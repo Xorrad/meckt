@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <math.h>
+#include <vector>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -20,3 +21,11 @@ class Mod;
 class Menu;
 class HomeMenu;
 class EditingMenu;
+
+enum class MapMode {
+    PROVINCES,
+    HEIGHTMAP,
+    RIVERS,
+    COUNT,
+};
+const std::vector<const char*> MapModeLabels = { "Provinces", "Heightmap", "Rivers" };

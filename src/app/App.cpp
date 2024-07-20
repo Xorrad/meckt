@@ -25,7 +25,7 @@ void App::Init() {
     m_DeltaClock.restart();
 
     // Initialize SFML.
-    m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "CK3 - XME");
+    m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Xorrad's Map Editor");
     m_Window.setFramerateLimit(60);
     
     // Initialize ImGui.
@@ -42,7 +42,6 @@ void App::Run() {
         // Handle SFML events.
         sf::Event event;
         while (m_Window.pollEvent(event)) {
-            m_ActiveMenu->Event(event);
 
             if (event.type == sf::Event::Closed) {
                 m_Window.close();
@@ -59,11 +58,7 @@ void App::Run() {
             if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)
                 break;
 
-            if(event.type == sf::Event::MouseButtonPressed) {
-                if(event.mouseButton.button == sf::Mouse::Left) {
-                    sf::Vector2i localPosition = sf::Mouse::getPosition(m_Window);
-                }
-            }
+            m_ActiveMenu->Event(event);
         }
 
         // Update between frames.

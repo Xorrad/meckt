@@ -12,6 +12,7 @@ public:
 
 private:
     UniquePtr<Mod> m_Mod;
+    MapMode m_MapMode;
 
     sf::View m_Camera;
     sf::Texture m_MapTexture;

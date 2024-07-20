@@ -5,9 +5,9 @@
 #include "imgui/imgui.hpp"
 
 EditingMenu::EditingMenu(App* app, UniquePtr<Mod> mod)
-: Menu(app, "Editor"), m_Mod(std::move(mod)) {
+: Menu(app, "Editor"), m_Mod(std::move(mod)), m_MapMode(MapMode::PROVINCES) {
     m_Mod->Load();
-    m_MapTexture.loadFromImage(m_Mod->getProvinceImage());
+    m_Mod->LoadMapModeTexture(m_MapTexture, m_MapMode);
     m_MapSprite.setTexture(m_MapTexture);
 
     m_Camera = m_App->GetWindow().getDefaultView();
@@ -67,10 +67,20 @@ void EditingMenu::Draw() {
     sf::RenderWindow& window = m_App->GetWindow();
 
     if(ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
+        if(ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save", "Ctrl+S")) {}
             if (ImGui::MenuItem("Close")) {
                 m_App->OpenMenu(MakeUnique<HomeMenu>(m_App));
+            }
+            ImGui::EndMenu();
+        }
+        if(ImGui::BeginMenu("View")) {
+            for(int i = 0; i < (int) MapMode::COUNT; i++) {
+                if(ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode) i)) {
+                    m_MapMode = (MapMode) i;
+                    m_Mod->LoadMapModeTexture(m_MapTexture, m_MapMode);
+                    m_MapSprite.setTexture(m_MapTexture);
+                }    
             }
             ImGui::EndMenu();
         }
