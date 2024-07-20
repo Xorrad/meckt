@@ -1,4 +1,5 @@
 #include "HomeMenu.hpp"
+#include "EditingMenu.hpp"
 #include "app/App.hpp"
 #include "imgui/imgui.hpp"
 #include "nfd/nfd.h"
@@ -14,7 +15,7 @@ void HomeMenu::Event(const sf::Event& event) {
 
 }
 
-void HomeMenu::Draw(sf::RenderWindow& window) {
+void HomeMenu::Draw() {
     static std::string error = "";
 
     ImGui::SetNextWindowPos(ImVec2(10, 10));
@@ -28,7 +29,7 @@ void HomeMenu::Draw(sf::RenderWindow& window) {
         if(result == NFD_OKAY) {
             UniquePtr<Mod> mod = MakeUnique<Mod>(std::string(dirPath));
             if(mod->HasMap()) {
-                m_App->OpenMod(std::move(mod));
+                m_App->OpenMenu(MakeUnique<EditingMenu>(m_App, std::move(mod)));
                 INFO("Opened mod at {}", dirPath);
             }
             else {

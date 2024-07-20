@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
+#include <math.h>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>

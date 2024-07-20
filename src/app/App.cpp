@@ -6,16 +6,19 @@
 App::App()
 : m_ActiveMenu(MakeUnique<HomeMenu>(this)) {}
 
+sf::RenderWindow& App::GetWindow() {
+    return m_Window;
+}
+
+void App::DebugSettings() {
+    this->OpenMenu(MakeUnique<EditingMenu>(this, std::move(MakeUnique<Mod>("test_mod/"))));
+}
+
 void App::OpenMenu(UniquePtr<Menu> menu) {
     m_ActiveMenu = std::move(menu);
 }
 
-void App::OpenMod(UniquePtr<Mod> mod) {
-    m_ActiveMod = std::move(mod);
-    OpenMenu(MakeUnique<EditingMenu>(this));
-}
-
-void App::Run() {
+void App::Init() {
     // Initialize app-related functionalities.
     Logger::ClearLogs();
     Configuration::Initialize();
@@ -30,15 +33,9 @@ void App::Run() {
         ERROR("Failed to initialize ImGui for SFML.", "");
         exit(EXIT_FAILURE);
     }
+}
 
-    // Here temporarily.
-    sf::Text text;
-    text.setCharacterSize(12);
-    text.setString("No map loaded.");
-    text.setFillColor(sf::Color::White);
-    text.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
-    text.setPosition({5, m_Window.getSize().y - text.getGlobalBounds().height - 10});
-
+void App::Run() {
     // Main application loop.
     while (m_Window.isOpen()) {
 
@@ -76,10 +73,9 @@ void App::Run() {
 
         // Drawing.
         m_Window.clear();
-        m_ActiveMenu->Draw(m_Window);
+        m_ActiveMenu->Draw();
 
         // ImGui::ShowDemoWindow();
-        m_Window.draw(text);
         ImGui::SFML::Render(m_Window);
 
         m_Window.display();

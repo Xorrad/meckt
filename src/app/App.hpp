@@ -11,8 +11,12 @@ public:
     App(const App&) = delete;
     App& operator=(const App&) = delete;
 
+    sf::RenderWindow& GetWindow();
+
+    void DebugSettings();
     void OpenMenu(UniquePtr<Menu> menu);
-    void OpenMod(UniquePtr<Mod> mod);
+
+    void Init();
     void Run();
 
 private:
@@ -21,5 +25,4 @@ private:
     SignalHandler m_SignalHandler;
 
     UniquePtr<Menu> m_ActiveMenu;
-    UniquePtr<Mod> m_ActiveMod;
 };
