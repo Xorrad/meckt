@@ -10,12 +10,22 @@ sf::RenderWindow& App::GetWindow() {
     return m_Window;
 }
 
+SharedPtr<Mod> App::GetMod() {
+    return m_ActiveMod;
+}
+
 void App::DebugSettings() {
-    this->OpenMenu(MakeUnique<EditingMenu>(this, std::move(MakeUnique<Mod>("test_mod/"))));
+    this->OpenMod(MakeShared<Mod>("test_mod/"));
 }
 
 void App::OpenMenu(UniquePtr<Menu> menu) {
     m_ActiveMenu = std::move(menu);
+}
+
+void App::OpenMod(SharedPtr<Mod> mod) {
+    m_ActiveMod = mod;
+    mod->Load();
+    this->OpenMenu(MakeUnique<EditingMenu>(this));
 }
 
 void App::Init() {

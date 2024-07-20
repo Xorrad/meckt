@@ -4,10 +4,9 @@
 #include "app/mod/Mod.hpp"
 #include "imgui/imgui.hpp"
 
-EditingMenu::EditingMenu(App* app, UniquePtr<Mod> mod)
-: Menu(app, "Editor"), m_Mod(std::move(mod)), m_MapMode(MapMode::PROVINCES) {
-    m_Mod->Load();
-    m_Mod->LoadMapModeTexture(m_MapTexture, m_MapMode);
+EditingMenu::EditingMenu(App* app)
+: Menu(app, "Editor"), m_MapMode(MapMode::PROVINCES) {
+    m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
     m_MapSprite.setTexture(m_MapTexture);
 
     m_Camera = m_App->GetWindow().getDefaultView();
@@ -78,7 +77,7 @@ void EditingMenu::Draw() {
             for(int i = 0; i < (int) MapMode::COUNT; i++) {
                 if(ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode) i)) {
                     m_MapMode = (MapMode) i;
-                    m_Mod->LoadMapModeTexture(m_MapTexture, m_MapMode);
+                    m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
                     m_MapSprite.setTexture(m_MapTexture);
                 }    
             }

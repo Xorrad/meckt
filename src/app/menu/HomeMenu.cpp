@@ -27,9 +27,9 @@ void HomeMenu::Draw() {
         nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
             
         if(result == NFD_OKAY) {
-            UniquePtr<Mod> mod = MakeUnique<Mod>(std::string(dirPath));
+            SharedPtr<Mod> mod = MakeShared<Mod>(std::string(dirPath));
             if(mod->HasMap()) {
-                m_App->OpenMenu(MakeUnique<EditingMenu>(m_App, std::move(mod)));
+                m_App->OpenMod(mod);
                 INFO("Opened mod at {}", dirPath);
             }
             else {
