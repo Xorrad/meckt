@@ -26,7 +26,8 @@ void App::Init() {
 
     // Initialize SFML.
     m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Xorrad's Map Editor");
-    m_Window.setFramerateLimit(60);
+    // m_Window.setFramerateLimit(60);
+    // m_Window.setVerticalSyncEnabled(true);
     
     // Initialize ImGui.
     if(!ImGui::SFML::Init(m_Window)) {
@@ -42,6 +43,7 @@ void App::Run() {
         // Handle SFML events.
         sf::Event event;
         while (m_Window.pollEvent(event)) {
+            ImGui::SFML::ProcessEvent(m_Window, event);
 
             if (event.type == sf::Event::Closed) {
                 m_Window.close();
@@ -54,7 +56,6 @@ void App::Run() {
                 Configuration::windowResolution = m_Window.getSize();
             }
 
-            ImGui::SFML::ProcessEvent(m_Window, event);
             if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)
                 break;
 
