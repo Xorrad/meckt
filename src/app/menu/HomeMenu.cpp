@@ -1,5 +1,6 @@
 #include "HomeMenu.hpp"
 #include "imgui/imgui.hpp"
+#include "nfd/nfd.h"
 
 HomeMenu::HomeMenu(App* app)
 : Menu(app, "Home") {}
@@ -18,7 +19,19 @@ void HomeMenu::Draw(sf::RenderWindow& window) {
     ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
 
     if(ImGui::Button("Open mod")) {
-
+        nfdchar_t *dirPath = NULL;
+        nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
+            
+        if(result == NFD_OKAY) {
+            INFO("Selected directory: {}", dirPath);
+            free(dirPath);
+        }
+        else if(result == NFD_CANCEL) {
+            INFO("Cancelled directory selection.", "");
+        }
+        else {
+            ERROR("Error while picking directory: {}", NFD_GetError());
+        }
     }
     
     ImGui::NewLine();

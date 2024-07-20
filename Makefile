@@ -3,6 +3,9 @@ MAKEFLAGS += -j4
 # Functions
 rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
+GTKFLAGS = $(shell pkg-config --cflags gtk+-3.0)
+GTKLIBS = $(shell pkg-config --libs gtk+-3.0)
+
 # Compiler flags
 CXX      := g++
 CXXFLAGS := -std=c++17 -pedantic-errors -Wall -Wno-format-security
@@ -43,6 +46,7 @@ endif
 # Libraries
 LDFLAGS :=  -L$(VENDOR_DIR)/lib/fmt -lfmt \
 			-L$(VENDOR_DIR)/lib/backward/ -lbackward \
+			-L$(VENDOR_DIR)/lib/nfd/ -lnfd \
 			-L/usr/lib -lstdc++ -lm -lbfd -ldl -ldw -lsfml-graphics -lsfml-window -lsfml-system -lGL
 
 .PHONY: all build clean debug release info run
@@ -61,7 +65,7 @@ $(OBJ_DIR)/%.o: %.cpp $(PCH)
 
 $(BIN_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $(BIN_DIR)/$(TARGET) $^ $(LIB) $(LDFLAGS)
+	$(CXX) $(GTKFLAGS) $(CXXFLAGS) -o $(BIN_DIR)/$(TARGET) $^ $(LIB) $(LDFLAGS) $(GTKLIBS)
 
 # Make commands
 
