@@ -1,7 +1,13 @@
 #include "App.hpp"
 #include "imgui/imgui.hpp"
+#include "menu/HomeMenu.hpp"
 
-App::App() {}
+App::App()
+: m_ActiveMenu(MakeUnique<HomeMenu>(this)) {}
+
+void App::OpenMenu(UniquePtr<Menu> menu) {
+    m_ActiveMenu = std::move(menu);
+}
 
 void App::Run() {
     // Initialize app-related functionalities.
@@ -30,9 +36,11 @@ void App::Run() {
     // Main application loop.
     while (m_Window.isOpen()) {
 
-
+        // Handle SFML events.
         sf::Event event;
         while (m_Window.pollEvent(event)) {
+            m_ActiveMenu->Event(event);
+
             if (event.type == sf::Event::Closed) {
                 m_Window.close();
                 break;
@@ -56,13 +64,18 @@ void App::Run() {
         }
 
         // Update between frames.
-        ImGui::SFML::Update(m_Window, m_DeltaClock.restart());
+        sf::Time delta = m_DeltaClock.restart();
+        ImGui::SFML::Update(m_Window, delta);
+        m_ActiveMenu->Update(delta);
 
         // Drawing.
         m_Window.clear();
-        ImGui::ShowDemoWindow();
+        m_ActiveMenu->Draw(m_Window);
+
+        // ImGui::ShowDemoWindow();
         m_Window.draw(text);
         ImGui::SFML::Render(m_Window);
+
         m_Window.display();
     }
 

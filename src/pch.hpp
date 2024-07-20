@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <memory>
+#include <string>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -14,3 +15,6 @@
 class SignalHandler;
 
 class App;
+class Menu;
+class EditingMenu;
+class EditingMenu;
