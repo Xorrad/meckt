@@ -15,6 +15,7 @@
 class SignalHandler;
 
 class App;
+class Mod;
 class Menu;
-class EditingMenu;
+class HomeMenu;
 class EditingMenu;

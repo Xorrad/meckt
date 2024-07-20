@@ -1,4 +1,5 @@
 #include "HomeMenu.hpp"
+#include "app/App.hpp"
 #include "imgui/imgui.hpp"
 #include "nfd/nfd.h"
 
@@ -14,6 +15,8 @@ void HomeMenu::Event(const sf::Event& event) {
 }
 
 void HomeMenu::Draw(sf::RenderWindow& window) {
+    static std::string error = "";
+
     ImGui::SetNextWindowPos(ImVec2(10, 10));
     ImGui::SetNextWindowSize(ImVec2(Configuration::windowResolution.x - 20, Configuration::windowResolution.y - 20), ImGuiCond_Always);
     ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
@@ -23,18 +26,29 @@ void HomeMenu::Draw(sf::RenderWindow& window) {
         nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
             
         if(result == NFD_OKAY) {
-            INFO("Selected directory: {}", dirPath);
+            UniquePtr<Mod> mod = MakeUnique<Mod>(std::string(dirPath));
+            if(mod->HasMap()) {
+                m_App->OpenMod(std::move(mod));
+                INFO("Opened mod at {}", dirPath);
+            }
+            else {
+                INFO("Opened mod without custom map at {}", dirPath);
+                error = fmt::format("This mod does not have a custom map.");
+            }
             free(dirPath);
         }
-        else if(result == NFD_CANCEL) {
-            INFO("Cancelled directory selection.", "");
-        }
-        else {
-            ERROR("Error while picking directory: {}", NFD_GetError());
+        else if(result != NFD_CANCEL) {
+            ERROR("Failed to open mod at {}", NFD_GetError());
+            error = fmt::format("Failed to open mod ({})", NFD_GetError());
         }
     }
+    if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("Select a mod directory (with descriptor file)");
+    }
     
-    ImGui::NewLine();
+    if(!error.empty()) {
+        ImGui::TextColored(ImVec4(1.0, 0, 0, 1.0), error.c_str());
+    }
 
     ImGui::End();
 

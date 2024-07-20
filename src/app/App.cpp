@@ -1,12 +1,18 @@
 #include "App.hpp"
 #include "imgui/imgui.hpp"
 #include "menu/HomeMenu.hpp"
+#include "menu/EditingMenu.hpp"
 
 App::App()
 : m_ActiveMenu(MakeUnique<HomeMenu>(this)) {}
 
 void App::OpenMenu(UniquePtr<Menu> menu) {
     m_ActiveMenu = std::move(menu);
+}
+
+void App::OpenMod(UniquePtr<Mod> mod) {
+    m_ActiveMod = std::move(mod);
+    OpenMenu(MakeUnique<EditingMenu>(this));
 }
 
 void App::Run() {
