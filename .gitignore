@@ -2,5 +2,6 @@
 /bin/
 /obj/
 /logs/
+/test_mod/
 *.txt
 imgui.ini
