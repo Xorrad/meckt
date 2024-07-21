@@ -29,7 +29,8 @@ SRC          := $(call rwildcard,$(SRC_DIR),*.cpp) \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_demo.cpp \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_widgets.cpp \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_draw.cpp \
-				$(VENDOR_DIR)/includes/imgui/imgui/imgui_tables.cpp 
+				$(VENDOR_DIR)/includes/imgui/imgui/imgui_tables.cpp \
+				$(VENDOR_DIR)/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp 
 PCH_HEADER   := $(SRC_DIR)/pch.hpp
 PCH          := $(PCH_HEADER:%.h=$(OBJ_DIR)/%.gch)
 OBJECTS      := $(SRC:%.cpp=$(OBJ_DIR)/%.o)

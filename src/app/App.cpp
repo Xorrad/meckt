@@ -2,6 +2,7 @@
 #include "imgui/imgui.hpp"
 #include "menu/HomeMenu.hpp"
 #include "menu/EditingMenu.hpp"
+#include "menu/ImGuiStyle.hpp"
 
 App::App()
 : m_ActiveMenu(MakeUnique<HomeMenu>(this)) {}
@@ -44,6 +45,9 @@ void App::Init() {
         ERROR("Failed to initialize ImGui for SFML.", "");
         exit(EXIT_FAILURE);
     }
+
+    ImGui::SetupSettings();
+    ImGui::SetupStyle();
 }
 
 void App::Run() {
@@ -81,7 +85,7 @@ void App::Run() {
         m_Window.clear();
         m_ActiveMenu->Draw();
 
-        // ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
         ImGui::SFML::Render(m_Window);
 
         m_Window.display();

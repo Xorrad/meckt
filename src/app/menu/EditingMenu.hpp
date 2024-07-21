@@ -6,6 +6,8 @@ class EditingMenu : public Menu {
 public:
     EditingMenu(App* app);
 
+    void ToggleCamera(bool enabled);
+
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);
     virtual void Draw();
@@ -19,8 +21,11 @@ private:
 
     bool m_Dragging;
     sf::Vector2i m_LastMousePosition;
+    sf::Vector2i m_LastClickMousePosition;
     float m_Zoom;
     float m_TotalZoom;
 
     sf::Text m_SelectionText;
+
+    std::vector<SharedPtr<Province>> m_SelectedProvinces;
 };

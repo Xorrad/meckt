@@ -13,19 +13,19 @@
 #include "util/Logger.hpp"
 #include "app/Configuration.hpp"
 
+#include "app/map/MapMode.hpp"
+#include "app/map/TitleType.hpp"
+
 // Custom backward::SignalHandling to print stacktrace to file.
 class SignalHandler;
 
 class App;
+
 class Mod;
+class Province;
+class Title;
+class Barony;
+
 class Menu;
 class HomeMenu;
 class EditingMenu;
-
-enum class MapMode {
-    PROVINCES,
-    HEIGHTMAP,
-    RIVERS,
-    COUNT,
-};
-const std::vector<const char*> MapModeLabels = { "Provinces", "Heightmap", "Rivers" };
