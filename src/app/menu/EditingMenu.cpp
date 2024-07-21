@@ -17,11 +17,29 @@ EditingMenu::EditingMenu(App* app)
     m_Zoom = 1.f;
     m_TotalZoom = 1.f;
 
-    m_SelectionText.setCharacterSize(12);
-    m_SelectionText.setString("No province selected.");
-    m_SelectionText.setFillColor(sf::Color::White);
-    m_SelectionText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
-    m_SelectionText.setPosition({5, m_App->GetWindow().getSize().y - m_SelectionText.getGlobalBounds().height - 10});
+    m_HoverText.setCharacterSize(12);
+    m_HoverText.setString("No province selected.");
+    m_HoverText.setFillColor(sf::Color::White);
+    m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
+    m_HoverText.setPosition({5, m_App->GetWindow().getSize().y - m_HoverText.getGlobalBounds().height - 10});
+}
+
+SharedPtr<Province> EditingMenu::GetHoveredProvince() {
+    sf::Vector2f mousePosition = m_App->GetWindow().mapPixelToCoords(sf::Mouse::getPosition(m_App->GetWindow()));
+
+    if(!m_MapSprite.getGlobalBounds().contains(mousePosition))
+        return nullptr;
+
+    SharedPtr<Mod> mod = m_App->GetMod();
+    sf::Vector2f mapMousePosition = mousePosition - m_MapSprite.getPosition();
+
+    sf::Color color = mod->getProvinceImage().getPixel(mapMousePosition.x, mapMousePosition.y);
+    uint32_t colorId = (color.r << 16) + (color.g << 8) + color.b;
+
+    if(mod->GetProvinces().count(colorId) == 0)
+        return nullptr;
+
+    return mod->GetProvinces()[colorId];
 }
 
 void EditingMenu::ToggleCamera(bool enabled) {
@@ -56,7 +74,16 @@ void EditingMenu::Event(const sf::Event& event) {
     ToggleCamera(true);
     sf::RenderWindow& window = m_App->GetWindow();
 
-    if(event.type == sf::Event::MouseWheelMoved) {
+    if(event.type == sf::Event::MouseMoved) {
+        SharedPtr<Province> province = this->GetHoveredProvince();
+        if(province != nullptr) {
+            m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
+        }
+        else {
+            m_HoverText.setString("No provinces hovered.");
+        }
+    }
+    else if(event.type == sf::Event::MouseWheelMoved) {
         float delta = (-event.mouseWheel.delta)/50.f;
 
         // Reset zoom if scrolling in reverse.
@@ -78,30 +105,22 @@ void EditingMenu::Event(const sf::Event& event) {
         if(event.mouseButton.button == sf::Mouse::Button::Left) {
             m_Dragging = false;
             
-            sf::Vector2i mouseScreenPosition = sf::Mouse::getPosition(window);
-            int dx = (mouseScreenPosition.x - m_LastClickMousePosition.x);
-            int dy = (mouseScreenPosition.y - m_LastClickMousePosition.y);
+            sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
+            int dx = (mousePosition.x - m_LastClickMousePosition.x);
+            int dy = (mousePosition.y - m_LastClickMousePosition.y);
             int d = sqrt(dx*dx + dy*dy);
 
             if(d < 2) {
-                sf::Vector2f mousePosition = window.mapPixelToCoords(mouseScreenPosition);
-                if(m_MapSprite.getGlobalBounds().contains(mousePosition)) {
-                    SharedPtr<Mod> mod = m_App->GetMod();
-                    sf::Vector2f mapMousePosition = mousePosition - m_MapSprite.getPosition();
+                if(m_MapMode == MapMode::PROVINCES) {
+                    SharedPtr<Province> province = this->GetHoveredProvince();
 
-                    if(m_MapMode == MapMode::PROVINCES) {
-                        sf::Color color = mod->getProvinceImage().getPixel(mapMousePosition.x, mapMousePosition.y);
-                        uint32_t colorId = (color.r << 16) + (color.g << 8) + color.b;
+                    if(province != nullptr) {
+                        fmt::println("Clicked on province {} named {}", province->GetId(), province->GetName());
 
-                        if(mod->GetProvinces().count(colorId) > 0) {
-                            SharedPtr<Province> province = mod->GetProvinces()[colorId];
-                            fmt::println("Clicked on province {} named {}", province->GetId(), province->GetName());
-
-                            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                                m_SelectedProvinces.clear();
-                            if(std::find(m_SelectedProvinces.begin(), m_SelectedProvinces.end(), province) == m_SelectedProvinces.end())
-                                m_SelectedProvinces.push_back(province);
-                        }
+                        if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                            m_SelectedProvinces.clear();
+                        if(std::find(m_SelectedProvinces.begin(), m_SelectedProvinces.end(), province) == m_SelectedProvinces.end())
+                            m_SelectedProvinces.push_back(province);
                     }
                 }
             }
@@ -185,5 +204,5 @@ void EditingMenu::Draw() {
 
     ToggleCamera(false);
 
-    window.draw(m_SelectionText);
+    window.draw(m_HoverText);
 }

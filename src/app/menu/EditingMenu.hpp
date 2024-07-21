@@ -6,6 +6,8 @@ class EditingMenu : public Menu {
 public:
     EditingMenu(App* app);
 
+    SharedPtr<Province> GetHoveredProvince();
+
     void ToggleCamera(bool enabled);
 
     virtual void Update(sf::Time delta);
@@ -25,7 +27,7 @@ private:
     float m_Zoom;
     float m_TotalZoom;
 
-    sf::Text m_SelectionText;
+    sf::Text m_HoverText;
 
     std::vector<SharedPtr<Province>> m_SelectedProvinces;
 };
