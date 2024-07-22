@@ -42,6 +42,15 @@ SharedPtr<Province> EditingMenu::GetHoveredProvince() {
     return mod->GetProvinces()[colorId];
 }
 
+std::vector<sf::Color> EditingMenu::GetSelectedProvincesColor() const {
+    std::vector<sf::Color> colors;
+
+    for(auto& province : m_SelectedProvinces)
+        colors.push_back(province->GetColor());
+
+    return colors;
+}
+
 void EditingMenu::ToggleCamera(bool enabled) {
     static sf::View previousView;
     sf::RenderWindow& window = m_App->GetWindow();
@@ -110,7 +119,7 @@ void EditingMenu::Event(const sf::Event& event) {
             int dy = (mousePosition.y - m_LastClickMousePosition.y);
             int d = sqrt(dx*dx + dy*dy);
 
-            if(d < 2) {
+            if(d < 5) {
                 if(m_MapMode == MapMode::PROVINCES) {
                     SharedPtr<Province> province = this->GetHoveredProvince();
 
@@ -131,9 +140,21 @@ void EditingMenu::Event(const sf::Event& event) {
 
 void EditingMenu::Draw() {
     sf::RenderWindow& window = m_App->GetWindow();
-    ImVec2 menuBarSize;
+
+    // Update provinces shader
+    std::vector<sf::Color> selectedProvincesColors = this->GetSelectedProvincesColor();
+    std::vector<sf::Glsl::Vec4> selectedProvincesColorsGLSL;
+    for(auto& c : selectedProvincesColors)
+        selectedProvincesColorsGLSL.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
+
+    sf::Shader& provinceShader = Configuration::shaders.Get(Shaders::PROVINCES);
+    provinceShader.setUniform("texture", sf::Shader::CurrentTexture);
+    provinceShader.setUniform("time", m_Clock.getElapsedTime().asSeconds());
+    provinceShader.setUniformArray("selectedProvinces", selectedProvincesColorsGLSL.data(), selectedProvincesColorsGLSL.size());
+    provinceShader.setUniform("selectedProvincesCount", (int) selectedProvincesColorsGLSL.size());
 
     // Main Menu Bar (File, View...)
+    ImVec2 menuBarSize;
     if(ImGui::BeginMainMenuBar()) {
         if(ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save", "Ctrl+S")) {}
@@ -200,7 +221,10 @@ void EditingMenu::Draw() {
 
     ToggleCamera(true);
 
-    window.draw(m_MapSprite);
+    if(m_MapMode == MapMode::PROVINCES)
+        window.draw(m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
+    else 
+        window.draw(m_MapSprite);
 
     ToggleCamera(false);
 

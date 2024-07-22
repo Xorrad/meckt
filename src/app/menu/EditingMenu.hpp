@@ -7,6 +7,7 @@ public:
     EditingMenu(App* app);
 
     SharedPtr<Province> GetHoveredProvince();
+    std::vector<sf::Color> GetSelectedProvincesColor() const;
 
     void ToggleCamera(bool enabled);
 
@@ -18,6 +19,7 @@ private:
     MapMode m_MapMode;
 
     sf::View m_Camera;
+    sf::Clock m_Clock;
     sf::Texture m_MapTexture;
     sf::Sprite m_MapSprite;
 

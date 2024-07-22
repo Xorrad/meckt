@@ -6,6 +6,7 @@ void Configuration::Initialize() {
 
     InitializeTextures();
     InitializeFonts();
+    InitializeShaders();
 }
 
 void Configuration::InitializeTextures() {
@@ -14,4 +15,9 @@ void Configuration::InitializeTextures() {
 
 void Configuration::InitializeFonts() {
     fonts.Load(Fonts::FIGTREE, "assets/fonts/Figtree-Medium.ttf");
+}
+
+void Configuration::InitializeShaders() {
+    shaders.Load(Shaders::PROVINCES, "assets/shaders/provinces.vert", "assets/shaders/provinces.frag");
+    // shaders.Load(Shaders::PROVINCES, "assets/shaders/provinces.frag", sf::Shader::Fragment);
 }
