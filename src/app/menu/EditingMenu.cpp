@@ -126,10 +126,16 @@ void EditingMenu::Event(const sf::Event& event) {
                     if(province != nullptr) {
                         fmt::println("Clicked on province {} named {}", province->GetId(), province->GetName());
 
-                        if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                            m_SelectedProvinces.clear();
-                        if(std::find(m_SelectedProvinces.begin(), m_SelectedProvinces.end(), province) == m_SelectedProvinces.end())
+                        bool isSelected = (std::find(m_SelectedProvinces.begin(), m_SelectedProvinces.end(), province) != m_SelectedProvinces.end());
+
+                        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+                            m_SelectedProvinces.erase(std::remove(m_SelectedProvinces.begin(), m_SelectedProvinces.end(), province), m_SelectedProvinces.end());
+                        }
+                        else if(!isSelected) {
+                            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                                m_SelectedProvinces.clear();
                             m_SelectedProvinces.push_back(province);
+                        }
                     }
                 }
             }
