@@ -1,6 +1,8 @@
 #include "Mod.hpp"
 #include "app/map/Province.hpp"
+
 #include <filesystem>
+#include <fmt/ostream.h>
 
 Mod::Mod(const std::string& dir)
 : m_Dir(dir) {}
@@ -94,4 +96,38 @@ void Mod::LoadTitlesHistory() {
 
 void Mod::LoadTitles() {
 
+}
+
+void Mod::Export() {
+    this->ExportProvincesDefinition();
+}
+
+void Mod::ExportProvincesDefinition() {
+    std::ofstream file(m_Dir + "/map_data/definition.csv", std::ios::out);
+
+    // The format of definition.csv is as following:
+    // [ID];[RED];[GREEN];[BLUE];[Barony Name];x;
+
+    file << "0;0;0;0;x;x\n";
+
+    // "IDs must be sequential, or your game will crash."
+    // That's why it is needed to make a sorted list of the provinces.
+    std::vector<SharedPtr<Province>> provincesSorted;
+    for(auto&[colorId, province] : m_Provinces) {
+        provincesSorted.push_back(province);
+    }
+    std::sort(provincesSorted.begin(), provincesSorted.end(), [=](SharedPtr<Province>& a, SharedPtr<Province>& b) {
+        return a->GetId() < b->GetId();
+    });
+
+    for(auto& province : provincesSorted) {
+        fmt::println(file, 
+            "{};{};{};{};{};x",
+            province->GetId(),
+            province->GetColor().r,
+            province->GetColor().g,
+            province->GetColor().b,
+            province->GetName()
+        );
+    }
 }

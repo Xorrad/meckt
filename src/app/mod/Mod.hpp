@@ -20,6 +20,9 @@ public:
     void LoadTitlesHistory();
     void LoadTitles();
 
+    void Export();
+    void ExportProvincesDefinition();
+
 private:
     std::string m_Dir;
     sf::Image m_HeightmapImage;

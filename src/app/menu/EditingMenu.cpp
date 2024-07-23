@@ -164,6 +164,10 @@ void EditingMenu::Draw() {
     if(ImGui::BeginMainMenuBar()) {
         if(ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+            if (ImGui::MenuItem("Export")) {
+                SharedPtr<Mod> mod = m_App->GetMod();
+                mod->Export();
+            }
             if (ImGui::MenuItem("Close")) {
                 m_App->OpenMenu(MakeUnique<HomeMenu>(m_App));
             }
@@ -187,7 +191,7 @@ void EditingMenu::Draw() {
     ImGui::SetNextWindowPos(ImVec2(Configuration::windowResolution.x - 400, menuBarSize.y));
     ImGui::SetNextWindowSize(ImVec2(400, Configuration::windowResolution.y - menuBarSize.y), ImGuiCond_Always);
     if(ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
-        if(ImGui::BeginTabBar("MyTabBar")) {
+        if(ImGui::BeginTabBar("Main TabBar")) {
             if(ImGui::BeginTabItem("Province")) {
                 
                 for(auto& province : m_SelectedProvinces) {
