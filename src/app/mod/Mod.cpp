@@ -31,6 +31,10 @@ std::map<uint32_t, SharedPtr<Province>>& Mod::GetProvinces() {
     return m_Provinces;
 }
 
+std::map<int, SharedPtr<Province>>& Mod::GetProvincesByIds() {
+    return m_ProvincesByIds;
+}
+
 void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
     switch(mode) {
         case MapMode::PROVINCES:
@@ -83,11 +87,62 @@ void Mod::LoadProvincesDefinition() {
         if(m_Provinces.count(province->GetColorId()) != 0)
             INFO("Several provinces with same color: {}", id);
         m_Provinces[province->GetColorId()] = province;
+        m_ProvincesByIds[province->GetId()] = province;
     }
 }
 
 void Mod::LoadProvincesTerrain() {
+    std::ifstream file(m_Dir + "/common/province_terrain/00_province_terrain.txt");
 
+    std::map<std::string, std::string> values;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        line = String::Strip(line, " ");
+        line = String::Strip(line, "\n");
+        line = String::Strip(line, "\r");
+        line = String::StripNonPrintable(line);
+
+        // Remove everything that is after a comment.
+        size_t i = line.find("#");
+        if(i != std::string::npos) {
+            line = line.substr(0, i);
+        }
+
+        std::stringstream lineStream(line);
+        std::vector<std::string> row;
+        std::string cell;
+
+        while (std::getline(lineStream, cell, '=')) {
+            row.push_back(cell);
+        }
+
+        if(row.size() < 2)
+            continue;
+
+        values[row[0]] = row[1];
+    }
+
+    std::string defaultLand = values["default_land"];
+    std::string defaultSea = values["default_sea"];
+    std::string defaultCoastalSea = values["default_coastal_sea"];
+
+    int n = values.erase("default_land");
+    values.erase("default_sea");
+    values.erase("default_coastal_sea");
+
+    for(const auto& [key, value] : values) {
+        int id = std::stoi(key);
+        TerrainType terrain = TerrainTypefromString(value);
+
+        if(m_ProvincesByIds.count(id) == 0) {
+            INFO("A province's terrain is defined but the province does not exist: {}", id);
+            continue;
+        }
+
+        m_ProvincesByIds[id]->SetTerrain(terrain);
+        m_ProvincesByIds[id]->SetIsSea(false);
+    }
 }
 
 void Mod::LoadTitlesHistory() {

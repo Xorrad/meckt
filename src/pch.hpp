@@ -11,10 +11,12 @@
 
 #include "util/Ptr.hpp"
 #include "util/Logger.hpp"
+#include "util/String.hpp"
 #include "app/Configuration.hpp"
 
 #include "app/map/MapMode.hpp"
 #include "app/map/TitleType.hpp"
+#include "app/map/TerrainType.hpp"
 
 // Custom backward::SignalHandling to print stacktrace to file.
 class SignalHandler;

@@ -199,13 +199,16 @@ void EditingMenu::Draw() {
                     if(ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
                         ImGui::PushID(province->GetId());                        
 
+                        // Province id.
                         ImGui::BeginDisabled();
                         std::string id = std::to_string(province->GetId());
                         ImGui::InputText("id", &id);
                         ImGui::EndDisabled();
 
+                        // Province barony name.
                         ImGui::InputText("name", &province->GetName());
 
+                        // Province color code.
                         float color[4] = {
                             province->GetColor().r/255.f,
                             province->GetColor().g/255.f,
@@ -217,7 +220,31 @@ void EditingMenu::Draw() {
                             province->SetColor(sf::Color(color[0]*255, color[1]*255, color[2]*255, color[3]*255));
                         }
                         ImGui::EndDisabled();
+
+                        // Province terrain type.
+                        if(province->IsSea()) ImGui::BeginDisabled();
+                        if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()]))
+                        {
+                            for (int i = 0; i < (int) TerrainType::COUNT; i++)
+                            {
+                                const bool isSelected = ((int) province->GetTerrain() == i);
+                                if (ImGui::Selectable(TerrainTypeLabels[i], isSelected))
+                                    province->SetTerrain((TerrainType) i);
+
+                                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                                if (isSelected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                        if(province->IsSea()) ImGui::EndDisabled();
                         
+                        // Sea province checkbox.
+                        bool isSea = province->IsSea();
+                        if(ImGui::Checkbox("is sea?", &isSea)) {
+                            province->SetIsSea(isSea);
+                        }
+
                         ImGui::PopID();
                     }
                 }

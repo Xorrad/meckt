@@ -11,6 +11,7 @@ public:
     bool HasMap() const;
 
     std::map<uint32_t, SharedPtr<Province>>& GetProvinces();
+    std::map<int, SharedPtr<Province>>& GetProvincesByIds();
 
     void LoadMapModeTexture(sf::Texture& texture, MapMode mode);
     
@@ -30,4 +31,5 @@ private:
     sf::Image m_RiversImage;
 
     std::map<uint32_t, SharedPtr<Province>> m_Provinces;
+    std::map<int, SharedPtr<Province>> m_ProvincesByIds;
 };
