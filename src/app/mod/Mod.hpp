@@ -23,6 +23,7 @@ public:
 
     void Export();
     void ExportProvincesDefinition();
+    void ExportProvincesTerrain();
 
 private:
     std::string m_Dir;
@@ -32,4 +33,8 @@ private:
 
     std::map<uint32_t, SharedPtr<Province>> m_Provinces;
     std::map<int, SharedPtr<Province>> m_ProvincesByIds;
+
+    TerrainType m_DefaultLandTerrain;
+    TerrainType m_DefaultSeaTerrain;
+    TerrainType m_DefaultCoastalSeaTerrain;
 };

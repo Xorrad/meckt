@@ -123,13 +123,18 @@ void Mod::LoadProvincesTerrain() {
         values[row[0]] = row[1];
     }
 
-    std::string defaultLand = values["default_land"];
-    std::string defaultSea = values["default_sea"];
-    std::string defaultCoastalSea = values["default_coastal_sea"];
+    m_DefaultLandTerrain = TerrainTypefromString(values["default_land"]);
+    m_DefaultSeaTerrain = TerrainTypefromString(values["default_sea"]);
+    m_DefaultCoastalSeaTerrain = TerrainTypefromString(values["default_coastal_sea"]);
 
-    int n = values.erase("default_land");
+    values.erase("default_land");
     values.erase("default_sea");
     values.erase("default_coastal_sea");
+
+    for(const auto& [colorId, province] : m_Provinces) {
+        TerrainType defaultTerrain = (province->IsSea() ? m_DefaultSeaTerrain : m_DefaultLandTerrain);
+        province->SetTerrain(defaultTerrain);
+    }
 
     for(const auto& [key, value] : values) {
         int id = std::stoi(key);
@@ -155,6 +160,7 @@ void Mod::LoadTitles() {
 
 void Mod::Export() {
     this->ExportProvincesDefinition();
+    this->ExportProvincesTerrain();
 }
 
 void Mod::ExportProvincesDefinition() {
@@ -167,15 +173,17 @@ void Mod::ExportProvincesDefinition() {
 
     // "IDs must be sequential, or your game will crash."
     // That's why it is needed to make a sorted list of the provinces.
-    std::vector<SharedPtr<Province>> provincesSorted;
-    for(auto&[colorId, province] : m_Provinces) {
-        provincesSorted.push_back(province);
-    }
-    std::sort(provincesSorted.begin(), provincesSorted.end(), [=](SharedPtr<Province>& a, SharedPtr<Province>& b) {
-        return a->GetId() < b->GetId();
-    });
+    // std::vector<SharedPtr<Province>> provincesSorted;
+    // for(auto&[colorId, province] : m_Provinces) {
+    //     provincesSorted.push_back(province);
+    // }
+    // std::sort(provincesSorted.begin(), provincesSorted.end(), [=](SharedPtr<Province>& a, SharedPtr<Province>& b) {
+    //     return a->GetId() < b->GetId();
+    // });
+    // std::map already sorts key in increasing order
+    // so there is no need to sort it again.
 
-    for(auto& province : provincesSorted) {
+    for(auto& [id, province] : m_ProvincesByIds) {
         fmt::println(file, 
             "{};{};{};{};{};x",
             province->GetId(),
@@ -185,4 +193,28 @@ void Mod::ExportProvincesDefinition() {
             province->GetName()
         );
     }
+
+    file.close();
+}
+
+void Mod::ExportProvincesTerrain() {
+    std::ofstream file(m_Dir + "/common/province_terrain/00_province_terrain.txt", std::ios::out);
+
+    auto terrainToString = [=](TerrainType terrain) {
+        return String::ToLowercase(TerrainTypeLabels[(int) terrain]);
+    };
+
+    fmt::println(file, "default_land={}", terrainToString(m_DefaultLandTerrain));
+    fmt::println(file, "default_sea={}", terrainToString(m_DefaultSeaTerrain));
+    fmt::println(file, "default_coastal_sea={}", terrainToString(m_DefaultCoastalSeaTerrain));
+
+    for(auto& [id, province] : m_ProvincesByIds) {
+        fmt::println(file,
+            "{}={}",
+            province->GetId(),
+            terrainToString(province->GetTerrain())
+        );
+    }
+
+    file.close();
 }
