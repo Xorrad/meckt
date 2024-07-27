@@ -8,7 +8,7 @@ GTKLIBS = $(shell pkg-config --libs gtk+-3.0)
 
 # Compiler flags
 CXX      := g++
-CXXFLAGS := -std=c++17 -pedantic-errors -Wall -Wno-format-security
+CXXFLAGS := -std=c++17 -pedantic-errors -Wall -Wno-format-security -Wno-sign-compare
 
 # Targets
 TARGET   := xme

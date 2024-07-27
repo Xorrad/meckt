@@ -156,6 +156,7 @@ void EditingMenu::Draw() {
     sf::Shader& provinceShader = Configuration::shaders.Get(Shaders::PROVINCES);
     provinceShader.setUniform("texture", sf::Shader::CurrentTexture);
     provinceShader.setUniform("time", m_Clock.getElapsedTime().asSeconds());
+    provinceShader.setUniform("mapMode", (int) m_MapMode);
     provinceShader.setUniformArray("selectedProvinces", selectedProvincesColorsGLSL.data(), selectedProvincesColorsGLSL.size());
     provinceShader.setUniform("selectedProvincesCount", (int) selectedProvincesColorsGLSL.size());
 

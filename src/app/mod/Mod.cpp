@@ -1,5 +1,6 @@
 #include "Mod.hpp"
 #include "app/map/Province.hpp"
+#include "parser/Parser.hpp"
 
 #include <filesystem>
 #include <fmt/ostream.h>
@@ -58,10 +59,35 @@ void Mod::Load() {
     m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png");
     m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png");
 
+    this->LoadDefaultMapFile();
     this->LoadProvincesDefinition();
     this->LoadProvincesTerrain();
     this->LoadTitlesHistory();
     this->LoadTitles();
+}
+
+void Mod::LoadDefaultMapFile() {
+    std::ifstream file(m_Dir + "/map_data/default.map");
+    std::string content = File::ReadString(file);
+
+    std::vector<PToken> tokens = Parser::Lex(content);
+
+    for(int i = 0; i < std::min(10, (int) tokens.size()); i++) {
+        switch(tokens[i]->GetType()) {
+            case TokenType::STRING:
+            case TokenType::IDENTIFIER:
+                fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<std::string>(tokens[i]->GetValue()));
+                break;
+            case TokenType::NUMBER:
+            case TokenType::BOOLEAN:
+                fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<double>(tokens[i]->GetValue()));
+                break;
+            default:
+                fmt::println("i={}\tt={}", i, (int) tokens[i]->GetType());
+                break;
+        }
+    }
+    file.close();
 }
 
 void Mod::LoadProvincesDefinition() {
@@ -168,8 +194,7 @@ void Mod::ExportProvincesDefinition() {
 
     // The format of definition.csv is as following:
     // [ID];[RED];[GREEN];[BLUE];[Barony Name];x;
-
-    file << "0;0;0;0;x;x\n";
+    // file << "0;0;0;0;x;x\n";
 
     // "IDs must be sequential, or your game will crash."
     // That's why it is needed to make a sorted list of the provinces.

@@ -16,6 +16,7 @@ public:
     void LoadMapModeTexture(sf::Texture& texture, MapMode mode);
     
     void Load();
+    void LoadDefaultMapFile();
     void LoadProvincesDefinition();
     void LoadProvincesTerrain();
     void LoadTitlesHistory();

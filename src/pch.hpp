@@ -4,6 +4,7 @@
 #include <string>
 #include <math.h>
 #include <vector>
+#include <variant>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -12,6 +13,7 @@
 #include "util/Ptr.hpp"
 #include "util/Logger.hpp"
 #include "util/String.hpp"
+#include "util/File.hpp"
 #include "app/Configuration.hpp"
 
 #include "app/map/MapMode.hpp"
@@ -22,6 +24,8 @@
 class SignalHandler;
 
 class App;
+
+class Token;
 
 class Mod;
 class Province;
