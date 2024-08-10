@@ -5,6 +5,7 @@
 #include <math.h>
 #include <vector>
 #include <variant>
+#include <queue>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -25,7 +26,12 @@ class SignalHandler;
 
 class App;
 
-class Token;
+namespace Parser {
+    class Token;
+    class Value;
+    class Node;
+    class Leaf;
+}
 
 class Mod;
 class Province;

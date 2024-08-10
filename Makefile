@@ -37,7 +37,7 @@ OBJECTS      := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES := $(OBJECTS:.o=.d)
 
 # Build type (default, debug, release)
-BUILD_TYPE := debug
+BUILD_TYPE := release
 ifeq ($(BUILD_TYPE),debug)
     CXXFLAGS += -O0 -DDEBUG -g
 else ifeq ($(BUILD_TYPE),release)

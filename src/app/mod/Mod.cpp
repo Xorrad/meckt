@@ -70,23 +70,23 @@ void Mod::LoadDefaultMapFile() {
     std::ifstream file(m_Dir + "/map_data/default.map");
     std::string content = File::ReadString(file);
 
-    std::vector<PToken> tokens = Parser::Lex(content);
+    // std::vector<PToken> tokens = Parser::Lex(content);
 
-    for(int i = 0; i < std::min(10, (int) tokens.size()); i++) {
-        switch(tokens[i]->GetType()) {
-            case TokenType::STRING:
-            case TokenType::IDENTIFIER:
-                fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<std::string>(tokens[i]->GetValue()));
-                break;
-            case TokenType::NUMBER:
-            case TokenType::BOOLEAN:
-                fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<double>(tokens[i]->GetValue()));
-                break;
-            default:
-                fmt::println("i={}\tt={}", i, (int) tokens[i]->GetType());
-                break;
-        }
-    }
+    // for(int i = 0; i < std::min(10, (int) tokens.size()); i++) {
+    //     switch(tokens[i]->GetType()) {
+    //         case TokenType::STRING:
+    //         case TokenType::IDENTIFIER:
+    //             fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<std::string>(tokens[i]->GetValue()));
+    //             break;
+    //         case TokenType::NUMBER:
+    //         case TokenType::BOOLEAN:
+    //             fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<double>(tokens[i]->GetValue()));
+    //             break;
+    //         default:
+    //             fmt::println("i={}\tt={}", i, (int) tokens[i]->GetType());
+    //             break;
+    //     }
+    // }
     file.close();
 }
 

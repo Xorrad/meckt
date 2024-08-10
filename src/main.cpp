@@ -2,7 +2,7 @@
 #include "parser/Parser.hpp"
 
 int main() {
-    // App app;
+    App app;
     // app.Init();
     // app.DebugSettings();
     // app.Run();

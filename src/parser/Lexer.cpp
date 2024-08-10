@@ -1,5 +1,10 @@
 #include "Lexer.hpp"
 
+using Parser::PToken;
+using Parser::TokenValue;
+using Parser::TokenType;
+using Parser::Token;
+
 Token::Token(TokenType type)
 : Token(type, (PToken) nullptr) {}
 
@@ -25,8 +30,8 @@ TokenValue Token::GetValue() const {
 
 // TODO: add a function lex from a stringstream or ifstream.
 
-std::vector<PToken> Parser::Lex(const std::string& content) {
-    std::vector<PToken> tokens;
+std::queue<PToken> Parser::Lex(const std::string& content) {
+    std::queue<PToken> tokens;
     Reader reader(content);
 
     while(!reader.IsEmpty()) {
@@ -34,7 +39,7 @@ std::vector<PToken> Parser::Lex(const std::string& content) {
         reader.Start();
         PToken token = ReadToken(reader);
         if(token != nullptr)
-            tokens.push_back(token);
+            tokens.push(token);
     }
 
     return tokens;
@@ -96,7 +101,7 @@ PToken Parser::ReadString(Reader& reader) {
     std::string str = reader.End();
     reader.Advance();
 
-    return MakeShared<Token>(TokenType::STRING, str);
+    return MakeShared<Token>(TokenType::STRING, "\"" + str + "\"");
 }
 
 PToken Parser::ReadNumber(Reader& reader) {
