@@ -223,7 +223,7 @@ void EditingMenu::Draw() {
                         ImGui::EndDisabled();
 
                         // Province terrain type.
-                        if(province->IsSea()) ImGui::BeginDisabled();
+                        // if(province->IsSea()) ImGui::BeginDisabled();
                         if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()]))
                         {
                             for (int i = 0; i < (int) TerrainType::COUNT; i++)
@@ -238,12 +238,42 @@ void EditingMenu::Draw() {
                             }
                             ImGui::EndCombo();
                         }
-                        if(province->IsSea()) ImGui::EndDisabled();
+                        // if(province->IsSea()) ImGui::EndDisabled();
                         
-                        // Sea province checkbox.
-                        bool isSea = province->IsSea();
-                        if(ImGui::Checkbox("is sea?", &isSea)) {
-                            province->SetIsSea(isSea);
+                        // ProvinceFlag checkboxes.
+                        bool isCoastal = province->HasFlag(ProvinceFlags::COASTAL);
+                        bool isLake = province->HasFlag(ProvinceFlags::LAKE);
+                        bool isIsland = province->HasFlag(ProvinceFlags::ISLAND);
+                        bool isLand = province->HasFlag(ProvinceFlags::LAND);
+                        bool isSea = province->HasFlag(ProvinceFlags::SEA);
+                        bool isRiver = province->HasFlag(ProvinceFlags::RIVER);
+                        bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
+
+                        if (ImGui::BeginTable("Province Flags", 2)) {
+                        
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            if(ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
+                            ImGui::TableSetColumnIndex(1);
+                            if(ImGui::Checkbox("Lake", &isLake)) province->SetFlag(ProvinceFlags::LAKE, isLake);
+
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            if(ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
+                            ImGui::TableSetColumnIndex(1);
+                            if(ImGui::Checkbox("Land", &isLand)) province->SetFlag(ProvinceFlags::LAND, isLand);
+                            
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            if(ImGui::Checkbox("Sea", &isSea)) province->SetFlag(ProvinceFlags::SEA, isSea);
+                            ImGui::TableSetColumnIndex(1);
+                            if(ImGui::Checkbox("River", &isRiver)) province->SetFlag(ProvinceFlags::RIVER, isRiver);
+                            
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            if(ImGui::Checkbox("Impassable", &isImpassable)) province->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
+
+                            ImGui::EndTable();
                         }
 
                         ImGui::PopID();

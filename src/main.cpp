@@ -3,9 +3,9 @@
 
 int main() {
     App app;
-    // app.Init();
-    // app.DebugSettings();
-    // app.Run();
-    Parser::Benchmark();
+    app.Init();
+    app.DebugSettings();
+    app.Run();
+    // Parser::Benchmark();
     return 0;
 }

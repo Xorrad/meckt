@@ -59,58 +59,61 @@ void Mod::Load() {
     m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png");
     m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png");
 
-    this->LoadDefaultMapFile();
     this->LoadProvincesDefinition();
+    this->LoadDefaultMapFile();
     this->LoadProvincesTerrain();
     this->LoadTitlesHistory();
     this->LoadTitles();
 }
 
 void Mod::LoadDefaultMapFile() {
-    std::ifstream file(m_Dir + "/map_data/default.map");
-    std::string content = File::ReadString(file);
+    Parser::Node result = Parser::Parse(m_Dir + "/map_data/default.map");
 
-    // std::vector<PToken> tokens = Parser::Lex(content);
+    // TODO: Coastal provinces??
+    
+    std::vector<double> lakes = result.Get("lakes");
+    for(double provinceId : lakes) {
+        m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAKE, true);
+    }
+    
+    // TODO: Islands provinces??
+    // TODO: Land provinces??
 
-    // for(int i = 0; i < std::min(10, (int) tokens.size()); i++) {
-    //     switch(tokens[i]->GetType()) {
-    //         case TokenType::STRING:
-    //         case TokenType::IDENTIFIER:
-    //             fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<std::string>(tokens[i]->GetValue()));
-    //             break;
-    //         case TokenType::NUMBER:
-    //         case TokenType::BOOLEAN:
-    //             fmt::println("i={}\tt={}\tv={}", i, (int) tokens[i]->GetType(), std::get<double>(tokens[i]->GetValue()));
-    //             break;
-    //         default:
-    //             fmt::println("i={}\tt={}", i, (int) tokens[i]->GetType());
-    //             break;
-    //     }
-    // }
-    file.close();
+    const std::vector<double>& seaZones = result.Get("sea_zones");
+    for(double provinceId : seaZones) {
+        m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
+    }
+
+    const std::vector<double>& rivers = result.Get("river_provinces");
+    for(double provinceId : rivers) {
+        m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::RIVER, true);
+    }
+    
+    std::vector<double>& impassable = result.Get("impassable_seas");
+    for(double provinceId : impassable) {
+        m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
+        m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
+    }
+    
+    impassable = result.Get("impassable_mountains");
+    for(double provinceId : impassable) {
+        m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
+        m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
+    }
 }
 
 void Mod::LoadProvincesDefinition() {
-    std::ifstream file(m_Dir + "/map_data/definition.csv");
-    std::string line;
-
-    while (std::getline(file, line)) {
-        std::stringstream lineStream(line);
-        std::vector<std::string> row;
-        std::string cell;
-
-        while (std::getline(lineStream, cell, ';')) {
-            row.push_back(cell);
-        }
-
-        int id = std::stoi(row[0]);
-        int r = std::stoi(row[1]);
-        int g = std::stoi(row[2]);
-        int b = std::stoi(row[3]);
-        std::string name = row[4];
+    std::vector<std::vector<std::string>> lines = File::ReadCSV(m_Dir + "/map_data/definition.csv");
+    
+    for(const auto& line : lines) {
+        int id = std::stoi(line[0]);
+        int r = std::stoi(line[1]);
+        int g = std::stoi(line[2]);
+        int b = std::stoi(line[3]);
+        std::string name = line[4];
 
         SharedPtr<Province> province = MakeShared<Province>(id, sf::Color(r, g, b), name);
-        if(m_Provinces.count(province->GetColorId()) != 0)
+        if(m_Provinces.count(province->GetColorId()) > 0)
             INFO("Several provinces with same color: {}", id);
         m_Provinces[province->GetColorId()] = province;
         m_ProvincesByIds[province->GetId()] = province;
@@ -118,52 +121,26 @@ void Mod::LoadProvincesDefinition() {
 }
 
 void Mod::LoadProvincesTerrain() {
-    std::ifstream file(m_Dir + "/common/province_terrain/00_province_terrain.txt");
+    Parser::Node result = Parser::Parse(m_Dir + "/common/province_terrain/00_province_terrain.txt");
 
-    std::map<std::string, std::string> values;
-    std::string line;
-
-    while (std::getline(file, line)) {
-        line = String::Strip(line, " ");
-        line = String::Strip(line, "\n");
-        line = String::Strip(line, "\r");
-        line = String::StripNonPrintable(line);
-
-        // Remove everything that is after a comment.
-        size_t i = line.find("#");
-        if(i != std::string::npos) {
-            line = line.substr(0, i);
-        }
-
-        std::stringstream lineStream(line);
-        std::vector<std::string> row;
-        std::string cell;
-
-        while (std::getline(lineStream, cell, '=')) {
-            row.push_back(cell);
-        }
-
-        if(row.size() < 2)
-            continue;
-
-        values[row[0]] = row[1];
-    }
-
-    m_DefaultLandTerrain = TerrainTypefromString(values["default_land"]);
-    m_DefaultSeaTerrain = TerrainTypefromString(values["default_sea"]);
-    m_DefaultCoastalSeaTerrain = TerrainTypefromString(values["default_coastal_sea"]);
-
-    values.erase("default_land");
-    values.erase("default_sea");
-    values.erase("default_coastal_sea");
+    m_DefaultLandTerrain = TerrainTypefromString(result.Get("default_land"));
+    m_DefaultSeaTerrain = TerrainTypefromString(result.Get("default_sea"));
+    m_DefaultCoastalSeaTerrain = TerrainTypefromString(result.Get("default_coastal_sea"));
 
     for(const auto& [colorId, province] : m_Provinces) {
-        TerrainType defaultTerrain = (province->IsSea() ? m_DefaultSeaTerrain : m_DefaultLandTerrain);
+        TerrainType defaultTerrain = m_DefaultLandTerrain;
+
+        if(province->HasFlag(ProvinceFlags::SEA))
+            defaultTerrain = (province->HasFlag(ProvinceFlags::COASTAL) ? m_DefaultCoastalSeaTerrain : m_DefaultSeaTerrain);
+
         province->SetTerrain(defaultTerrain);
     }
 
-    for(const auto& [key, value] : values) {
-        int id = std::stoi(key);
+    for(const auto& [key, value] : result.GetEntries()) {
+        if(!std::holds_alternative<double>(key))
+            continue;
+
+        int id = std::get<double>(key);
         TerrainType terrain = TerrainTypefromString(value);
 
         if(m_ProvincesByIds.count(id) == 0) {
@@ -172,7 +149,9 @@ void Mod::LoadProvincesTerrain() {
         }
 
         m_ProvincesByIds[id]->SetTerrain(terrain);
-        m_ProvincesByIds[id]->SetIsSea(false);
+
+        if(!m_ProvincesByIds[id]->HasFlag(ProvinceFlags::SEA))
+            m_ProvincesByIds[id]->SetFlag(ProvinceFlags::LAND, true);
     }
 }
 
