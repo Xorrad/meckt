@@ -15,6 +15,7 @@
 #include "util/Logger.hpp"
 #include "util/String.hpp"
 #include "util/File.hpp"
+#include "util/Date.hpp"
 #include "app/Configuration.hpp"
 
 #include "app/map/MapMode.hpp"
