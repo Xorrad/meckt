@@ -42,77 +42,169 @@ bool Node::IsList() const {
 
 }
 
+void Node::Push(const RawValue& value) {
+    if(this->GetType() == ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::Push' on non-leaf node.");
+    
+    auto holder = this->GetLeafHolder();
+
+    #define CreateList(T) holder->m_Value = std::vector<T>{std::get<T>(holder->m_Value)};
+
+    // Check if the value to push into the list
+    // is a single value or another list.
+    #define PushToList(T) \
+        if(value.index() < 3) { \
+            std::get<std::vector<T>>(holder->m_Value).push_back(std::get<T>(value)); \
+        } \
+        else { \
+            for(const auto& v : std::get<std::vector<T>>(value)) \
+                std::get<std::vector<T>>(holder->m_Value).push_back(v); \
+        } \
+
+    switch(this->GetType()) {
+        case ValueType::NUMBER:
+            CreateList(double);
+            PushToList(double);
+            break;
+        case ValueType::BOOL:
+            CreateList(bool);
+            PushToList(bool);
+            break;
+        case ValueType::STRING:
+            CreateList(std::string);
+            PushToList(std::string);
+            break;
+        case ValueType::NUMBER_LIST:
+            PushToList(double);
+            break;
+        case ValueType::BOOL_LIST:
+            PushToList(bool);
+            break;
+        case ValueType::STRING_LIST:
+            PushToList(std::string);
+            break;
+        default:
+            break;
+    }
+}
+
 Node& Node::Get(const Key& key) {
     if(this->GetType() != ValueType::NODE)
-        throw std::runtime_error("error: invalid use of 'Node::Get' with leaf node.");
-    return this->GetNodeHolder()->Get(key);
+        throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
+
+    // if(this->ContainsKey(key))
+    //     this->Put(key, Node());
+
+    return this->GetNodeHolder()->m_Values[key];
+}
+
+const Node& Node::Get(const Key& key) const {
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
+    return this->GetNodeHolder()->m_Values[key];
+}
+
+std::map<Key, Node>& Node::GetEntries() {
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
+    return this->GetNodeHolder()->m_Values;
+}
+
+// std::vector<Node&> Node::GetValues() {
+//     if(this->GetType() != ValueType::NODE)
+//         throw std::runtime_error("error: invalid use of 'Node::GetValues' on leaf node.");
+    
+//     std::vector<Node&> values;
+//     auto holder = this->GetNodeHolder();
+//     for(auto& [key, value] : holder->m_Values)
+//         values.push_back(value);
+        
+//     return values;
+// }
+
+std::vector<Key> Node::GetKeys() const {
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::GetKeys' on leaf node.");
+    
+    std::vector<Key> keys;
+    auto holder = this->GetNodeHolder();
+    for(const auto& [key, value] : holder->m_Values)
+        keys.push_back(key);
+
+    return keys;
 }
 
 bool Node::ContainsKey(const Key& key) const{
     if(this->GetType() != ValueType::NODE)
-        throw std::runtime_error("error: invalid use of 'Node::ContainsKey' with leaf node.");
-    return this->GetNodeHolder()->ContainsKey(key);
+        throw std::runtime_error("error: invalid use of 'Node::ContainsKey' on leaf node.");
+    return this->GetNodeHolder()->m_Values.count(key) > 0;
+}
+
+void Node::Put(const Key& key, const Node& node) {
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::Put' on leaf node.");
+    this->GetNodeHolder()->m_Values[key] = node;
 }
 
 Node::operator int() const {
     if(this->GetType() != ValueType::NUMBER)
         throw std::runtime_error("error: invalid cast from 'node' to type 'int'");
-    return (int) std::get<double>(this->GetLeafHolder()->Get());
+    return (int) std::get<double>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator double() const {
     if(this->GetType() != ValueType::NUMBER)
         throw std::runtime_error("error: invalid cast from 'node' to type 'double'");
-    return std::get<double>(this->GetLeafHolder()->Get());
+    return std::get<double>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator bool() const {
     if(this->GetType() != ValueType::BOOL)
         throw std::runtime_error("error: invalid cast from 'node' to type 'bool'");
-    return std::get<bool>(this->GetLeafHolder()->Get());
+    return std::get<bool>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator std::string() const {
     if(this->GetType() != ValueType::STRING)
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::string'");
-    return std::get<std::string>(this->GetLeafHolder()->Get());
+    return std::get<std::string>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator std::vector<double>&() const {
     if(this->GetType() != ValueType::NUMBER_LIST)
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<double>&'");
-    return std::get<std::vector<double>>(this->GetLeafHolder()->Get());
+    return std::get<std::vector<double>>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator std::vector<bool>&() const {
     if(this->GetType() != ValueType::BOOL_LIST)
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<bool>&'");
-    return std::get<std::vector<bool>>(this->GetLeafHolder()->Get());
+    return std::get<std::vector<bool>>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator std::vector<std::string>&() const {
     if(this->GetType() != ValueType::STRING_LIST)
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<std::string>&'");
-    return std::get<std::vector<std::string>>(this->GetLeafHolder()->Get());
+    return std::get<std::vector<std::string>>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator RawValue&() const {
     if(this->GetType() == ValueType::NODE)
         throw std::runtime_error("error: invalid cast from 'node' to type 'RawValue&'");
-    return this->GetLeafHolder()->Get();
+    return this->GetLeafHolder()->m_Value;
 }
 
 Node& Node::operator=(const RawValue& value) {
     if(this->GetType() == ValueType::NODE)
         m_Value = MakeShared<LeafHolder>(value);
     else
-        this->GetLeafHolder()->Set(value);
+        this->GetLeafHolder()->m_Value = value;
     return *this;
 }
 
 Node& Node::operator=(const Node& value) {
     if(this->GetType() != ValueType::NODE && value.GetType() != ValueType::NODE)
-        this->GetLeafHolder()->Set(value.GetLeafHolder()->Get());
+        this->GetLeafHolder()->m_Value = value.GetLeafHolder()->m_Value;
     else
         m_Value = value.m_Value->Copy();
     return *this;
@@ -120,21 +212,14 @@ Node& Node::operator=(const Node& value) {
 
 Node& Node::operator [](const Key& key) {
     if(this->GetType() != ValueType::NODE)
-        return *this;
-    
-    SharedPtr<NodeHolder> value = this->GetNodeHolder();
-    
-    // TODO: add warning message or throw exception?
-    if(!value->ContainsKey(key)) {
-        value->Put(key, Node());
-    }
-
-    return value->Get(key);
+        throw std::runtime_error("error: invalid use of 'operator[]' on leaf node.");
+    return this->Get(key);
 }
 
 const Node& Node::operator [](const Key& key) const {
-    const Node& node = (*this);
-    return node[key];
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'operator[] const' on leaf node.");
+    return this->Get(key);
 }
 
 SharedPtr<LeafHolder> Node::GetLeafHolder() {
@@ -184,22 +269,6 @@ SharedPtr<AbstractValueHolder> NodeHolder::Copy() const {
     return copy;
 }
 
-bool NodeHolder::ContainsKey(const Key& key) {
-    return m_Values.count(key) > 0;
-}
-
-Node& NodeHolder::Get(const Key& key) {
-    return m_Values.at(key);
-}
-
-std::map<Key, Node>& NodeHolder::GetValues() {
-    return m_Values;
-}
-
-void NodeHolder::Put(const Key& key, const Node& node) {
-    m_Values[key] = node;
-}
-
 ////////////////////////////////
 //      LeafHolder class      //
 ////////////////////////////////
@@ -218,59 +287,6 @@ SharedPtr<AbstractValueHolder> LeafHolder::Copy() const {
     SharedPtr<LeafHolder> copy = MakeShared<LeafHolder>();
     copy->m_Value = m_Value;
     return copy;
-}
-
-RawValue& LeafHolder::Get() {
-    return m_Value;
-}
-
-const RawValue& LeafHolder::Get() const {
-    return m_Value;
-}
-
-void LeafHolder::Set(const RawValue& value) {
-    m_Value = value;
-}
-
-void LeafHolder::Push(const RawValue& value) {
-    #define CreateList(T) m_Value = std::vector<T>{std::get<T>(m_Value)};
-
-    // Check if the value to push into the list
-    // is a single value or another list.
-    #define PushToList(T) \
-        if(value.index() < 3) { \
-            std::get<std::vector<T>>(m_Value).push_back(std::get<T>(value)); \
-        } \
-        else { \
-            for(const auto& v : std::get<std::vector<T>>(value)) \
-                std::get<std::vector<T>>(m_Value).push_back(v); \
-        } \
-
-    switch(this->GetType()) {
-        case ValueType::NUMBER:
-            CreateList(double);
-            PushToList(double);
-            break;
-        case ValueType::BOOL:
-            CreateList(bool);
-            PushToList(bool);
-            break;
-        case ValueType::STRING:
-            CreateList(std::string);
-            PushToList(std::string);
-            break;
-        case ValueType::NUMBER_LIST:
-            PushToList(double);
-            break;
-        case ValueType::BOOL_LIST:
-            PushToList(bool);
-            break;
-        case ValueType::STRING_LIST:
-            PushToList(std::string);
-            break;
-        default:
-            break;
-    }
 }
 
 Node Parser::Parse(const std::string& filePath) {
@@ -295,6 +311,9 @@ Node Parser::Parse(std::deque<PToken>& tokens) {
 
         if(token->Is(TokenType::RIGHT_BRACE))
             break;
+            
+        if(token->Is(TokenType::COMMENT))
+            continue;
 
         switch(state) {
             case KEY:
@@ -309,11 +328,17 @@ Node Parser::Parse(std::deque<PToken>& tokens) {
                     state = ParsingState::OPERATOR;
                     break;
                 }
-                throw std::runtime_error("Unexpected token while parsing key.");
+                throw std::runtime_error(fmt::format("Unexpected token while parsing key ({}).", (int) token->GetType()));
                 break;
 
             case OPERATOR:
-                if(token->Is(TokenType::EQUAL)) {
+                if(token->Is(TokenType::EQUAL)
+                    || token->Is(TokenType::GREATER)
+                    || token->Is(TokenType::GREATER_EQUAL)
+                    || token->Is(TokenType::LESS)
+                    || token->Is(TokenType::LESS_EQUAL)
+                    // || token->Is(TokenType::TWO_DOTS)
+                ) {
                     state = ParsingState::VALUE;
                 }
                 // throw std::runtime_error("Unexpected token while parsing operator.");
@@ -327,8 +352,7 @@ Node Parser::Parse(std::deque<PToken>& tokens) {
                     Node& current = values[key];
 
                     if(!current.Is(ValueType::NODE)) {
-                        fmt::println("{}", (int) node.GetType());
-                        current.GetLeafHolder()->Push((RawValue) node);
+                        current.Push((RawValue) node);
                     }
 
                     // TODO: handle array of nodes?
@@ -523,8 +547,8 @@ void Parser::Benchmark() {
     // std::string filePath = "test_mod/map_data/default.map";
     // std::string filePath = "test_mod/map_data/island_region.txt";
     // std::string filePath = "test_mod/map_data/geographical_regions/00_agot_geographical_region.txt";
-    // std::string filePath = "test_mod/history/characters/00_agot_char_vale_ancestors.txt";
-    std::string filePath = "test_mod/parser_test.txt";
+    std::string filePath = "test_mod/history/characters/00_agot_char_vale_ancestors.txt";
+    // std::string filePath = "test_mod/parser_test.txt";
 
     std::ifstream file(filePath);
 
@@ -544,7 +568,7 @@ void Parser::Benchmark() {
     fmt::println("file path = {}", filePath);
     fmt::println("file size = {}", String::FileSizeFormat(std::filesystem::file_size(filePath)));
     fmt::println("tokens = {}", tokensCount);
-    fmt::println("entries = {}", result.GetNodeHolder()->GetValues().size());
+    fmt::println("entries = {}", result.GetEntries().size());
     fmt::println("elapsed file   = {}", String::DurationFormat(elapsedFile));
     fmt::println("elapsed lexer  = {}", String::DurationFormat(elapsedLexer));
     fmt::println("elapsed parser = {}", String::DurationFormat(elapsedParser));
@@ -552,7 +576,7 @@ void Parser::Benchmark() {
 
     // Display all the first-level keys in the test file.
     fmt::println("\nKeys:");
-    for(const auto&[key, value] : result.GetNodeHolder()->GetValues()) {
+    for(const auto&[key, value] : result.GetEntries()) {
         switch(key.index()) {
             case 0: fmt::println("- {}", std::get<0>(key));
             case 1: fmt::println("- {}", std::get<1>(key));
@@ -565,21 +589,12 @@ void Parser::Benchmark() {
     
     if(filePath == "test_mod/map_data/default.map") {
 
-        fmt::println("type = {}", (int) result.Get("lakes").GetType());
+        std::vector<double> l = result.Get("lakes");
+        fmt::println("\nlakes: {} elements", l.size());
+        for(auto i : l)
+            fmt::println("- {}", i);
 
-        for(const auto&[key, value] : result.Get("lakes").GetNodeHolder()->GetValues()) {
-            switch(key.index()) {
-                case 0: fmt::println("- {}", std::get<0>(key));
-                case 1: fmt::println("- {}", std::get<1>(key));
-            }
-        }
-
-        // std::vector<double> l = result.Get("lakes");
-        // fmt::println("size = {}", l.size());
-        // for(auto i : l)
-        //     fmt::println("{}", i);
-
-        fmt::println("island_region => {}", (std::string) result.Get("island_region"));
+        fmt::println("\nisland_region => {}", (std::string) result.Get("island_region"));
     }
 
     ///////////////////////////////

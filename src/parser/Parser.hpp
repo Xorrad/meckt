@@ -24,13 +24,22 @@ namespace Parser {
             Node(const std::map<Key, Node>& values);
 
             ValueType GetType() const;
-            
             bool Is(ValueType type) const;
             bool IsList() const;
 
-            Node& Get(const Key& key);
-            bool ContainsKey(const Key& key) const;
+            // Functions to use with LeafHolder.
+            void Push(const RawValue& value);
 
+            // Functions to use with NodeHolder.
+            Node& Get(const Key& key);
+            const Node& Get(const Key& key) const;
+            std::map<Key, Node>& GetEntries();
+            // std::vector<Node&> GetValues();
+            std::vector<Key> GetKeys() const;
+            bool ContainsKey(const Key& key) const;
+            void Put(const Key& key, const Node& node);
+
+            // Overload cast for LeafHolder.
             operator int() const;
             operator double() const;
             operator bool() const;
@@ -45,7 +54,9 @@ namespace Parser {
 
             Node& operator [](const Key& key);
             const Node& operator [](const Key& key) const;
-
+        
+        private:
+            // Function to access the underlying value holder.
             SharedPtr<NodeHolder> GetNodeHolder();
             const SharedPtr<NodeHolder> GetNodeHolder() const;
 
@@ -63,6 +74,8 @@ namespace Parser {
     };
 
     class NodeHolder : public AbstractValueHolder {
+        friend Node;
+
         public:
             NodeHolder();
             NodeHolder(const NodeHolder& n);
@@ -71,17 +84,13 @@ namespace Parser {
             virtual ValueType GetType() const;
             virtual SharedPtr<AbstractValueHolder> Copy() const;
 
-            bool ContainsKey(const Key& key);
-            Node& Get(const Key& key);
-            std::map<Key, Node>& GetValues();
-
-            void Put(const Key& key, const Node& node);
-
         private:
             std::map<Key, Node> m_Values;
     };
 
     class LeafHolder : public AbstractValueHolder {
+        friend Node;
+
         public:
             LeafHolder();
             LeafHolder(const LeafHolder& l);
@@ -89,12 +98,6 @@ namespace Parser {
 
             virtual ValueType GetType() const;
             virtual SharedPtr<AbstractValueHolder> Copy() const;
-
-            RawValue& Get();
-            const RawValue& Get() const;
-
-            void Set(const RawValue& value);
-            void Push(const RawValue& value);
 
         private:
             RawValue m_Value;
