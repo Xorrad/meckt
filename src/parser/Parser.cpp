@@ -1,237 +1,297 @@
 #include "Parser.hpp"
 #include <filesystem>
 
-using Parser::PToken;
-using Parser::TokenValue;
-using Parser::TokenType;
-using Parser::Token;
+using namespace Parser;
+using namespace Parser::Impl;
 
-using Parser::PValue;
-using Parser::Key;
-using Parser::Value;
-using Parser::Node;
-using Parser::Leaf;
+////////////////////////////////
+//         Node class         //
+////////////////////////////////
 
-Node::Node() {
+Node::Node() : m_Value(MakeShared<NodeHolder>()) {
 
 }
 
-Node::Node(const Node& n) {
-    m_Values = n.m_Values;
+Node::Node(const Node& node)
+: m_Value((node.m_Value == nullptr) ? nullptr : node.m_Value->Copy())
+{
+
 }
 
-Node::Node(const std::map<Key, PValue>& values) {
+Node::Node(const RawValue& value) : m_Value(MakeShared<LeafHolder>(value)) {
+
+}
+
+Node::Node(const std::map<Key, Node>& values) : m_Value(MakeShared<NodeHolder>(values)) {
+
+}
+
+ValueType Node::GetType() const {
+    return m_Value->GetType();
+}
+
+bool Node::Is(ValueType type) const {
+    return this->GetType() == type;
+}
+
+bool Node::IsList() const {
+    ValueType t = this->GetType();
+    return (t == ValueType::NUMBER_LIST)
+        || (t == ValueType::BOOL_LIST)
+        || (t == ValueType::STRING_LIST);
+
+}
+
+Node& Node::Get(const Key& key) {
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::Get' with leaf node.");
+    return this->GetNodeHolder()->Get(key);
+}
+
+bool Node::ContainsKey(const Key& key) const{
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::ContainsKey' with leaf node.");
+    return this->GetNodeHolder()->ContainsKey(key);
+}
+
+Node::operator int() const {
+    if(this->GetType() != ValueType::NUMBER)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'int'");
+    return (int) std::get<double>(this->GetLeafHolder()->Get());
+}
+
+Node::operator double() const {
+    if(this->GetType() != ValueType::NUMBER)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'double'");
+    return std::get<double>(this->GetLeafHolder()->Get());
+}
+
+Node::operator bool() const {
+    if(this->GetType() != ValueType::BOOL)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'bool'");
+    return std::get<bool>(this->GetLeafHolder()->Get());
+}
+
+Node::operator std::string() const {
+    if(this->GetType() != ValueType::STRING)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'std::string'");
+    return std::get<std::string>(this->GetLeafHolder()->Get());
+}
+
+Node::operator std::vector<double>&() const {
+    if(this->GetType() != ValueType::NUMBER_LIST)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<double>&'");
+    return std::get<std::vector<double>>(this->GetLeafHolder()->Get());
+}
+
+Node::operator std::vector<bool>&() const {
+    if(this->GetType() != ValueType::BOOL_LIST)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<bool>&'");
+    return std::get<std::vector<bool>>(this->GetLeafHolder()->Get());
+}
+
+Node::operator std::vector<std::string>&() const {
+    if(this->GetType() != ValueType::STRING_LIST)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<std::string>&'");
+    return std::get<std::vector<std::string>>(this->GetLeafHolder()->Get());
+}
+
+Node::operator RawValue&() const {
+    if(this->GetType() == ValueType::NODE)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'RawValue&'");
+    return this->GetLeafHolder()->Get();
+}
+
+Node& Node::operator=(const RawValue& value) {
+    if(this->GetType() == ValueType::NODE)
+        m_Value = MakeShared<LeafHolder>(value);
+    else
+        this->GetLeafHolder()->Set(value);
+    return *this;
+}
+
+Node& Node::operator=(const Node& value) {
+    if(this->GetType() != ValueType::NODE && value.GetType() != ValueType::NODE)
+        this->GetLeafHolder()->Set(value.GetLeafHolder()->Get());
+    else
+        m_Value = value.m_Value->Copy();
+    return *this;
+}
+
+Node& Node::operator [](const Key& key) {
+    if(this->GetType() != ValueType::NODE)
+        return *this;
+    
+    SharedPtr<NodeHolder> value = this->GetNodeHolder();
+    
+    // TODO: add warning message or throw exception?
+    if(!value->ContainsKey(key)) {
+        value->Put(key, Node());
+    }
+
+    return value->Get(key);
+}
+
+const Node& Node::operator [](const Key& key) const {
+    const Node& node = (*this);
+    return node[key];
+}
+
+SharedPtr<LeafHolder> Node::GetLeafHolder() {
+    return std::dynamic_pointer_cast<LeafHolder>(m_Value);
+}
+
+const SharedPtr<LeafHolder> Node::GetLeafHolder() const {
+    return std::dynamic_pointer_cast<LeafHolder>(m_Value);
+}
+
+SharedPtr<NodeHolder> Node::GetNodeHolder() {
+    return std::dynamic_pointer_cast<NodeHolder>(m_Value);
+}
+
+const SharedPtr<NodeHolder> Node::GetNodeHolder() const {
+    return std::dynamic_pointer_cast<NodeHolder>(m_Value);
+}
+
+////////////////////////////////
+//      NodeHolder class      //
+////////////////////////////////
+
+
+NodeHolder::NodeHolder() {
+
+}
+
+NodeHolder::NodeHolder(const NodeHolder& n) {
+    for(auto [key, value] : n.m_Values) {
+        m_Values[key] = *(&value);
+    }
+}
+
+NodeHolder::NodeHolder(const std::map<Key, Node>& values) {
     m_Values = values;
 }
 
-bool Node::IsLeaf() const {
-    return false;
+ValueType NodeHolder::GetType() const {
+    return ValueType::NODE;
 }
 
-int Node::Count() const {
-    return m_Values.size();
-}
-
-int Node::GetInt() const {
-    throw std::runtime_error("undefined behaviour while calling Node::GetInt()");
-}
-
-double Node::GetDouble() const {
-    throw std::runtime_error("undefined behaviour while calling Node::GetDouble()");
-}
-
-bool Node::GetBool() const {
-    throw std::runtime_error("undefined behaviour while calling Node::GetBool()");
-}
-
-std::string Node::GetString() const {
-    throw std::runtime_error("undefined behaviour while calling Node::GetString()");
-}
-
-PValue Node::Get(const Key& key) {
-    return m_Values.at(key);
-}
-
-PValue Node::Get(const Key& key) const {
-    return m_Values.at(key);
-}
-
-void Node::Set(const Key& key, int value) {
-    m_Values[key] = MakeShared<Leaf>(value);
-}
-
-void Node::Set(const Key& key, double value) {
-    m_Values[key] = MakeShared<Leaf>(value);
-}
-
-void Node::Set(const Key& key, bool value) {
-    m_Values[key] = MakeShared<Leaf>(value);
-}
-
-void Node::Set(const Key& key, std::string value) {
-    m_Values[key] = MakeShared<Leaf>(value);
-}
-
-void Node::Set(const Key& key, const PValue& value) {
-    m_Values[key] = value->Copy();
-}
-
-PValue Node::operator=(int v) {
-    return MakeShared<Leaf>(v);
-}
-
-PValue Node::operator=(double v) {
-    return MakeShared<Leaf>(v);
-}
-
-PValue Node::operator=(bool v) {
-    return MakeShared<Leaf>(v);
-}
-
-PValue Node::operator=(std::string v) {
-    return MakeShared<Leaf>(v);
-}
-
-PValue Node::operator=(PValue v) {
-    return v->Copy();
-}
-
-PValue Node::Copy() const {
-    SharedPtr<Node> copy = MakeShared<Node>();
+SharedPtr<AbstractValueHolder> NodeHolder::Copy() const {
+    SharedPtr<NodeHolder> copy = MakeShared<NodeHolder>();
     for(const auto&[key, value] : m_Values) {
-        copy->m_Values[key] = value->Copy();
+        copy->m_Values[key] = *(&value);
     }
     return copy;
 }
 
-PValue Node::operator[](const Key& key) {
-    return this->Get(key);
+bool NodeHolder::ContainsKey(const Key& key) {
+    return m_Values.count(key) > 0;
 }
 
-PValue Node::operator[](const Key& key) const {
-    return this->Get(key);
+Node& NodeHolder::Get(const Key& key) {
+    return m_Values.at(key);
 }
 
-Leaf::Leaf() {}
-Leaf::Leaf(const Leaf& l) : m_Value(l.m_Value) {}
-Leaf::Leaf(int v) : m_Value((double) v) {}
-Leaf::Leaf(double v) : m_Value(v) {}
-Leaf::Leaf(bool v) : m_Value(v) {}
-Leaf::Leaf(std::string v) : m_Value(v) {}
-
-bool Leaf::IsLeaf() const {
-    return true;
+std::map<Key, Node>& NodeHolder::GetValues() {
+    return m_Values;
 }
 
-int Leaf::Count() const {
-    return 0;
+void NodeHolder::Put(const Key& key, const Node& node) {
+    m_Values[key] = node;
 }
 
-int Leaf::GetInt() const {
-    double d = std::get<double>(m_Value);
-    return (int) d;
+////////////////////////////////
+//      LeafHolder class      //
+////////////////////////////////
+
+LeafHolder::LeafHolder() : m_Value(0.0) {}
+
+LeafHolder::LeafHolder(const LeafHolder& l) : m_Value(l.m_Value) {}
+
+LeafHolder::LeafHolder(const RawValue& value) : m_Value(value) {}
+
+ValueType LeafHolder::GetType() const {
+    return (ValueType) m_Value.index();
 }
 
-double Leaf::GetDouble() const {
-    return std::get<double>(m_Value);
-}
-
-bool Leaf::GetBool() const {
-    return std::get<bool>(m_Value);
-}
-
-std::string Leaf::GetString() const {
-    return std::get<std::string>(m_Value);
-}
-
-PValue Leaf::Get(const Key& key) {
-    throw std::runtime_error("undefined behaviour while calling Leaf::Get()");
-}
-
-PValue Leaf::Get(const Key& key) const {
-    throw std::runtime_error("undefined behaviour while calling Leaf::Get()");
-}
-
-void Leaf::Set(const Key& key, const PValue& value) {
-    throw std::runtime_error("undefined behaviour while calling Leaf::Set()");
-}
-
-void Leaf::Set(const Key& key, int value) {
-    throw std::runtime_error("undefined behaviour while calling Leaf::Set()");
-}
-
-void Leaf::Set(const Key& key, double value) {
-    throw std::runtime_error("undefined behaviour while calling Leaf::Set()");
-}
-
-void Leaf::Set(const Key& key, bool value) {
-    throw std::runtime_error("undefined behaviour while calling Leaf::Set()");
-}
-
-void Leaf::Set(const Key& key, std::string value) {
-    throw std::runtime_error("undefined behaviour while calling Leaf::Set()");
-}
-
-PValue Leaf::operator=(int v) {
-    m_Value = (double) v;
-    return MakeShared<Leaf>(this);
-}
-
-PValue Leaf::operator=(double v) {
-    m_Value = v;
-    return MakeShared<Leaf>(this);
-}
-
-PValue Leaf::operator=(bool v) {
-    m_Value = v;
-    return MakeShared<Leaf>(this);
-}
-
-PValue Leaf::operator=(std::string v) {
-    m_Value = v;
-    return MakeShared<Leaf>(this);
-}
-
-PValue Leaf::operator=(PValue v) {
-    return v->Copy();
-}
-
-PValue Leaf::operator[](const Key& key) {
-    throw std::runtime_error("undefined behaviour while calling Leaf::operator[]()");
-}
-
-PValue Leaf::operator[](const Key& key) const {
-    throw std::runtime_error("undefined behaviour while calling Leaf::operator[]()");
-}
-
-PValue Leaf::Copy() const {
-    SharedPtr<Leaf> copy = MakeShared<Leaf>();
+SharedPtr<AbstractValueHolder> LeafHolder::Copy() const {
+    SharedPtr<LeafHolder> copy = MakeShared<LeafHolder>();
     copy->m_Value = m_Value;
     return copy;
 }
 
-PValue Parser::Parse(const std::string& filePath) {
+RawValue& LeafHolder::Get() {
+    return m_Value;
+}
+
+const RawValue& LeafHolder::Get() const {
+    return m_Value;
+}
+
+void LeafHolder::Set(const RawValue& value) {
+    m_Value = value;
+}
+
+void LeafHolder::Push(const RawValue& value) {
+    #define CreateList(T) m_Value = std::vector<T>{std::get<T>(m_Value)};
+
+    // Check if the value to push into the list
+    // is a single value or another list.
+    #define PushToList(T) \
+        if(value.index() < 3) { \
+            std::get<std::vector<T>>(m_Value).push_back(std::get<T>(value)); \
+        } \
+        else { \
+            for(const auto& v : std::get<std::vector<T>>(value)) \
+                std::get<std::vector<T>>(m_Value).push_back(v); \
+        } \
+
+    switch(this->GetType()) {
+        case ValueType::NUMBER:
+            CreateList(double);
+            PushToList(double);
+            break;
+        case ValueType::BOOL:
+            CreateList(bool);
+            PushToList(bool);
+            break;
+        case ValueType::STRING:
+            CreateList(std::string);
+            PushToList(std::string);
+            break;
+        case ValueType::NUMBER_LIST:
+            PushToList(double);
+            break;
+        case ValueType::BOOL_LIST:
+            PushToList(bool);
+            break;
+        case ValueType::STRING_LIST:
+            PushToList(std::string);
+            break;
+        default:
+            break;
+    }
+}
+
+Node Parser::Parse(const std::string& filePath) {
     std::ifstream file(filePath);
     std::string content = File::ReadString(file);
     file.close();
 
-    std::queue<PToken> tokens = Parser::Lex(content);
+    std::deque<PToken> tokens = Parser::Lex(content);
     return Parse(tokens);
 }
 
-PValue Parser::Parse(std::queue<PToken>& tokens) {
+Node Parser::Parse(std::deque<PToken>& tokens) {
     enum ParsingState { KEY, OPERATOR, VALUE };
     ParsingState state = KEY;
 
-    PValue values = MakeShared<Node>();
+    Node values;
     Key key;
 
     while(!tokens.empty()) {
         PToken token = tokens.front();
-        tokens.pop();
-
-        // fmt::println("token {}", (int) token->GetType());
-        // fmt::println("state {}", (int) state);
+        tokens.pop_front();
 
         if(token->Is(TokenType::RIGHT_BRACE))
             break;
@@ -239,7 +299,6 @@ PValue Parser::Parse(std::queue<PToken>& tokens) {
         switch(state) {
             case KEY:
                 if(token->Is(TokenType::IDENTIFIER)) {
-                    // fmt::println("switch state to OPERATOR");
                     key = std::get<std::string>(token->GetValue());
                     state = ParsingState::OPERATOR;
                     break;
@@ -248,7 +307,6 @@ PValue Parser::Parse(std::queue<PToken>& tokens) {
                 if(token->Is(TokenType::NUMBER)) {
                     key = std::get<double>(token->GetValue());
                     state = ParsingState::OPERATOR;
-                    // fmt::println("switch state to OPERATOR");
                     break;
                 }
                 throw std::runtime_error("Unexpected token while parsing key.");
@@ -257,45 +315,206 @@ PValue Parser::Parse(std::queue<PToken>& tokens) {
             case OPERATOR:
                 if(token->Is(TokenType::EQUAL)) {
                     state = ParsingState::VALUE;
-                    // fmt::println("switch state to VALUE");
                 }
                 // throw std::runtime_error("Unexpected token while parsing operator.");
                 break;
                 
             case VALUE:
-                switch(token->GetType()) {
-                    case TokenType::LEFT_BRACE:
-                        values->Set(key, Parse(tokens));
-                        break;
-                    case TokenType::BOOLEAN:
-                        values->Set(key, std::get<bool>(token->GetValue()));
-                        break;
-                    case TokenType::DATE:
-                        values->Set(key, std::get<std::string>(token->GetValue()));
-                        break;
-                    case TokenType::IDENTIFIER:
-                        // fmt::println("value is IDENTIFIER {} {}", std::get<std::string>(key), std::get<std::string>(token->GetValue()));
-                        values->Set(key, std::get<std::string>(token->GetValue()));
-                        // fmt::println("after value set");
-                        break;
-                    case TokenType::NUMBER:
-                        // fmt::println("value is NUMBER");
-                        values->Set(key, std::get<double>(token->GetValue()));
-                        break;
-                    case TokenType::STRING:
-                        values->Set(key, std::get<std::string>(token->GetValue()));
-                        break;
-                    default:
-                        throw std::runtime_error("Unexpected token while parsing value.");
-                        break;
+                tokens.push_front(token);
+                Node node = ParseNode(tokens);
+
+                if(values.ContainsKey(key)) {
+                    Node& current = values[key];
+
+                    if(!current.Is(ValueType::NODE)) {
+                        fmt::println("{}", (int) node.GetType());
+                        current.GetLeafHolder()->Push((RawValue) node);
+                    }
+
+                    // TODO: handle array of nodes?
+                }
+                else {
+                    values[key] = std::move(node);
                 }
                 state = ParsingState::KEY;
-                // fmt::println("switch state to KEY");
                 break;
         }
     }
 
     return values;
+}
+
+Node Parser::Impl::ParseNode(std::deque<PToken>& tokens) {
+    PToken token = tokens.front();
+    tokens.pop_front();
+
+    // Handle RANGE keyword by generating a list of all the numbers between A and B
+    // as in: RANGE { A  B }
+    if(token->Is(TokenType::IDENTIFIER) && std::get<std::string>(token->GetValue()) == "RANGE") {
+        if(tokens.empty())
+            throw std::runtime_error("error: unexpected end while parsing range.");
+
+        // Remove LEFT_BRACE token from the list.
+        token = tokens.front();
+        tokens.pop_front();
+
+        if(!token->Is(TokenType::LEFT_BRACE))
+            throw std::runtime_error("error: unexpected token while parsing range.");
+
+        return ParseRange(tokens);
+    }
+
+    // Skip LIST keyword.
+    if(token->Is(TokenType::IDENTIFIER) && std::get<std::string>(token->GetValue()) == "LIST") {
+        if(tokens.empty())
+            throw std::runtime_error("error: unexpected end while parsing list.");
+
+        // Remove LEFT_BRACE token from the list.
+        token = tokens.front();
+        tokens.pop_front();
+
+        if(!token->Is(TokenType::LEFT_BRACE))
+            throw std::runtime_error("error: unexpected token while parsing list.");
+    }
+
+    // Handle simple/raw values such as number, bool, string...
+    else if(!token->Is(TokenType::LEFT_BRACE)) {
+        return ParseRaw(token);
+    }
+
+    // Handle lists: { 1 2 3 4 5 }
+    // Check if two successive tokens are of the same type.
+    // So, if there isn't any operators for the second tokens,
+    // it has to be a list.
+    if(IsList(tokens)) {
+        // The current token, which is LEFT_BRACE, won't be useful, so we can discard it.
+        token = tokens.front();
+
+        if(token->Is(TokenType::NUMBER))
+            return ParseList<double>(tokens);
+        
+        if(token->Is(TokenType::IDENTIFIER) || token->Is(TokenType::STRING))
+            return ParseList<std::string>(tokens);
+    }
+    
+    return Parse(tokens);
+    // throw std::runtime_error("error: failed to parse node value.");
+}
+
+Node Parser::Impl::ParseRaw(PToken token) {
+    switch(token->GetType()) {
+        case TokenType::BOOLEAN:
+            return Node(std::get<bool>(token->GetValue()));
+        case TokenType::DATE:
+            return Node(std::get<std::string>(token->GetValue()));
+        case TokenType::IDENTIFIER:
+            return Node(std::get<std::string>(token->GetValue()));
+        case TokenType::NUMBER:
+            return Node(std::get<double>(token->GetValue()));
+        case TokenType::STRING:
+            return Node(std::get<std::string>(token->GetValue()));
+        default:
+            throw std::runtime_error("error: unexpected token while parsing value.");
+    }
+}
+
+Node Parser::Impl::ParseRange(std::deque<PToken>& tokens) {
+    
+    // First, check if the first two tokens are numbers
+    // and initialize the minimum and maximum between
+    // the two, as default for the range.
+    if(tokens.size() < 3)
+        throw std::runtime_error("error: unexpected end while parsing range.");
+    
+    PToken firstToken = tokens.at(0);
+    PToken secondToken = tokens.at(1);
+    
+    tokens.pop_front();
+    tokens.pop_front();
+
+    if(!firstToken->Is(TokenType::NUMBER) || !secondToken->Is(TokenType::NUMBER))
+        throw std::runtime_error("error: unexpected token while parsing range.");
+
+    if(tokens.empty())
+        throw std::runtime_error("error: unexpected end while parsing list.");
+
+    int first = (int) std::get<double>(firstToken->GetValue());
+    int second = (int) std::get<double>(secondToken->GetValue());
+    int min = std::min(first, second), max = std::max(first, second);
+
+    // Loop over the list and keep the minimum and the maximum,
+    // then generate a list/vector of all the numbers in that range.
+    PToken token;
+
+    // The RIGHT_BRACE token must be removed from the list before returning.
+    // The first token exists because the size of the list has been checked
+    // at the beginning of the function.
+    token = tokens.front();
+    tokens.pop_front();
+
+    while(!token->Is(TokenType::RIGHT_BRACE)) {
+        if(!token->Is(TokenType::NUMBER))
+            throw std::runtime_error("error: unexpected token while parsing range.");
+        
+        int n = (int) std::get<double>(token->GetValue());
+        min = std::min(min, n);
+        max = std::max(max, n);
+
+        if(tokens.empty())
+            throw std::runtime_error("error: unexpected end while parsing range.");
+        
+        token = tokens.front();
+        tokens.pop_front();
+    }
+
+    std::vector<double> list;
+    for(int i = min; i <= max; i++)
+        list.push_back((double) i);
+
+    // Use std::move to avoid copying the object and thus the array.
+    return std::move(Node(list));
+}
+
+template<typename T>
+Node Parser::Impl::ParseList(std::deque<PToken>& tokens) {
+    std::vector<T> list;
+    PToken token;
+    
+    // The RIGHT_BRACE token must be removed from the list before returning.
+    token = tokens.front();
+    tokens.pop_front();
+
+    while(!token->Is(TokenType::RIGHT_BRACE)) {
+        list.push_back(std::get<T>(token->GetValue()));
+
+        if(tokens.empty())
+            throw std::runtime_error("error: unexpected end while parsing list.");
+        
+        token = tokens.front();
+        tokens.pop_front();
+    }
+    
+    // Use std::move to avoid copying the object and thus the array.
+    return std::move(Node(list));
+}
+    
+bool Parser::Impl::IsList(std::deque<PToken>& tokens) {
+    if(tokens.size() < 2)
+        return false;
+
+    PToken firstToken = tokens.at(0);
+    PToken secondToken = tokens.at(1);
+
+    #define IS_ARRAY_TYPE(t) (t->Is(TokenType::IDENTIFIER) || t->Is(TokenType::NUMBER) || t->Is(TokenType::STRING))
+
+    // Check if two successive tokens are of the same type.
+    // So, if there isn't any operators for the second tokens,
+    // it has to be a list.
+
+    // Or if there is only an element in the list, check if the second
+    // token is a RIGHT_BRACE.
+    return (secondToken->Is(firstToken->GetType()) && IS_ARRAY_TYPE(secondToken))
+        || (secondToken->Is(TokenType::RIGHT_BRACE) && IS_ARRAY_TYPE(firstToken));
 }
 
 void Parser::Benchmark() {
@@ -314,22 +533,77 @@ void Parser::Benchmark() {
     
     sf::Time elapsedFile = clock.restart();
 
-    std::queue<PToken> tokens = Parser::Lex(content);
+    std::deque<PToken> tokens = Parser::Lex(content);
+    int tokensCount = tokens.size();
 
     sf::Time elapsedLexer = clock.restart();
 
-    PValue entries = Parser::Parse(tokens);
+    Node result = Parser::Parse(tokens);
     sf::Time elapsedParser = clock.getElapsedTime();
 
     fmt::println("file path = {}", filePath);
     fmt::println("file size = {}", String::FileSizeFormat(std::filesystem::file_size(filePath)));
-    fmt::println("tokens = {}", tokens.size());
-    fmt::println("entries = {}", entries->Count());
+    fmt::println("tokens = {}", tokensCount);
+    fmt::println("entries = {}", result.GetNodeHolder()->GetValues().size());
     fmt::println("elapsed file   = {}", String::DurationFormat(elapsedFile));
     fmt::println("elapsed lexer  = {}", String::DurationFormat(elapsedLexer));
     fmt::println("elapsed parser = {}", String::DurationFormat(elapsedParser));
-    fmt::println("elapsed total  = {}", String::DurationFormat(elapsedLexer + elapsedParser));
+    fmt::println("elapsed total  = {}", String::DurationFormat(elapsedFile + elapsedLexer + elapsedParser));
+
+    // Display all the first-level keys in the test file.
+    fmt::println("\nKeys:");
+    for(const auto&[key, value] : result.GetNodeHolder()->GetValues()) {
+        switch(key.index()) {
+            case 0: fmt::println("- {}", std::get<0>(key));
+            case 1: fmt::println("- {}", std::get<1>(key));
+        }
+    }
+
+    ///////////////////////////
+    // Test default.map file //
+    ///////////////////////////
     
-    fmt::println("\n");
-    // fmt::println("{}", entries->Get("test")->GetString());
+    if(filePath == "test_mod/map_data/default.map") {
+
+        fmt::println("type = {}", (int) result.Get("lakes").GetType());
+
+        for(const auto&[key, value] : result.Get("lakes").GetNodeHolder()->GetValues()) {
+            switch(key.index()) {
+                case 0: fmt::println("- {}", std::get<0>(key));
+                case 1: fmt::println("- {}", std::get<1>(key));
+            }
+        }
+
+        // std::vector<double> l = result.Get("lakes");
+        // fmt::println("size = {}", l.size());
+        // for(auto i : l)
+        //     fmt::println("{}", i);
+
+        fmt::println("island_region => {}", (std::string) result.Get("island_region"));
+    }
+
+    ///////////////////////////////
+    // Test parser_test.txt file //
+    ///////////////////////////////
+
+    if(filePath == "test_mod/parser_test.txt") {
+        // Test number list.
+        std::vector<double> l1 = result.Get("list");
+        fmt::println("\nlist: {} elements", l1.size());
+        for(auto i : l1)
+            fmt::println("- {}", i);
+            
+        // Test range.
+        std::vector<double> l2 = result.Get("range");
+        fmt::println("\nrange: {} elements", l2.size());
+        for(auto i : l2)
+            fmt::println("- {}", i);
+        
+        // Test for single raw values.
+        // TODO: add date
+        fmt::println("\nidentifier => {}", (std::string) result.Get("identifier"));
+        fmt::println("string => {}", (std::string) result.Get("string"));
+        fmt::println("number => {}", (double) result.Get("number"));
+        fmt::println("bool => {}", (bool) result.Get("bool"));
+    }
 }

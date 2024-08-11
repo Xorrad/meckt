@@ -3,121 +3,116 @@
 #include "parser/Lexer.hpp"
 
 namespace Parser {
-    using PValue = SharedPtr<Value>;
     using Key = std::variant<double, std::string>;
+    using RawValue = std::variant<double, bool, std::string, std::vector<double>, std::vector<bool>, std::vector<std::string>>;
 
-    class Value {
-        public:
-            virtual bool IsLeaf() const = 0;
-            virtual int Count() const = 0;
-
-            virtual int GetInt() const = 0;
-            virtual double GetDouble() const = 0;
-            virtual bool GetBool() const = 0;
-            virtual std::string GetString() const = 0;
-            
-            virtual PValue Get(const Key& key) = 0;
-            virtual PValue Get(const Key& key) const = 0;
-
-            virtual void Set(const Key& key, int value) = 0;
-            virtual void Set(const Key& key, double value) = 0;
-            virtual void Set(const Key& key, bool value) = 0;
-            virtual void Set(const Key& key, std::string value) = 0;
-            virtual void Set(const Key& key, const PValue& value) = 0;
-
-            virtual PValue operator=(int v) = 0;
-            virtual PValue operator=(double v) = 0;
-            virtual PValue operator=(bool v) = 0;
-            virtual PValue operator=(std::string v) = 0;
-            virtual PValue operator=(PValue v) = 0;
-
-            virtual PValue operator[](const Key& key) = 0;
-            virtual PValue operator[](const Key& key) const = 0;
-
-            virtual PValue Copy() const = 0;
+    enum class ValueType {
+        NUMBER,
+        BOOL,
+        STRING,
+        NUMBER_LIST,
+        BOOL_LIST,
+        STRING_LIST,
+        NODE
     };
 
-    class Node : public Value {
+    class Node {
         public:
             Node();
-            Node(const Node& n);
-            Node(const std::map<Key, PValue>& values);
+            Node(const Node& node);
+            Node(const RawValue& value);
+            Node(const std::map<Key, Node>& values);
 
-            virtual bool IsLeaf() const;
-            virtual int Count() const;
-
-            virtual int GetInt() const;
-            virtual double GetDouble() const;
-            virtual bool GetBool() const;
-            virtual std::string GetString() const;
+            ValueType GetType() const;
             
-            virtual PValue Get(const Key& key);
-            virtual PValue Get(const Key& key) const;
+            bool Is(ValueType type) const;
+            bool IsList() const;
 
-            virtual void Set(const Key& key, int value);
-            virtual void Set(const Key& key, double value);
-            virtual void Set(const Key& key, bool value);
-            virtual void Set(const Key& key, std::string value);
-            virtual void Set(const Key& key, const PValue& value);
+            Node& Get(const Key& key);
+            bool ContainsKey(const Key& key) const;
 
-            virtual PValue operator=(int v);
-            virtual PValue operator=(double v);
-            virtual PValue operator=(bool v);
-            virtual PValue operator=(std::string v);
-            virtual PValue operator=(PValue v);
+            operator int() const;
+            operator double() const;
+            operator bool() const;
+            operator std::string() const;
+            operator std::vector<double>&() const;
+            operator std::vector<bool>&() const;
+            operator std::vector<std::string>&() const;
+            operator RawValue&() const;
 
-            virtual PValue operator[](const Key& key);
-            virtual PValue operator[](const Key& key) const;
+            Node& operator=(const RawValue& value);
+            Node& operator=(const Node& value);
 
-            virtual PValue Copy() const;
+            Node& operator [](const Key& key);
+            const Node& operator [](const Key& key) const;
+
+            SharedPtr<NodeHolder> GetNodeHolder();
+            const SharedPtr<NodeHolder> GetNodeHolder() const;
+
+            SharedPtr<LeafHolder> GetLeafHolder();
+            const SharedPtr<LeafHolder> GetLeafHolder() const;
 
         private:
-            std::map<Key, PValue> m_Values;        
+            SharedPtr<AbstractValueHolder> m_Value;
     };
 
-    class Leaf : public Value {
+    class AbstractValueHolder {
         public:
-            Leaf();
-            Leaf(const Leaf& l);
-            Leaf(int v);
-            Leaf(double v);
-            Leaf(bool v);
-            Leaf(std::string v);
-
-            virtual bool IsLeaf() const;
-            virtual int Count() const;
-
-            virtual int GetInt() const;
-            virtual double GetDouble() const;
-            virtual bool GetBool() const;
-            virtual std::string GetString() const;
-            
-            virtual PValue Get(const Key& key);
-            virtual PValue Get(const Key& key) const;
-
-            virtual void Set(const Key& key, int value);
-            virtual void Set(const Key& key, double value);
-            virtual void Set(const Key& key, bool value);
-            virtual void Set(const Key& key, std::string value);
-            virtual void Set(const Key& key, const PValue& value);
-
-            virtual PValue operator=(int v);
-            virtual PValue operator=(double v);
-            virtual PValue operator=(bool v);
-            virtual PValue operator=(std::string v);
-            virtual PValue operator=(PValue v);
-
-            virtual PValue operator[](const Key& key);
-            virtual PValue operator[](const Key& key) const;
-
-            virtual PValue Copy() const;
-
-        private:
-            std::variant<double, bool, std::string> m_Value;
+            virtual ValueType GetType() const = 0;
+            virtual SharedPtr<AbstractValueHolder> Copy() const = 0;
     };
 
-    PValue Parse(const std::string& content);
-    PValue Parse(std::queue<PToken>& tokens);
+    class NodeHolder : public AbstractValueHolder {
+        public:
+            NodeHolder();
+            NodeHolder(const NodeHolder& n);
+            NodeHolder(const std::map<Key, Node>& values);
+
+            virtual ValueType GetType() const;
+            virtual SharedPtr<AbstractValueHolder> Copy() const;
+
+            bool ContainsKey(const Key& key);
+            Node& Get(const Key& key);
+            std::map<Key, Node>& GetValues();
+
+            void Put(const Key& key, const Node& node);
+
+        private:
+            std::map<Key, Node> m_Values;
+    };
+
+    class LeafHolder : public AbstractValueHolder {
+        public:
+            LeafHolder();
+            LeafHolder(const LeafHolder& l);
+            LeafHolder(const RawValue& value);
+
+            virtual ValueType GetType() const;
+            virtual SharedPtr<AbstractValueHolder> Copy() const;
+
+            RawValue& Get();
+            const RawValue& Get() const;
+
+            void Set(const RawValue& value);
+            void Push(const RawValue& value);
+
+        private:
+            RawValue m_Value;
+    };
+
+    Node Parse(const std::string& content);
+    Node Parse(std::deque<PToken>& tokens);
+    
+    namespace Impl {
+        Node ParseNode(std::deque<PToken>& tokens);
+        Node ParseRaw(PToken token);
+        Node ParseRange(std::deque<PToken>& tokens);
+
+        template<typename T>
+        Node ParseList(std::deque<PToken>& tokens);
+
+        bool IsList(std::deque<PToken>& tokens);
+    }
 
     void Benchmark();
 }

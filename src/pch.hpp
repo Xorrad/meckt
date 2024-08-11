@@ -5,7 +5,7 @@
 #include <math.h>
 #include <vector>
 #include <variant>
-#include <queue>
+#include <deque>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -28,9 +28,10 @@ class App;
 
 namespace Parser {
     class Token;
-    class Value;
     class Node;
-    class Leaf;
+    class AbstractValueHolder;
+    class NodeHolder;
+    class LeafHolder;
 }
 
 class Mod;

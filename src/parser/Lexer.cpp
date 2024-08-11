@@ -30,8 +30,8 @@ TokenValue Token::GetValue() const {
 
 // TODO: add a function lex from a stringstream or ifstream.
 
-std::queue<PToken> Parser::Lex(const std::string& content) {
-    std::queue<PToken> tokens;
+std::deque<PToken> Parser::Lex(const std::string& content) {
+    std::deque<PToken> tokens;
     Reader reader(content);
 
     while(!reader.IsEmpty()) {
@@ -39,7 +39,7 @@ std::queue<PToken> Parser::Lex(const std::string& content) {
         reader.Start();
         PToken token = ReadToken(reader);
         if(token != nullptr)
-            tokens.push(token);
+            tokens.push_back(token);
     }
 
     return tokens;

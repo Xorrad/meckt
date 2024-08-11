@@ -37,7 +37,7 @@ namespace Parser {
         TokenValue m_Value;
     };
 
-    std::queue<PToken> Lex(const std::string& content);
+    std::deque<PToken> Lex(const std::string& content);
 
     PToken ReadToken(Reader& reader);
     PToken ReadString(Reader& reader);
