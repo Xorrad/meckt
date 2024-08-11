@@ -24,6 +24,18 @@ std::string String::StripNonPrintable(const std::string& str) {
     return s;
 }
 
+std::vector<std::string> String::Split(std::string str, const std::string& delimiter) {
+    std::vector<std::string> result;
+    size_t i = 0;
+    while ((i = str.find(delimiter)) != std::string::npos) {
+        std::string r = str.substr(0, i);
+        result.push_back(str.substr(0, i));
+        str.erase(0, i + delimiter.length());
+    }
+    result.push_back(str);
+    return result;
+}
+
 int UTF8CharLength(char ch) {
     if((ch & 0x80) == 0)
         return 1;

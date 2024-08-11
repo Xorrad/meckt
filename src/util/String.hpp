@@ -4,6 +4,7 @@ namespace String {
     std::string Strip(std::string str, std::string toReplace);
     std::string ToLowercase(std::string str);
     std::string StripNonPrintable(const std::string& str);
+    std::vector<std::string> Split(std::string str, const std::string& delimiter);
 
     int UTF8CharLength(char ch);
 
