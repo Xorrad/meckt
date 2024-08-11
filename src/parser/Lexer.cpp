@@ -163,5 +163,5 @@ PToken Parser::ReadIdentifier(Reader& reader) {
     if(dots != 2)
         return MakeShared<Token>(TokenType::IDENTIFIER, str);
 
-    return MakeShared<Token>(TokenType::DATE, str);
+    return MakeShared<Token>(TokenType::DATE, Date(str));
 }

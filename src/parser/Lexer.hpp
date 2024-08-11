@@ -3,7 +3,7 @@
 
 namespace Parser {
     using PToken = SharedPtr<Token>;
-    using TokenValue = std::variant<double, bool, std::string, PToken>;
+    using TokenValue = std::variant<double, bool, std::string, Date, PToken>;
 
     enum class TokenType {
         // Separators / Punctuators

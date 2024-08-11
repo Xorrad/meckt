@@ -110,6 +110,12 @@ std::map<Key, Node>& Node::GetEntries() {
     return this->GetNodeHolder()->m_Values;
 }
 
+const std::map<Key, Node>& Node::GetEntries() const {
+    if(this->GetType() != ValueType::NODE)
+        throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
+    return this->GetNodeHolder()->m_Values;
+}
+
 // std::vector<Node&> Node::GetValues() {
 //     if(this->GetType() != ValueType::NODE)
 //         throw std::runtime_error("error: invalid use of 'Node::GetValues' on leaf node.");
@@ -328,6 +334,12 @@ Node Parser::Parse(std::deque<PToken>& tokens) {
                     state = ParsingState::OPERATOR;
                     break;
                 }
+                
+                if(token->Is(TokenType::DATE)) {
+                    key = std::get<Date>(token->GetValue());
+                    state = ParsingState::OPERATOR;
+                    break;
+                }
                 throw std::runtime_error(fmt::format("Unexpected token while parsing key ({}).", (int) token->GetType()));
                 break;
 
@@ -430,7 +442,7 @@ Node Parser::Impl::ParseRaw(PToken token) {
         case TokenType::BOOLEAN:
             return Node(std::get<bool>(token->GetValue()));
         case TokenType::DATE:
-            return Node(std::get<std::string>(token->GetValue()));
+            return Node(std::get<Date>(token->GetValue()));
         case TokenType::IDENTIFIER:
             return Node(std::get<std::string>(token->GetValue()));
         case TokenType::NUMBER:
@@ -529,7 +541,7 @@ bool Parser::Impl::IsList(std::deque<PToken>& tokens) {
     PToken firstToken = tokens.at(0);
     PToken secondToken = tokens.at(1);
 
-    #define IS_ARRAY_TYPE(t) (t->Is(TokenType::IDENTIFIER) || t->Is(TokenType::NUMBER) || t->Is(TokenType::STRING))
+    #define IS_LIST_TYPE(t) (t->Is(TokenType::IDENTIFIER) || t->Is(TokenType::NUMBER) || t->Is(TokenType::STRING))
 
     // Check if two successive tokens are of the same type.
     // So, if there isn't any operators for the second tokens,
@@ -537,18 +549,19 @@ bool Parser::Impl::IsList(std::deque<PToken>& tokens) {
 
     // Or if there is only an element in the list, check if the second
     // token is a RIGHT_BRACE.
-    return (secondToken->Is(firstToken->GetType()) && IS_ARRAY_TYPE(secondToken))
-        || (secondToken->Is(TokenType::RIGHT_BRACE) && IS_ARRAY_TYPE(firstToken));
+    return (secondToken->Is(firstToken->GetType()) && IS_LIST_TYPE(secondToken))
+        || (secondToken->Is(TokenType::RIGHT_BRACE) && IS_LIST_TYPE(firstToken));
 }
 
 void Parser::Benchmark() {
     sf::Clock clock;
 
     // std::string filePath = "test_mod/map_data/default.map";
+    std::string filePath = "test_mod/parser_test.txt";
+
     // std::string filePath = "test_mod/map_data/island_region.txt";
     // std::string filePath = "test_mod/map_data/geographical_regions/00_agot_geographical_region.txt";
-    std::string filePath = "test_mod/history/characters/00_agot_char_vale_ancestors.txt";
-    // std::string filePath = "test_mod/parser_test.txt";
+    // std::string filePath = "test_mod/history/characters/00_agot_char_vale_ancestors.txt";
 
     std::ifstream file(filePath);
 
@@ -574,27 +587,18 @@ void Parser::Benchmark() {
     fmt::println("elapsed parser = {}", String::DurationFormat(elapsedParser));
     fmt::println("elapsed total  = {}", String::DurationFormat(elapsedFile + elapsedLexer + elapsedParser));
 
-    // Display all the first-level keys in the test file.
-    fmt::println("\nKeys:");
-    for(const auto&[key, value] : result.GetEntries()) {
-        switch(key.index()) {
-            case 0: fmt::println("- {}", std::get<0>(key));
-            case 1: fmt::println("- {}", std::get<1>(key));
-        }
-    }
+    // Display the result.
+    fmt::println("\n------------------RESULT--------------------\n");
+    fmt::println("\n{}", result);
+    fmt::println("\n--------------------------------------------\n");
 
     ///////////////////////////
     // Test default.map file //
     ///////////////////////////
     
     if(filePath == "test_mod/map_data/default.map") {
-
-        std::vector<double> l = result.Get("lakes");
-        fmt::println("\nlakes: {} elements", l.size());
-        for(auto i : l)
-            fmt::println("- {}", i);
-
-        fmt::println("\nisland_region => {}", (std::string) result.Get("island_region"));
+        fmt::println("\nlakes = {}", result.Get("lakes"));
+        fmt::println("\nisland_region => {}", result.Get("island_region"));
     }
 
     ///////////////////////////////
@@ -603,22 +607,22 @@ void Parser::Benchmark() {
 
     if(filePath == "test_mod/parser_test.txt") {
         // Test number list.
-        std::vector<double> l1 = result.Get("list");
-        fmt::println("\nlist: {} elements", l1.size());
-        for(auto i : l1)
-            fmt::println("- {}", i);
+        fmt::println("\nlist = {}", result.Get("list"));
             
         // Test range.
-        std::vector<double> l2 = result.Get("range");
-        fmt::println("\nrange: {} elements", l2.size());
-        for(auto i : l2)
-            fmt::println("- {}", i);
+        fmt::println("\nrange = {}", result.Get("range"));
+        
+        // Test string list.
+        fmt::println("\nstring_list = {}", result.Get("string_list"));
         
         // Test for single raw values.
-        // TODO: add date
-        fmt::println("\nidentifier => {}", (std::string) result.Get("identifier"));
-        fmt::println("string => {}", (std::string) result.Get("string"));
-        fmt::println("number => {}", (double) result.Get("number"));
-        fmt::println("bool => {}", (bool) result.Get("bool"));
+        fmt::println("\nidentifier => {}", result.Get("identifier"));
+        fmt::println("string => {}", result.Get("string"));
+        fmt::println("number => {}", result.Get("number"));
+        fmt::println("bool => {}", result.Get("bool"));
+        fmt::println("date => {}", result.Get("date"));
+
+        // Test date as key
+        fmt::println("1000.1.1 => {}", result.Get(Date(1000, 1, 1)));
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-// #include <fmt/format.h>
+#include <fmt/format.h>
 
 struct Date {
     int year;
@@ -43,15 +43,15 @@ struct Date {
     }
 };
 
-// template <>
-// class fmt::formatter<Date> {
-// public:
-//     constexpr auto parse (format_parse_context& ctx) {
-//        return ctx.begin();
-//     }
+template <>
+class fmt::formatter<Date> {
+public:
+    constexpr auto parse(format_parse_context& ctx) {
+       return ctx.begin();
+    }
 
-//     template <typename Context>
-//     constexpr auto format (Date const& date, Context& ctx) const {
-//         return format_to(ctx.out(), "{}.{}.{}", date.year, date.month, date.day);
-//     }
-// };
+    template <typename Context>
+    constexpr auto format(const Date& date, Context& ctx) const {
+        return format_to(ctx.out(), "{}.{}.{}", date.year, date.month, date.day);
+    }
+};

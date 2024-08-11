@@ -2,14 +2,18 @@
 
 #include "parser/Lexer.hpp"
 
+#include <fmt/format.h>
+#include <ranges>
+
 namespace Parser {
-    using Key = std::variant<double, std::string>;
-    using RawValue = std::variant<double, bool, std::string, std::vector<double>, std::vector<bool>, std::vector<std::string>>;
+    using Key = std::variant<double, std::string, Date>;
+    using RawValue = std::variant<double, bool, std::string, Date, std::vector<double>, std::vector<bool>, std::vector<std::string>>;
 
     enum class ValueType {
         NUMBER,
         BOOL,
         STRING,
+        DATE,
         NUMBER_LIST,
         BOOL_LIST,
         STRING_LIST,
@@ -34,6 +38,7 @@ namespace Parser {
             Node& Get(const Key& key);
             const Node& Get(const Key& key) const;
             std::map<Key, Node>& GetEntries();
+            const std::map<Key, Node>& GetEntries() const;
             // std::vector<Node&> GetValues();
             std::vector<Key> GetKeys() const;
             bool ContainsKey(const Key& key) const;
@@ -103,6 +108,7 @@ namespace Parser {
             RawValue m_Value;
     };
 
+
     Node Parse(const std::string& content);
     Node Parse(std::deque<PToken>& tokens);
     
@@ -119,3 +125,85 @@ namespace Parser {
 
     void Benchmark();
 }
+
+///////////////////////////////////////////
+//          Formatters for fmt           //
+///////////////////////////////////////////
+template <>
+class fmt::formatter<Parser::Key> {
+public:
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename Context>
+    constexpr auto format(const Parser::Key& key, Context& ctx) const {
+        switch(key.index()) {
+            case 0: return format_to(ctx.out(), "{}", std::get<double>(key));
+            case 1: return format_to(ctx.out(), "{}", std::get<std::string>(key));
+            case 2: return format_to(ctx.out(), "{}", std::get<Date>(key));
+        }
+        return format_to(ctx.out(), "");
+    }
+};
+
+template <>
+class fmt::formatter<Parser::RawValue> {
+public:
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename Context>
+    constexpr auto format(const Parser::RawValue& value, Context& ctx) const {
+        switch((Parser::ValueType) value.index()) {
+            case Parser::ValueType::NUMBER:
+                return format_to(ctx.out(), "{}", std::get<double>(value));
+            case Parser::ValueType::BOOL:
+                return format_to(ctx.out(), "{}", std::get<bool>(value));
+            case Parser::ValueType::STRING:
+                return format_to(ctx.out(), "{}", std::get<std::string>(value));
+            case Parser::ValueType::DATE:
+                return format_to(ctx.out(), "{}", std::get<Date>(value));
+            case Parser::ValueType::NUMBER_LIST:
+                return format_to(ctx.out(), "{{ {} }}", fmt::join(
+                    std::views::transform(std::get<std::vector<double>>(value), [](const auto& v) {
+                        return fmt::format("{}", v);
+                    }), " ")
+                );
+            case Parser::ValueType::BOOL_LIST:
+                return format_to(ctx.out(), "{{ {} }}", fmt::join(
+                    std::views::transform(std::get<std::vector<bool>>(value), [](const auto& v) {
+                        return fmt::format("{}", v);
+                    }), " ")
+                );
+            case Parser::ValueType::STRING_LIST:
+                return format_to(ctx.out(), "{{ {} }}", fmt::join(
+                    std::views::transform(std::get<std::vector<std::string>>(value), [](const auto& v) {
+                        return fmt::format("{}", v);
+                    }), " ")
+                );
+            default:
+                return format_to(ctx.out(), "");
+        }
+    }
+};
+
+template <>
+class fmt::formatter<Parser::Node> {
+public:
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename Context>
+    constexpr auto format(const Parser::Node& node, Context& ctx) const {
+        if(node.Is(Parser::ValueType::NODE)) {
+            auto v = std::views::transform(node.GetEntries(), [](const auto& p) {
+                return fmt::format("{} = {}", p.first, p.second);
+            });
+            return format_to(ctx.out(), "{{\n{}\n}}", fmt::join(v, "\n"));
+        }
+        return format_to(ctx.out(), "{}", (Parser::RawValue&) node);
+    }
+};

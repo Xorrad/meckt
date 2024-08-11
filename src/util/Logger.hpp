@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <filesystem>
-#include "fmt/core.h"
+#include <fmt/core.h>
 
 #define LOGS_FILE "logs/logs.txt"
 #define CRASH_FILE "logs/crash.txt"
