@@ -1,4 +1,12 @@
 #include "File.hpp"
+#include <filesystem>
+
+std::vector<std::string> File::ListFiles(const std::string& dirPath) {
+    std::vector<std::string> files;
+    for (const auto& entry : std::filesystem::directory_iterator(dirPath))
+        files.push_back(entry.path());
+    return files;
+}
 
 std::string File::ReadString(std::ifstream& file) {
     std::stringstream ss;
