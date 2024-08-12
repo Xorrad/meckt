@@ -21,8 +21,22 @@ ProvinceFlags& operator&=(ProvinceFlags& a, ProvinceFlags b) {
     return a = a & b;
 }
 
-Province::Province(int id, sf::Color color, std::string name)
-: m_Id(id), m_Color(color), m_Name(name), m_Flags(ProvinceFlags::NONE), m_Terrain(TerrainType::PLAINS) {}
+ProvinceHolding ProvinceHoldingFromString(const std::string& str) {
+    for(int i = 0; i < ProvinceHoldingLabels.size(); i++) {
+        if(String::ToLowercase(ProvinceHoldingLabels[i]) == str)
+            return (ProvinceHolding) i;
+    }
+    return ProvinceHolding::NONE;
+}
+
+Province::Province(int id, sf::Color color, std::string name) {
+    m_Id = id;
+    m_Color = color;
+    m_Name = name;
+    m_Flags = ProvinceFlags::NONE;
+    m_Terrain = TerrainType::PLAINS;
+    m_Holding = ProvinceHolding::NONE;
+}
 
 int& Province::GetId() {
     return m_Id;
@@ -52,6 +66,18 @@ TerrainType& Province::GetTerrain() {
     return m_Terrain;
 }
 
+std::string& Province::GetCulture() {
+    return m_Culture;
+}
+
+std::string& Province::GetReligion() {
+    return m_Religion;
+}
+
+ProvinceHolding& Province::GetHolding() {
+    return m_Holding;
+}
+
 void Province::SetColor(sf::Color color) {
     m_Color = color;
 }
@@ -67,4 +93,16 @@ void Province::SetFlag(ProvinceFlags flag, bool enabled) {
 
 void Province::SetTerrain(TerrainType terrain) {
     m_Terrain = terrain;
+}
+
+void Province::SetCulture(std::string culture) {
+    m_Culture = culture;
+}
+
+void Province::SetReligion(std::string religion) {
+    m_Religion = religion;
+}
+
+void Province::SetHolding(ProvinceHolding holding) {
+    m_Holding = holding;
 }

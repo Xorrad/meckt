@@ -62,6 +62,7 @@ void Mod::Load() {
     this->LoadProvincesDefinition();
     this->LoadDefaultMapFile();
     this->LoadProvincesTerrain();
+    this->LoadProvincesInfo();
     this->LoadTitlesHistory();
     this->LoadTitles();
 }
@@ -140,18 +141,39 @@ void Mod::LoadProvincesTerrain() {
         if(!std::holds_alternative<double>(key))
             continue;
 
-        int id = std::get<double>(key);
+        int provinceId = std::get<double>(key);
         TerrainType terrain = TerrainTypefromString(value);
 
-        if(m_ProvincesByIds.count(id) == 0) {
-            INFO("A province's terrain is defined but the province does not exist: {}", id);
+        if(m_ProvincesByIds.count(provinceId) == 0) {
+            INFO("A province's terrain is defined but the province does not exist: {}", provinceId);
             continue;
         }
 
-        m_ProvincesByIds[id]->SetTerrain(terrain);
+        m_ProvincesByIds[provinceId]->SetTerrain(terrain);
 
-        if(!m_ProvincesByIds[id]->HasFlag(ProvinceFlags::SEA))
-            m_ProvincesByIds[id]->SetFlag(ProvinceFlags::LAND, true);
+        if(!m_ProvincesByIds[provinceId]->HasFlag(ProvinceFlags::SEA))
+            m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
+    }
+}
+
+void Mod::LoadProvincesInfo() {
+    std::vector<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
+
+    for(const auto& filePath : filesPath) {
+        Parser::Node result = Parser::Parse(filePath);
+        
+        for(const auto& [key, value] : result.GetEntries()) {
+            if(!std::holds_alternative<double>(key))
+                continue;
+            int provinceId = std::get<double>(key);
+
+            if(value.ContainsKey("culture"))
+                m_ProvincesByIds[provinceId]->SetCulture(value.Get("culture"));
+            if(value.ContainsKey("religion"))
+                m_ProvincesByIds[provinceId]->SetReligion(value.Get("religion"));
+            if(value.ContainsKey("holding"))
+                m_ProvincesByIds[provinceId]->SetHolding(ProvinceHoldingFromString(value.Get("holding")));
+        }
     }
 }
 

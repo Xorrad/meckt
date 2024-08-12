@@ -17,6 +17,25 @@ ProvinceFlags operator~(ProvinceFlags a);
 ProvinceFlags& operator|=(ProvinceFlags& a, ProvinceFlags b);
 ProvinceFlags& operator&=(ProvinceFlags& a, ProvinceFlags b);
 
+enum class ProvinceHolding {
+    NONE,
+    TRIBAL,
+    CASTLE,
+    CITY,
+    CHURCH,
+    COUNT,
+};
+
+const std::vector<const char*> ProvinceHoldingLabels = {
+    "none",
+    "tribal_holding",
+    "castle_holding",
+    "city_holding",
+    "church_holding",
+};
+
+ProvinceHolding ProvinceHoldingFromString(const std::string& str);
+
 class Province {
 public:
     Province(int id, sf::Color color, std::string name);
@@ -28,11 +47,17 @@ public:
     ProvinceFlags& GetFlags();
     bool HasFlag(ProvinceFlags flag) const;
     TerrainType& GetTerrain();
+    std::string& GetCulture();
+    std::string& GetReligion();
+    ProvinceHolding& GetHolding();
 
     void SetColor(sf::Color color);
     void SetFlags(ProvinceFlags flags);
     void SetFlag(ProvinceFlags flag, bool enabled);
     void SetTerrain(TerrainType terrain);
+    void SetCulture(std::string culture);
+    void SetReligion(std::string religion);
+    void SetHolding(ProvinceHolding holding);
 
 private:
     int m_Id;
@@ -41,8 +66,11 @@ private:
     ProvinceFlags m_Flags;
     TerrainType m_Terrain;
 
+    std::string m_Culture;
+    std::string m_Religion;
+    ProvinceHolding m_Holding;
+
     // Sea-zone for port
     // Terrain
-    // Culture
-    // Religion
+    // History (modifiers with date, buildings, owners...)
 };

@@ -19,6 +19,7 @@ public:
     void LoadDefaultMapFile();
     void LoadProvincesDefinition();
     void LoadProvincesTerrain();
+    void LoadProvincesInfo();
     void LoadTitlesHistory();
     void LoadTitles();
 

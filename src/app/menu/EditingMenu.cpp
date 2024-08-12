@@ -224,10 +224,8 @@ void EditingMenu::Draw() {
 
                         // Province terrain type.
                         // if(province->IsSea()) ImGui::BeginDisabled();
-                        if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()]))
-                        {
-                            for (int i = 0; i < (int) TerrainType::COUNT; i++)
-                            {
+                        if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()])) {
+                            for (int i = 0; i < (int) TerrainType::COUNT; i++) {
                                 const bool isSelected = ((int) province->GetTerrain() == i);
                                 if (ImGui::Selectable(TerrainTypeLabels[i], isSelected))
                                     province->SetTerrain((TerrainType) i);
@@ -249,7 +247,7 @@ void EditingMenu::Draw() {
                         bool isRiver = province->HasFlag(ProvinceFlags::RIVER);
                         bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
 
-                        if (ImGui::BeginTable("Province Flags", 2)) {
+                        if (ImGui::BeginTable("province flags", 2)) {
                         
                             ImGui::TableNextRow();
                             ImGui::TableSetColumnIndex(0);
@@ -274,6 +272,20 @@ void EditingMenu::Draw() {
                             if(ImGui::Checkbox("Impassable", &isImpassable)) province->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
 
                             ImGui::EndTable();
+                        }
+
+                        ImGui::InputText("culture", &province->GetCulture());
+                        ImGui::InputText("religion", &province->GetReligion());
+
+                        if (ImGui::BeginCombo("holding", ProvinceHoldingLabels[(int) province->GetHolding()])) {
+                            for (int i = 0; i < (int) ProvinceHolding::COUNT; i++) {
+                                const bool isSelected = ((int) province->GetHolding() == i);
+                                if (ImGui::Selectable(ProvinceHoldingLabels[i], isSelected))
+                                    province->SetHolding((ProvinceHolding) i);
+                                if (isSelected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
                         }
 
                         ImGui::PopID();
