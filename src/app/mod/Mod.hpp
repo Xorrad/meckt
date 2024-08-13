@@ -12,6 +12,9 @@ public:
 
     std::map<uint32_t, SharedPtr<Province>>& GetProvinces();
     std::map<int, SharedPtr<Province>>& GetProvincesByIds();
+    
+    std::map<std::string, SharedPtr<Title>>& GetTitles();
+    std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
 
     void LoadMapModeTexture(sf::Texture& texture, MapMode mode);
     

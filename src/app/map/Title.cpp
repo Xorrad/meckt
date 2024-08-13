@@ -4,6 +4,8 @@ Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 
 Title::Title(std::string name, sf::Color color) : m_Name(name), m_Color(color) {}
 
+// Title::Title(const Title& title) : Title(title.GetName(), title.GetColor()) {}
+
 std::string Title::GetName() const {
     return m_Name;
 }
@@ -12,7 +14,7 @@ sf::Color Title::GetColor() const {
     return m_Color;
 }
 
-SharedPtr<HighTitle> Title::GetLiegeTitle() {
+SharedPtr<HighTitle>& Title::GetLiegeTitle() {
     return m_LiegeTitle;
 }
 
@@ -36,6 +38,11 @@ HighTitle::HighTitle() : Title("", sf::Color(0, 0, 0)) {}
 
 HighTitle::HighTitle(std::string name, sf::Color color) : Title(name, color) {}
 
+// HighTitle::~HighTitle() {
+//     m_DejureTitles.clear();
+//     m_CapitalTitle
+// }
+
 std::vector<SharedPtr<Title>>& HighTitle::GetDejureTitles() {
     return m_DejureTitles;
 }
@@ -53,7 +60,7 @@ void HighTitle::AddDejureTitle(SharedPtr<Title> title) {
     if(previousLiege != nullptr) {
         previousLiege->RemoveDejureTitle(title);
     }
-    title->SetLiegeTitle(SharedPtr<HighTitle>(this));
+    title->SetLiegeTitle(shared_from_this());
 }
 
 void HighTitle::RemoveDejureTitle(SharedPtr<Title> title) {
@@ -110,16 +117,3 @@ EmpireTitle::EmpireTitle(std::string name, sf::Color color) : HighTitle(name, co
 TitleType EmpireTitle::GetType() const {
     return TitleType::EMPIRE;
 }
-
-// template <typename ...Args>
-// SharedPtr<Title> MakeTitle(TitleType type, Args&& ...args) {
-//     switch(type) {
-//         case TitleType::BARONY: return MakeShared<BaronyTitle>(std::forward<Args>(args)...);
-//         case TitleType::COUNTY: return MakeShared<CountyTitle>(std::forward<Args>(args)...);
-//         case TitleType::DUCHY: return MakeShared<DuchyTitle>(std::forward<Args>(args)...);
-//         case TitleType::KINGDOM: return MakeShared<KingdomTitle>(std::forward<Args>(args)...);
-//         case TitleType::EMPIRE: return MakeShared<EmpireTitle>(std::forward<Args>(args)...);
-//         default: break;
-//     }
-//     throw std::runtime_error("error: failed to create SharedPtr<Title> with unknown title type.");
-// }

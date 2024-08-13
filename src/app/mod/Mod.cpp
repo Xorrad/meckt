@@ -37,6 +37,14 @@ std::map<int, SharedPtr<Province>>& Mod::GetProvincesByIds() {
     return m_ProvincesByIds;
 }
 
+std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
+    return m_Titles;
+}
+
+std::map<TitleType, std::vector<SharedPtr<Title>>>& Mod::GetTitlesByType() {
+    return m_TitlesByType;
+}
+
 void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
     switch(mode) {
         case MapMode::PROVINCES:
@@ -195,9 +203,12 @@ void Mod::LoadTitles() {
         m_TitlesByType[(TitleType) i] = std::vector<SharedPtr<Title>>();
 
     for(const auto& filePath : filesPath) {
+        // fmt::println("loading titles from {}", filePath);
         Parser::Node data = Parser::Parse(filePath);
         std::vector<SharedPtr<Title>> titles = ParseTitles(data);
     }
+
+    INFO("loaded {} titles from {} files", m_Titles.size(), filesPath.size());
 }
 
 std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
@@ -220,15 +231,17 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             // to get the right derived class such as BaronyTitle, CountyTitle...
             SharedPtr<Title> title = MakeTitle(type, key, value.Get("color"));
 
+            // fmt::println("{} {}", key, TitleTypeLabels[(int) type]);
+
             if(type == TitleType::BARONY) {
                 SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
-                baronyTitle->SetProvinceId(data.Get("province"));
+                baronyTitle->SetProvinceId(value.Get("province"));
             }
             else {
                 SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
                 std::vector<SharedPtr<Title>> dejureTitles = ParseTitles(value);
 
-                for(auto& dejureTitle : dejureTitles) {
+                for(const auto& dejureTitle : dejureTitles) {
                     highTitle->AddDejureTitle(dejureTitle);
                 }
 
@@ -243,6 +256,8 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             m_Titles[key] = title;
             m_TitlesByType[type].push_back(title);
             titles.push_back(title);
+
+            if(type == TitleType::EMPIRE) break;
         }
         catch(const std::runtime_error& e) {}
     }

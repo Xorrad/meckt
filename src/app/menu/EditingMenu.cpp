@@ -146,6 +146,7 @@ void EditingMenu::Event(const sf::Event& event) {
 
 void EditingMenu::Draw() {
     sf::RenderWindow& window = m_App->GetWindow();
+    bool exitToMainMenu = false;
 
     // Update provinces shader
     std::vector<sf::Color> selectedProvincesColors = this->GetSelectedProvincesColor();
@@ -170,7 +171,7 @@ void EditingMenu::Draw() {
                 mod->Export();
             }
             if (ImGui::MenuItem("Close")) {
-                m_App->OpenMenu(MakeUnique<HomeMenu>(m_App));
+                exitToMainMenu = true;
             }
             ImGui::EndMenu();
         }
@@ -309,4 +310,8 @@ void EditingMenu::Draw() {
     ToggleCamera(false);
 
     window.draw(m_HoverText);
+
+    if(exitToMainMenu) {
+        m_App->OpenMenu(MakeUnique<HomeMenu>(m_App));
+    }
 }

@@ -4,11 +4,16 @@ class Title {
 public:
     Title();
     Title(std::string name, sf::Color color);
+    virtual ~Title() = default;
+
+    // Title(const Title& title) = delete;
+    // Title& operator=(const Title& other) = delete;
+    // Title& operator=(Title&& other) = delete;
 
     virtual TitleType GetType() const = 0;
     std::string GetName() const;
     sf::Color GetColor() const;
-    SharedPtr<HighTitle> GetLiegeTitle();
+    SharedPtr<HighTitle>& GetLiegeTitle();
     
     bool Is(TitleType type) const;
 
@@ -22,10 +27,11 @@ protected:
     SharedPtr<HighTitle> m_LiegeTitle;
 };
 
-class HighTitle : public Title {
+class HighTitle : public Title, public std::enable_shared_from_this<HighTitle> {
 public:
     HighTitle();
     HighTitle(std::string name, sf::Color color);
+    virtual ~HighTitle() = default;
 
     virtual TitleType GetType() const = 0;
     std::vector<SharedPtr<Title>>& GetDejureTitles();
