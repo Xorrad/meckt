@@ -3,5 +3,6 @@
 /obj/
 /logs/
 /test_mod/
+/tmp/
 *.txt
 imgui.ini
