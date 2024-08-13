@@ -60,8 +60,75 @@ void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
             return;
         case MapMode::RELIGION:
             return;
+        case MapMode::COUNTY:
+            UpdateTitlesImages(TitleType::COUNTY);
+            texture.loadFromImage(m_TitlesImage);
+            return;
+        case MapMode::DUCHY:
+            UpdateTitlesImages(TitleType::DUCHY);
+            texture.loadFromImage(m_TitlesImage);
+            return;
+        case MapMode::KINGDOM:
+            UpdateTitlesImages(TitleType::KINGDOM);
+            texture.loadFromImage(m_TitlesImage);
+            return;
+        case MapMode::EMPIRE:
+            UpdateTitlesImages(TitleType::EMPIRE);
+            texture.loadFromImage(m_TitlesImage);
+            return;
         default:
             return;
+    }
+}
+
+void Mod::UpdateTitlesImages(TitleType type) {
+    // Map provinces color to the titles color and then when 
+    // updating the image, swap the color of each pixel.
+    std::map<sf::Uint32, sf::Color> colors;
+
+    std::function<const SharedPtr<HighTitle>(const SharedPtr<BaronyTitle>&)> GetLiegeTitle;
+
+    switch(type) {
+        case TitleType::COUNTY:
+            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle(); };
+            break;
+        case TitleType::DUCHY:
+            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle()->GetLiegeTitle(); };
+            break;
+        case TitleType::KINGDOM:
+            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle(); };
+            break;
+        case TitleType::EMPIRE:
+            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle(); };
+            break;
+        default:
+            return;
+    }
+
+    for(const auto& [provinceColorId, province] : m_Provinces) {
+        if(m_Titles.count(province->GetName()) == 0) {
+            // INFO("{}", province->GetName());
+            colors[province->GetColor().toInteger()] = province->GetColor();
+            continue;
+        }
+
+        const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(m_Titles[province->GetName()]);
+        if(barony->GetLiegeTitle() == nullptr) {
+            colors[province->GetColor().toInteger()] = province->GetColor();
+            continue;
+        }
+        
+        const SharedPtr<HighTitle>& liege = GetLiegeTitle(barony);
+        colors[province->GetColor().toInteger()] = liege->GetColor();
+    }
+
+    //m_TitlesImage.create(m_ProvinceImage.getSize().x, m_ProvinceImage.getSize().y);
+    m_TitlesImage = m_ProvinceImage;
+
+    for(uint y = 0; y < m_TitlesImage.getSize().y; y++) {
+        for(uint x = 0; x < m_TitlesImage.getSize().x; x++) {
+            m_TitlesImage.setPixel(x, y, colors[m_ProvinceImage.getPixel(x, y).toInteger()]);
+        }
     }
 }
 
@@ -121,6 +188,9 @@ void Mod::LoadDefaultMapFile() {
 void Mod::LoadProvincesDefinition() {
     std::vector<std::vector<std::string>> lines = File::ReadCSV(m_Dir + "/map_data/definition.csv");
     
+    // Skip the first line.
+    lines.erase(lines.begin());
+
     for(const auto& line : lines) {
         int id = std::stoi(line[0]);
         int r = std::stoi(line[1]);
@@ -209,6 +279,9 @@ void Mod::LoadTitles() {
     }
 
     INFO("loaded {} titles from {} files", m_Titles.size(), filesPath.size());
+    
+    for(int i = 0; i < (int) TitleType::COUNT; i++)
+        INFO("loaded {} {} titles", m_TitlesByType[(TitleType) i].size(), TitleTypeLabels[i]);
 }
 
 std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
@@ -257,7 +330,7 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             m_TitlesByType[type].push_back(title);
             titles.push_back(title);
 
-            if(type == TitleType::EMPIRE) break;
+            // if(type == TitleType::EMPIRE) break;
         }
         catch(const std::runtime_error& e) {}
     }
@@ -275,7 +348,7 @@ void Mod::ExportProvincesDefinition() {
 
     // The format of definition.csv is as following:
     // [ID];[RED];[GREEN];[BLUE];[Barony Name];x;
-    // file << "0;0;0;0;x;x\n";
+    file << "0;0;0;0;x;x\n";
 
     // "IDs must be sequential, or your game will crash."
     // That's why it is needed to make a sorted list of the provinces.

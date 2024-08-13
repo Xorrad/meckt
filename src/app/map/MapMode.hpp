@@ -7,7 +7,15 @@ enum class MapMode {
     TERRAIN,
     CULTURE,
     RELIGION,
+    COUNTY,
+    DUCHY,
+    KINGDOM,
+    EMPIRE,
     COUNT,
 };
 
-const std::vector<const char*> MapModeLabels = { "Provinces", "Heightmap", "Rivers", "Terrain", "Culture", "Religion" };
+const std::vector<const char*> MapModeLabels = {
+    "Provinces", "Heightmap", "Rivers",
+    "Terrain", "Culture", "Religion",
+    "County", "Duchy", "Kingdom", "Empire" 
+};
