@@ -53,6 +53,7 @@ namespace Parser {
             operator std::vector<bool>&() const;
             operator std::vector<std::string>&() const;
             operator RawValue&() const;
+            operator sf::Color() const;
 
             Node& operator=(const RawValue& value);
             Node& operator=(const Node& value);

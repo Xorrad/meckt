@@ -36,5 +36,5 @@ std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath)
 
     file.close();
     
-    return std::move(lines);
+    return lines;
 }

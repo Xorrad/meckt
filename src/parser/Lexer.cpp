@@ -47,7 +47,7 @@ std::deque<PToken> Parser::Lex(const std::string& content) {
 
 PToken Parser::ReadToken(Reader& reader) {
     char ch = reader.Advance();
-    int line = reader.GetLine();
+    // int line = reader.GetLine();
 
     // TODO: handle UTF8 characters
     // and ZERO WIDTH NO-BREAK SPACE

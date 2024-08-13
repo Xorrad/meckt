@@ -2,8 +2,7 @@
 #include "imgui/imgui.hpp"
 
 void ImGui::SetupSettings() {
-    ImGuiIO& io = ImGui::GetIO();
-    
+    // ImGuiIO& io = ImGui::GetIO();
 }
 
 void ImGui::SetupStyle() {

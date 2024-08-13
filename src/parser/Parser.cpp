@@ -200,6 +200,18 @@ Node::operator RawValue&() const {
     return this->GetLeafHolder()->m_Value;
 }
 
+Node::operator sf::Color() const {
+    if(this->GetType() != ValueType::NUMBER_LIST)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'sf::Color&'");
+    
+    std::vector<double> values = std::get<std::vector<double>>(this->GetLeafHolder()->m_Value);
+    
+    if(values.size() < 3)
+        throw std::runtime_error("error: invalid cast from 'node' to type 'sf::Color&'");
+
+    return sf::Color((int) values[0], (int) values[1], (int) values[2]);
+}
+
 Node& Node::operator=(const RawValue& value) {
     if(this->GetType() == ValueType::NODE)
         m_Value = MakeShared<LeafHolder>(value);
@@ -507,8 +519,7 @@ Node Parser::Impl::ParseRange(std::deque<PToken>& tokens) {
     for(int i = min; i <= max; i++)
         list.push_back((double) i);
 
-    // Use std::move to avoid copying the object and thus the array.
-    return std::move(Node(list));
+    return Node(list);
 }
 
 template<typename T>
@@ -530,8 +541,7 @@ Node Parser::Impl::ParseList(std::deque<PToken>& tokens) {
         tokens.pop_front();
     }
     
-    // Use std::move to avoid copying the object and thus the array.
-    return std::move(Node(list));
+    return Node(list);
 }
     
 bool Parser::Impl::IsList(std::deque<PToken>& tokens) {

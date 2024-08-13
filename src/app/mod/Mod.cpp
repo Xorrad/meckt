@@ -1,5 +1,6 @@
 #include "Mod.hpp"
 #include "app/map/Province.hpp"
+#include "app/map/Title.hpp"
 #include "parser/Parser.hpp"
 
 #include <filesystem>
@@ -47,6 +48,12 @@ void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
         case MapMode::RIVERS:
             texture.loadFromImage(m_RiversImage);
             return;
+        case MapMode::CULTURE:
+            return;
+        case MapMode::RELIGION:
+            return;
+        default:
+            return;
     }
 }
 
@@ -63,8 +70,8 @@ void Mod::Load() {
     this->LoadDefaultMapFile();
     this->LoadProvincesTerrain();
     this->LoadProvincesInfo();
-    this->LoadTitlesHistory();
     this->LoadTitles();
+    this->LoadTitlesHistory();
 }
 
 void Mod::LoadDefaultMapFile() {
@@ -182,7 +189,66 @@ void Mod::LoadTitlesHistory() {
 }
 
 void Mod::LoadTitles() {
+    std::vector<std::string> filesPath = File::ListFiles(m_Dir + "/common/landed_titles/");
 
+    for(int i = 0; i < (int) TitleType::COUNT; i++)
+        m_TitlesByType[(TitleType) i] = std::vector<SharedPtr<Title>>();
+
+    for(const auto& filePath : filesPath) {
+        Parser::Node data = Parser::Parse(filePath);
+        
+        std::vector<SharedPtr<Title>> titles = ParseTitles(data);
+    }
+}
+
+std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
+    std::vector<SharedPtr<Title>> titles;
+
+    for(auto& [k, value] : data.GetEntries()) {
+        if(!std::holds_alternative<std::string>(k))
+            continue;
+        std::string key = std::get<std::string>(k);
+
+        // Need to check if the key is a title (starts with e_, k_, d_, c_ or b_)
+        // because it could be attributes such as color, capital, can_create...
+
+        try {
+            // This function throws an exception if key does not
+            // correspond to a title type.
+            TitleType type = GetTitleTypeByName(key);
+
+            // Need to use a custom function to create a SharedPtr<Title>
+            // to get the right derived class such as BaronyTitle, CountyTitle...
+            SharedPtr<Title> title = MakeTitle(type, key, value.Get("color"));
+
+            if(type == TitleType::BARONY) {
+                SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+                baronyTitle->SetProvinceId(data.Get("province"));
+            }
+            else {
+                SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
+                std::vector<SharedPtr<Title>> dejureTitles = ParseTitles(value);
+
+                for(auto& dejureTitle : dejureTitles) {
+                    highTitle->AddDejureTitle(dejureTitle);
+                }
+
+                if(type != TitleType::COUNTY && value.ContainsKey("capital")) {
+                    std::string capitalName = value.Get("capital");
+                    if(m_Titles.count(capitalName) > 0 && IsInstance<CountyTitle>(m_Titles[capitalName])) {
+                        highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(m_Titles[capitalName]));
+                    }
+                }
+            }
+
+            m_Titles[key] = title;
+            m_TitlesByType[type].push_back(title);
+            titles.push_back(title);
+        }
+        catch(const std::runtime_error& e) {}
+    }
+
+    return titles;
 }
 
 void Mod::Export() {

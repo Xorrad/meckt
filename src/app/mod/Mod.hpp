@@ -20,8 +20,10 @@ public:
     void LoadProvincesDefinition();
     void LoadProvincesTerrain();
     void LoadProvincesInfo();
-    void LoadTitlesHistory();
     void LoadTitles();
+    void LoadTitlesHistory();
+
+    std::vector<SharedPtr<Title>> ParseTitles(Parser::Node& data);
 
     void Export();
     void ExportProvincesDefinition();
@@ -35,6 +37,9 @@ private:
 
     std::map<uint32_t, SharedPtr<Province>> m_Provinces;
     std::map<int, SharedPtr<Province>> m_ProvincesByIds;
+    
+    std::map<std::string, SharedPtr<Title>> m_Titles;
+    std::map<TitleType, std::vector<SharedPtr<Title>>> m_TitlesByType;
 
     TerrainType m_DefaultLandTerrain;
     TerrainType m_DefaultSeaTerrain;

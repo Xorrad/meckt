@@ -6,8 +6,8 @@ enum class MapMode {
     RIVERS,
     TERRAIN,
     CULTURE,
-    FAITH,
+    RELIGION,
     COUNT,
 };
 
-const std::vector<const char*> MapModeLabels = { "Provinces", "Heightmap", "Rivers", "Terrain", "Culture", "Faith" };
+const std::vector<const char*> MapModeLabels = { "Provinces", "Heightmap", "Rivers", "Terrain", "Culture", "Religion" };

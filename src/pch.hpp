@@ -38,7 +38,12 @@ namespace Parser {
 class Mod;
 class Province;
 class Title;
-class Barony;
+class HighTitle;
+class BaronyTitle;
+class CountyTitle;
+class DuchyTitle;
+class KingdomTitle;
+class EmpireTitle;
 
 class Menu;
 class HomeMenu;
