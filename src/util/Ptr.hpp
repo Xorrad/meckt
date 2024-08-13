@@ -15,3 +15,8 @@ template <typename T, typename ...Args>
 UniquePtr<T> MakeUnique(Args&& ...args) {
     return std::make_unique<T>(std::forward<Args>(args)...);
 }
+
+template <typename Derived, typename Base>
+inline bool IsInstance(const SharedPtr<Base>& ptr) {
+    return dynamic_cast<Derived*>(ptr.get());
+}
