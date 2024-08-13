@@ -89,7 +89,7 @@ void Node::Push(const RawValue& value) {
 }
 
 Node& Node::Get(const Key& key) {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
 
     // if(this->ContainsKey(key))
@@ -99,25 +99,25 @@ Node& Node::Get(const Key& key) {
 }
 
 const Node& Node::Get(const Key& key) const {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
     return this->GetNodeHolder()->m_Values[key];
 }
 
 std::map<Key, Node>& Node::GetEntries() {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
     return this->GetNodeHolder()->m_Values;
 }
 
 const std::map<Key, Node>& Node::GetEntries() const {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
     return this->GetNodeHolder()->m_Values;
 }
 
 // std::vector<Node&> Node::GetValues() {
-//     if(this->GetType() != ValueType::NODE)
+//     if(!this->Is(ValueType::NODE)
 //         throw std::runtime_error("error: invalid use of 'Node::GetValues' on leaf node.");
     
 //     std::vector<Node&> values;
@@ -129,7 +129,7 @@ const std::map<Key, Node>& Node::GetEntries() const {
 // }
 
 std::vector<Key> Node::GetKeys() const {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::GetKeys' on leaf node.");
     
     std::vector<Key> keys;
@@ -141,67 +141,94 @@ std::vector<Key> Node::GetKeys() const {
 }
 
 bool Node::ContainsKey(const Key& key) const{
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::ContainsKey' on leaf node.");
     return this->GetNodeHolder()->m_Values.count(key) > 0;
 }
 
 void Node::Put(const Key& key, const Node& node) {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Put' on leaf node.");
     this->GetNodeHolder()->m_Values[key] = node;
 }
 
 Node::operator int() const {
-    if(this->GetType() != ValueType::NUMBER)
+    if(!this->Is(ValueType::NUMBER))
         throw std::runtime_error("error: invalid cast from 'node' to type 'int'");
     return (int) std::get<double>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator double() const {
-    if(this->GetType() != ValueType::NUMBER)
+    if(!this->Is(ValueType::NUMBER))
         throw std::runtime_error("error: invalid cast from 'node' to type 'double'");
     return std::get<double>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator bool() const {
-    if(this->GetType() != ValueType::BOOL)
+    if(!this->Is(ValueType::BOOL))
         throw std::runtime_error("error: invalid cast from 'node' to type 'bool'");
     return std::get<bool>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator std::string() const {
-    if(this->GetType() != ValueType::STRING)
+    if(!this->Is(ValueType::STRING))
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::string'");
     return std::get<std::string>(this->GetLeafHolder()->m_Value);
 }
 
+Node::operator Date() const {
+    if(!this->Is(ValueType::DATE))
+        throw std::runtime_error("error: invalid cast from 'node' to type 'Date'");
+    return std::get<Date>(this->GetLeafHolder()->m_Value);
+}
+
+Node::operator ScopedString() const {
+    if(!this->Is(ValueType::SCOPED_STRING))
+        throw std::runtime_error("error: invalid cast from 'node' to type 'ScopedString'");
+    return std::get<ScopedString>(this->GetLeafHolder()->m_Value);
+}
+
 Node::operator std::vector<double>&() const {
-    if(this->GetType() != ValueType::NUMBER_LIST)
+    if(!this->Is(ValueType::NUMBER_LIST))
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<double>&'");
     return std::get<std::vector<double>>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator std::vector<bool>&() const {
-    if(this->GetType() != ValueType::BOOL_LIST)
+    if(!this->Is(ValueType::BOOL_LIST))
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<bool>&'");
     return std::get<std::vector<bool>>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator std::vector<std::string>&() const {
-    if(this->GetType() != ValueType::STRING_LIST)
+    if(!this->Is(ValueType::STRING_LIST))
         throw std::runtime_error("error: invalid cast from 'node' to type 'std::vector<std::string>&'");
     return std::get<std::vector<std::string>>(this->GetLeafHolder()->m_Value);
 }
 
 Node::operator RawValue&() const {
-    if(this->GetType() == ValueType::NODE)
+    if(this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid cast from 'node' to type 'RawValue&'");
     return this->GetLeafHolder()->m_Value;
 }
 
+Node::operator Key() const {
+    switch(this->GetType()) {
+        case ValueType::NUMBER:
+            return std::get<double>(this->GetLeafHolder()->m_Value);
+        case ValueType::STRING:
+            return std::get<std::string>(this->GetLeafHolder()->m_Value);
+        case ValueType::DATE:
+            return std::get<Date>(this->GetLeafHolder()->m_Value);
+        case ValueType::SCOPED_STRING:
+            return std::get<ScopedString>(this->GetLeafHolder()->m_Value);
+        default:
+            throw std::runtime_error("error: invalid cast from 'node' to type 'Key'");
+    }
+}
+
 Node::operator sf::Color() const {
-    if(this->GetType() != ValueType::NUMBER_LIST)
+    if(!this->Is(ValueType::NUMBER_LIST))
         throw std::runtime_error("error: invalid cast from 'node' to type 'sf::Color&'");
     
     std::vector<double> values = std::get<std::vector<double>>(this->GetLeafHolder()->m_Value);
@@ -221,7 +248,7 @@ Node& Node::operator=(const RawValue& value) {
 }
 
 Node& Node::operator=(const Node& value) {
-    if(this->GetType() != ValueType::NODE && value.GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE) && !value.Is(ValueType::NODE))
         this->GetLeafHolder()->m_Value = value.GetLeafHolder()->m_Value;
     else
         m_Value = value.m_Value->Copy();
@@ -229,13 +256,13 @@ Node& Node::operator=(const Node& value) {
 }
 
 Node& Node::operator [](const Key& key) {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'operator[]' on leaf node.");
     return this->Get(key);
 }
 
 const Node& Node::operator [](const Key& key) const {
-    if(this->GetType() != ValueType::NODE)
+    if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'operator[] const' on leaf node.");
     return this->Get(key);
 }
@@ -336,7 +363,7 @@ Node Parser::Parse(std::deque<PToken>& tokens) {
         switch(state) {
             case KEY:
                 if(token->Is(TokenType::IDENTIFIER)) {
-                    key = std::get<std::string>(token->GetValue());
+                    key = ParseIdentifier(token, tokens);
                     state = ParsingState::OPERATOR;
                     break;
                 }
@@ -352,6 +379,7 @@ Node Parser::Parse(std::deque<PToken>& tokens) {
                     state = ParsingState::OPERATOR;
                     break;
                 }
+
                 throw std::runtime_error(fmt::format("Unexpected token while parsing key ({}).", (int) token->GetType()));
                 break;
 
@@ -427,7 +455,7 @@ Node Parser::Impl::ParseNode(std::deque<PToken>& tokens) {
 
     // Handle simple/raw values such as number, bool, string...
     else if(!token->Is(TokenType::LEFT_BRACE)) {
-        return ParseRaw(token);
+        return ParseRaw(token, tokens);
     }
 
     // Handle lists: { 1 2 3 4 5 }
@@ -449,14 +477,14 @@ Node Parser::Impl::ParseNode(std::deque<PToken>& tokens) {
     // throw std::runtime_error("error: failed to parse node value.");
 }
 
-Node Parser::Impl::ParseRaw(PToken token) {
+Node Parser::Impl::ParseRaw(PToken token, std::deque<PToken>& tokens) {
     switch(token->GetType()) {
         case TokenType::BOOLEAN:
             return Node(std::get<bool>(token->GetValue()));
         case TokenType::DATE:
             return Node(std::get<Date>(token->GetValue()));
         case TokenType::IDENTIFIER:
-            return Node(std::get<std::string>(token->GetValue()));
+            return ParseIdentifier(token, tokens);
         case TokenType::NUMBER:
             return Node(std::get<double>(token->GetValue()));
         case TokenType::STRING:
@@ -464,6 +492,23 @@ Node Parser::Impl::ParseRaw(PToken token) {
         default:
             throw std::runtime_error("error: unexpected token while parsing value.");
     }
+}
+
+Node Parser::Impl::ParseIdentifier(PToken token, std::deque<PToken>& tokens) {
+    if(!token->Is(TokenType::IDENTIFIER))
+        throw std::runtime_error("error: unexpected token while parsing string.");
+
+    std::string firstValue = std::get<std::string>(token->GetValue());
+
+    // Check if the token is a scope such as in: "scope:value"
+    if(tokens.size() < 2 || !tokens.at(0)->Is(TokenType::TWO_DOTS) || !tokens.at(1)->Is(TokenType::IDENTIFIER))
+        return Node(firstValue);
+
+    std::string secondValue = std::get<std::string>(tokens.at(1)->GetValue());
+    tokens.pop_front();
+    tokens.pop_front();
+    
+    return Node(ScopedString(firstValue, secondValue));
 }
 
 Node Parser::Impl::ParseRange(std::deque<PToken>& tokens) {
@@ -599,7 +644,7 @@ void Parser::Benchmark() {
 
     // Display the result.
     fmt::println("\n------------------RESULT--------------------\n");
-    fmt::println("\n{}", result);
+    // fmt::println("{}", result);
     fmt::println("\n--------------------------------------------\n");
 
     ///////////////////////////
@@ -631,6 +676,9 @@ void Parser::Benchmark() {
         fmt::println("number => {}", result.Get("number"));
         fmt::println("bool => {}", result.Get("bool"));
         fmt::println("date => {}", result.Get("date"));
+        fmt::println("scope:value => {}", result.Get(ScopedString("scope", "value")));
+        // fmt::println("scope => {}", (ScopedString) result.Get("scope"));
+        
 
         // Test date as key
         fmt::println("1000.1.1 => {}", result.Get(Date(1000, 1, 1)));

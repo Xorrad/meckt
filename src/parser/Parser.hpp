@@ -6,14 +6,15 @@
 #include <ranges>
 
 namespace Parser {
-    using Key = std::variant<double, std::string, Date>;
-    using RawValue = std::variant<double, bool, std::string, Date, std::vector<double>, std::vector<bool>, std::vector<std::string>>;
+    using Key = std::variant<double, std::string, Date, ScopedString>;
+    using RawValue = std::variant<double, bool, std::string, Date, ScopedString, std::vector<double>, std::vector<bool>, std::vector<std::string>>;
 
     enum class ValueType {
         NUMBER,
         BOOL,
         STRING,
         DATE,
+        SCOPED_STRING,
         NUMBER_LIST,
         BOOL_LIST,
         STRING_LIST,
@@ -49,10 +50,13 @@ namespace Parser {
             operator double() const;
             operator bool() const;
             operator std::string() const;
+            operator Date() const;
+            operator ScopedString() const;
             operator std::vector<double>&() const;
             operator std::vector<bool>&() const;
             operator std::vector<std::string>&() const;
             operator RawValue&() const;
+            operator Key() const;
             operator sf::Color() const;
 
             Node& operator=(const RawValue& value);
@@ -115,7 +119,8 @@ namespace Parser {
     
     namespace Impl {
         Node ParseNode(std::deque<PToken>& tokens);
-        Node ParseRaw(PToken token);
+        Node ParseRaw(PToken token, std::deque<PToken>& tokens);
+        Node ParseIdentifier(PToken token, std::deque<PToken>& tokens);
         Node ParseRange(std::deque<PToken>& tokens);
 
         template<typename T>
@@ -143,6 +148,7 @@ public:
             case 0: return format_to(ctx.out(), "{}", std::get<double>(key));
             case 1: return format_to(ctx.out(), "{}", std::get<std::string>(key));
             case 2: return format_to(ctx.out(), "{}", std::get<Date>(key));
+            case 3: return format_to(ctx.out(), "{}", std::get<ScopedString>(key));
         }
         return format_to(ctx.out(), "");
     }
@@ -166,6 +172,8 @@ public:
                 return format_to(ctx.out(), "{}", std::get<std::string>(value));
             case Parser::ValueType::DATE:
                 return format_to(ctx.out(), "{}", std::get<Date>(value));
+            case Parser::ValueType::SCOPED_STRING:
+                return format_to(ctx.out(), "{}", std::get<ScopedString>(value));
             case Parser::ValueType::NUMBER_LIST:
                 return format_to(ctx.out(), "{{ {} }}", fmt::join(
                     std::views::transform(std::get<std::vector<double>>(value), [](const auto& v) {

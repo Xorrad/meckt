@@ -17,6 +17,7 @@
 #include "util/String.hpp"
 #include "util/File.hpp"
 #include "util/Date.hpp"
+#include "util/ScopedString.hpp"
 #include "app/Configuration.hpp"
 
 #include "app/map/MapMode.hpp"
