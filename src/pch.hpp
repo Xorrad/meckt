@@ -6,6 +6,7 @@
 #include <vector>
 #include <variant>
 #include <deque>
+#include <set>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>

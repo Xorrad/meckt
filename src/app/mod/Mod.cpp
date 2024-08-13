@@ -164,7 +164,7 @@ void Mod::LoadProvincesTerrain() {
 }
 
 void Mod::LoadProvincesInfo() {
-    std::vector<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
+    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
 
     for(const auto& filePath : filesPath) {
         Parser::Node result = Parser::Parse(filePath);
@@ -189,14 +189,13 @@ void Mod::LoadTitlesHistory() {
 }
 
 void Mod::LoadTitles() {
-    std::vector<std::string> filesPath = File::ListFiles(m_Dir + "/common/landed_titles/");
+    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/common/landed_titles/");
 
     for(int i = 0; i < (int) TitleType::COUNT; i++)
         m_TitlesByType[(TitleType) i] = std::vector<SharedPtr<Title>>();
 
     for(const auto& filePath : filesPath) {
         Parser::Node data = Parser::Parse(filePath);
-        
         std::vector<SharedPtr<Title>> titles = ParseTitles(data);
     }
 }
