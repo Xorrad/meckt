@@ -3,6 +3,7 @@
 class Menu {
 public:
     Menu(App* app, const std::string& name);
+    virtual ~Menu() = default;
 
     App* GetApp() const;
     std::string GetName() const;
