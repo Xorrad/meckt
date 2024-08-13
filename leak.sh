@@ -1,1 +1,1 @@
-valgrind --leak-check=full ./bin/xme
+valgrind --leak-check=full --log-file="valgrind.txt" ./bin/xme

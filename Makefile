@@ -39,7 +39,7 @@ DEPENDENCIES := $(OBJECTS:.o=.d)
 # Build type (default, debug, release)
 BUILD_TYPE := debug
 ifeq ($(BUILD_TYPE),debug)
-    CXXFLAGS += -O0 -DDEBUG -g
+    CXXFLAGS += -O0 -DDEBUG -g #-fsanitize=address
 else ifeq ($(BUILD_TYPE),release)
     CXXFLAGS += -O3 -DNDEBUG
 endif
