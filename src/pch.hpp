@@ -16,6 +16,7 @@
 #include "util/Logger.hpp"
 #include "util/String.hpp"
 #include "util/File.hpp"
+#include "util/Color.hpp"
 #include "util/Date.hpp"
 #include "util/ScopedString.hpp"
 #include "app/Configuration.hpp"

@@ -17,7 +17,7 @@ public:
     std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
 
     void LoadMapModeTexture(sf::Texture& texture, MapMode mode);
-    void UpdateTitlesImages(TitleType type);
+    void UpdateTitlesImages(sf::Texture& texture, TitleType type);
 
     void Load();
     void LoadDefaultMapFile();

@@ -61,33 +61,36 @@ void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
         case MapMode::RELIGION:
             return;
         case MapMode::COUNTY:
-            UpdateTitlesImages(TitleType::COUNTY);
-            texture.loadFromImage(m_TitlesImage);
+            UpdateTitlesImages(texture, TitleType::COUNTY);
+            // texture.loadFromImage(m_TitlesImage);
             return;
         case MapMode::DUCHY:
-            UpdateTitlesImages(TitleType::DUCHY);
-            texture.loadFromImage(m_TitlesImage);
+            UpdateTitlesImages(texture, TitleType::DUCHY);
+            // texture.loadFromImage(m_TitlesImage);
             return;
         case MapMode::KINGDOM:
-            UpdateTitlesImages(TitleType::KINGDOM);
-            texture.loadFromImage(m_TitlesImage);
+            UpdateTitlesImages(texture, TitleType::KINGDOM);
+            // texture.loadFromImage(m_TitlesImage);
             return;
         case MapMode::EMPIRE:
-            UpdateTitlesImages(TitleType::EMPIRE);
-            texture.loadFromImage(m_TitlesImage);
+            UpdateTitlesImages(texture, TitleType::EMPIRE);
+            // texture.loadFromImage(m_TitlesImage);
             return;
         default:
             return;
     }
 }
 
-void Mod::UpdateTitlesImages(TitleType type) {
+void Mod::UpdateTitlesImages(sf::Texture& texture, TitleType type) {
+    // Used for benchmarking.
+    sf::Clock clock;
+    
     // Map provinces color to the titles color and then when 
     // updating the image, swap the color of each pixel.
-    std::map<sf::Uint32, sf::Color> colors;
+    std::unordered_map<sf::Uint32, sf::Uint32> colors;
 
+    // Determine which liege title to choose depending on type.
     std::function<const SharedPtr<HighTitle>(const SharedPtr<BaronyTitle>&)> GetLiegeTitle;
-
     switch(type) {
         case TitleType::COUNTY:
             GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle(); };
@@ -106,30 +109,99 @@ void Mod::UpdateTitlesImages(TitleType type) {
     }
 
     for(const auto& [provinceColorId, province] : m_Provinces) {
+        sf::Uint32 provinceColor = province->GetColor().toInteger();
+
         if(m_Titles.count(province->GetName()) == 0) {
-            // INFO("{}", province->GetName());
-            colors[province->GetColor().toInteger()] = province->GetColor();
             continue;
         }
 
         const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(m_Titles[province->GetName()]);
         if(barony->GetLiegeTitle() == nullptr) {
-            colors[province->GetColor().toInteger()] = province->GetColor();
             continue;
         }
-        
+
         const SharedPtr<HighTitle>& liege = GetLiegeTitle(barony);
-        colors[province->GetColor().toInteger()] = liege->GetColor();
+        colors[provinceColor] = liege->GetColor().toInteger();
+    }
+    // fmt::println("mapping colors: {}", String::DurationFormat(clock.restart()));
+    // fmt::println("mapped: {} colors", colors.size());
+
+    uint width = m_ProvinceImage.getSize().x;
+    uint height = m_ProvinceImage.getSize().y;
+    uint pixels = width * height * 4;
+
+    // Use vectors to avoid using SFML getters and setters for pixels.
+    const sf::Uint8* provincesPixels = m_ProvinceImage.getPixelsPtr();
+    std::vector<sf::Uint8> titlesPixels = std::vector<sf::Uint8>();
+    titlesPixels.reserve(width * height * 4);
+    // fmt::println("image=[{}, {}]\tbytes={}", width, height, titlesPixels.capacity());
+    // fmt::println("initializing pixels array: {}", String::DurationFormat(clock.restart()));
+
+    const int threadsCount = 6;
+    std::vector<UniquePtr<sf::Thread>> threads;
+
+    // Split the image vertically between all the threads.
+    const uint threadRange = pixels / threadsCount;
+
+    for(uint i = 0; i < threadsCount; i++) {
+
+        threads.push_back(MakeUnique<sf::Thread>([&, i](){
+            uint startIndex = i * threadRange;
+            uint endIndex = (i == threadsCount-1) ? pixels : (i+1) * threadRange;
+            uint index = startIndex;
+            // // fmt::println("i={}\t[{},{}]", i, startIndex, endIndex);
+
+            sf::Uint32 provinceColor = 0x000000FF;
+            sf::Uint32 previousProvinceColor = 0x00000000;
+
+            // Cast to edit directly the bytes of the color and pixels.
+            // - colorPtr is used to read the color from the provinces map image.
+            // - titlePtr is used to access the color composites (RGBA)
+            //   of the pixels from the array we are painting.
+            // - replacePtr is the liege color to paint on the new texture.
+            char* colorPtr = static_cast<char*>((void*) &provinceColor);
+            char* titlePtr = static_cast<char*>((void*) &titlesPixels[startIndex]);
+            char* replacePtr = NULL;
+            const char alpha = (const char) 0xFF;
+
+            while(index < endIndex) {
+                // Copy the four bytes corresponding to RGBA from the provinces image pixels
+                // to the array for the titles image.
+                // The bytes need to be flipped, otherwise provinceColor would
+                // be ABGR and we couldn't find the associated title color in the map.
+                colorPtr[3] = provincesPixels[index++]; // R
+                colorPtr[2] = provincesPixels[index++]; // G
+                colorPtr[1] = provincesPixels[index++]; // B
+                index++;
+
+                // Search for the corresponding title color in the map only
+                // if it isn't the same color has the previous one.
+                if(previousProvinceColor != provinceColor) {
+                    const auto& it = colors.find(provinceColor);
+                    replacePtr = (it == colors.end()) ? colorPtr : static_cast<char*>((void*) &it->second);
+                }
+                
+                // Replace the bits of the pixel in the titles image
+                // where each byte correspond to a color composite (RGBA).
+                *titlePtr++ = replacePtr[3]; // R
+                *titlePtr++ = replacePtr[2]; // G
+                *titlePtr++ = replacePtr[1]; // B
+                *titlePtr++ = alpha;
+
+                previousProvinceColor = provinceColor;
+            }    
+        
+        }));
+        threads[threads.size()-1]->launch();
     }
 
-    //m_TitlesImage.create(m_ProvinceImage.getSize().x, m_ProvinceImage.getSize().y);
-    m_TitlesImage = m_ProvinceImage;
+    for(auto& thread : threads)
+        thread->wait();
+    // fmt::println("filling pixels: {}", String::DurationFormat(clock.restart()));
 
-    for(uint y = 0; y < m_TitlesImage.getSize().y; y++) {
-        for(uint x = 0; x < m_TitlesImage.getSize().x; x++) {
-            m_TitlesImage.setPixel(x, y, colors[m_ProvinceImage.getPixel(x, y).toInteger()]);
-        }
-    }
+    // m_TitlesImage.create(width, height, titlesPixels.data());
+    texture.update(titlesPixels.data());
+    // fmt::println("initializing image: {}", String::DurationFormat(clock.restart()));
 }
 
 void Mod::Load() {
