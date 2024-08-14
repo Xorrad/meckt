@@ -37,6 +37,23 @@ std::map<int, SharedPtr<Province>>& Mod::GetProvincesByIds() {
     return m_ProvincesByIds;
 }
 
+SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type) {
+    if(!m_Titles.count(province->GetName()))
+        return nullptr;
+
+    const SharedPtr<Title>& barony = m_Titles[province->GetName()];
+
+    // Determine which liege title to choose depending on type.
+    switch(type) {
+        case TitleType::BARONY:  return barony;
+        case TitleType::COUNTY:  return barony->GetLiegeTitle();
+        case TitleType::DUCHY:   return barony->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::KINGDOM: return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::EMPIRE:  return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+        default: return nullptr;
+    }
+}
+
 std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
     return m_Titles;
 }
@@ -60,21 +77,20 @@ void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
             return;
         case MapMode::RELIGION:
             return;
+        case MapMode::BARONY:
+            UpdateTitlesImages(texture, TitleType::BARONY);
+            return;
         case MapMode::COUNTY:
             UpdateTitlesImages(texture, TitleType::COUNTY);
-            // texture.loadFromImage(m_TitlesImage);
             return;
         case MapMode::DUCHY:
             UpdateTitlesImages(texture, TitleType::DUCHY);
-            // texture.loadFromImage(m_TitlesImage);
             return;
         case MapMode::KINGDOM:
             UpdateTitlesImages(texture, TitleType::KINGDOM);
-            // texture.loadFromImage(m_TitlesImage);
             return;
         case MapMode::EMPIRE:
             UpdateTitlesImages(texture, TitleType::EMPIRE);
-            // texture.loadFromImage(m_TitlesImage);
             return;
         default:
             return;
@@ -89,39 +105,13 @@ void Mod::UpdateTitlesImages(sf::Texture& texture, TitleType type) {
     // updating the image, swap the color of each pixel.
     std::unordered_map<sf::Uint32, sf::Uint32> colors;
 
-    // Determine which liege title to choose depending on type.
-    std::function<const SharedPtr<HighTitle>(const SharedPtr<BaronyTitle>&)> GetLiegeTitle;
-    switch(type) {
-        case TitleType::COUNTY:
-            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle(); };
-            break;
-        case TitleType::DUCHY:
-            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle()->GetLiegeTitle(); };
-            break;
-        case TitleType::KINGDOM:
-            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle(); };
-            break;
-        case TitleType::EMPIRE:
-            GetLiegeTitle = [&](const SharedPtr<BaronyTitle>& barony) { return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle(); };
-            break;
-        default:
-            return;
-    }
-
     for(const auto& [provinceColorId, province] : m_Provinces) {
-        sf::Uint32 provinceColor = province->GetColor().toInteger();
 
-        if(m_Titles.count(province->GetName()) == 0) {
+        if(m_Titles.count(province->GetName()) == 0)
             continue;
-        }
 
-        const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(m_Titles[province->GetName()]);
-        if(barony->GetLiegeTitle() == nullptr) {
-            continue;
-        }
-
-        const SharedPtr<HighTitle>& liege = GetLiegeTitle(barony);
-        colors[provinceColor] = liege->GetColor().toInteger();
+        const SharedPtr<Title>& liege = GetProvinceLiegeTitle(province, type);
+        colors[province->GetColor().toInteger()] = liege->GetColor().toInteger();
     }
     // fmt::println("mapping colors: {}", String::DurationFormat(clock.restart()));
     // fmt::println("mapped: {} colors", colors.size());

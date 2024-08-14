@@ -1,5 +1,7 @@
 #pragma once
 
+enum class TitleType : int;
+
 enum class MapMode {
     PROVINCES,
     HEIGHTMAP,
@@ -7,6 +9,7 @@ enum class MapMode {
     TERRAIN,
     CULTURE,
     RELIGION,
+    BARONY,
     COUNTY,
     DUCHY,
     KINGDOM,
@@ -17,5 +20,13 @@ enum class MapMode {
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
     "Terrain", "Culture", "Religion",
-    "County", "Duchy", "Kingdom", "Empire" 
+    "Barony", "County", "Duchy", "Kingdom", "Empire" 
 };
+
+inline TitleType MapModeToTileType(MapMode mode) {
+    return (TitleType) ((int) mode - 6);
+}
+
+inline bool MapModeIsTitle(MapMode mode) {
+    return ((int) mode) >= (int) MapMode::BARONY && ((int) mode) <= (int) MapMode::EMPIRE;
+}

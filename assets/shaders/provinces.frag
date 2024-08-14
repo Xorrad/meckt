@@ -1,6 +1,7 @@
 // const int MAX_SELECTED_PROVINCES 1000;
 
 uniform sampler2D texture;
+uniform sampler2D provincesTexture;
 uniform float time;
 uniform int mapMode;
 
@@ -19,7 +20,8 @@ bool IsSelected(vec4 color) {
 
 void main() {
     vec4 pixelColor = texture2D(texture, gl_TexCoord[0].xy);
-    bool selected = IsSelected(pixelColor);
+    vec4 provincePixelColor = texture2D(provincesTexture, gl_TexCoord[0].xy);
+    bool selected = IsSelected(provincePixelColor);
 
     if(!selected) {
         gl_FragColor = gl_Color * pixelColor;
