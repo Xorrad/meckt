@@ -139,10 +139,10 @@ EditingMenu::EditingMenu(App* app)
     m_TotalZoom = 1.f;
 
     m_HoverText.setCharacterSize(12);
-    m_HoverText.setString("No province selected.");
+    m_HoverText.setString("#");
     m_HoverText.setFillColor(sf::Color::White);
     m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
-    m_HoverText.setPosition({5, m_App->GetWindow().getSize().y - m_HoverText.getGlobalBounds().height - 10});
+    // m_HoverText.setPosition({5, m_App->GetWindow().getSize().y - m_HoverText.getGlobalBounds().height - 10});
 }
 
 SharedPtr<Province> EditingMenu::GetHoveredProvince() {
@@ -161,6 +161,33 @@ SharedPtr<Province> EditingMenu::GetHoveredProvince() {
         return nullptr;
 
     return mod->GetProvinces()[colorId];
+}
+
+void EditingMenu::UpdateHoveringText() {
+    SharedPtr<Province> province = this->GetHoveredProvince();
+    sf::Vector2i mousePosition = sf::Mouse::getPosition(m_App->GetWindow());
+
+    if(province == nullptr)
+        goto Hide;
+
+    if(m_MapMode == MapMode::PROVINCES) {
+        m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
+        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+        m_HoverText.setFillColor(brightenColor(province->GetColor()));
+        return;
+    }
+    else if(MapModeIsTitle(m_MapMode)) {
+        const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceLiegeTitle(province, MapModeToTileType(m_MapMode));
+        if(title == nullptr)
+            goto Hide;
+        m_HoverText.setString(fmt::format("{}", title->GetName()));
+        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+        m_HoverText.setFillColor(brightenColor(title->GetColor()));
+        return;
+    }
+
+    Hide:
+    m_HoverText.setString("");
 }
 
 void EditingMenu::ToggleCamera(bool enabled) {
@@ -204,13 +231,7 @@ void EditingMenu::Event(const sf::Event& event) {
     sf::RenderWindow& window = m_App->GetWindow();
 
     if(event.type == sf::Event::MouseMoved) {
-        SharedPtr<Province> province = this->GetHoveredProvince();
-        if(province != nullptr) {
-            m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
-        }
-        else {
-            m_HoverText.setString("No provinces hovered.");
-        }
+        this->UpdateHoveringText();
     }
     else if(event.type == sf::Event::MouseWheelMoved) {
         float delta = (-event.mouseWheel.delta)/50.f;

@@ -11,3 +11,9 @@ struct std::hash<sf::Color> {
         return res;
     }
 };
+
+inline sf::Color brightenColor(const sf::Color& color) {
+	if((color.r + color.g + color.b) >= (255*3/2))
+		return sf::Color::Black;
+	return sf::Color::White;
+}

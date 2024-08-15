@@ -44,6 +44,7 @@ public:
 
     SharedPtr<Province> GetHoveredProvince();
 
+    void UpdateHoveringText();
     void ToggleCamera(bool enabled);
     void SwitchMapMode(MapMode mode);
 
