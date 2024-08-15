@@ -21,7 +21,7 @@ bool IsSelected(vec4 color) {
 void main() {
     vec4 pixelColor = texture2D(texture, gl_TexCoord[0].xy);
     vec4 provincePixelColor = texture2D(provincesTexture, gl_TexCoord[0].xy);
-    bool selected = IsSelected(provincePixelColor);
+    bool selected = IsSelected(pixelColor);
 
     if(!selected) {
         gl_FragColor = gl_Color * pixelColor;

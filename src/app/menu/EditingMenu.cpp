@@ -89,23 +89,28 @@ void MapSelectionHandler::UpdateColors() {
         // The shader need the colors of provinces.
         // Ttherefore, we have to loop recursively through
         // each titles until we reach a barony tier and get the color.
-        std::function<void(const SharedPtr<Title>&)> PushTitleProvincesColor = [&](const SharedPtr<Title>& title) {
-            if(title->Is(TitleType::BARONY)) {
-                const SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
-                const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
-                sf::Color c = province->GetColor();
-                m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-                m_Count++;
-            }
-            else {
-                const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
-                for(const auto& dejureTitle : highTitle->GetDejureTitles())
-                    PushTitleProvincesColor(dejureTitle);
-            }
-        };
+        // std::function<void(const SharedPtr<Title>&)> PushTitleProvincesColor = [&](const SharedPtr<Title>& title) {
+        //     if(title->Is(TitleType::BARONY)) {
+        //         const SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
+        //         const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
+        //         sf::Color c = province->GetColor();
+        //         m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
+        //         m_Count++;
+        //     }
+        //     else {
+        //         const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+        //         for(const auto& dejureTitle : highTitle->GetDejureTitles())
+        //             PushTitleProvincesColor(dejureTitle);
+        //     }
+        // };
+        // for(const auto& title : m_Titles)
+        //     PushTitleProvincesColor(title);
 
-        for(const auto& title : m_Titles)
-            PushTitleProvincesColor(title);
+        for(const auto& title : m_Titles) {
+            sf::Color c = title->GetColor();
+            m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
+        }
+        m_Count = m_Titles.size();
     }
 
     this->UpdateShader();
@@ -168,6 +173,14 @@ void EditingMenu::ToggleCamera(bool enabled) {
     else {
         window.setView(previousView);
     }
+}
+
+void EditingMenu::SwitchMapMode(MapMode mode) {
+    m_MapMode = mode;
+    m_SelectionHandler.ClearSelection();
+    
+    m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
+    m_MapSprite.setTexture(m_MapTexture);
 }
 
 void EditingMenu::Update(sf::Time delta) {
@@ -257,8 +270,6 @@ void EditingMenu::Draw() {
     provinceShader.setUniform("texture", sf::Shader::CurrentTexture);
     provinceShader.setUniform("time", m_Clock.getElapsedTime().asSeconds());
     provinceShader.setUniform("mapMode", (int) m_MapMode);
-    // provinceShader.setUniformArray("selectedProvinces", m_SelectionHandler.GetColors().data(), m_SelectionHandler.GetColors().size());
-    // provinceShader.setUniform("selectedProvincesCount", (int) m_SelectionHandler.GetCount());
 
     // Main Menu Bar (File, View...)
     ImVec2 menuBarSize;
@@ -277,9 +288,7 @@ void EditingMenu::Draw() {
         if(ImGui::BeginMenu("View")) {
             for(int i = 0; i < (int) MapMode::COUNT; i++) {
                 if(ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode) i)) {
-                    m_MapMode = (MapMode) i;
-                    m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
-                    m_MapSprite.setTexture(m_MapTexture);
+                    this->SwitchMapMode((MapMode) i);
                 }    
             }
             ImGui::EndMenu();

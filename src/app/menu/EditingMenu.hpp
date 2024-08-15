@@ -45,6 +45,7 @@ public:
     SharedPtr<Province> GetHoveredProvince();
 
     void ToggleCamera(bool enabled);
+    void SwitchMapMode(MapMode mode);
 
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);
