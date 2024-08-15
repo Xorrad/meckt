@@ -319,9 +319,12 @@ void EditingMenu::Draw() {
     }
 
     // Right Sidebar (Province, Operations...)
-    ImGui::SetNextWindowPos(ImVec2(Configuration::windowResolution.x - 400, menuBarSize.y));
-    ImGui::SetNextWindowSize(ImVec2(400, Configuration::windowResolution.y - menuBarSize.y), ImGuiCond_Always);
-    if(ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
+    static ImVec2 mainWindowSize = ImVec2(400, Configuration::windowResolution.y - menuBarSize.y);
+    ImGui::SetNextWindowPos(ImVec2(Configuration::windowResolution.x - mainWindowSize.x, menuBarSize.y));
+    ImGui::SetNextWindowSize(mainWindowSize, ImGuiCond_Once);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(10.f, -1.f), ImVec2(INFINITY, -1.f));
+
+    if(ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
         if(ImGui::BeginTabBar("Main TabBar")) {
             if(ImGui::BeginTabItem("Province")) {
                 
@@ -467,9 +470,10 @@ void EditingMenu::Draw() {
             }
             ImGui::EndTabBar();
         }
-    }
 
-    ImGui::End();
+        mainWindowSize = ImGui::GetWindowSize();
+        ImGui::End();
+    }
 
     ToggleCamera(true);
 
