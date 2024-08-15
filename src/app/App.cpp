@@ -36,7 +36,7 @@ void App::Init() {
     m_DeltaClock.restart();
 
     // Initialize SFML.
-    m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Xorrad's Map Editor");
+    m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Meckt");
     // m_Window.setFramerateLimit(60);
     // m_Window.setVerticalSyncEnabled(true);
     

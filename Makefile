@@ -11,7 +11,7 @@ CXX      := g++
 CXXFLAGS := -std=c++20 -pedantic-errors -Wall -Wno-format-security -Wno-sign-compare
 
 # Targets
-TARGET   := xme
+TARGET   := meckt
 
 # Directories
 SRC_DIR     := src
