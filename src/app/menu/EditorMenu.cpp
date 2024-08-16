@@ -361,7 +361,7 @@ void EditorMenu::SetupDockspace() {
 
     // Get the central dockspace ID and create the central dockspace
     ImGuiID dockspaceID = ImGui::GetID("MainDockspace");
-    ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_PassthruCentralNode;
+    ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_PassthruCentralNode;
     ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
 
     // Setup docking layout only once
@@ -376,7 +376,7 @@ void EditorMenu::SetupDockspace() {
 
         // Split the right dockspace into top and bottom
         ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Right, 0.25f, nullptr, &dockspaceID);
-        ImGuiID dockDown = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.5f, nullptr, &dockRight);
+        ImGuiID dockDown = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.6f, nullptr, &dockRight);
 
         // Create docked windows
         ImGui::DockBuilderDockWindow("Titles", dockRight);
