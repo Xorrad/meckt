@@ -282,50 +282,7 @@ void EditingMenu::Event(const sf::Event& event) {
     ToggleCamera(false);
 }
 
-void EditingMenu::SetupDockspace() {
-    // Get the position and size of the "work area", which does not include the menu bar.
-    ImVec2 workPos = ImGui::GetMainViewport()->WorkPos;
-    ImVec2 workSize = ImGui::GetMainViewport()->WorkSize;
-
-    // Setup a fullscreen window
-    ImGui::SetNextWindowPos(workPos);
-    ImGui::SetNextWindowSize(workSize);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
-    ImGui::Begin("Global Window", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground);
-
-    // Get the central dockspace ID and create the central dockspace
-    ImGuiID dockspaceID = ImGui::GetID("MainDockspace");
-    ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_PassthruCentralNode;
-    ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
-
-    // Setup docking layout only once
-    static bool dockspaceInitialized = false;
-    if (!dockspaceInitialized) {
-        dockspaceInitialized = true;
-
-        ImGui::DockBuilderRemoveNode(dockspaceID);
-        ImGui::DockBuilderAddNode(dockspaceID, dockspaceFlags | ImGuiDockNodeFlags_DockSpace);
-		ImGui::DockBuilderSetNodePos(dockspaceID, workPos);
-		ImGui::DockBuilderSetNodeSize(dockspaceID, workSize);
-
-        // Split the right dockspace into top and bottom
-        ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Right, 0.25f, nullptr, &dockspaceID);
-        ImGuiID dockDown = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.5f, nullptr, &dockRight);
-
-        // Create docked windows
-        ImGui::DockBuilderDockWindow("Titles", dockRight);
-        ImGui::DockBuilderDockWindow("Properties", dockDown);
-
-        ImGui::DockBuilderFinish(dockspaceID);
-    }
-
-    ImGui::End();
-    ImGui::PopStyleVar();
-    ImGui::PopStyleVar();
-}
-
-void EditingMenu::Draw() {
+void EditingMenu::Render() {
     sf::RenderWindow& window = m_App->GetWindow();
     bool exitToMainMenu = false;
 
@@ -523,4 +480,48 @@ void EditingMenu::Draw() {
     if(exitToMainMenu) {
         m_App->OpenMenu(MakeUnique<HomeMenu>(m_App));
     }
+}
+
+
+void EditingMenu::SetupDockspace() {
+    // Get the position and size of the "work area", which does not include the menu bar.
+    ImVec2 workPos = ImGui::GetMainViewport()->WorkPos;
+    ImVec2 workSize = ImGui::GetMainViewport()->WorkSize;
+
+    // Setup a fullscreen window
+    ImGui::SetNextWindowPos(workPos);
+    ImGui::SetNextWindowSize(workSize);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+    ImGui::Begin("Global Window", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground);
+
+    // Get the central dockspace ID and create the central dockspace
+    ImGuiID dockspaceID = ImGui::GetID("MainDockspace");
+    ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_PassthruCentralNode;
+    ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
+
+    // Setup docking layout only once
+    static bool dockspaceInitialized = false;
+    if (!dockspaceInitialized) {
+        dockspaceInitialized = true;
+
+        ImGui::DockBuilderRemoveNode(dockspaceID);
+        ImGui::DockBuilderAddNode(dockspaceID, dockspaceFlags | ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodePos(dockspaceID, workPos);
+		ImGui::DockBuilderSetNodeSize(dockspaceID, workSize);
+
+        // Split the right dockspace into top and bottom
+        ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Right, 0.25f, nullptr, &dockspaceID);
+        ImGuiID dockDown = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.5f, nullptr, &dockRight);
+
+        // Create docked windows
+        ImGui::DockBuilderDockWindow("Titles", dockRight);
+        ImGui::DockBuilderDockWindow("Properties", dockDown);
+
+        ImGui::DockBuilderFinish(dockspaceID);
+    }
+
+    ImGui::End();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleVar();
 }

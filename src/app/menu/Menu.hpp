@@ -10,7 +10,7 @@ public:
 
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);
-    virtual void Draw();
+    virtual void Render();
 
 protected:
     App* m_App;

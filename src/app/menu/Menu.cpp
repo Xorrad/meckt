@@ -17,4 +17,4 @@ void Menu::Update(sf::Time delta) {}
 
 void Menu::Event(const sf::Event& event) {}
 
-void Menu::Draw() {}
+void Menu::Render() {}

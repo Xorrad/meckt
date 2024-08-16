@@ -83,7 +83,7 @@ void App::Run() {
 
         // Drawing.
         m_Window.clear();
-        m_ActiveMenu->Draw();
+        m_ActiveMenu->Render();
 
         ImGui::ShowDemoWindow();
         ImGui::SFML::Render(m_Window);

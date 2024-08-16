@@ -15,7 +15,7 @@ void HomeMenu::Event(const sf::Event& event) {
 
 }
 
-void HomeMenu::Draw() {
+void HomeMenu::Render() {
     static std::string error = "";
 
     ImGui::SetNextWindowPos(ImVec2(10, 10));
