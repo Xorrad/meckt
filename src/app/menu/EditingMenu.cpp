@@ -282,6 +282,49 @@ void EditingMenu::Event(const sf::Event& event) {
     ToggleCamera(false);
 }
 
+void EditingMenu::SetupDockspace() {
+    // Get the position and size of the "work area", which does not include the menu bar.
+    ImVec2 workPos = ImGui::GetMainViewport()->WorkPos;
+    ImVec2 workSize = ImGui::GetMainViewport()->WorkSize;
+
+    // Setup a fullscreen window
+    ImGui::SetNextWindowPos(workPos);
+    ImGui::SetNextWindowSize(workSize);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+    ImGui::Begin("Global Window", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground);
+
+    // Get the central dockspace ID and create the central dockspace
+    ImGuiID dockspaceID = ImGui::GetID("MainDockspace");
+    ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_PassthruCentralNode;
+    ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
+
+    // Setup docking layout only once
+    static bool dockspaceInitialized = false;
+    if (!dockspaceInitialized) {
+        dockspaceInitialized = true;
+
+        ImGui::DockBuilderRemoveNode(dockspaceID);
+        ImGui::DockBuilderAddNode(dockspaceID, dockspaceFlags | ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodePos(dockspaceID, workPos);
+		ImGui::DockBuilderSetNodeSize(dockspaceID, workSize);
+
+        // Split the right dockspace into top and bottom
+        ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Right, 0.25f, nullptr, &dockspaceID);
+        ImGuiID dockDown = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.5f, nullptr, &dockRight);
+
+        // Create docked windows
+        ImGui::DockBuilderDockWindow("Titles", dockRight);
+        ImGui::DockBuilderDockWindow("Properties", dockDown);
+
+        ImGui::DockBuilderFinish(dockspaceID);
+    }
+
+    ImGui::End();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleVar();
+}
+
 void EditingMenu::Draw() {
     sf::RenderWindow& window = m_App->GetWindow();
     bool exitToMainMenu = false;
@@ -293,7 +336,6 @@ void EditingMenu::Draw() {
     provinceShader.setUniform("mapMode", (int) m_MapMode);
 
     // Main Menu Bar (File, View...)
-    ImVec2 menuBarSize;
     if(ImGui::BeginMainMenuBar()) {
         if(ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save", "Ctrl+S")) {}
@@ -314,164 +356,156 @@ void EditingMenu::Draw() {
             }
             ImGui::EndMenu();
         }
-        menuBarSize = ImGui::GetWindowSize();
         ImGui::EndMainMenuBar();
     }
 
-    // Right Sidebar (Province, Operations...)
-    static ImVec2 mainWindowSize = ImVec2(400, Configuration::windowResolution.y - menuBarSize.y);
-    ImGui::SetNextWindowPos(ImVec2(Configuration::windowResolution.x - mainWindowSize.x, menuBarSize.y));
-    ImGui::SetNextWindowSize(mainWindowSize, ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(10.f, -1.f), ImVec2(INFINITY, -1.f));
+    this->SetupDockspace();
 
-    if(ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {
-        if(ImGui::BeginTabBar("Main TabBar")) {
-            if(ImGui::BeginTabItem("Province")) {
-                
-                for(auto& province : m_SelectionHandler.GetProvinces()) {
-                    
-                    if(ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                        ImGui::PushID(province->GetId());                        
+    static bool displayTitles = true;
+    if(displayTitles) {
+        if(ImGui::Begin("Titles", &displayTitles)) {
+        
+            if (ImGui::BeginTable("Titles Tree", 3, ImGuiTableFlags_Resizable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+                ImGui::TableSetupColumn("Color", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableHeadersRow();
 
-                        // Province id.
-                        ImGui::BeginDisabled();
-                        std::string id = std::to_string(province->GetId());
-                        ImGui::InputText("id", &id);
-                        ImGui::EndDisabled();
+                std::function<void(const SharedPtr<Title>&)> DisplayTitle = [&](const SharedPtr<Title>& title) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
 
-                        // Province barony name.
-                        ImGui::InputText("name", &province->GetName());
-
-                        // Province color code.
-                        float color[4] = {
-                            province->GetColor().r/255.f,
-                            province->GetColor().g/255.f,
-                            province->GetColor().b/255.f,
-                            province->GetColor().a/255.f
-                        };
-                        ImGui::BeginDisabled();
-                        if(ImGui::ColorEdit3("color", color)) {
-                            province->SetColor(sf::Color(color[0]*255, color[1]*255, color[2]*255, color[3]*255));
-                        }
-                        ImGui::EndDisabled();
-
-                        // Province terrain type.
-                        // if(province->IsSea()) ImGui::BeginDisabled();
-                        if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()])) {
-                            for (int i = 0; i < (int) TerrainType::COUNT; i++) {
-                                const bool isSelected = ((int) province->GetTerrain() == i);
-                                if (ImGui::Selectable(TerrainTypeLabels[i], isSelected))
-                                    province->SetTerrain((TerrainType) i);
-
-                                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                                if (isSelected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-                        // if(province->IsSea()) ImGui::EndDisabled();
-                        
-                        // ProvinceFlag checkboxes.
-                        bool isCoastal = province->HasFlag(ProvinceFlags::COASTAL);
-                        bool isLake = province->HasFlag(ProvinceFlags::LAKE);
-                        bool isIsland = province->HasFlag(ProvinceFlags::ISLAND);
-                        bool isLand = province->HasFlag(ProvinceFlags::LAND);
-                        bool isSea = province->HasFlag(ProvinceFlags::SEA);
-                        bool isRiver = province->HasFlag(ProvinceFlags::RIVER);
-                        bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
-
-                        if (ImGui::BeginTable("province flags", 2)) {
-                        
-                            ImGui::TableNextRow();
-                            ImGui::TableSetColumnIndex(0);
-                            if(ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
-                            ImGui::TableSetColumnIndex(1);
-                            if(ImGui::Checkbox("Lake", &isLake)) province->SetFlag(ProvinceFlags::LAKE, isLake);
-
-                            ImGui::TableNextRow();
-                            ImGui::TableSetColumnIndex(0);
-                            if(ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
-                            ImGui::TableSetColumnIndex(1);
-                            if(ImGui::Checkbox("Land", &isLand)) province->SetFlag(ProvinceFlags::LAND, isLand);
-                            
-                            ImGui::TableNextRow();
-                            ImGui::TableSetColumnIndex(0);
-                            if(ImGui::Checkbox("Sea", &isSea)) province->SetFlag(ProvinceFlags::SEA, isSea);
-                            ImGui::TableSetColumnIndex(1);
-                            if(ImGui::Checkbox("River", &isRiver)) province->SetFlag(ProvinceFlags::RIVER, isRiver);
-                            
-                            ImGui::TableNextRow();
-                            ImGui::TableSetColumnIndex(0);
-                            if(ImGui::Checkbox("Impassable", &isImpassable)) province->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
-
-                            ImGui::EndTable();
-                        }
-
-                        ImGui::InputText("culture", &province->GetCulture());
-                        ImGui::InputText("religion", &province->GetReligion());
-
-                        if (ImGui::BeginCombo("holding", ProvinceHoldingLabels[(int) province->GetHolding()])) {
-                            for (int i = 0; i < (int) ProvinceHolding::COUNT; i++) {
-                                const bool isSelected = ((int) province->GetHolding() == i);
-                                if (ImGui::Selectable(ProvinceHoldingLabels[i], isSelected))
-                                    province->SetHolding((ProvinceHolding) i);
-                                if (isSelected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-
-                        ImGui::PopID();
-                    }
-                }
-                ImGui::EndTabItem();
-            }
-            if(ImGui::BeginTabItem("Titles")) {
-
-                if (ImGui::BeginTable("Titles Tree", 3, ImGuiTableFlags_Resizable)) {
-                    ImGui::TableSetupColumn("Name");
-                    ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 50.0f);
-                    ImGui::TableSetupColumn("Color", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-                    ImGui::TableHeadersRow();
-
-                    std::function<void(const SharedPtr<Title>&)> DisplayTitle = [&](const SharedPtr<Title>& title) {
-                        ImGui::TableNextRow();
+                    if(title->Is(TitleType::BARONY)) {
+                        ImGui::TreeNodeEx(title->GetName().c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
                         ImGui::TableNextColumn();
-
-                        if(title->Is(TitleType::BARONY)) {
-                            ImGui::TreeNodeEx(title->GetName().c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%s", TitleTypeLabels[(int) title->GetType()]);
-                            ImGui::TableNextColumn();
-                            ImGui::Text("(%d, %d, %d)", title->GetColor().r, title->GetColor().g, title->GetColor().b);
+                        ImGui::Text("%s", TitleTypeLabels[(int) title->GetType()]);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("(%d, %d, %d)", title->GetColor().r, title->GetColor().g, title->GetColor().b);
+                    }
+                    else {
+                        SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
+                        bool open = ImGui::TreeNodeEx(title->GetName().c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", TitleTypeLabels[(int) title->GetType()]);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("(%d, %d, %d)", title->GetColor().r, title->GetColor().g, title->GetColor().b);
+                        if (open) {
+                            for(const auto& dejureTitle : highTitle->GetDejureTitles())
+                                DisplayTitle(dejureTitle);
+                            ImGui::TreePop();
                         }
-                        else {
-                            SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
-                            bool open = ImGui::TreeNodeEx(title->GetName().c_str());
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%s", TitleTypeLabels[(int) title->GetType()]);
-                            ImGui::TableNextColumn();
-                            ImGui::Text("(%d, %d, %d)", title->GetColor().r, title->GetColor().g, title->GetColor().b);
-                            if (open) {
-                                for(const auto& dejureTitle : highTitle->GetDejureTitles())
-                                    DisplayTitle(dejureTitle);
-                                ImGui::TreePop();
-                            }
-                        }
-                    };
+                    }
+                };
 
-                    for(const auto& empireTitle : m_App->GetMod()->GetTitlesByType()[TitleType::EMPIRE])
-                        DisplayTitle(empireTitle);
+                for(const auto& empireTitle : m_App->GetMod()->GetTitlesByType()[TitleType::EMPIRE])
+                    DisplayTitle(empireTitle);
 
-                    ImGui::EndTable();
-                }
-                
-                ImGui::EndTabItem();
+                ImGui::EndTable();
             }
-            ImGui::EndTabBar();
         }
+        ImGui::End();
+    }
 
-        mainWindowSize = ImGui::GetWindowSize();
+    static bool displayProperties = true;
+    if(displayProperties) {
+        if(ImGui::Begin("Properties", &displayProperties)) {
+            for(auto& province : m_SelectionHandler.GetProvinces()) {
+                
+                if(ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::PushID(province->GetId());                        
+
+                    // Province id.
+                    ImGui::BeginDisabled();
+                    std::string id = std::to_string(province->GetId());
+                    ImGui::InputText("id", &id);
+                    ImGui::EndDisabled();
+
+                    // Province barony name.
+                    ImGui::InputText("name", &province->GetName());
+
+                    // Province color code.
+                    float color[4] = {
+                        province->GetColor().r/255.f,
+                        province->GetColor().g/255.f,
+                        province->GetColor().b/255.f,
+                        province->GetColor().a/255.f
+                    };
+                    ImGui::BeginDisabled();
+                    if(ImGui::ColorEdit3("color", color)) {
+                        province->SetColor(sf::Color(color[0]*255, color[1]*255, color[2]*255, color[3]*255));
+                    }
+                    ImGui::EndDisabled();
+
+                    // Province terrain type.
+                    // if(province->IsSea()) ImGui::BeginDisabled();
+                    if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()])) {
+                        for (int i = 0; i < (int) TerrainType::COUNT; i++) {
+                            const bool isSelected = ((int) province->GetTerrain() == i);
+                            if (ImGui::Selectable(TerrainTypeLabels[i], isSelected))
+                                province->SetTerrain((TerrainType) i);
+
+                            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                            if (isSelected)
+                                ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+                    // if(province->IsSea()) ImGui::EndDisabled();
+                    
+                    // ProvinceFlag checkboxes.
+                    bool isCoastal = province->HasFlag(ProvinceFlags::COASTAL);
+                    bool isLake = province->HasFlag(ProvinceFlags::LAKE);
+                    bool isIsland = province->HasFlag(ProvinceFlags::ISLAND);
+                    bool isLand = province->HasFlag(ProvinceFlags::LAND);
+                    bool isSea = province->HasFlag(ProvinceFlags::SEA);
+                    bool isRiver = province->HasFlag(ProvinceFlags::RIVER);
+                    bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
+
+                    if (ImGui::BeginTable("province flags", 2)) {
+                    
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        if(ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
+                        ImGui::TableSetColumnIndex(1);
+                        if(ImGui::Checkbox("Lake", &isLake)) province->SetFlag(ProvinceFlags::LAKE, isLake);
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        if(ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
+                        ImGui::TableSetColumnIndex(1);
+                        if(ImGui::Checkbox("Land", &isLand)) province->SetFlag(ProvinceFlags::LAND, isLand);
+                        
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        if(ImGui::Checkbox("Sea", &isSea)) province->SetFlag(ProvinceFlags::SEA, isSea);
+                        ImGui::TableSetColumnIndex(1);
+                        if(ImGui::Checkbox("River", &isRiver)) province->SetFlag(ProvinceFlags::RIVER, isRiver);
+                        
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        if(ImGui::Checkbox("Impassable", &isImpassable)) province->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
+
+                        ImGui::EndTable();
+                    }
+
+                    ImGui::InputText("culture", &province->GetCulture());
+                    ImGui::InputText("religion", &province->GetReligion());
+
+                    if (ImGui::BeginCombo("holding", ProvinceHoldingLabels[(int) province->GetHolding()])) {
+                        for (int i = 0; i < (int) ProvinceHolding::COUNT; i++) {
+                            const bool isSelected = ((int) province->GetHolding() == i);
+                            if (ImGui::Selectable(ProvinceHoldingLabels[i], isSelected))
+                                province->SetHolding((ProvinceHolding) i);
+                            if (isSelected)
+                                ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    ImGui::PopID();
+                }
+            }
+        }
         ImGui::End();
     }
 

@@ -2,7 +2,13 @@
 #include "imgui/imgui.hpp"
 
 void ImGui::SetupSettings() {
-    // ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
+
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    
+    // Disable saving windows settings
+    // io.IniFilename = NULL;
+    // io.LogFilename = NULL;
 }
 
 void ImGui::SetupStyle() {

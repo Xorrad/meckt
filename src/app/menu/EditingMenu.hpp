@@ -50,7 +50,10 @@ public:
 
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);
+    
+    void SetupDockspace();
     virtual void Draw();
+
 
 private:
     MapMode m_MapMode;
