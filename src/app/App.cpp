@@ -1,7 +1,7 @@
 #include "App.hpp"
 #include "imgui/imgui.hpp"
 #include "menu/HomeMenu.hpp"
-#include "menu/EditingMenu.hpp"
+#include "menu/EditorMenu.hpp"
 #include "menu/ImGuiStyle.hpp"
 
 App::App()
@@ -26,7 +26,7 @@ void App::OpenMenu(UniquePtr<Menu> menu) {
 void App::OpenMod(SharedPtr<Mod> mod) {
     m_ActiveMod = mod;
     mod->Load();
-    this->OpenMenu(MakeUnique<EditingMenu>(this));
+    this->OpenMenu(MakeUnique<EditorMenu>(this));
 }
 
 void App::Init() {

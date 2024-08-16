@@ -1,12 +1,15 @@
-#include "EditingMenu.hpp"
+#include "EditorMenu.hpp"
 #include "HomeMenu.hpp"
 #include "app/App.hpp"
 #include "app/mod/Mod.hpp"
 #include "app/map/Province.hpp"
 #include "app/map/Title.hpp"
+
+#include "app/menu/tab/Tab.hpp"
+
 #include "imgui/imgui.hpp"
 
-MapSelectionHandler::MapSelectionHandler(EditingMenu* menu) : m_Menu(menu), m_Count(0) {}
+MapSelectionHandler::MapSelectionHandler(EditorMenu* menu) : m_Menu(menu), m_Count(0) {}
 
 void MapSelectionHandler::Select(const SharedPtr<Province>& province) {
     if(m_Menu->m_MapMode == MapMode::PROVINCES) {
@@ -122,8 +125,8 @@ void MapSelectionHandler::UpdateShader() {
     provinceShader.setUniform("selectedProvincesCount", (int) m_Count);
 }
 
-EditingMenu::EditingMenu(App* app)
-: Menu(app, "Editor"), m_MapMode(MapMode::PROVINCES), m_SelectionHandler(MapSelectionHandler(this))
+EditorMenu::EditorMenu(App* app)
+: Menu(app, "Editor"), m_MapMode(MapMode::PROVINCES), m_SelectionHandler(MapSelectionHandler(this)), m_ExitToMainMenu(false)
 {
     m_App->GetMod()->LoadMapModeTexture(m_ProvinceTexture, MapMode::PROVINCES);
     Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", m_ProvinceTexture);
@@ -143,9 +146,11 @@ EditingMenu::EditingMenu(App* app)
     m_HoverText.setFillColor(sf::Color::White);
     m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
     // m_HoverText.setPosition({5, m_App->GetWindow().getSize().y - m_HoverText.getGlobalBounds().height - 10});
+
+    this->InitTabs();
 }
 
-SharedPtr<Province> EditingMenu::GetHoveredProvince() {
+SharedPtr<Province> EditorMenu::GetHoveredProvince() {
     sf::Vector2f mousePosition = m_App->GetWindow().mapPixelToCoords(sf::Mouse::getPosition(m_App->GetWindow()));
 
     if(!m_MapSprite.getGlobalBounds().contains(mousePosition))
@@ -163,7 +168,11 @@ SharedPtr<Province> EditingMenu::GetHoveredProvince() {
     return mod->GetProvinces()[colorId];
 }
 
-void EditingMenu::UpdateHoveringText() {
+MapSelectionHandler& EditorMenu::GetSelectionHandler() {
+    return m_SelectionHandler;
+}
+
+void EditorMenu::UpdateHoveringText() {
     SharedPtr<Province> province = this->GetHoveredProvince();
     sf::Vector2i mousePosition = sf::Mouse::getPosition(m_App->GetWindow());
 
@@ -190,7 +199,7 @@ void EditingMenu::UpdateHoveringText() {
     m_HoverText.setString("");
 }
 
-void EditingMenu::ToggleCamera(bool enabled) {
+void EditorMenu::ToggleCamera(bool enabled) {
     static sf::View previousView;
     sf::RenderWindow& window = m_App->GetWindow();
     if(enabled) {
@@ -202,7 +211,7 @@ void EditingMenu::ToggleCamera(bool enabled) {
     }
 }
 
-void EditingMenu::SwitchMapMode(MapMode mode) {
+void EditorMenu::SwitchMapMode(MapMode mode) {
     m_MapMode = mode;
     m_SelectionHandler.ClearSelection();
     
@@ -210,8 +219,15 @@ void EditingMenu::SwitchMapMode(MapMode mode) {
     m_MapSprite.setTexture(m_MapTexture);
 }
 
-void EditingMenu::Update(sf::Time delta) {
+void EditorMenu::Update(sf::Time delta) {
     ToggleCamera(true);
+
+    // Update all currently opened tabs
+    for(const auto& [type, tab] : m_Tabs) {
+        if(!tab->IsVisible())
+            continue;
+        tab->Update(delta);
+    }
 
     if(m_Dragging) {
         sf::RenderWindow& window = m_App->GetWindow();
@@ -226,9 +242,16 @@ void EditingMenu::Update(sf::Time delta) {
     ToggleCamera(false);
 }
 
-void EditingMenu::Event(const sf::Event& event) {
+void EditorMenu::Event(const sf::Event& event) {
     ToggleCamera(true);
     sf::RenderWindow& window = m_App->GetWindow();
+
+    // Report event to all currently opened tabs
+    for(const auto& [type, tab] : m_Tabs) {
+        if(!tab->IsVisible())
+            continue;
+        tab->Event(event);
+    }
 
     if(event.type == sf::Event::MouseMoved) {
         this->UpdateHoveringText();
@@ -282,9 +305,8 @@ void EditingMenu::Event(const sf::Event& event) {
     ToggleCamera(false);
 }
 
-void EditingMenu::Render() {
+void EditorMenu::Render() {
     sf::RenderWindow& window = m_App->GetWindow();
-    bool exitToMainMenu = false;
 
     // Update provinces shader
     sf::Shader& provinceShader = Configuration::shaders.Get(Shaders::PROVINCES);
@@ -292,178 +314,16 @@ void EditingMenu::Render() {
     provinceShader.setUniform("time", m_Clock.getElapsedTime().asSeconds());
     provinceShader.setUniform("mapMode", (int) m_MapMode);
 
-    // Main Menu Bar (File, View...)
-    if(ImGui::BeginMainMenuBar()) {
-        if(ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Save", "Ctrl+S")) {}
-            if (ImGui::MenuItem("Export")) {
-                SharedPtr<Mod> mod = m_App->GetMod();
-                mod->Export();
-            }
-            if (ImGui::MenuItem("Close")) {
-                exitToMainMenu = true;
-            }
-            ImGui::EndMenu();
-        }
-        if(ImGui::BeginMenu("View")) {
-            for(int i = 0; i < (int) MapMode::COUNT; i++) {
-                if(ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode) i)) {
-                    this->SwitchMapMode((MapMode) i);
-                }    
-            }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-    }
-
+    this->RenderMenuBar();
     this->SetupDockspace();
 
-    static bool displayTitles = true;
-    if(displayTitles) {
-        if(ImGui::Begin("Titles", &displayTitles)) {
-        
-            if (ImGui::BeginTable("Titles Tree", 3, ImGuiTableFlags_Resizable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 50.0f);
-                ImGui::TableSetupColumn("Color", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-                ImGui::TableHeadersRow();
-
-                std::function<void(const SharedPtr<Title>&)> DisplayTitle = [&](const SharedPtr<Title>& title) {
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-
-                    if(title->Is(TitleType::BARONY)) {
-                        ImGui::TreeNodeEx(title->GetName().c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%s", TitleTypeLabels[(int) title->GetType()]);
-                        ImGui::TableNextColumn();
-                        ImGui::Text("(%d, %d, %d)", title->GetColor().r, title->GetColor().g, title->GetColor().b);
-                    }
-                    else {
-                        SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
-                        bool open = ImGui::TreeNodeEx(title->GetName().c_str());
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%s", TitleTypeLabels[(int) title->GetType()]);
-                        ImGui::TableNextColumn();
-                        ImGui::Text("(%d, %d, %d)", title->GetColor().r, title->GetColor().g, title->GetColor().b);
-                        if (open) {
-                            for(const auto& dejureTitle : highTitle->GetDejureTitles())
-                                DisplayTitle(dejureTitle);
-                            ImGui::TreePop();
-                        }
-                    }
-                };
-
-                for(const auto& empireTitle : m_App->GetMod()->GetTitlesByType()[TitleType::EMPIRE])
-                    DisplayTitle(empireTitle);
-
-                ImGui::EndTable();
-            }
+    for(const auto& [type, tab] : m_Tabs) {
+        if(!tab->IsVisible())
+            continue;
+        if(ImGui::Begin(tab->GetName().c_str(), &tab->IsVisible())) {
+            tab->Render();
         }
-        ImGui::End();
-    }
-
-    static bool displayProperties = true;
-    if(displayProperties) {
-        if(ImGui::Begin("Properties", &displayProperties)) {
-            for(auto& province : m_SelectionHandler.GetProvinces()) {
-                
-                if(ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::PushID(province->GetId());                        
-
-                    // Province id.
-                    ImGui::BeginDisabled();
-                    std::string id = std::to_string(province->GetId());
-                    ImGui::InputText("id", &id);
-                    ImGui::EndDisabled();
-
-                    // Province barony name.
-                    ImGui::InputText("name", &province->GetName());
-
-                    // Province color code.
-                    float color[4] = {
-                        province->GetColor().r/255.f,
-                        province->GetColor().g/255.f,
-                        province->GetColor().b/255.f,
-                        province->GetColor().a/255.f
-                    };
-                    ImGui::BeginDisabled();
-                    if(ImGui::ColorEdit3("color", color)) {
-                        province->SetColor(sf::Color(color[0]*255, color[1]*255, color[2]*255, color[3]*255));
-                    }
-                    ImGui::EndDisabled();
-
-                    // Province terrain type.
-                    // if(province->IsSea()) ImGui::BeginDisabled();
-                    if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()])) {
-                        for (int i = 0; i < (int) TerrainType::COUNT; i++) {
-                            const bool isSelected = ((int) province->GetTerrain() == i);
-                            if (ImGui::Selectable(TerrainTypeLabels[i], isSelected))
-                                province->SetTerrain((TerrainType) i);
-
-                            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                            if (isSelected)
-                                ImGui::SetItemDefaultFocus();
-                        }
-                        ImGui::EndCombo();
-                    }
-                    // if(province->IsSea()) ImGui::EndDisabled();
-                    
-                    // ProvinceFlag checkboxes.
-                    bool isCoastal = province->HasFlag(ProvinceFlags::COASTAL);
-                    bool isLake = province->HasFlag(ProvinceFlags::LAKE);
-                    bool isIsland = province->HasFlag(ProvinceFlags::ISLAND);
-                    bool isLand = province->HasFlag(ProvinceFlags::LAND);
-                    bool isSea = province->HasFlag(ProvinceFlags::SEA);
-                    bool isRiver = province->HasFlag(ProvinceFlags::RIVER);
-                    bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
-
-                    if (ImGui::BeginTable("province flags", 2)) {
-                    
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        if(ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
-                        ImGui::TableSetColumnIndex(1);
-                        if(ImGui::Checkbox("Lake", &isLake)) province->SetFlag(ProvinceFlags::LAKE, isLake);
-
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        if(ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
-                        ImGui::TableSetColumnIndex(1);
-                        if(ImGui::Checkbox("Land", &isLand)) province->SetFlag(ProvinceFlags::LAND, isLand);
-                        
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        if(ImGui::Checkbox("Sea", &isSea)) province->SetFlag(ProvinceFlags::SEA, isSea);
-                        ImGui::TableSetColumnIndex(1);
-                        if(ImGui::Checkbox("River", &isRiver)) province->SetFlag(ProvinceFlags::RIVER, isRiver);
-                        
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        if(ImGui::Checkbox("Impassable", &isImpassable)) province->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
-
-                        ImGui::EndTable();
-                    }
-
-                    ImGui::InputText("culture", &province->GetCulture());
-                    ImGui::InputText("religion", &province->GetReligion());
-
-                    if (ImGui::BeginCombo("holding", ProvinceHoldingLabels[(int) province->GetHolding()])) {
-                        for (int i = 0; i < (int) ProvinceHolding::COUNT; i++) {
-                            const bool isSelected = ((int) province->GetHolding() == i);
-                            if (ImGui::Selectable(ProvinceHoldingLabels[i], isSelected))
-                                province->SetHolding((ProvinceHolding) i);
-                            if (isSelected)
-                                ImGui::SetItemDefaultFocus();
-                        }
-                        ImGui::EndCombo();
-                    }
-
-                    ImGui::PopID();
-                }
-            }
-        }
-        ImGui::End();
+        ImGui::End();   
     }
 
     ToggleCamera(true);
@@ -477,13 +337,17 @@ void EditingMenu::Render() {
 
     window.draw(m_HoverText);
 
-    if(exitToMainMenu) {
+    if(m_ExitToMainMenu) {
         m_App->OpenMenu(MakeUnique<HomeMenu>(m_App));
     }
 }
 
+void EditorMenu::InitTabs() {
+    m_Tabs[Tabs::TITLES] = MakeShared<TitlesTab>(this, true);
+    m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(this, true);
+}
 
-void EditingMenu::SetupDockspace() {
+void EditorMenu::SetupDockspace() {
     // Get the position and size of the "work area", which does not include the menu bar.
     ImVec2 workPos = ImGui::GetMainViewport()->WorkPos;
     ImVec2 workSize = ImGui::GetMainViewport()->WorkSize;
@@ -524,4 +388,38 @@ void EditingMenu::SetupDockspace() {
     ImGui::End();
     ImGui::PopStyleVar();
     ImGui::PopStyleVar();
+}
+
+void EditorMenu::RenderMenuBar() {
+    if(ImGui::BeginMainMenuBar()) {
+        if(ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+            if (ImGui::MenuItem("Export")) {
+                SharedPtr<Mod> mod = m_App->GetMod();
+                mod->Export();
+            }
+            if (ImGui::MenuItem("Close")) {
+                m_ExitToMainMenu = true;
+            }
+            ImGui::EndMenu();
+        }
+        if(ImGui::BeginMenu("View")) {
+
+            for(const auto& [type, tab] : m_Tabs) {
+                ImGui::MenuItem(tab->GetName().c_str(), "", &tab->IsVisible());
+            }
+
+            if(ImGui::BeginMenu("Map")) {
+                for(int i = 0; i < (int) MapMode::COUNT; i++) {
+                    if(ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode) i)) {
+                        this->SwitchMapMode((MapMode) i);
+                    }    
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
 }

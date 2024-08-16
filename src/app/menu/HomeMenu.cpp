@@ -1,5 +1,5 @@
 #include "HomeMenu.hpp"
-#include "EditingMenu.hpp"
+#include "EditorMenu.hpp"
 #include "app/App.hpp"
 #include "imgui/imgui.hpp"
 #include "nfd/nfd.h"

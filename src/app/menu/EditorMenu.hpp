@@ -4,7 +4,7 @@
 
 class MapSelectionHandler {
 public:
-    MapSelectionHandler(EditingMenu* menu);
+    MapSelectionHandler(EditorMenu* menu);
     
     void Select(const SharedPtr<Province>& province);
     void Deselect(const SharedPtr<Province>& province);
@@ -22,7 +22,7 @@ private:
     void UpdateShader();
 
 private:
-    EditingMenu* m_Menu;
+    EditorMenu* m_Menu;
 
     std::vector<SharedPtr<Province>> m_Provinces;
     std::vector<SharedPtr<Title>> m_Titles;
@@ -37,12 +37,13 @@ private:
     std::size_t m_Count;
 };
 
-class EditingMenu : public Menu {
+class EditorMenu : public Menu {
 friend MapSelectionHandler;
 public:
-    EditingMenu(App* app);
+    EditorMenu(App* app);
 
     SharedPtr<Province> GetHoveredProvince();
+    MapSelectionHandler& GetSelectionHandler();
 
     void UpdateHoveringText();
     void ToggleCamera(bool enabled);
@@ -52,7 +53,9 @@ public:
     virtual void Event(const sf::Event& event);
     virtual void Render();
     
+    void InitTabs();
     void SetupDockspace();
+    void RenderMenuBar();
 
 private:
     MapMode m_MapMode;
@@ -71,4 +74,7 @@ private:
     float m_TotalZoom;
 
     sf::Text m_HoverText;
+
+    std::map<Tabs, SharedPtr<Tab>> m_Tabs;
+    bool m_ExitToMainMenu;
 };

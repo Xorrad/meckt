@@ -7,6 +7,7 @@
 #include <variant>
 #include <deque>
 #include <set>
+#include <functional>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -50,4 +51,10 @@ class EmpireTitle;
 
 class Menu;
 class HomeMenu;
-class EditingMenu;
+class EditorMenu;
+
+class Tab;
+class TitlesTab;
+class PropertiesTab;
+
+#include "app/menu/tab/Tab.hpp"
