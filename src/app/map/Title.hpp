@@ -1,6 +1,7 @@
 #pragma once
 
 class Title {
+friend PropertiesTab;
 public:
     Title();
     Title(std::string name, sf::Color color);
@@ -28,6 +29,7 @@ protected:
 };
 
 class HighTitle : public Title, public std::enable_shared_from_this<HighTitle> {
+friend PropertiesTab;
 public:
     HighTitle();
     HighTitle(std::string name, sf::Color color);
@@ -47,6 +49,7 @@ protected:
 };
 
 class BaronyTitle : public Title {
+friend PropertiesTab;
 public:
     BaronyTitle();
     BaronyTitle(std::string name, sf::Color color);
@@ -61,6 +64,7 @@ private:
 };
 
 class CountyTitle : public HighTitle {
+friend PropertiesTab;
 public:
     CountyTitle();
     CountyTitle(std::string name, sf::Color color);
@@ -69,6 +73,7 @@ public:
 };
 
 class DuchyTitle : public HighTitle {
+friend PropertiesTab;
 public:
     DuchyTitle();
     DuchyTitle(std::string name, sf::Color color);
@@ -77,6 +82,7 @@ public:
 };
 
 class KingdomTitle : public HighTitle {
+friend PropertiesTab;
 public:
     KingdomTitle();
     KingdomTitle(std::string name, sf::Color color);
@@ -85,6 +91,7 @@ public:
 };
 
 class EmpireTitle : public HighTitle {
+friend PropertiesTab;
 public:
     EmpireTitle();
     EmpireTitle(std::string name, sf::Color color);

@@ -19,6 +19,9 @@ public:
     std::vector<SharedPtr<Title>>& GetTitles();
     std::vector<sf::Glsl::Vec4>& GetColors();
     std::size_t GetCount() const;
+
+    void Update();
+    
 private:
     void UpdateColors();
     void UpdateShader();
@@ -45,11 +48,12 @@ public:
     EditorMenu(App* app);
 
     SharedPtr<Province> GetHoveredProvince();
+    MapMode GetMapMode() const;
     MapSelectionHandler& GetSelectionHandler();
 
     void UpdateHoveringText();
     void ToggleCamera(bool enabled);
-    void SwitchMapMode(MapMode mode);
+    void SwitchMapMode(MapMode mode, bool clearSelection = true);
 
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);

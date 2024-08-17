@@ -37,19 +37,20 @@ const std::vector<const char*> ProvinceHoldingLabels = {
 ProvinceHolding ProvinceHoldingFromString(const std::string& str);
 
 class Province {
+friend PropertiesTab;
 public:
     Province(int id, sf::Color color, std::string name);
 
-    int& GetId();
-    sf::Color& GetColor();
+    int GetId() const;
+    sf::Color GetColor() const;
     uint32_t GetColorId() const;
-    std::string& GetName();
-    ProvinceFlags& GetFlags();
+    std::string GetName() const;
+    ProvinceFlags GetFlags() const;
     bool HasFlag(ProvinceFlags flag) const;
-    TerrainType& GetTerrain();
-    std::string& GetCulture();
-    std::string& GetReligion();
-    ProvinceHolding& GetHolding();
+    TerrainType GetTerrain() const;
+    std::string GetCulture() const;
+    std::string GetReligion() const;
+    ProvinceHolding GetHolding() const;
 
     void SetColor(sf::Color color);
     void SetFlags(ProvinceFlags flags);

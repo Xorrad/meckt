@@ -5,6 +5,7 @@
 #include "app/map/Title.hpp"
 
 #include "imgui/imgui.hpp"
+#include "app/menu/ImGuiStyle.hpp"
 
 PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) : Tab("Properties", Tabs::PROPERTIES, menu, visible) {}
 
@@ -35,7 +36,7 @@ void PropertiesTab::RenderProvinces() {
             ImGui::EndDisabled();
 
             // Province barony name.
-            ImGui::InputText("name", &province->GetName());
+            ImGui::InputText("name", &province->m_Name);
 
             // Province color code.
             float color[4] = {
@@ -102,8 +103,8 @@ void PropertiesTab::RenderProvinces() {
                 ImGui::EndTable();
             }
 
-            ImGui::InputText("culture", &province->GetCulture());
-            ImGui::InputText("religion", &province->GetReligion());
+            ImGui::InputText("culture", &province->m_Culture);
+            ImGui::InputText("religion", &province->m_Religion);
 
             if (ImGui::BeginCombo("holding", ProvinceHoldingLabels[(int) province->GetHolding()])) {
                 for (int i = 0; i < (int) ProvinceHolding::COUNT; i++) {
@@ -127,11 +128,42 @@ void PropertiesTab::RenderTitles() {
         if(ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::PushID(title->GetName().c_str());
 
-            // Province id.
+            ImGui::InputText("name", &title->m_Name);
+
             ImGui::BeginDisabled();
-            std::string name = title->GetName();
-            ImGui::InputText("name", &name);
+            if(ImGui::BeginCombo("type", TitleTypeLabels[(int) title->GetType()]))
+                ImGui::EndCombo();
             ImGui::EndDisabled();
+
+            sf::Color color = title->GetColor();
+            if(ImGui::ColorEdit3("color", &color)) {
+                title->SetColor(color);
+                m_Menu->SwitchMapMode(m_Menu->GetMapMode(), false);
+                m_Menu->GetSelectionHandler().Update();
+            }
+
+            if(title->Is(TitleType::BARONY)) {
+                const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(title);
+                ImGui::InputInt("province id", &barony->m_ProvinceId);
+            }
+            else {
+                const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+
+                ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY | ImGuiChildFlags_Border, ImGuiWindowFlags_MenuBar);
+
+                if(ImGui::BeginMenuBar()) {
+                    if(ImGui::BeginMenu("dejure titles")) {
+                        ImGui::EndMenu();
+                    }
+                    ImGui::EndMenuBar();
+                }
+
+                for(const auto& dejure : highTitle->GetDejureTitles()) {
+                    ImGui::Selectable(dejure->GetName().c_str());    
+                }
+
+                ImGui::EndChild();
+            }
 
             ImGui::PopID();
         }

@@ -38,11 +38,11 @@ Province::Province(int id, sf::Color color, std::string name) {
     m_Holding = ProvinceHolding::NONE;
 }
 
-int& Province::GetId() {
+int Province::GetId() const {
     return m_Id;
 }
 
-sf::Color& Province::GetColor() {
+sf::Color Province::GetColor() const {
     return m_Color;
 }
  
@@ -50,11 +50,11 @@ uint32_t Province::GetColorId() const {
     return (m_Color.r << 16) + (m_Color.g << 8) + m_Color.b;
 }
 
-std::string& Province::GetName() {
+std::string Province::GetName() const {
     return m_Name;
 }
 
-ProvinceFlags& Province::GetFlags() {
+ProvinceFlags Province::GetFlags() const {
     return m_Flags;
 }
 
@@ -62,19 +62,19 @@ bool Province::HasFlag(ProvinceFlags flag) const {
     return (bool) (m_Flags & flag);
 }
 
-TerrainType& Province::GetTerrain() {
+TerrainType Province::GetTerrain() const {
     return m_Terrain;
 }
 
-std::string& Province::GetCulture() {
+std::string Province::GetCulture() const {
     return m_Culture;
 }
 
-std::string& Province::GetReligion() {
+std::string Province::GetReligion() const {
     return m_Religion;
 }
 
-ProvinceHolding& Province::GetHolding() {
+ProvinceHolding Province::GetHolding() const {
     return m_Holding;
 }
 

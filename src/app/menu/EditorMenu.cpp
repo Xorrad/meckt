@@ -27,7 +27,7 @@ void MapSelectionHandler::Select(const SharedPtr<Province>& province) {
         m_Titles.push_back(title);
     }
 
-    this->UpdateColors();
+    this->Update();
 }
 
 void MapSelectionHandler::Select(const SharedPtr<Title>& title) {
@@ -37,7 +37,7 @@ void MapSelectionHandler::Select(const SharedPtr<Title>& title) {
         return;
     m_Titles.push_back(title);
 
-    this->UpdateColors();
+    this->Update();
 }
 
 void MapSelectionHandler::Deselect(const SharedPtr<Province>& province) {
@@ -52,7 +52,7 @@ void MapSelectionHandler::Deselect(const SharedPtr<Province>& province) {
         m_Titles.erase(std::remove(m_Titles.begin(), m_Titles.end(), title));
     }
 
-    this->UpdateColors();
+    this->Update();
 }
 
 void MapSelectionHandler::Deselect(const SharedPtr<Title>& title) {
@@ -60,7 +60,7 @@ void MapSelectionHandler::Deselect(const SharedPtr<Title>& title) {
         return;
     m_Titles.erase(std::remove(m_Titles.begin(), m_Titles.end(), title));
 
-    this->UpdateColors();
+    this->Update();
 }
 
 void MapSelectionHandler::ClearSelection() {
@@ -68,7 +68,7 @@ void MapSelectionHandler::ClearSelection() {
     m_Titles.clear();
     m_Colors.clear();
 
-    this->UpdateColors();
+    this->Update();
 }
 
 bool MapSelectionHandler::IsSelected(const SharedPtr<Province>& province) {
@@ -93,6 +93,11 @@ std::vector<sf::Glsl::Vec4>& MapSelectionHandler::GetColors() {
 
 std::size_t MapSelectionHandler::GetCount() const {
     return m_Count;
+}
+
+void MapSelectionHandler::Update() {
+    this->UpdateColors();
+    this->UpdateShader();
 }
 
 void MapSelectionHandler::UpdateColors() {
@@ -133,8 +138,6 @@ void MapSelectionHandler::UpdateColors() {
         }
         m_Count = m_Titles.size();
     }
-
-    this->UpdateShader();
 }
 
 void MapSelectionHandler::UpdateShader() {
@@ -186,6 +189,10 @@ SharedPtr<Province> EditorMenu::GetHoveredProvince() {
     return mod->GetProvinces()[colorId];
 }
 
+MapMode EditorMenu::GetMapMode() const {
+    return m_MapMode;
+}
+
 MapSelectionHandler& EditorMenu::GetSelectionHandler() {
     return m_SelectionHandler;
 }
@@ -229,9 +236,10 @@ void EditorMenu::ToggleCamera(bool enabled) {
     }
 }
 
-void EditorMenu::SwitchMapMode(MapMode mode) {
+void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
     m_MapMode = mode;
-    m_SelectionHandler.ClearSelection();
+    if(clearSelection)
+        m_SelectionHandler.ClearSelection();
     
     m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
     m_MapSprite.setTexture(m_MapTexture);
