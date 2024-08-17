@@ -5,4 +5,6 @@ public:
     PropertiesTab(EditorMenu* menu, bool visible = true);
 
     virtual void Render() override;
+    void RenderProvinces();
+    void RenderTitles();
 };

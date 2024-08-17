@@ -12,8 +12,17 @@ void PropertiesTab::Render() {
     if(!m_Visible)
         return;
 
-    const SharedPtr<Mod> mod = this->GetMod();
+    // const SharedPtr<Mod> mod = this->GetMod();
+    if(m_Menu->GetSelectionHandler().GetProvinces().size() > 0) {
+        this->RenderProvinces();
+    }
+    else if(m_Menu->GetSelectionHandler().GetTitles().size() > 0) {
+        this->RenderTitles();
+    }
     
+}
+
+void PropertiesTab::RenderProvinces() {
     for(auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
                 
         if(ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -109,5 +118,23 @@ void PropertiesTab::Render() {
 
             ImGui::PopID();
         }
+    }
+}
+
+void PropertiesTab::RenderTitles() {
+    for(auto& title : m_Menu->GetSelectionHandler().GetTitles()) {
+                
+        if(ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::PushID(title->GetName().c_str());
+
+            // Province id.
+            ImGui::BeginDisabled();
+            std::string name = title->GetName();
+            ImGui::InputText("name", &name);
+            ImGui::EndDisabled();
+
+            ImGui::PopID();
+        }
+
     }
 }

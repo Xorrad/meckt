@@ -7,7 +7,9 @@ public:
     MapSelectionHandler(EditorMenu* menu);
     
     void Select(const SharedPtr<Province>& province);
+    void Select(const SharedPtr<Title>& title);
     void Deselect(const SharedPtr<Province>& province);
+    void Deselect(const SharedPtr<Title>& title);
     void ClearSelection();
 
     bool IsSelected(const SharedPtr<Province>& province);

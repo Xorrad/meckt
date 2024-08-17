@@ -30,6 +30,16 @@ void MapSelectionHandler::Select(const SharedPtr<Province>& province) {
     this->UpdateColors();
 }
 
+void MapSelectionHandler::Select(const SharedPtr<Title>& title) {
+    if(title == nullptr)
+        return;
+    if(this->IsSelected(title))
+        return;
+    m_Titles.push_back(title);
+
+    this->UpdateColors();
+}
+
 void MapSelectionHandler::Deselect(const SharedPtr<Province>& province) {
     if(m_Menu->m_MapMode == MapMode::PROVINCES) {
         m_Provinces.erase(std::remove(m_Provinces.begin(), m_Provinces.end(), province));
@@ -41,6 +51,14 @@ void MapSelectionHandler::Deselect(const SharedPtr<Province>& province) {
             return;
         m_Titles.erase(std::remove(m_Titles.begin(), m_Titles.end(), title));
     }
+
+    this->UpdateColors();
+}
+
+void MapSelectionHandler::Deselect(const SharedPtr<Title>& title) {
+    if(title == nullptr)
+        return;
+    m_Titles.erase(std::remove(m_Titles.begin(), m_Titles.end(), title));
 
     this->UpdateColors();
 }
