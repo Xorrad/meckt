@@ -158,8 +158,23 @@ void PropertiesTab::RenderTitles() {
                     ImGui::EndMenuBar();
                 }
 
-                for(const auto& dejure : highTitle->GetDejureTitles()) {
-                    ImGui::Selectable(dejure->GetName().c_str());    
+                // Make a copy to be able to use highTitle->RemoveDejureTitle
+                // without causing a crash while iterating.
+                std::vector<SharedPtr<Title>> dejureTitles = highTitle->GetDejureTitles();
+                for(auto const& dejure : dejureTitles) {
+                    ImGui::PushID(dejure->GetName().c_str());
+                    ImGui::SetNextItemAllowOverlap();
+                    ImGui::Selectable(dejure->GetName().c_str());
+                    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-10);
+                    if(ImGui::SmallButton("x")) {
+                        highTitle->RemoveDejureTitle(dejure);
+
+                        // Update the map to remove the dejure title from the title color.
+                        // In the future, it would be better not having to redraw the entire map
+                        // but only the relevant colors.
+                        m_Menu->SwitchMapMode(m_Menu->GetMapMode(), false);
+                    }
+                    ImGui::PopID();
                 }
 
                 ImGui::EndChild();

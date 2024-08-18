@@ -43,13 +43,24 @@ SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province,
 
     const SharedPtr<Title>& barony = m_Titles[province->GetName()];
 
+    #define RETURN_IF_NULL(v) if(v == nullptr) return nullptr;
+
     // Determine which liege title to choose depending on type.
     switch(type) {
         case TitleType::BARONY:  return barony;
         case TitleType::COUNTY:  return barony->GetLiegeTitle();
-        case TitleType::DUCHY:   return barony->GetLiegeTitle()->GetLiegeTitle();
-        case TitleType::KINGDOM: return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
-        case TitleType::EMPIRE:  return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::DUCHY:
+            RETURN_IF_NULL(barony->GetLiegeTitle());
+            return barony->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::KINGDOM:
+            RETURN_IF_NULL(barony->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
+            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::EMPIRE:
+            RETURN_IF_NULL(barony->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
+            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
         default: return nullptr;
     }
 }
@@ -111,6 +122,10 @@ void Mod::UpdateTitlesImages(sf::Texture& texture, TitleType type) {
             continue;
 
         const SharedPtr<Title>& liege = GetProvinceLiegeTitle(province, type);
+
+        if(liege == nullptr)
+            continue;
+
         colors[province->GetColor().toInteger()] = liege->GetColor().toInteger();
     }
     // fmt::println("mapping colors: {}", String::DurationFormat(clock.restart()));
