@@ -175,7 +175,7 @@ void PropertiesTab::RenderTitles() {
             else {
                 const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
 
-                ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY | ImGuiChildFlags_Border, ImGuiWindowFlags_MenuBar);
+                ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY | ImGuiChildFlags_Border, ImGuiWindowFlags_None);
 
                 if(ImGui::BeginMenuBar()) {
                     if(ImGui::BeginMenu("dejure titles")) {

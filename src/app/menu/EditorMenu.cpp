@@ -271,6 +271,7 @@ void EditorMenu::InitSelectionCallbacks() {
 void EditorMenu::InitTabs() {
     m_Tabs[Tabs::TITLES] = MakeShared<TitlesTab>(this, true);
     m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(this, true);
+    m_Tabs[Tabs::SELECTION] = MakeShared<SelectionTab>(this, true);
 }
 
 void EditorMenu::SetupDockspace() {
@@ -307,6 +308,7 @@ void EditorMenu::SetupDockspace() {
         // Create docked windows
         ImGui::DockBuilderDockWindow("Titles", dockRight);
         ImGui::DockBuilderDockWindow("Properties", dockDown);
+        ImGui::DockBuilderDockWindow("Selection", dockDown);
 
         ImGui::DockBuilderFinish(dockspaceID);
     }

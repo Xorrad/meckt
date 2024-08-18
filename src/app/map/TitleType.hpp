@@ -10,12 +10,26 @@ enum class TitleType {
 };
 
 const std::vector<const char*> TitleTypeLabels = { "Barony", "County", "Duchy", "Kingdom", "Empire" };
+const std::vector<const char*> TitleTypePrefixes = { "b", "c", "d", "k", "e" };
 
-inline TitleType GetTitleTypeByName(std::string name) {
-    if(name.starts_with("b_")) return TitleType::BARONY;
-    if(name.starts_with("c_")) return TitleType::COUNTY;
-    if(name.starts_with("d_")) return TitleType::DUCHY;
-    if(name.starts_with("k_")) return TitleType::KINGDOM;
-    if(name.starts_with("e_")) return TitleType::EMPIRE;
+inline TitleType GetTitleTypeByName(const std::string& name) {
+    for(int i = 0; i < (int) TitleType::COUNT; i++) {
+        std::string prefix = std::string(TitleTypePrefixes[i]) + "_";
+        if(name.starts_with(prefix))
+            return (TitleType) i;
+    }
     throw std::runtime_error("error: invalid title name.");
+}
+
+inline std::string GetTitlePrefixByType(TitleType type) {
+    return TitleTypePrefixes[(int) type];
+}
+
+inline bool IsValidTitleName(const std::string& name, TitleType type) {
+    try {
+        GetTitleTypeByName(name);
+        return true;
+    }
+    catch (const std::runtime_error& e){}
+    return true;
 }
