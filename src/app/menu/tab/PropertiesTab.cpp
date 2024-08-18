@@ -1,5 +1,8 @@
 #include "PropertiesTab.hpp"
 #include "app/menu/EditorMenu.hpp"
+#include "app/menu/selection/SelectionHandler.hpp"
+
+#include "app/App.hpp"
 #include "app/mod/Mod.hpp"
 #include "app/map/Province.hpp"
 #include "app/map/Title.hpp"
@@ -7,11 +10,34 @@
 #include "imgui/imgui.hpp"
 #include "app/menu/ImGuiStyle.hpp"
 
-PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) : Tab("Properties", Tabs::PROPERTIES, menu, visible) {}
+PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) : Tab("Properties", Tabs::PROPERTIES, menu, visible), m_SelectingTitle(false) {
+    m_SelectingTitleText.setCharacterSize(24);
+    m_SelectingTitleText.setString("Click on a title.");
+    m_SelectingTitleText.setFillColor(sf::Color::Red);
+    m_SelectingTitleText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
+    m_SelectingTitleText.setPosition({10, 20});
+    m_Clock.restart();
+}
+
+void PropertiesTab::Update(sf::Time delta) {
+    if(m_Clock.getElapsedTime().asSeconds() > 0.5) {
+        if(m_Clock.getElapsedTime().asSeconds() > 1.5) {
+            m_SelectingTitleText.setString("Click on a title...");
+            m_Clock.restart();
+        }
+        else if(m_Clock.getElapsedTime().asSeconds() > 1.0)
+            m_SelectingTitleText.setString("Click on a title..");
+        else
+            m_SelectingTitleText.setString("Click on a title.");
+    }
+}
 
 void PropertiesTab::Render() {
     if(!m_Visible)
         return;
+
+    if(m_SelectingTitle)
+        m_Menu->GetApp()->GetWindow().draw(m_SelectingTitleText);
 
     // const SharedPtr<Mod> mod = this->GetMod();
     if(m_Menu->GetSelectionHandler().GetProvinces().size() > 0) {
@@ -165,16 +191,30 @@ void PropertiesTab::RenderTitles() {
                     ImGui::PushID(dejure->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
                     ImGui::Selectable(dejure->GetName().c_str());
-                    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-10);
+                    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
                     if(ImGui::SmallButton("x")) {
                         highTitle->RemoveDejureTitle(dejure);
 
                         // Update the map to remove the dejure title from the title color.
-                        // In the future, it would be better not having to redraw the entire map
+                        // TODO: it would be better not having to redraw the entire map
                         // but only the relevant colors.
                         m_Menu->SwitchMapMode(m_Menu->GetMapMode(), false);
                     }
                     ImGui::PopID();
+                }
+                ImGui::NewLine();
+                if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
+                    TitleType dejureType = (TitleType)(((int) highTitle->GetType())-1);
+                    m_SelectingTitle = true;
+                    m_Menu->SwitchMapMode(TitleTypeToMapMode(dejureType), false);
+                    m_Menu->GetSelectionHandler().AddCallback([this, highTitle, dejureType](SharedPtr<Title> clickedTitle) {
+                        if(!clickedTitle->Is(dejureType))
+                            return SelectionCallbackResult::INTERRUPT;
+                        highTitle->AddDejureTitle(clickedTitle);
+                        m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
+                        m_SelectingTitle = false;
+                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                    });
                 }
 
                 ImGui::EndChild();

@@ -27,6 +27,10 @@ inline TitleType MapModeToTileType(MapMode mode) {
     return (TitleType) ((int) mode - 6);
 }
 
+inline MapMode TitleTypeToMapMode(TitleType type) {
+    return (MapMode) ((int) type + 6);
+}
+
 inline bool MapModeIsTitle(MapMode mode) {
     return ((int) mode) >= (int) MapMode::BARONY && ((int) mode) <= (int) MapMode::EMPIRE;
 }

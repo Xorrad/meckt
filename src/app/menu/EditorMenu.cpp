@@ -1,153 +1,19 @@
 #include "EditorMenu.hpp"
 #include "HomeMenu.hpp"
+#include "app/menu/tab/Tab.hpp"
+
 #include "app/App.hpp"
 #include "app/mod/Mod.hpp"
 #include "app/map/Province.hpp"
 #include "app/map/Title.hpp"
 
-#include "app/menu/tab/Tab.hpp"
-
 #include "imgui/imgui.hpp"
 
-MapSelectionHandler::MapSelectionHandler(EditorMenu* menu) : m_Menu(menu), m_Count(0) {}
-
-void MapSelectionHandler::Select(const SharedPtr<Province>& province) {
-    if(m_Menu->m_MapMode == MapMode::PROVINCES) {
-        if(this->IsSelected(province))
-            return;
-        m_Provinces.push_back(province);
-    }
-    else if(MapModeIsTitle(m_Menu->m_MapMode)) {
-        TitleType type = MapModeToTileType(m_Menu->m_MapMode);
-        SharedPtr<Title> title = m_Menu->GetApp()->GetMod()->GetProvinceLiegeTitle(province, type);
-        if(title == nullptr)
-            return;
-        if(this->IsSelected(title))
-            return;
-        m_Titles.push_back(title);
-    }
-
-    this->Update();
-}
-
-void MapSelectionHandler::Select(const SharedPtr<Title>& title) {
-    if(title == nullptr)
-        return;
-    if(this->IsSelected(title))
-        return;
-    m_Titles.push_back(title);
-
-    this->Update();
-}
-
-void MapSelectionHandler::Deselect(const SharedPtr<Province>& province) {
-    if(m_Menu->m_MapMode == MapMode::PROVINCES) {
-        m_Provinces.erase(std::remove(m_Provinces.begin(), m_Provinces.end(), province));
-    }
-    else if(MapModeIsTitle(m_Menu->m_MapMode)) {
-        TitleType type = MapModeToTileType(m_Menu->m_MapMode);
-        SharedPtr<Title> title = m_Menu->GetApp()->GetMod()->GetProvinceLiegeTitle(province, type);
-        if(title == nullptr)
-            return;
-        m_Titles.erase(std::remove(m_Titles.begin(), m_Titles.end(), title));
-    }
-
-    this->Update();
-}
-
-void MapSelectionHandler::Deselect(const SharedPtr<Title>& title) {
-    if(title == nullptr)
-        return;
-    m_Titles.erase(std::remove(m_Titles.begin(), m_Titles.end(), title));
-
-    this->Update();
-}
-
-void MapSelectionHandler::ClearSelection() {
-    m_Provinces.clear();
-    m_Titles.clear();
-    m_Colors.clear();
-
-    this->Update();
-}
-
-bool MapSelectionHandler::IsSelected(const SharedPtr<Province>& province) {
-    return std::find(m_Provinces.begin(), m_Provinces.end(), province) != m_Provinces.end();
-}
-
-bool MapSelectionHandler::IsSelected(const SharedPtr<Title>& title) {
-    return std::find(m_Titles.begin(), m_Titles.end(), title) != m_Titles.end();
-}
-
-std::vector<SharedPtr<Province>>& MapSelectionHandler::GetProvinces() {
-    return m_Provinces;
-}
-
-std::vector<SharedPtr<Title>>& MapSelectionHandler::GetTitles() {
-    return m_Titles;
-}
-
-std::vector<sf::Glsl::Vec4>& MapSelectionHandler::GetColors() {
-    return m_Colors;
-}
-
-std::size_t MapSelectionHandler::GetCount() const {
-    return m_Count;
-}
-
-void MapSelectionHandler::Update() {
-    this->UpdateColors();
-    this->UpdateShader();
-}
-
-void MapSelectionHandler::UpdateColors() {
-    m_Colors.clear();
-    m_Count = 0;
-
-    if(m_Menu->m_MapMode == MapMode::PROVINCES) {
-        for(const auto& province : m_Provinces) {
-            sf::Color c = province->GetColor();
-            m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-        }
-        m_Count = m_Provinces.size();
-    }
-    else if(MapModeIsTitle(m_Menu->m_MapMode)) {
-        // The shader need the colors of provinces.
-        // Ttherefore, we have to loop recursively through
-        // each titles until we reach a barony tier and get the color.
-        // std::function<void(const SharedPtr<Title>&)> PushTitleProvincesColor = [&](const SharedPtr<Title>& title) {
-        //     if(title->Is(TitleType::BARONY)) {
-        //         const SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
-        //         const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
-        //         sf::Color c = province->GetColor();
-        //         m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-        //         m_Count++;
-        //     }
-        //     else {
-        //         const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
-        //         for(const auto& dejureTitle : highTitle->GetDejureTitles())
-        //             PushTitleProvincesColor(dejureTitle);
-        //     }
-        // };
-        // for(const auto& title : m_Titles)
-        //     PushTitleProvincesColor(title);
-
-        for(const auto& title : m_Titles) {
-            sf::Color c = title->GetColor();
-            m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-        }
-        m_Count = m_Titles.size();
-    }
-}
-
-void MapSelectionHandler::UpdateShader() {
-    sf::Shader& provinceShader = Configuration::shaders.Get(Shaders::PROVINCES);
-    provinceShader.setUniformArray("selectedProvinces", m_Colors.data(), m_Colors.size());
-    provinceShader.setUniform("selectedProvincesCount", (int) m_Count);
-}
-
 EditorMenu::EditorMenu(App* app)
-: Menu(app, "Editor"), m_MapMode(MapMode::PROVINCES), m_SelectionHandler(MapSelectionHandler(this)), m_ExitToMainMenu(false)
+: Menu(app, "Editor"),
+m_MapMode(MapMode::PROVINCES),
+m_SelectionHandler(SelectionHandler(this)),
+m_ExitToMainMenu(false)
 {
     m_App->GetMod()->LoadMapModeTexture(m_ProvinceTexture, MapMode::PROVINCES);
     Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", m_ProvinceTexture);
@@ -168,11 +34,14 @@ EditorMenu::EditorMenu(App* app)
     m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
     // m_HoverText.setPosition({5, m_App->GetWindow().getSize().y - m_HoverText.getGlobalBounds().height - 10});
 
+    this->InitSelectionCallbacks();
     this->InitTabs();
 }
 
 SharedPtr<Province> EditorMenu::GetHoveredProvince() {
+    ToggleCamera(true);
     sf::Vector2f mousePosition = m_App->GetWindow().mapPixelToCoords(sf::Mouse::getPosition(m_App->GetWindow()));
+    ToggleCamera(false);
 
     if(!m_MapSprite.getGlobalBounds().contains(mousePosition))
         return nullptr;
@@ -185,7 +54,7 @@ SharedPtr<Province> EditorMenu::GetHoveredProvince() {
 
     if(mod->GetProvinces().count(colorId) == 0)
         return nullptr;
-
+        
     return mod->GetProvinces()[colorId];
 }
 
@@ -193,7 +62,7 @@ MapMode EditorMenu::GetMapMode() const {
     return m_MapMode;
 }
 
-MapSelectionHandler& EditorMenu::GetSelectionHandler() {
+SelectionHandler& EditorMenu::GetSelectionHandler() {
     return m_SelectionHandler;
 }
 
@@ -269,7 +138,6 @@ void EditorMenu::Update(sf::Time delta) {
 }
 
 void EditorMenu::Event(const sf::Event& event) {
-    ToggleCamera(true);
     sf::RenderWindow& window = m_App->GetWindow();
 
     // Report event to all currently opened tabs
@@ -283,6 +151,7 @@ void EditorMenu::Event(const sf::Event& event) {
         this->UpdateHoveringText();
     }
     else if(event.type == sf::Event::MouseWheelMoved) {
+        ToggleCamera(true);
         float delta = (-event.mouseWheel.delta)/50.f;
 
         // Reset zoom if scrolling in reverse.
@@ -292,6 +161,7 @@ void EditorMenu::Event(const sf::Event& event) {
         float factor = std::max(0.9f, std::min(1.1f, m_Zoom));
         m_TotalZoom *= factor;
         m_Camera.zoom(factor);
+        ToggleCamera(false);
     }
     else if(event.type == sf::Event::MouseButtonPressed) {
         if(event.mouseButton.button == sf::Mouse::Button::Left) {
@@ -313,22 +183,19 @@ void EditorMenu::Event(const sf::Event& event) {
                 if(m_MapMode == MapMode::PROVINCES || MapModeIsTitle(m_MapMode)) {
                     SharedPtr<Province> province = this->GetHoveredProvince();
                     if(province != nullptr) {
-                        bool isSelected = m_SelectionHandler.IsSelected(province);
 
-                        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-                            m_SelectionHandler.Deselect(province);
+                        if(MapModeIsTitle(m_MapMode)) {
+                            SharedPtr<Title> title = m_App->GetMod()->GetProvinceLiegeTitle(province, MapModeToTileType(m_MapMode));
+                            if(title == nullptr)
+                                return;
+                            m_SelectionHandler.OnClick(title);
                         }
-                        else if(!isSelected) {
-                            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                                m_SelectionHandler.ClearSelection();
-                            m_SelectionHandler.Select(province);
-                        }
+                        m_SelectionHandler.OnClick(province);
                     }
                 }
             }
         }
     }
-    ToggleCamera(false);
 }
 
 void EditorMenu::Render() {
@@ -339,6 +206,17 @@ void EditorMenu::Render() {
     provinceShader.setUniform("texture", sf::Shader::CurrentTexture);
     provinceShader.setUniform("time", m_Clock.getElapsedTime().asSeconds());
     provinceShader.setUniform("mapMode", (int) m_MapMode);
+
+    ToggleCamera(true);
+
+    if(m_MapMode == MapMode::PROVINCES || MapModeIsTitle(m_MapMode))
+        window.draw(m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
+    else 
+        window.draw(m_MapSprite);
+
+    ToggleCamera(false);
+
+    window.draw(m_HoverText);
 
     this->RenderMenuBar();
     this->SetupDockspace();
@@ -352,20 +230,42 @@ void EditorMenu::Render() {
         ImGui::End();   
     }
 
-    ToggleCamera(true);
-
-    if(m_MapMode == MapMode::PROVINCES || MapModeIsTitle(m_MapMode))
-        window.draw(m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
-    else 
-        window.draw(m_MapSprite);
-
-    ToggleCamera(false);
-
-    window.draw(m_HoverText);
-
     if(m_ExitToMainMenu) {
         m_App->OpenMenu(MakeUnique<HomeMenu>(m_App));
     }
+}
+
+void EditorMenu::InitSelectionCallbacks() {
+    m_SelectionHandler.AddCallback([&](SharedPtr<Province> province) {
+        if(m_MapMode != MapMode::PROVINCES)
+            return SelectionCallbackResult::CONTINUE;
+
+        bool isSelected = m_SelectionHandler.IsSelected(province);
+
+        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+            m_SelectionHandler.Deselect(province);
+        }
+        else if(!isSelected) {
+            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                m_SelectionHandler.ClearSelection();
+            m_SelectionHandler.Select(province);
+        }
+        return SelectionCallbackResult::CONTINUE;
+    });
+    
+    m_SelectionHandler.AddCallback([&](SharedPtr<Title> title) {
+        bool isSelected = m_SelectionHandler.IsSelected(title);
+
+        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+            m_SelectionHandler.Deselect(title);
+        }
+        else if(!isSelected) {
+            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                m_SelectionHandler.ClearSelection();
+            m_SelectionHandler.Select(title);
+        }
+        return SelectionCallbackResult::CONTINUE;
+    });
 }
 
 void EditorMenu::InitTabs() {

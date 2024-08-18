@@ -38,6 +38,7 @@ public:
     virtual TitleType GetType() const = 0;
     std::vector<SharedPtr<Title>>& GetDejureTitles();
     SharedPtr<CountyTitle>& GetCapitalTitle();
+    bool IsDejureTitle(const SharedPtr<Title>& title);
 
     void AddDejureTitle(SharedPtr<Title> title);
     void RemoveDejureTitle(SharedPtr<Title> title);

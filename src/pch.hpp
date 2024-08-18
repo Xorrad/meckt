@@ -25,6 +25,7 @@
 #include "app/map/TitleType.hpp"
 #include "app/map/MapMode.hpp"
 #include "app/map/TerrainType.hpp"
+#include "app/menu/selection/SelectionCallbackResult.hpp"
 
 // Custom backward::SignalHandling to print stacktrace to file.
 class SignalHandler;

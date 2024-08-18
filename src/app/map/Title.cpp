@@ -51,10 +51,16 @@ SharedPtr<CountyTitle>& HighTitle::GetCapitalTitle() {
     return m_CapitalTitle;
 }
 
+bool HighTitle::IsDejureTitle(const SharedPtr<Title>& title) {
+    return std::find(m_DejureTitles.begin(), m_DejureTitles.end(), title) != m_DejureTitles.end();
+}
+
 void HighTitle::AddDejureTitle(SharedPtr<Title> title) {
     if(title == nullptr)
         return;
-    m_DejureTitles.push_back(title);
+
+    if(!this->IsDejureTitle(title))
+        m_DejureTitles.push_back(title);
 
     SharedPtr<HighTitle> previousLiege = title->GetLiegeTitle();
     if(previousLiege != nullptr) {
