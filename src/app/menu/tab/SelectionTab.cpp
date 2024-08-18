@@ -38,16 +38,22 @@ void SelectionTab::RenderCreateTitle() {
         ImGui::Text("All those beautiful files will be deleted.\nThis operation cannot be undone!");
         ImGui::Separator();
 
-        static std::string name = "c_";
-        static TitleType type = TitleType::COUNTY;
-        static sf::Color color = sf::Color::Red;
-        static bool landless = false;
+        static std::string name;
+        static TitleType type;
+        static sf::Color color;
+        static bool landless;
 
         // If there is at least one title selected then use that title upper type ass
         // the default type for the new title (capping at the empire level).
-        static bool initializing = true;
-        if(initializing) {
-            initializing = false;
+        static bool initialized = false;
+        if(!initialized) {
+            initialized = true;
+
+            name = "c_";
+            type = TitleType::COUNTY;
+            color = sf::Color::Red;
+            landless = false;
+
             if(m_Menu->GetSelectionHandler().GetTitles().size() > 0) {
                 const SharedPtr<Title>& selectedTitle = m_Menu->GetSelectionHandler().GetTitles()[0];
                 type = (TitleType) (std::max((int) selectedTitle->GetType() + 1, (int) TitleType::EMPIRE));
@@ -87,9 +93,13 @@ void SelectionTab::RenderCreateTitle() {
         ImGui::PopStyleVar();
 
         bool isNameTaken = mod->GetTitles().count(name) > 0;
+        if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another title.");
         if(isNameTaken) ImGui::BeginDisabled();
         if(ImGui::Button("Create", ImVec2(120, 0)) && !isNameTaken) {
             ImGui::CloseCurrentPopup();
+
+            // To reset the name and type for the next time creating a title.
+            initialized = false;
 
             // Create a new title using the attributes.
             SharedPtr<Title> title = MakeTitle(type, name, color);
