@@ -43,6 +43,18 @@ void SelectionTab::RenderCreateTitle() {
         static sf::Color color = sf::Color::Red;
         static bool landless = false;
 
+        // If there is at least one title selected then use that title upper type ass
+        // the default type for the new title (capping at the empire level).
+        static bool initializing = true;
+        if(initializing) {
+            initializing = false;
+            if(m_Menu->GetSelectionHandler().GetTitles().size() > 0) {
+                const SharedPtr<Title>& selectedTitle = m_Menu->GetSelectionHandler().GetTitles()[0];
+                type = (TitleType) (std::max((int) selectedTitle->GetType() + 1, (int) TitleType::EMPIRE));
+                name = GetTitlePrefixByType(type) + "_";
+            }
+        }
+
         if(ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, FilterTitleName)) {
             if(!IsValidTitleName(name, type)) {
                 std::string prefix = GetTitlePrefixByType(type);
@@ -57,7 +69,7 @@ void SelectionTab::RenderCreateTitle() {
                 if (ImGui::Selectable(TitleTypeLabels[i], isSelected)) {
                     type = (TitleType) i;
 
-                    // Update the prefix in the name input.
+                    // Update the prefix in the name input to match the new type.
                     std::string prefix = GetTitlePrefixByType(type);
                     name = name.substr(2, name.size()-2);
                     name = prefix + "_" + name;
@@ -79,12 +91,27 @@ void SelectionTab::RenderCreateTitle() {
         if(ImGui::Button("Create", ImVec2(120, 0)) && !isNameTaken) {
             ImGui::CloseCurrentPopup();
 
+            // Create a new title using the attributes.
             SharedPtr<Title> title = MakeTitle(type, name, color);
             mod->GetTitles()[name] = title;
             mod->GetTitlesByType()[type].push_back(title);
 
-            // TODO: add selected titles as dejure titles (only if correct type).
             // TODO: use landless attribute when creating title.
+
+            if(type != TitleType::BARONY) {
+                // If the title is at least a county, then add every selected titles of the
+                // right type (one type lower than that of the title) as dejure titles.
+                const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+
+                for(const auto& selectedTitle : m_Menu->GetSelectionHandler().GetTitles()) {
+                    if((int) selectedTitle->GetType() != (int) type - 1)
+                        continue;
+                    highTitle->AddDejureTitle(selectedTitle);
+                }
+            }
+            else {
+                // TODO: use first selected barony as province id for the new title.
+            }
         }
         if(isNameTaken) ImGui::EndDisabled();
 
