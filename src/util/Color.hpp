@@ -49,6 +49,10 @@ namespace sf {
 			return (*this);
 		}
 
+		Uint32 toInteger() const {
+			return toRgb().toInteger();
+		}
+
 		// credits to https://gist.github.com/marukrap/7c361f2c367eaf40537a8715e3fd952as
 		// for the conversion between rgb and hsv.
 
