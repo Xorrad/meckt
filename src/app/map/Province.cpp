@@ -78,6 +78,10 @@ ProvinceHolding Province::GetHolding() const {
     return m_Holding;
 }
 
+void Province::SetName(std::string name) {
+    m_Name = name;
+}
+
 void Province::SetColor(sf::Color color) {
     m_Color = color;
 }

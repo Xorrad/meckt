@@ -43,6 +43,10 @@ void SelectionTab::RenderCreateTitle() {
         static sf::Color color;
         static bool landless;
 
+        bool hasSelectedTitle = (m_Menu->GetSelectionHandler().GetTitles().size() > 0);
+        bool hasSelectedProvince = (m_Menu->GetSelectionHandler().GetProvinces().size() > 0);
+        bool isNameTaken = mod->GetTitles().count(name) > 0;
+
         // If there is at least one title selected then use that title upper type ass
         // the default type for the new title (capping at the empire level).
         static bool initialized = false;
@@ -54,9 +58,13 @@ void SelectionTab::RenderCreateTitle() {
             color = sf::Color::Red;
             landless = false;
 
-            if(m_Menu->GetSelectionHandler().GetTitles().size() > 0) {
+            if(hasSelectedTitle) {
                 const SharedPtr<Title>& selectedTitle = m_Menu->GetSelectionHandler().GetTitles()[0];
                 type = (TitleType) (std::max((int) selectedTitle->GetType() + 1, (int) TitleType::EMPIRE));
+                name = GetTitlePrefixByType(type) + "_";
+            }
+            else if(hasSelectedProvince) {
+                type = TitleType::BARONY;
                 name = GetTitlePrefixByType(type) + "_";
             }
         }
@@ -91,9 +99,11 @@ void SelectionTab::RenderCreateTitle() {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::Checkbox("Landless", &landless);
         ImGui::PopStyleVar();
-
-        bool isNameTaken = mod->GetTitles().count(name) > 0;
+        
         if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another title.");
+        if(!hasSelectedProvince && type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "No province is currently selected!");
+        if(type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This operation will change the barony name!");
+
         if(isNameTaken) ImGui::BeginDisabled();
         if(ImGui::Button("Create", ImVec2(120, 0)) && !isNameTaken) {
             ImGui::CloseCurrentPopup();
@@ -120,8 +130,15 @@ void SelectionTab::RenderCreateTitle() {
                 }
             }
             else {
-                // TODO: use first selected barony as province id for the new title.
+                // If no province is currently selected, the default province id for the barony will be 0.
+                int provinceId = (hasSelectedProvince) ? m_Menu->GetSelectionHandler().GetProvinces()[0]->GetId() : 0;
+                const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(title);
+                barony->SetProvinceId(provinceId);
+
+                mod->GetProvincesByIds()[provinceId]->SetName(name);
             }
+
+            m_Menu->SwitchMapMode(TitleTypeToMapMode(type), true);
         }
         if(isNameTaken) ImGui::EndDisabled();
 

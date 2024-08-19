@@ -52,6 +52,7 @@ public:
     std::string GetReligion() const;
     ProvinceHolding GetHolding() const;
 
+    void SetName(std::string name);
     void SetColor(sf::Color color);
     void SetFlags(ProvinceFlags flags);
     void SetFlag(ProvinceFlags flag, bool enabled);
