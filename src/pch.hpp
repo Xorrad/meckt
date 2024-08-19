@@ -8,6 +8,7 @@
 #include <deque>
 #include <set>
 #include <functional>
+#include <random>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>

@@ -73,6 +73,33 @@ std::map<TitleType, std::vector<SharedPtr<Title>>>& Mod::GetTitlesByType() {
     return m_TitlesByType;
 }
 
+void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb) {
+    // TODO: add the likeness as an input in the modal.
+    float likeness = 0.05f;
+    sf::HSVColor defaultColor = rgb;
+
+    // Generate a list of colors with a uniformly spaced
+    // saturation around the saturation of the original color.
+    std::vector<sf::HSVColor> colors;
+    float total = likeness * titles.size();
+    // Make sure that the starting saturation is between 0 and (1-total).
+    float saturation = std::min(std::max(0.f, defaultColor.s - total / 2.f), 1.f - total);
+    float maxSaturation = saturation + total;
+    while(saturation <= maxSaturation) {
+        colors.push_back(sf::HSVColor(defaultColor.h, saturation, defaultColor.v));
+        saturation += likeness;
+    }
+
+    // Shuffle the colors not to have a gradient but random
+    // distribution which may make it easier to discern titles.
+    std::random_shuffle(colors.begin(), colors.end());
+
+    // Apply those colors to the titles.
+    for(int i = 0; i < titles.size(); i++) {
+        titles[i]->SetColor(colors[i]);
+    }
+}
+
 void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
     switch(mode) {
         case MapMode::PROVINCES:

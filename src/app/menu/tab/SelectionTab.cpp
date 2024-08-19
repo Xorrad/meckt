@@ -35,7 +35,7 @@ void SelectionTab::RenderCreateTitle() {
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Create a new title", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("All those beautiful files will be deleted.\nThis operation cannot be undone!");
+        ImGui::Text("Create a new title with the attributes below:");
         ImGui::Separator();
 
         static std::string name;
@@ -134,7 +134,52 @@ void SelectionTab::RenderCreateTitle() {
 }
 
 void SelectionTab::RenderHarmonizeColors() {
-    if(ImGui::Button("harmonize colors")) {
-        
+    if(ImGui::Button("harmonize colors"))
+        ImGui::OpenPopup("Harmonize colors");
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Harmonize colors", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Harmonize the colors of titles to match the color below:");
+        ImGui::Separator();
+
+        bool hasTitlesSelected = (m_Menu->GetSelectionHandler().GetTitles().size() > 0);
+
+        static sf::Color color;
+        static bool initialized = false;
+        if(!initialized) {
+            initialized = true;
+            color = sf::Color::Red;
+
+            // Use the first selected title as default color.
+            if(hasTitlesSelected) {
+                color = m_Menu->GetSelectionHandler().GetTitles()[0]->GetColor();
+            }
+        }
+
+        if(!hasTitlesSelected) ImGui::BeginDisabled();
+        ImGui::ColorEdit3("color", &color);
+        if(!hasTitlesSelected) ImGui::EndDisabled();
+
+        if(!hasTitlesSelected) {
+            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "You have to select at least one title.");
+            ImGui::BeginDisabled();
+        }
+        if(ImGui::Button("Harmonize", ImVec2(120, 0)) && hasTitlesSelected) {
+            ImGui::CloseCurrentPopup();
+
+            // To reset the color for the next time using this operation.
+            initialized = false;
+
+            m_Menu->GetApp()->GetMod()->HarmonizeTitlesColors(m_Menu->GetSelectionHandler().GetTitles(), color);
+            m_Menu->SwitchMapMode(m_Menu->GetMapMode(), true);
+        }
+        if(!hasTitlesSelected) ImGui::EndDisabled();
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel", ImVec2(120, 0)))
+            ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
     }
 }
