@@ -73,9 +73,7 @@ std::map<TitleType, std::vector<SharedPtr<Title>>>& Mod::GetTitlesByType() {
     return m_TitlesByType;
 }
 
-void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb) {
-    // TODO: add the likeness as an input in the modal.
-    float likeness = 0.05f;
+void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float likeness) {
     sf::HSVColor defaultColor = rgb;
 
     // Generate a list of colors with a uniformly spaced
