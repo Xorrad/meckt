@@ -30,6 +30,9 @@ void App::OpenMod(SharedPtr<Mod> mod) {
 }
 
 void App::Init() {
+    // Initialize random seed.
+    srand(time(NULL));
+
     // Initialize app-related functionalities.
     Logger::ClearLogs();
     Configuration::Initialize();

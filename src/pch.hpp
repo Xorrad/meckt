@@ -17,6 +17,7 @@
 #include "util/Ptr.hpp"
 #include "util/Logger.hpp"
 #include "util/String.hpp"
+#include "util/Math.hpp"
 #include "util/File.hpp"
 #include "util/Color.hpp"
 #include "util/Date.hpp"

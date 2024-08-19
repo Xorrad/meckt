@@ -147,7 +147,8 @@ void SelectionTab::RenderHarmonizeColors() {
 
         static sf::Color color;
         static bool initialized = false;
-        static int likeness = 8;
+        static int hue = 3;
+        static int saturation = 20;
         if(!initialized) {
             initialized = true;
             color = sf::Color::Red;
@@ -159,25 +160,28 @@ void SelectionTab::RenderHarmonizeColors() {
         }
 
         if(!hasTitlesSelected) ImGui::BeginDisabled();
-        ImGui::ColorEdit3("color", &color);
-        ImGui::DragInt("likeness", &likeness, 1, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::ColorEdit3("color", &color, ImGuiColorEditFlags_PickerHueWheel);
+
+        ImGui::DragInt("hue spread", &hue, 1, 0, 360, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragInt("saturation spread", &saturation, 1, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
 
         if(!hasTitlesSelected) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "You have to select at least one title.");
+
         if(ImGui::Button("Harmonize", ImVec2(120, 0)) && hasTitlesSelected) {
             ImGui::CloseCurrentPopup();
-
-            // To reset the color for the next time using this operation.
             initialized = false;
 
-            m_Menu->GetApp()->GetMod()->HarmonizeTitlesColors(m_Menu->GetSelectionHandler().GetTitles(), color, likeness/100.f);
+            m_Menu->GetApp()->GetMod()->HarmonizeTitlesColors(m_Menu->GetSelectionHandler().GetTitles(), color, hue/100.f, saturation/100.f);
             m_Menu->SwitchMapMode(m_Menu->GetMapMode(), true);
         }
         if(!hasTitlesSelected) ImGui::EndDisabled();
 
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine();
-        if(ImGui::Button("Cancel", ImVec2(120, 0)))
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
+            initialized = false;
+        }
         ImGui::EndPopup();
     }
 }

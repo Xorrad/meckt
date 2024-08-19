@@ -73,19 +73,27 @@ std::map<TitleType, std::vector<SharedPtr<Title>>>& Mod::GetTitlesByType() {
     return m_TitlesByType;
 }
 
-void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float likeness) {
+void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float hue, float saturation) {
+    // Generate a list of colors with uniformly spaced saturations around
+    // the saturation of the original color while picking a random hue.
     sf::HSVColor defaultColor = rgb;
-
-    // Generate a list of colors with a uniformly spaced
-    // saturation around the saturation of the original color.
     std::vector<sf::HSVColor> colors;
-    float total = likeness * titles.size();
-    // Make sure that the starting saturation is between 0 and (1-total).
-    float saturation = std::min(std::max(0.f, defaultColor.s - total / 2.f), 1.f - total);
-    float maxSaturation = saturation + total;
-    while(saturation <= maxSaturation) {
-        colors.push_back(sf::HSVColor(defaultColor.h, saturation, defaultColor.v));
-        saturation += likeness;
+
+    // Define the range of values for hue and saturation.
+    float hues[] = { std::max(0.f, defaultColor.h - hue), std::min(360.f, defaultColor.h + hue) };
+    float saturations[] = { std::max(0.f, defaultColor.s - saturation), std::min(1.f, defaultColor.s + saturation) };
+
+    // Initialize first saturation value and the speed/step at which to increment it.
+    float s = saturations[0];
+    float saturationStep = (saturations[1] - saturations[0]) / (float) titles.size();
+
+    while(colors.size() < titles.size()) {
+        // TODO: check if the color isn't already used by another title when generating one.
+
+        float h = Math::RandomFloat(hues[0], hues[1]);
+        sf::HSVColor color = sf::HSVColor(h, s, defaultColor.v);
+        colors.push_back(color);
+        s += saturationStep;
     }
 
     // Shuffle the colors not to have a gradient but random

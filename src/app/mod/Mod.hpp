@@ -17,7 +17,7 @@ public:
     std::map<std::string, SharedPtr<Title>>& GetTitles();
     std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
 
-    void HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color color, float likeness = 0.08f);
+    void HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color color, float hue, float saturation);
 
     void LoadMapModeTexture(sf::Texture& texture, MapMode mode);
     void UpdateTitlesImages(sf::Texture& texture, TitleType type);
