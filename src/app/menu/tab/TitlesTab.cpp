@@ -67,8 +67,10 @@ void TitlesTab::Render() {
             }
         };
 
-        for(const auto& empireTitle : mod->GetTitlesByType()[TitleType::EMPIRE])
-            DisplayTitle(empireTitle);
+        for(const auto& [name, title] : mod->GetTitles()) {
+            if(title->GetLiegeTitle() == nullptr)
+                DisplayTitle(title);
+        }
 
         ImGui::EndTable();
     }
