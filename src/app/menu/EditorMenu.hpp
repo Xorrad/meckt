@@ -45,6 +45,7 @@ private:
     sf::Text m_HoverText;
 
     std::map<Tabs, SharedPtr<Tab>> m_Tabs;
+    bool m_DisplayBorders;
 
     bool m_ExitToMainMenu;
 };

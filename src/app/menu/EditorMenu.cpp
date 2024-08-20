@@ -13,10 +13,12 @@ EditorMenu::EditorMenu(App* app)
 : Menu(app, "Editor"),
 m_MapMode(MapMode::PROVINCES),
 m_SelectionHandler(SelectionHandler(this)),
+m_DisplayBorders(true),
 m_ExitToMainMenu(false)
 {
     m_App->GetMod()->LoadMapModeTexture(m_ProvinceTexture, MapMode::PROVINCES);
     Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", m_ProvinceTexture);
+    Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTextureSize", sf::Vector2f(m_ProvinceTexture.getSize()));
 
     m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
     m_MapSprite.setTexture(m_MapTexture);
@@ -206,6 +208,7 @@ void EditorMenu::Render() {
     provinceShader.setUniform("texture", sf::Shader::CurrentTexture);
     provinceShader.setUniform("time", m_Clock.getElapsedTime().asSeconds());
     provinceShader.setUniform("mapMode", (int) m_MapMode);
+    provinceShader.setUniform("displayBorders", m_DisplayBorders);
 
     ToggleCamera(true);
 
@@ -336,6 +339,8 @@ void EditorMenu::RenderMenuBar() {
             for(const auto& [type, tab] : m_Tabs) {
                 ImGui::MenuItem(tab->GetName().c_str(), "", &tab->IsVisible());
             }
+            
+            ImGui::MenuItem("Borders", "", &m_DisplayBorders);
 
             if(ImGui::BeginMenu("Map")) {
                 for(int i = 0; i < (int) MapMode::COUNT; i++) {
@@ -345,6 +350,7 @@ void EditorMenu::RenderMenuBar() {
                 }
                 ImGui::EndMenu();
             }
+
 
             ImGui::EndMenu();
         }
