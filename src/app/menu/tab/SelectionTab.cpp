@@ -96,13 +96,15 @@ void SelectionTab::RenderCreateTitle() {
 
         ImGui::ColorEdit3("color", &color);
 
+        ImGui::BeginDisabled();
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::Checkbox("Landless", &landless);
         ImGui::PopStyleVar();
+        ImGui::EndDisabled();
         
         if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another title.");
         if(!hasSelectedProvince && type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "No province is currently selected!");
-        if(type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This operation will change the barony name!");
+        if(type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This operation will change the province name!");
 
         if(isNameTaken) ImGui::BeginDisabled();
         if(ImGui::Button("Create", ImVec2(120, 0)) && !isNameTaken) {
