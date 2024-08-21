@@ -168,6 +168,10 @@ void PropertiesTab::RenderTitles() {
                 m_Menu->GetSelectionHandler().Update();
             }
 
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            ImGui::Checkbox("Landless", &title->m_Landless);
+            ImGui::PopStyleVar();
+
             if(title->Is(TitleType::BARONY)) {
                 const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(title);
                 ImGui::InputInt("province id", &barony->m_ProvinceId);

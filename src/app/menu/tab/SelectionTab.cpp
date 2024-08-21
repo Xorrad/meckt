@@ -96,11 +96,9 @@ void SelectionTab::RenderCreateTitle() {
 
         ImGui::ColorEdit3("color", &color);
 
-        ImGui::BeginDisabled();
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::Checkbox("Landless", &landless);
         ImGui::PopStyleVar();
-        ImGui::EndDisabled();
         
         if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another title.");
         if(!hasSelectedProvince && type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "No province is currently selected!");
@@ -114,7 +112,7 @@ void SelectionTab::RenderCreateTitle() {
             initialized = false;
 
             // Create a new title using the attributes.
-            SharedPtr<Title> title = MakeTitle(type, name, color);
+            SharedPtr<Title> title = MakeTitle(type, name, color, landless);
             mod->GetTitles()[name] = title;
             mod->GetTitlesByType()[type].push_back(title);
 

@@ -409,10 +409,11 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             // This function throws an exception if key does not
             // correspond to a title type.
             TitleType type = GetTitleTypeByName(key);
+            bool landless = !value.ContainsKey("landless") ? false : value.Get("landless");
 
             // Need to use a custom function to create a SharedPtr<Title>
             // to get the right derived class such as BaronyTitle, CountyTitle...
-            SharedPtr<Title> title = MakeTitle(type, key, value.Get("color"));
+            SharedPtr<Title> title = MakeTitle(type, key, value.Get("color"), landless);
 
             // fmt::println("{} {}", key, TitleTypeLabels[(int) type]);
 

@@ -4,7 +4,7 @@ class Title {
 friend PropertiesTab;
 public:
     Title();
-    Title(std::string name, sf::Color color);
+    Title(std::string name, sf::Color color, bool landless = false);
     virtual ~Title() = default;
 
     // Title(const Title& title) = delete;
@@ -15,24 +15,27 @@ public:
     std::string GetName() const;
     sf::Color GetColor() const;
     SharedPtr<HighTitle>& GetLiegeTitle();
+    bool IsLandless() const;
     
     bool Is(TitleType type) const;
 
     void SetName(std::string name);
     void SetColor(sf::Color color);
     void SetLiegeTitle(SharedPtr<HighTitle> title);
+    void SetLandless(bool landless);
 
 protected:
     std::string m_Name;
     sf::Color m_Color;
     SharedPtr<HighTitle> m_LiegeTitle;
+    bool m_Landless;
 };
 
 class HighTitle : public Title, public std::enable_shared_from_this<HighTitle> {
 friend PropertiesTab;
 public:
     HighTitle();
-    HighTitle(std::string name, sf::Color color);
+    HighTitle(std::string name, sf::Color color, bool landless = false);
     virtual ~HighTitle() = default;
 
     virtual TitleType GetType() const = 0;
@@ -53,8 +56,8 @@ class BaronyTitle : public Title {
 friend PropertiesTab;
 public:
     BaronyTitle();
-    BaronyTitle(std::string name, sf::Color color);
-    BaronyTitle(std::string name, sf::Color color, int provinceId);
+    BaronyTitle(std::string name, sf::Color color, bool landless = false);
+    BaronyTitle(std::string name, sf::Color color, bool landless, int provinceId);
 
     virtual TitleType GetType() const;
     int GetProvinceId() const;
@@ -68,7 +71,7 @@ class CountyTitle : public HighTitle {
 friend PropertiesTab;
 public:
     CountyTitle();
-    CountyTitle(std::string name, sf::Color color);
+    CountyTitle(std::string name, sf::Color color, bool landless = false);
 
     virtual TitleType GetType() const;
 };
@@ -77,7 +80,7 @@ class DuchyTitle : public HighTitle {
 friend PropertiesTab;
 public:
     DuchyTitle();
-    DuchyTitle(std::string name, sf::Color color);
+    DuchyTitle(std::string name, sf::Color color, bool landless = false);
 
     virtual TitleType GetType() const;
 };
@@ -86,7 +89,7 @@ class KingdomTitle : public HighTitle {
 friend PropertiesTab;
 public:
     KingdomTitle();
-    KingdomTitle(std::string name, sf::Color color);
+    KingdomTitle(std::string name, sf::Color color, bool landless = false);
 
     virtual TitleType GetType() const;
 };
@@ -95,7 +98,7 @@ class EmpireTitle : public HighTitle {
 friend PropertiesTab;
 public:
     EmpireTitle();
-    EmpireTitle(std::string name, sf::Color color);
+    EmpireTitle(std::string name, sf::Color color, bool landless = false);
 
     virtual TitleType GetType() const;
 };

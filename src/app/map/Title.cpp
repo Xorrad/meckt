@@ -2,7 +2,7 @@
 
 Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 
-Title::Title(std::string name, sf::Color color) : m_Name(name), m_Color(color) {}
+Title::Title(std::string name, sf::Color color, bool landless) : m_Name(name), m_Color(color), m_Landless(landless) {}
 
 // Title::Title(const Title& title) : Title(title.GetName(), title.GetColor()) {}
 
@@ -16,6 +16,10 @@ sf::Color Title::GetColor() const {
 
 SharedPtr<HighTitle>& Title::GetLiegeTitle() {
     return m_LiegeTitle;
+}
+
+bool Title::IsLandless() const {
+    return m_Landless;
 }
 
 bool Title::Is(TitleType type) const {
@@ -34,9 +38,13 @@ void Title::SetLiegeTitle(SharedPtr<HighTitle> title) {
     m_LiegeTitle = title;
 }
 
+void Title::SetLandless(bool landless) {
+    m_Landless = landless;
+}
+
 HighTitle::HighTitle() : Title("", sf::Color(0, 0, 0)) {}
 
-HighTitle::HighTitle(std::string name, sf::Color color) : Title(name, color) {}
+HighTitle::HighTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless) {}
 
 // HighTitle::~HighTitle() {
 //     m_DejureTitles.clear();
@@ -81,8 +89,8 @@ void HighTitle::SetCapitalTitle(SharedPtr<CountyTitle> title) {
 }
 
 BaronyTitle::BaronyTitle() : Title() {}
-BaronyTitle::BaronyTitle(std::string name, sf::Color color) : Title(name, color) {}
-BaronyTitle::BaronyTitle(std::string name, sf::Color color, int provinceId) : Title(name, color), m_ProvinceId(provinceId) {}
+BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless) {}
+BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless, int provinceId) : Title(name, color, landless), m_ProvinceId(provinceId) {}
 
 TitleType BaronyTitle::GetType() const {
     return TitleType::BARONY;
@@ -97,28 +105,28 @@ void BaronyTitle::SetProvinceId(int id) {
 }
 
 CountyTitle::CountyTitle() : HighTitle() {}
-CountyTitle::CountyTitle(std::string name, sf::Color color) : HighTitle(name, color) {}
+CountyTitle::CountyTitle(std::string name, sf::Color color, bool landless) : HighTitle(name, color, landless) {}
 
 TitleType CountyTitle::GetType() const {
     return TitleType::COUNTY;
 }
 
 DuchyTitle::DuchyTitle() : HighTitle() {}
-DuchyTitle::DuchyTitle(std::string name, sf::Color color) : HighTitle(name, color) {}
+DuchyTitle::DuchyTitle(std::string name, sf::Color color, bool landless) : HighTitle(name, color, landless) {}
 
 TitleType DuchyTitle::GetType() const {
     return TitleType::DUCHY;
 }
 
 KingdomTitle::KingdomTitle() : HighTitle() {}
-KingdomTitle::KingdomTitle(std::string name, sf::Color color) : HighTitle(name, color) {}
+KingdomTitle::KingdomTitle(std::string name, sf::Color color, bool landless) : HighTitle(name, color, landless) {}
 
 TitleType KingdomTitle::GetType() const {
     return TitleType::KINGDOM;
 }
 
 EmpireTitle::EmpireTitle() : HighTitle() {}
-EmpireTitle::EmpireTitle(std::string name, sf::Color color) : HighTitle(name, color) {}
+EmpireTitle::EmpireTitle(std::string name, sf::Color color, bool landless) : HighTitle(name, color, landless) {}
 
 TitleType EmpireTitle::GetType() const {
     return TitleType::EMPIRE;
