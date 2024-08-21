@@ -8,21 +8,21 @@ using namespace Parser::Impl;
 //         Node class         //
 ////////////////////////////////
 
-Node::Node() : m_Value(MakeShared<NodeHolder>()) {
+Node::Node() : m_Value(MakeShared<NodeHolder>()), m_Depth(0) {
 
 }
 
 Node::Node(const Node& node)
-: m_Value((node.m_Value == nullptr) ? nullptr : node.m_Value->Copy())
+: m_Value((node.m_Value == nullptr) ? nullptr : node.m_Value->Copy()), m_Depth(0)
 {
 
 }
 
-Node::Node(const RawValue& value) : m_Value(MakeShared<LeafHolder>(value)) {
+Node::Node(const RawValue& value) : m_Value(MakeShared<LeafHolder>(value)), m_Depth(0) {
 
 }
 
-Node::Node(const std::map<Key, Node>& values) : m_Value(MakeShared<NodeHolder>(values)) {
+Node::Node(const std::map<Key, Node>& values) : m_Value(MakeShared<NodeHolder>(values)), m_Depth(0) {
 
 }
 
@@ -40,6 +40,15 @@ bool Node::IsList() const {
         || (t == ValueType::BOOL_LIST)
         || (t == ValueType::STRING_LIST);
 
+}
+
+uint Node::GetDepth() const {
+    return m_Depth;
+}
+
+void Node::SetDepth(uint depth) {
+    m_Depth = depth;
+    m_Value->SetDepth(depth);
 }
 
 void Node::Push(const RawValue& value) {
@@ -150,6 +159,7 @@ void Node::Put(const Key& key, const Node& node) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Put' on leaf node.");
     this->GetNodeHolder()->m_Values[key] = node;
+    this->GetNodeHolder()->m_Values[key].SetDepth(m_Depth + 1);
 }
 
 Node::operator int() const {
@@ -250,8 +260,11 @@ Node& Node::operator=(const RawValue& value) {
 Node& Node::operator=(const Node& value) {
     if(!this->Is(ValueType::NODE) && !value.Is(ValueType::NODE))
         this->GetLeafHolder()->m_Value = value.GetLeafHolder()->m_Value;
-    else
+    else {
+        auto holder = value.m_Value->Copy();
+        holder->SetDepth(m_Depth);
         m_Value = value.m_Value->Copy();
+    }
     return *this;
 }
 
@@ -314,6 +327,11 @@ SharedPtr<AbstractValueHolder> NodeHolder::Copy() const {
     return copy;
 }
 
+void NodeHolder::SetDepth(uint depth) {
+    for(auto& [key, node] : m_Values)
+        node.SetDepth(depth + 1);
+}
+
 ////////////////////////////////
 //      LeafHolder class      //
 ////////////////////////////////
@@ -334,16 +352,20 @@ SharedPtr<AbstractValueHolder> LeafHolder::Copy() const {
     return copy;
 }
 
+void LeafHolder::SetDepth(uint depth) {}
+
 Node Parser::Parse(const std::string& filePath) {
     std::ifstream file(filePath);
     std::string content = File::ReadString(file);
     file.close();
 
     std::deque<PToken> tokens = Parser::Lex(content);
-    return Parse(tokens);
+    Node node = Parse(tokens);
+    node.SetDepth(0);
+    return node;
 }
 
-Node Parser::Parse(std::deque<PToken>& tokens) {
+Node Parser::Parse(std::deque<PToken>& tokens, uint depth) {
     enum ParsingState { KEY, OPERATOR, VALUE };
     ParsingState state = KEY;
 
@@ -417,6 +439,7 @@ Node Parser::Parse(std::deque<PToken>& tokens) {
         }
     }
 
+    values.SetDepth(depth);
     return values;
 }
 
@@ -644,7 +667,7 @@ void Parser::Benchmark() {
 
     // Display the result.
     fmt::println("\n------------------RESULT--------------------\n");
-    // fmt::println("{}", result);
+    fmt::println("{}", result);
     fmt::println("\n--------------------------------------------\n");
 
     ///////////////////////////
@@ -679,8 +702,20 @@ void Parser::Benchmark() {
         fmt::println("scope:value => {}", result.Get(ScopedString("scope", "value")));
         // fmt::println("scope => {}", (ScopedString) result.Get("scope"));
         
-
         // Test date as key
         fmt::println("1000.1.1 => {}", result.Get(Date(1000, 1, 1)));
+        
+        // Test utf8 characters as value
+        fmt::println("utf8 => {}", result.Get("utf8"));
+
+        // Test depth
+        fmt::println("depth: {}", result.Get("depth").GetDepth());
+        fmt::println("depth.name: {} {}", result.Get("depth").Get("name"), result.Get("depth").Get("name").GetDepth());
+        fmt::println("depth.1: {}", result.Get("depth").Get(1.0).GetDepth());
+        fmt::println("depth.1.name: {} {}", result.Get("depth").Get(1.0).Get("name"), result.Get("depth").Get(1.0).Get("name").GetDepth());
+        fmt::println("depth.1.2: {}", result.Get("depth").Get(1.0).Get(2.0).GetDepth());
+        fmt::println("depth.1.2.name: {} {}", result.Get("depth").Get(1.0).Get(2.0).Get("name"), result.Get("depth").Get(1.0).Get(2.0).Get("name").GetDepth());
+        fmt::println("depth.1.3: {}", result.Get("depth").Get(1.0).Get(2.0).Get(3.0).GetDepth());
+        fmt::println("depth.1.3.name: {} {}", result.Get("depth").Get(1.0).Get(2.0).Get(3.0).Get("name"), result.Get("depth").Get(1.0).Get(2.0).Get(3.0).Get("name").GetDepth());
     }
 }

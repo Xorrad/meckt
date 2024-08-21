@@ -32,6 +32,9 @@ namespace Parser {
             bool Is(ValueType type) const;
             bool IsList() const;
 
+            uint GetDepth() const;
+            void SetDepth(uint depth);
+
             // Functions to use with LeafHolder.
             void Push(const RawValue& value);
 
@@ -75,12 +78,14 @@ namespace Parser {
 
         private:
             SharedPtr<AbstractValueHolder> m_Value;
+            uint m_Depth;
     };
 
     class AbstractValueHolder {
         public:
             virtual ValueType GetType() const = 0;
             virtual SharedPtr<AbstractValueHolder> Copy() const = 0;
+            virtual void SetDepth(uint depth) = 0;
     };
 
     class NodeHolder : public AbstractValueHolder {
@@ -93,6 +98,7 @@ namespace Parser {
 
             virtual ValueType GetType() const;
             virtual SharedPtr<AbstractValueHolder> Copy() const;
+            virtual void SetDepth(uint depth);
 
         private:
             std::map<Key, Node> m_Values;
@@ -108,6 +114,7 @@ namespace Parser {
 
             virtual ValueType GetType() const;
             virtual SharedPtr<AbstractValueHolder> Copy() const;
+            virtual void SetDepth(uint depth);
 
         private:
             RawValue m_Value;
@@ -115,8 +122,8 @@ namespace Parser {
 
 
     Node Parse(const std::string& content);
-    Node Parse(std::deque<PToken>& tokens);
-    
+    Node Parse(std::deque<PToken>& tokens, uint depth = 0);
+
     namespace Impl {
         Node ParseNode(std::deque<PToken>& tokens);
         Node ParseRaw(PToken token, std::deque<PToken>& tokens);
@@ -209,9 +216,9 @@ public:
     constexpr auto format(const Parser::Node& node, Context& ctx) const {
         if(node.Is(Parser::ValueType::NODE)) {
             auto v = std::views::transform(node.GetEntries(), [](const auto& p) {
-                return fmt::format("{} = {}", p.first, p.second);
+                return fmt::format("{}{} = {}", std::string(p.second.GetDepth(), '\t'), p.first, p.second);
             });
-            return format_to(ctx.out(), "{{\n{}\n}}", fmt::join(v, "\n"));
+            return format_to(ctx.out(), "{{\n{}\n{}}}", fmt::join(v, "\n"), std::string(node.GetDepth(), '\t'));
         }
         return format_to(ctx.out(), "{}", (Parser::RawValue&) node);
     }
