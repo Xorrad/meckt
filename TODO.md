@@ -1,9 +1,6 @@
 # PRIORITY
-- Add button to destroy a title
 - Fix duchy in the vale (d_) which does not load
-- Add button to switch to province in barony properties
 - Ask to generate provinces if a color is present in provinces.png but not definition.csv
-- Import coastal, island and land flags from files for provinces
 - Keep extra title data from the parser not to discard them when exporting (same for provinces?)
 - Keep track of the file in which a title is saved
 - Export provinces (definition, default.map, terrain, culture, religion...)
@@ -12,14 +9,18 @@
 - Add button to change barony province id (by clicking on map)
 - Add way to change the order of dejure titles to change counties' capital barony
 - Add way to focus camera on province or title on map
-- Add checkbox 'landless' for titles
+- Import coastal, island and land flags from files for provinces
 
 # IN FUTURE
 - Add console tab with logs, errors...
 - Add history for titles
 - Improve map drawing to be able to display all kinds of titles at the same time (i.e baronies and d_xxxxx)
+- Add button to open .txt file of title / province
+- Add button to change a province sea-zone for port
 
 # IDEAS
 - Import custom terrain types
 - Import cultures and religions for autocompletion
 - Add button to merge provinces/titles of same type
+- Improve province/title selection highlighting (shader)
+- Change UI colors and style
