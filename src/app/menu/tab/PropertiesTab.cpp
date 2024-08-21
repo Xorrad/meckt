@@ -220,8 +220,50 @@ void PropertiesTab::RenderTitles() {
                         return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                     });
                 }
-
                 ImGui::EndChild();
+            }
+
+            if(ImGui::Button("delete"))
+                ImGui::OpenPopup("Delete this title");
+
+            ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            if(ImGui::BeginPopupModal("Delete this title", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
+                ImGui::Separator();
+
+                if(ImGui::Button("Delete", ImVec2(120, 0))) {
+                    ImGui::CloseCurrentPopup();
+
+                    // Remove the title from his liege's dejure titles.
+                    if(!title->Is(TitleType::EMPIRE) && title->GetLiegeTitle()) {
+                        const SharedPtr<HighTitle>& liege = title->GetLiegeTitle();
+                        liege->RemoveDejureTitle(title);
+                    }
+
+                    // Remove the title as the liege of all his dejure titles.
+                    if(!title->Is(TitleType::BARONY)) {
+                        const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+                        for(auto& dejure : highTitle->GetDejureTitles()) {
+                            dejure->SetLiegeTitle(nullptr);
+                        }
+                    }
+
+                    const SharedPtr<Mod>& mod = m_Menu->GetApp()->GetMod();
+                    auto& l = mod->GetTitlesByType()[title->GetType()];
+
+                    mod->GetTitles().erase(title->GetName());
+                    l.erase(std::remove(l.begin(), l.end(), title));
+
+                    m_Menu->SwitchMapMode(m_Menu->GetMapMode(), true);
+                }
+
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+                if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
             }
 
             ImGui::PopID();
