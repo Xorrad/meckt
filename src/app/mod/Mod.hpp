@@ -33,6 +33,7 @@ public:
     std::vector<SharedPtr<Title>> ParseTitles(Parser::Node& data);
 
     void Export();
+    void ExportDefaultMapFile();
     void ExportProvincesDefinition();
     void ExportProvincesTerrain();
 

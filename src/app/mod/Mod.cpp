@@ -450,8 +450,46 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
 }
 
 void Mod::Export() {
+    this->ExportDefaultMapFile();
     this->ExportProvincesDefinition();
     this->ExportProvincesTerrain();
+}
+
+void Mod::ExportDefaultMapFile() {
+    // Read the file and keep all values except for the terrain flags
+    // such as: sea_zones, impassable_seas, lakes, impassable_mountains, river_provinces
+    Parser::Node data = Parser::Parse(m_Dir + "/map_data/default.map");
+
+    data.Put("sea_zones", Parser::Node(std::vector<double>()));
+    data.Put("impassable_seas", Parser::Node(std::vector<double>()));
+    data.Put("lakes", Parser::Node(std::vector<double>()));
+    data.Put("impassable_mountains", Parser::Node(std::vector<double>()));
+    data.Put("river_provinces", Parser::Node(std::vector<double>()));
+
+    // TODO: improve function to use range instead of giant list of ids.
+
+    for(const auto& [id, province] : m_ProvincesByIds) {
+        if(province->HasFlag(ProvinceFlags::SEA)) {
+            data.Get("sea_zones").Push((double) id);
+            if(province->HasFlag(ProvinceFlags::IMPASSABLE))
+                data.Get("impassable_seas").Push((double) id);
+        }
+        else if(province->HasFlag(ProvinceFlags::IMPASSABLE)) {
+                data.Get("impassable_mountains").Push((double) id);
+        }
+
+        if(province->HasFlag(ProvinceFlags::LAKE))
+            data.Get("lakes").Push((double) id);
+            
+        if(province->HasFlag(ProvinceFlags::RIVER))
+            data.Get("river_provinces").Push((double) id);
+    }
+
+    // TODO: add error log if file can't be opened.
+
+    std::ofstream file(m_Dir + "/map_data/default.map", std::ios::out);
+    fmt::println(file, "{}", data);
+    file.close();
 }
 
 void Mod::ExportProvincesDefinition() {
@@ -490,19 +528,21 @@ void Mod::ExportProvincesDefinition() {
 void Mod::ExportProvincesTerrain() {
     std::ofstream file(m_Dir + "/common/province_terrain/00_province_terrain.txt", std::ios::out);
 
-    auto terrainToString = [=](TerrainType terrain) {
+    auto TerrainToString = [=](TerrainType terrain) {
         return String::ToLowercase(TerrainTypeLabels[(int) terrain]);
     };
 
-    fmt::println(file, "default_land={}", terrainToString(m_DefaultLandTerrain));
-    fmt::println(file, "default_sea={}", terrainToString(m_DefaultSeaTerrain));
-    fmt::println(file, "default_coastal_sea={}", terrainToString(m_DefaultCoastalSeaTerrain));
+    fmt::println(file, "default_land={}", TerrainToString(m_DefaultLandTerrain));
+    fmt::println(file, "default_sea={}", TerrainToString(m_DefaultSeaTerrain));
+    fmt::println(file, "default_coastal_sea={}", TerrainToString(m_DefaultCoastalSeaTerrain));
 
     for(auto& [id, province] : m_ProvincesByIds) {
+        if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
+            continue;
         fmt::println(file,
             "{}={}",
             province->GetId(),
-            terrainToString(province->GetTerrain())
+            TerrainToString(province->GetTerrain())
         );
     }
 
