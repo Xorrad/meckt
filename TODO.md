@@ -17,6 +17,7 @@
 - Improve map drawing to be able to display all kinds of titles at the same time (i.e baronies and d_xxxxx)
 - Add button to open .txt file of title / province
 - Add button to change a province sea-zone for port
+- Improve ExportDefaultMap to use range and not only list
 
 # IDEAS
 - Import custom terrain types

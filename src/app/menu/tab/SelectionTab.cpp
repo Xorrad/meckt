@@ -116,8 +116,6 @@ void SelectionTab::RenderCreateTitle() {
             mod->GetTitles()[name] = title;
             mod->GetTitlesByType()[type].push_back(title);
 
-            // TODO: use landless attribute when creating title.
-
             if(type != TitleType::BARONY) {
                 // If the title is at least a county, then add every selected titles of the
                 // right type (one type lower than that of the title) as dejure titles.
