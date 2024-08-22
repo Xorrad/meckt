@@ -47,6 +47,7 @@ namespace Parser {
             std::vector<Key> GetKeys() const;
             bool ContainsKey(const Key& key) const;
             void Put(const Key& key, const Node& node);
+            Node Remove(const Key& key);
 
             // Overload cast for LeafHolder.
             operator int() const;
@@ -216,9 +217,9 @@ public:
     constexpr auto format(const Parser::Node& node, Context& ctx) const {
         if(node.Is(Parser::ValueType::NODE)) {
             auto v = std::views::transform(node.GetEntries(), [](const auto& p) {
-                return fmt::format("{}{} = {}", std::string(p.second.GetDepth(), '\t'), p.first, p.second);
+                return fmt::format("{}{} = {}", std::string(p.second.GetDepth()-1, '\t'), p.first, p.second);
             });
-            return format_to(ctx.out(), "{{\n{}\n{}}}", fmt::join(v, "\n"), std::string(node.GetDepth(), '\t'));
+            return format_to(ctx.out(), "{}", fmt::join(v, "\n"));
         }
         return format_to(ctx.out(), "{}", (Parser::RawValue&) node);
     }

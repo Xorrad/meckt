@@ -162,6 +162,14 @@ void Node::Put(const Key& key, const Node& node) {
     this->GetNodeHolder()->m_Values[key].SetDepth(m_Depth + 1);
 }
 
+Node Node::Remove(const Key& key) {
+    if(!this->Is(ValueType::NODE))
+        throw std::runtime_error("error: invalid use of 'Node::Remove' on leaf node.");
+    Node value = std::move(this->GetNodeHolder()->m_Values[key]);
+    this->GetNodeHolder()->m_Values.erase(key);
+    return value;
+}
+
 Node::operator int() const {
     if(!this->Is(ValueType::NUMBER))
         throw std::runtime_error("error: invalid cast from 'node' to type 'int'");
