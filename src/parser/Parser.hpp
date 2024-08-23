@@ -217,10 +217,61 @@ public:
     constexpr auto format(const Parser::Node& node, Context& ctx) const {
         if(node.Is(Parser::ValueType::NODE)) {
             auto v = std::views::transform(node.GetEntries(), [](const auto& p) {
+                if(p.second.Is(Parser::ValueType::NUMBER_LIST))
+                    return formatNumbersList(p.first, p.second);
                 return fmt::format("{}{} = {}", std::string(p.second.GetDepth()-1, '\t'), p.first, p.second);
             });
             return format_to(ctx.out(), "{}", fmt::join(v, "\n"));
         }
         return format_to(ctx.out(), "{}", (Parser::RawValue&) node);
+    }
+
+    static std::string formatNumbersList(const Parser::Key& key, const Parser::Node& node) {
+        std::vector<double> l = node;
+        std::vector<double> loneNumbers;
+        std::string indent = std::string(node.GetDepth()-1, '\t');
+
+        // Sort the list by ascending order.
+        std::sort(l.begin(), l.end(), [=](double a, double b) { return a < b; });
+
+        // Make a list of the lines to build the list
+        // with LIST and RANGE depending on the values.
+        std::vector<std::string> lines;
+        int start = 0;
+        int current = 1;
+
+        while(current <= l.size()) {
+            // Count the number of elements in the current range and make
+            // a range only if there are at least 3 elements.
+            int n = current - start;
+            bool isFollowingStreak = (current < l.size() && l[current-1]+1 == l[current]);
+
+            // Push a new line if a streak is broken or if it is the last element of the vector.
+            if(!isFollowingStreak) {
+                if(n > 2) {
+                    lines.push_back(fmt::format("RANGE {{ {}  {} }}", l[start], l[current-1]));
+                }
+                else {
+                    for(int i = start; i < current; i++)
+                        loneNumbers.push_back(l[i]);
+                }
+                start = current;
+            }
+            current++;
+        }
+
+        if(!loneNumbers.empty()) {
+            lines.push_back(fmt::format("LIST {{ {} }}", fmt::join(
+                std::views::transform(loneNumbers, [](const auto& v) {
+                    return fmt::format("{}", v);
+                }), " ")
+            ));
+        }
+
+        return fmt::format("{}", fmt::join(
+            std::views::transform(lines, [indent, key](const auto& line) {
+                return fmt::format("{}{} = {}", indent, key, line);
+            }), "\n")
+        );
     }
 };
