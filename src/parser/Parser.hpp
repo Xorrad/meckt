@@ -221,7 +221,9 @@ public:
                     return formatNumbersList(p.first, p.second);
                 return fmt::format("{}{} = {}", std::string(p.second.GetDepth()-1, '\t'), p.first, p.second);
             });
-            return format_to(ctx.out(), "{}", fmt::join(v, "\n"));
+            if(node.GetDepth() == 0)
+                return format_to(ctx.out(), "{}", fmt::join(v, "\n"));
+            return format_to(ctx.out(), "{{\n{}\n{}}}", fmt::join(v, "\n"), std::string(node.GetDepth()-1, '\t'));
         }
         return format_to(ctx.out(), "{}", (Parser::RawValue&) node);
     }
