@@ -8,23 +8,30 @@ using namespace Parser::Impl;
 //         Node class         //
 ////////////////////////////////
 
-Node::Node() : m_Value(MakeShared<NodeHolder>()), m_Depth(0) {
+Node::Node() :
+    m_Value(MakeShared<NodeHolder>()),
+    m_Depth(0)
+{}
 
-}
+Node::Node(const Node& node) :
+    m_Value((node.m_Value == nullptr) ? nullptr : node.m_Value->Copy()),
+    m_Depth(0)
+{}
 
-Node::Node(const Node& node)
-: m_Value((node.m_Value == nullptr) ? nullptr : node.m_Value->Copy()), m_Depth(0)
-{
+Node::Node(const RawValue& value) : 
+    m_Value(MakeShared<LeafHolder>(value)),
+    m_Depth(0)
+{}
 
-}
+Node::Node(const sf::Color& color) : 
+    m_Value(MakeShared<LeafHolder>(std::vector<double>{(double) color.r, (double) color.g, (double) color.b})), 
+    m_Depth(0)
+{}
 
-Node::Node(const RawValue& value) : m_Value(MakeShared<LeafHolder>(value)), m_Depth(0) {
-
-}
-
-Node::Node(const std::map<Key, Node>& values) : m_Value(MakeShared<NodeHolder>(values)), m_Depth(0) {
-
-}
+Node::Node(const std::map<Key, Node>& values) :
+    m_Value(MakeShared<NodeHolder>(values)),
+    m_Depth(0)
+{}
 
 ValueType Node::GetType() const {
     return m_Value->GetType();
@@ -112,6 +119,29 @@ const Node& Node::Get(const Key& key) const {
         throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
     return this->GetNodeHolder()->m_Values[key];
 }
+
+template <typename T>
+T Node::Get(const Key& key, T defaultValue) const {
+    if(!this->Is(ValueType::NODE))
+        throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
+    auto it = this->GetNodeHolder()->m_Values.find(key);
+    if(it == this->GetNodeHolder()->m_Values.end())
+        return defaultValue;
+    return it->second;
+}
+
+template int Node::Get<int>(const Key&, int) const;
+template double Node::Get<double>(const Key&, double) const;
+template bool Node::Get<bool>(const Key&, bool) const;
+template std::string Node::Get<std::string>(const Key&, std::string) const;
+template Date Node::Get<Date>(const Key&, Date) const;
+template ScopedString Node::Get<ScopedString>(const Key&, ScopedString) const;
+template std::vector<double> Node::Get<std::vector<double>>(const Key&, std::vector<double>) const;
+template std::vector<bool> Node::Get<std::vector<bool>>(const Key&, std::vector<bool>) const;
+template std::vector<std::string> Node::Get<std::vector<std::string>>(const Key&, std::vector<std::string>) const;
+template RawValue Node::Get<RawValue>(const Key&, RawValue) const;
+template Key Node::Get<Key>(const Key&, Key) const;
+template sf::Color Node::Get<sf::Color>(const Key&, sf::Color) const;
 
 std::map<Key, Node>& Node::GetEntries() {
     if(!this->Is(ValueType::NODE))

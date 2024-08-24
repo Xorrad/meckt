@@ -26,6 +26,7 @@ namespace Parser {
             Node();
             Node(const Node& node);
             Node(const RawValue& value);
+            Node(const sf::Color& color);
             Node(const std::map<Key, Node>& values);
 
             ValueType GetType() const;
@@ -41,6 +42,7 @@ namespace Parser {
             // Functions to use with NodeHolder.
             Node& Get(const Key& key);
             const Node& Get(const Key& key) const;
+            template <typename T> T Get(const Key& key, T defaultValue) const;
             std::map<Key, Node>& GetEntries();
             const std::map<Key, Node>& GetEntries() const;
             // std::vector<Node&> GetValues();

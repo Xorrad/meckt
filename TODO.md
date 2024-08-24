@@ -1,5 +1,4 @@
 # PRIORITY
-- Fix duchy in the vale (d_) which does not load
 - Ask to generate provinces if a color is present in provinces.png but not definition.csv
 - Keep extra title data from the parser not to discard them when exporting (same for provinces?)
 - Keep track of the file in which a title is saved
@@ -25,3 +24,4 @@
 - Add button to merge provinces/titles of same type
 - Improve province/title selection highlighting (shader)
 - Change UI colors and style
+- Keep the order of keys after parsing and when exporting

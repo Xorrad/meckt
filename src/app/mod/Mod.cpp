@@ -409,17 +409,20 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             // This function throws an exception if key does not
             // correspond to a title type.
             TitleType type = GetTitleTypeByName(key);
-            bool landless = !value.ContainsKey("landless") ? false : value.Get("landless");
+
+            bool landless = value.Get("landless", false);
 
             // Need to use a custom function to create a SharedPtr<Title>
             // to get the right derived class such as BaronyTitle, CountyTitle...
-            SharedPtr<Title> title = MakeTitle(type, key, value.Get("color"), landless);
+            SharedPtr<Title> title = MakeTitle(type, key, value.Get("color", sf::Color::Black), landless);
 
-            // fmt::println("{} {}", key, TitleTypeLabels[(int) type]);
+            // TODO: add error log if title color is not specified.
 
             if(type == TitleType::BARONY) {
                 SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
-                baronyTitle->SetProvinceId(value.Get("province"));
+                baronyTitle->SetProvinceId(value.Get("province", 0));
+
+                // TODO: add error log if province id is not specified.
             }
             else {
                 SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
@@ -440,10 +443,10 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             m_Titles[key] = title;
             m_TitlesByType[type].push_back(title);
             titles.push_back(title);
-
-            // if(type == TitleType::EMPIRE) break;
         }
-        catch(const std::runtime_error& e) {}
+        catch(const std::runtime_error& e) {
+            // fmt::println("error: {}", e.what());
+        }
     }
 
     return titles;
