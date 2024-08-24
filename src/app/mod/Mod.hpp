@@ -30,7 +30,7 @@ public:
     void LoadTitles();
     void LoadTitlesHistory();
 
-    std::vector<SharedPtr<Title>> ParseTitles(Parser::Node& data);
+    std::vector<SharedPtr<Title>> ParseTitles(Parser::PNode data);
 
     void Export();
     void ExportDefaultMapFile();

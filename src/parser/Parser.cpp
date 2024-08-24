@@ -22,7 +22,11 @@ Node::Node(const RawValue& value) : m_Value(MakeShared<LeafHolder>(value)), m_De
 
 }
 
-Node::Node(const std::map<Key, Node>& values) : m_Value(MakeShared<NodeHolder>(values)), m_Depth(0) {
+Node::Node(const sf::Color& color)
+: m_Value(MakeShared<LeafHolder>(std::vector<double>{(double) color.r, (double) color.g, (double) color.b})), m_Depth(0)
+{}
+
+Node::Node(const std::map<Key, PNode>& values) : m_Value(MakeShared<NodeHolder>(values)), m_Depth(0) {
 
 }
 
@@ -97,29 +101,60 @@ void Node::Push(const RawValue& value) {
     }
 }
 
-Node& Node::Get(const Key& key) {
-    if(!this->Is(ValueType::NODE))
-        throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
-
-    // if(this->ContainsKey(key))
-    //     this->Put(key, Node());
-
-    return this->GetNodeHolder()->m_Values[key];
-}
-
-const Node& Node::Get(const Key& key) const {
+PNode Node::Get(const Key& key) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
     return this->GetNodeHolder()->m_Values[key];
 }
 
-std::map<Key, Node>& Node::GetEntries() {
+PNode Node::Get(const Key& key, const Node& defaultValue) {
+    if(!this->Is(ValueType::NODE))
+        throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
+    auto it = this->GetNodeHolder()->m_Values.find(key);
+    if(it == this->GetNodeHolder()->m_Values.end()) {
+        return MakeShared<Node>(defaultValue);
+    }
+    return it->second;
+}
+
+PNode Node::Get(const Key& key, const RawValue& defaultValue) {
+    return this->Get(key, Node(defaultValue));
+}
+
+PNode Node::Get(const Key& key, const sf::Color& defaultValue) {
+    return this->Get(key, Node(defaultValue));
+}
+
+const PNode Node::Get(const Key& key) const {
+    if(!this->Is(ValueType::NODE))
+        throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
+    return this->GetNodeHolder()->m_Values[key];
+}
+
+const PNode Node::Get(const Key& key, const Node& defaultValue) const {
+    if(!this->Is(ValueType::NODE))
+        throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
+    auto it = this->GetNodeHolder()->m_Values.find(key);
+    if(it == this->GetNodeHolder()->m_Values.end())
+        return MakeShared<Node>(defaultValue);
+    return it->second;
+}
+
+const PNode Node::Get(const Key& key, const RawValue& defaultValue) const {
+    return this->Get(key, Node(defaultValue));
+}
+
+const PNode Node::Get(const Key& key, const sf::Color& defaultValue) const {
+    return this->Get(key, Node(defaultValue));
+}
+
+std::map<Key, PNode>& Node::GetEntries() {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
     return this->GetNodeHolder()->m_Values;
 }
 
-const std::map<Key, Node>& Node::GetEntries() const {
+const std::map<Key, PNode>& Node::GetEntries() const {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
     return this->GetNodeHolder()->m_Values;
@@ -158,14 +193,21 @@ bool Node::ContainsKey(const Key& key) const{
 void Node::Put(const Key& key, const Node& node) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Put' on leaf node.");
-    this->GetNodeHolder()->m_Values[key] = node;
-    this->GetNodeHolder()->m_Values[key].SetDepth(m_Depth + 1);
+    this->GetNodeHolder()->m_Values[key] = MakeShared<Node>(node);
+    this->GetNodeHolder()->m_Values[key]->SetDepth(m_Depth + 1);
 }
 
-Node Node::Remove(const Key& key) {
+void Node::Put(const Key& key, PNode node) {
+    if(!this->Is(ValueType::NODE))
+        throw std::runtime_error("error: invalid use of 'Node::Put' on leaf node.");
+    this->GetNodeHolder()->m_Values[key] = node;
+    this->GetNodeHolder()->m_Values[key]->SetDepth(m_Depth + 1);
+}
+
+PNode Node::Remove(const Key& key) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Remove' on leaf node.");
-    Node value = std::move(this->GetNodeHolder()->m_Values[key]);
+    PNode value = this->GetNodeHolder()->m_Values[key];
     this->GetNodeHolder()->m_Values.erase(key);
     return value;
 }
@@ -276,13 +318,13 @@ Node& Node::operator=(const Node& value) {
     return *this;
 }
 
-Node& Node::operator [](const Key& key) {
+PNode Node::operator [](const Key& key) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'operator[]' on leaf node.");
     return this->Get(key);
 }
 
-const Node& Node::operator [](const Key& key) const {
+const PNode Node::operator [](const Key& key) const {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'operator[] const' on leaf node.");
     return this->Get(key);
@@ -319,7 +361,7 @@ NodeHolder::NodeHolder(const NodeHolder& n) {
     }
 }
 
-NodeHolder::NodeHolder(const std::map<Key, Node>& values) {
+NodeHolder::NodeHolder(const std::map<Key, PNode>& values) {
     m_Values = values;
 }
 
@@ -337,7 +379,7 @@ SharedPtr<AbstractValueHolder> NodeHolder::Copy() const {
 
 void NodeHolder::SetDepth(uint depth) {
     for(auto& [key, node] : m_Values)
-        node.SetDepth(depth + 1);
+        node->SetDepth(depth + 1);
 }
 
 ////////////////////////////////
@@ -362,22 +404,22 @@ SharedPtr<AbstractValueHolder> LeafHolder::Copy() const {
 
 void LeafHolder::SetDepth(uint depth) {}
 
-Node Parser::Parse(const std::string& filePath) {
+PNode Parser::Parse(const std::string& filePath) {
     std::ifstream file(filePath);
     std::string content = File::ReadString(file);
     file.close();
 
     std::deque<PToken> tokens = Parser::Lex(content);
-    Node node = Parse(tokens);
-    node.SetDepth(0);
+    PNode node = Parse(tokens);
+    node->SetDepth(0);
     return node;
 }
 
-Node Parser::Parse(std::deque<PToken>& tokens, uint depth) {
+PNode Parser::Parse(std::deque<PToken>& tokens, uint depth) {
     enum ParsingState { KEY, OPERATOR, VALUE };
     ParsingState state = KEY;
 
-    Node values;
+    PNode node = MakeShared<Node>();
     Key key;
 
     while(!tokens.empty()) {
@@ -393,7 +435,7 @@ Node Parser::Parse(std::deque<PToken>& tokens, uint depth) {
         switch(state) {
             case KEY:
                 if(token->Is(TokenType::IDENTIFIER)) {
-                    key = ParseIdentifier(token, tokens);
+                    key = *ParseIdentifier(token, tokens);
                     state = ParsingState::OPERATOR;
                     break;
                 }
@@ -428,30 +470,30 @@ Node Parser::Parse(std::deque<PToken>& tokens, uint depth) {
                 
             case VALUE:
                 tokens.push_front(token);
-                Node node = ParseNode(tokens);
+                PNode value = ParseNode(tokens);
 
-                if(values.ContainsKey(key)) {
-                    Node& current = values[key];
+                if(node->ContainsKey(key)) {
+                    PNode current = node->Get(key);
 
-                    if(!current.Is(ValueType::NODE)) {
-                        current.Push((RawValue) node);
+                    if(!current->Is(ValueType::NODE)) {
+                        current->Push(*value);
                     }
 
                     // TODO: handle array of nodes?
                 }
                 else {
-                    values[key] = std::move(node);
+                    node->Put(key, value);
                 }
                 state = ParsingState::KEY;
                 break;
         }
     }
 
-    values.SetDepth(depth);
-    return values;
+    node->SetDepth(depth);
+    return node;
 }
 
-Node Parser::Impl::ParseNode(std::deque<PToken>& tokens) {
+PNode Parser::Impl::ParseNode(std::deque<PToken>& tokens) {
     PToken token = tokens.front();
     tokens.pop_front();
 
@@ -508,24 +550,24 @@ Node Parser::Impl::ParseNode(std::deque<PToken>& tokens) {
     // throw std::runtime_error("error: failed to parse node value.");
 }
 
-Node Parser::Impl::ParseRaw(PToken token, std::deque<PToken>& tokens) {
+PNode Parser::Impl::ParseRaw(PToken token, std::deque<PToken>& tokens) {
     switch(token->GetType()) {
         case TokenType::BOOLEAN:
-            return Node(std::get<bool>(token->GetValue()));
+            return MakeShared<Node>(std::get<bool>(token->GetValue()));
         case TokenType::DATE:
-            return Node(std::get<Date>(token->GetValue()));
+            return MakeShared<Node>(std::get<Date>(token->GetValue()));
         case TokenType::IDENTIFIER:
             return ParseIdentifier(token, tokens);
         case TokenType::NUMBER:
-            return Node(std::get<double>(token->GetValue()));
+            return MakeShared<Node>(std::get<double>(token->GetValue()));
         case TokenType::STRING:
-            return Node(std::get<std::string>(token->GetValue()));
+            return MakeShared<Node>(std::get<std::string>(token->GetValue()));
         default:
             throw std::runtime_error("error: unexpected token while parsing value.");
     }
 }
 
-Node Parser::Impl::ParseIdentifier(PToken token, std::deque<PToken>& tokens) {
+PNode Parser::Impl::ParseIdentifier(PToken token, std::deque<PToken>& tokens) {
     if(!token->Is(TokenType::IDENTIFIER))
         throw std::runtime_error("error: unexpected token while parsing string.");
 
@@ -533,16 +575,16 @@ Node Parser::Impl::ParseIdentifier(PToken token, std::deque<PToken>& tokens) {
 
     // Check if the token is a scope such as in: "scope:value"
     if(tokens.size() < 2 || !tokens.at(0)->Is(TokenType::TWO_DOTS) || !tokens.at(1)->Is(TokenType::IDENTIFIER))
-        return Node(firstValue);
+        return MakeShared<Node>(firstValue);
 
     std::string secondValue = std::get<std::string>(tokens.at(1)->GetValue());
     tokens.pop_front();
     tokens.pop_front();
     
-    return Node(ScopedString(firstValue, secondValue));
+    return MakeShared<Node>(ScopedString(firstValue, secondValue));
 }
 
-Node Parser::Impl::ParseRange(std::deque<PToken>& tokens) {
+PNode Parser::Impl::ParseRange(std::deque<PToken>& tokens) {
     
     // First, check if the first two tokens are numbers
     // and initialize the minimum and maximum between
@@ -595,11 +637,11 @@ Node Parser::Impl::ParseRange(std::deque<PToken>& tokens) {
     for(int i = min; i <= max; i++)
         list.push_back((double) i);
 
-    return Node(list);
+    return MakeShared<Node>(list);
 }
 
 template<typename T>
-Node Parser::Impl::ParseList(std::deque<PToken>& tokens) {
+PNode Parser::Impl::ParseList(std::deque<PToken>& tokens) {
     std::vector<T> list;
     PToken token;
     
@@ -617,7 +659,7 @@ Node Parser::Impl::ParseList(std::deque<PToken>& tokens) {
         tokens.pop_front();
     }
     
-    return Node(list);
+    return MakeShared<Node>(list);
 }
     
 bool Parser::Impl::IsList(std::deque<PToken>& tokens) {
@@ -643,11 +685,11 @@ void Parser::Benchmark() {
     sf::Clock clock;
 
     // std::string filePath = "test_mod/map_data/default.map";
-    std::string filePath = "test_mod/parser_test.txt";
+    // std::string filePath = "test_mod/parser_test.txt";
 
     // std::string filePath = "test_mod/map_data/island_region.txt";
     // std::string filePath = "test_mod/map_data/geographical_regions/00_agot_geographical_region.txt";
-    // std::string filePath = "test_mod/history/characters/00_agot_char_vale_ancestors.txt";
+    std::string filePath = "test_mod/history/characters/00_agot_char_vale_ancestors.txt";
 
     std::ifstream file(filePath);
 
@@ -661,13 +703,13 @@ void Parser::Benchmark() {
 
     sf::Time elapsedLexer = clock.restart();
 
-    Node result = Parser::Parse(tokens);
+    PNode result = Parser::Parse(tokens);
     sf::Time elapsedParser = clock.getElapsedTime();
 
     fmt::println("file path = {}", filePath);
     fmt::println("file size = {}", String::FileSizeFormat(std::filesystem::file_size(filePath)));
     fmt::println("tokens = {}", tokensCount);
-    fmt::println("entries = {}", result.GetEntries().size());
+    fmt::println("entries = {}", result->GetEntries().size());
     fmt::println("elapsed file   = {}", String::DurationFormat(elapsedFile));
     fmt::println("elapsed lexer  = {}", String::DurationFormat(elapsedLexer));
     fmt::println("elapsed parser = {}", String::DurationFormat(elapsedParser));
@@ -675,7 +717,7 @@ void Parser::Benchmark() {
 
     // Display the result.
     fmt::println("\n------------------RESULT--------------------\n");
-    fmt::println("{}", result);
+    // fmt::println("{}", *result);
     fmt::println("\n--------------------------------------------\n");
 
     ///////////////////////////
@@ -683,8 +725,8 @@ void Parser::Benchmark() {
     ///////////////////////////
     
     if(filePath == "test_mod/map_data/default.map") {
-        fmt::println("\nlakes = {}", result.Get("lakes"));
-        fmt::println("\nisland_region => {}", result.Get("island_region"));
+        fmt::println("\nlakes = {}", *result->Get("lakes"));
+        fmt::println("\nisland_region => {}", *result->Get("island_region"));
     }
 
     ///////////////////////////////
@@ -693,37 +735,37 @@ void Parser::Benchmark() {
 
     if(filePath == "test_mod/parser_test.txt") {
         // Test number list.
-        fmt::println("\nlist = {}", result.Get("list"));
+        fmt::println("\nlist = {}", *result->Get("list"));
             
         // Test range.
-        fmt::println("\nrange = {}", result.Get("range"));
+        fmt::println("\nrange = {}", *result->Get("range"));
         
         // Test string list.
-        fmt::println("\nstring_list = {}", result.Get("string_list"));
+        fmt::println("\nstring_list = {}", *result->Get("string_list"));
         
         // Test for single raw values.
-        fmt::println("\nidentifier => {}", result.Get("identifier"));
-        fmt::println("string => {}", result.Get("string"));
-        fmt::println("number => {}", result.Get("number"));
-        fmt::println("bool => {}", result.Get("bool"));
-        fmt::println("date => {}", result.Get("date"));
-        fmt::println("scope:value => {}", result.Get(ScopedString("scope", "value")));
+        fmt::println("\nidentifier => {}", *result->Get("identifier"));
+        fmt::println("string => {}", *result->Get("string"));
+        fmt::println("number => {}", *result->Get("number"));
+        fmt::println("bool => {}", *result->Get("bool"));
+        fmt::println("date => {}", *result->Get("date"));
+        fmt::println("scope:value => {}", *result->Get(ScopedString("scope", "value")));
         // fmt::println("scope => {}", (ScopedString) result.Get("scope"));
         
         // Test date as key
-        fmt::println("1000.1.1 => {}", result.Get(Date(1000, 1, 1)));
+        fmt::println("1000.1.1 => {}", *result->Get(Date(1000, 1, 1)));
         
         // Test utf8 characters as value
-        fmt::println("utf8 => {}", result.Get("utf8"));
+        fmt::println("utf8 => {}", *result->Get("utf8"));
 
         // Test depth
-        fmt::println("depth: {}", result.Get("depth").GetDepth());
-        fmt::println("depth.name: {} {}", result.Get("depth").Get("name"), result.Get("depth").Get("name").GetDepth());
-        fmt::println("depth.1: {}", result.Get("depth").Get(1.0).GetDepth());
-        fmt::println("depth.1.name: {} {}", result.Get("depth").Get(1.0).Get("name"), result.Get("depth").Get(1.0).Get("name").GetDepth());
-        fmt::println("depth.1.2: {}", result.Get("depth").Get(1.0).Get(2.0).GetDepth());
-        fmt::println("depth.1.2.name: {} {}", result.Get("depth").Get(1.0).Get(2.0).Get("name"), result.Get("depth").Get(1.0).Get(2.0).Get("name").GetDepth());
-        fmt::println("depth.1.3: {}", result.Get("depth").Get(1.0).Get(2.0).Get(3.0).GetDepth());
-        fmt::println("depth.1.3.name: {} {}", result.Get("depth").Get(1.0).Get(2.0).Get(3.0).Get("name"), result.Get("depth").Get(1.0).Get(2.0).Get(3.0).Get("name").GetDepth());
+        fmt::println("depth: {}", result->Get("depth")->GetDepth());
+        fmt::println("depth.name: {} {}", *result->Get("depth")->Get("name"), result->Get("depth")->Get("name")->GetDepth());
+        fmt::println("depth.1: {}", result->Get("depth")->Get(1.0)->GetDepth());
+        fmt::println("depth.1.name: {} {}", *result->Get("depth")->Get(1.0)->Get("name"), result->Get("depth")->Get(1.0)->Get("name")->GetDepth());
+        fmt::println("depth.1.2: {}", result->Get("depth")->Get(1.0)->Get(2.0)->GetDepth());
+        fmt::println("depth.1.2.name: {} {}", *result->Get("depth")->Get(1.0)->Get(2.0)->Get("name"), result->Get("depth")->Get(1.0)->Get(2.0)->Get("name")->GetDepth());
+        fmt::println("depth.1.3: {}", result->Get("depth")->Get(1.0)->Get(2.0)->Get(3.0)->GetDepth());
+        fmt::println("depth.1.3.name: {} {}", *result->Get("depth")->Get(1.0)->Get(2.0)->Get(3.0)->Get("name"), result->Get("depth")->Get(1.0)->Get(2.0)->Get(3.0)->Get("name")->GetDepth());
     }
 }

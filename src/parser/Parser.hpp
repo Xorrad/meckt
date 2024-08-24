@@ -6,6 +6,7 @@
 #include <ranges>
 
 namespace Parser {
+    using PNode = SharedPtr<Node>;
     using Key = std::variant<double, std::string, Date, ScopedString>;
     using RawValue = std::variant<double, bool, std::string, Date, ScopedString, std::vector<double>, std::vector<bool>, std::vector<std::string>>;
 
@@ -26,7 +27,8 @@ namespace Parser {
             Node();
             Node(const Node& node);
             Node(const RawValue& value);
-            Node(const std::map<Key, Node>& values);
+            Node(const sf::Color& color);
+            Node(const std::map<Key, PNode>& values);
 
             ValueType GetType() const;
             bool Is(ValueType type) const;
@@ -39,15 +41,23 @@ namespace Parser {
             void Push(const RawValue& value);
 
             // Functions to use with NodeHolder.
-            Node& Get(const Key& key);
-            const Node& Get(const Key& key) const;
-            std::map<Key, Node>& GetEntries();
-            const std::map<Key, Node>& GetEntries() const;
+            PNode Get(const Key& key);
+            PNode Get(const Key& key, const Node& defaultValue);
+            PNode Get(const Key& key, const RawValue& defaultValue);
+            PNode Get(const Key& key, const sf::Color& defaultValue);
+            const PNode Get(const Key& key) const;
+            const PNode Get(const Key& key, const Node& defaultValue) const;
+            const PNode Get(const Key& key, const RawValue& defaultValue) const;
+            const PNode Get(const Key& key, const sf::Color& defaultValue) const;
+
+            std::map<Key, PNode>& GetEntries();
+            const std::map<Key, PNode>& GetEntries() const;
             // std::vector<Node&> GetValues();
             std::vector<Key> GetKeys() const;
             bool ContainsKey(const Key& key) const;
             void Put(const Key& key, const Node& node);
-            Node Remove(const Key& key);
+            void Put(const Key& key, PNode node);
+            PNode Remove(const Key& key);
 
             // Overload cast for LeafHolder.
             operator int() const;
@@ -66,8 +76,8 @@ namespace Parser {
             Node& operator=(const RawValue& value);
             Node& operator=(const Node& value);
 
-            Node& operator [](const Key& key);
-            const Node& operator [](const Key& key) const;
+            PNode operator [](const Key& key);
+            const PNode operator [](const Key& key) const;
         
         private:
             // Function to access the underlying value holder.
@@ -95,14 +105,14 @@ namespace Parser {
         public:
             NodeHolder();
             NodeHolder(const NodeHolder& n);
-            NodeHolder(const std::map<Key, Node>& values);
+            NodeHolder(const std::map<Key, PNode>& values);
 
             virtual ValueType GetType() const;
             virtual SharedPtr<AbstractValueHolder> Copy() const;
             virtual void SetDepth(uint depth);
 
         private:
-            std::map<Key, Node> m_Values;
+            std::map<Key, PNode> m_Values;
     };
 
     class LeafHolder : public AbstractValueHolder {
@@ -122,17 +132,17 @@ namespace Parser {
     };
 
 
-    Node Parse(const std::string& content);
-    Node Parse(std::deque<PToken>& tokens, uint depth = 0);
+    PNode Parse(const std::string& content);
+    PNode Parse(std::deque<PToken>& tokens, uint depth = 0);
 
     namespace Impl {
-        Node ParseNode(std::deque<PToken>& tokens);
-        Node ParseRaw(PToken token, std::deque<PToken>& tokens);
-        Node ParseIdentifier(PToken token, std::deque<PToken>& tokens);
-        Node ParseRange(std::deque<PToken>& tokens);
+        PNode ParseNode(std::deque<PToken>& tokens);
+        PNode ParseRaw(PToken token, std::deque<PToken>& tokens);
+        PNode ParseIdentifier(PToken token, std::deque<PToken>& tokens);
+        PNode ParseRange(std::deque<PToken>& tokens);
 
         template<typename T>
-        Node ParseList(std::deque<PToken>& tokens);
+        PNode ParseList(std::deque<PToken>& tokens);
 
         bool IsList(std::deque<PToken>& tokens);
     }
@@ -217,9 +227,9 @@ public:
     constexpr auto format(const Parser::Node& node, Context& ctx) const {
         if(node.Is(Parser::ValueType::NODE)) {
             auto v = std::views::transform(node.GetEntries(), [](const auto& p) {
-                if(p.second.Is(Parser::ValueType::NUMBER_LIST))
-                    return formatNumbersList(p.first, p.second);
-                return fmt::format("{}{} = {}", std::string(p.second.GetDepth()-1, '\t'), p.first, p.second);
+                if(p.second->Is(Parser::ValueType::NUMBER_LIST))
+                    return formatNumbersList(p.first, *p.second);
+                return fmt::format("{}{} = {}", std::string(p.second->GetDepth()-1, '\t'), p.first, *p.second);
             });
             if(node.GetDepth() == 0)
                 return format_to(ctx.out(), "{}", fmt::join(v, "\n"));

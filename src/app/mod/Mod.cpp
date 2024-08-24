@@ -260,11 +260,11 @@ void Mod::Load() {
 }
 
 void Mod::LoadDefaultMapFile() {
-    Parser::Node result = Parser::Parse(m_Dir + "/map_data/default.map");
+    Parser::PNode result = Parser::Parse(m_Dir + "/map_data/default.map");
 
     // TODO: Coastal provinces??
     
-    std::vector<double> lakes = result.Get("lakes");
+    std::vector<double> lakes = *result->Get("lakes");
     for(double provinceId : lakes) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAKE, true);
     }
@@ -272,23 +272,23 @@ void Mod::LoadDefaultMapFile() {
     // TODO: Islands provinces??
     // TODO: Land provinces??
 
-    const std::vector<double>& seaZones = result.Get("sea_zones");
+    const std::vector<double>& seaZones = *result->Get("sea_zones");
     for(double provinceId : seaZones) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
     }
 
-    const std::vector<double>& rivers = result.Get("river_provinces");
+    const std::vector<double>& rivers = *result->Get("river_provinces");
     for(double provinceId : rivers) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::RIVER, true);
     }
     
-    std::vector<double>& impassable = result.Get("impassable_seas");
+    std::vector<double>& impassable = *result->Get("impassable_seas");
     for(double provinceId : impassable) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
     }
     
-    impassable = result.Get("impassable_mountains");
+    impassable = *result->Get("impassable_mountains");
     for(double provinceId : impassable) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
@@ -317,11 +317,11 @@ void Mod::LoadProvincesDefinition() {
 }
 
 void Mod::LoadProvincesTerrain() {
-    Parser::Node result = Parser::Parse(m_Dir + "/common/province_terrain/00_province_terrain.txt");
+    Parser::PNode result = Parser::Parse(m_Dir + "/common/province_terrain/00_province_terrain.txt");
 
-    m_DefaultLandTerrain = TerrainTypefromString(result.Get("default_land"));
-    m_DefaultSeaTerrain = TerrainTypefromString(result.Get("default_sea"));
-    m_DefaultCoastalSeaTerrain = TerrainTypefromString(result.Get("default_coastal_sea"));
+    m_DefaultLandTerrain = TerrainTypefromString(*result->Get("default_land"));
+    m_DefaultSeaTerrain = TerrainTypefromString(*result->Get("default_sea"));
+    m_DefaultCoastalSeaTerrain = TerrainTypefromString(*result->Get("default_coastal_sea"));
 
     for(const auto& [colorId, province] : m_Provinces) {
         TerrainType defaultTerrain = m_DefaultLandTerrain;
@@ -332,12 +332,12 @@ void Mod::LoadProvincesTerrain() {
         province->SetTerrain(defaultTerrain);
     }
 
-    for(const auto& [key, value] : result.GetEntries()) {
+    for(const auto& [key, value] : result->GetEntries()) {
         if(!std::holds_alternative<double>(key))
             continue;
 
         int provinceId = std::get<double>(key);
-        TerrainType terrain = TerrainTypefromString(value);
+        TerrainType terrain = TerrainTypefromString(*value);
 
         if(m_ProvincesByIds.count(provinceId) == 0) {
             INFO("A province's terrain is defined but the province does not exist: {}", provinceId);
@@ -355,19 +355,19 @@ void Mod::LoadProvincesInfo() {
     std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
 
     for(const auto& filePath : filesPath) {
-        Parser::Node result = Parser::Parse(filePath);
+        Parser::PNode result = Parser::Parse(filePath);
         
-        for(const auto& [key, value] : result.GetEntries()) {
+        for(const auto& [key, value] : result->GetEntries()) {
             if(!std::holds_alternative<double>(key))
                 continue;
             int provinceId = std::get<double>(key);
 
-            if(value.ContainsKey("culture"))
-                m_ProvincesByIds[provinceId]->SetCulture(value.Get("culture"));
-            if(value.ContainsKey("religion"))
-                m_ProvincesByIds[provinceId]->SetReligion(value.Get("religion"));
-            if(value.ContainsKey("holding"))
-                m_ProvincesByIds[provinceId]->SetHolding(ProvinceHoldingFromString(value.Get("holding")));
+            if(value->ContainsKey("culture"))
+                m_ProvincesByIds[provinceId]->SetCulture(*value->Get("culture"));
+            if(value->ContainsKey("religion"))
+                m_ProvincesByIds[provinceId]->SetReligion(*value->Get("religion"));
+            if(value->ContainsKey("holding"))
+                m_ProvincesByIds[provinceId]->SetHolding(ProvinceHoldingFromString(*value->Get("holding")));
         }
     }
 }
@@ -384,7 +384,7 @@ void Mod::LoadTitles() {
 
     for(const auto& filePath : filesPath) {
         // fmt::println("loading titles from {}", filePath);
-        Parser::Node data = Parser::Parse(filePath);
+        Parser::PNode data = Parser::Parse(filePath);
         std::vector<SharedPtr<Title>> titles = ParseTitles(data);
     }
 
@@ -394,10 +394,10 @@ void Mod::LoadTitles() {
         INFO("loaded {} {} titles", m_TitlesByType[(TitleType) i].size(), TitleTypeLabels[i]);
 }
 
-std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
+std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::PNode data) {
     std::vector<SharedPtr<Title>> titles;
 
-    for(auto& [k, value] : data.GetEntries()) {
+    for(auto& [k, value] : data->GetEntries()) {
         if(!std::holds_alternative<std::string>(k))
             continue;
         std::string key = std::get<std::string>(k);
@@ -409,17 +409,19 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             // This function throws an exception if key does not
             // correspond to a title type.
             TitleType type = GetTitleTypeByName(key);
-            bool landless = !value.ContainsKey("landless") ? false : value.Get("landless");
+            bool landless = *value->Get("landless", false);
 
             // Need to use a custom function to create a SharedPtr<Title>
             // to get the right derived class such as BaronyTitle, CountyTitle...
-            SharedPtr<Title> title = MakeTitle(type, key, value.Get("color"), landless);
+            SharedPtr<Title> title = MakeTitle(type, key, *value->Get("color", sf::Color::Black), landless);
 
-            // fmt::println("{} {}", key, TitleTypeLabels[(int) type]);
+            // TODO: add error log if title color is not specified.
 
             if(type == TitleType::BARONY) {
                 SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
-                baronyTitle->SetProvinceId(value.Get("province"));
+                baronyTitle->SetProvinceId(*value->Get("province"));
+
+                // TODO: add error log if province id is not specified.
             }
             else {
                 SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
@@ -429,8 +431,8 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
                     highTitle->AddDejureTitle(dejureTitle);
                 }
 
-                if(type != TitleType::COUNTY && value.ContainsKey("capital")) {
-                    std::string capitalName = value.Get("capital");
+                if(type != TitleType::COUNTY && value->ContainsKey("capital")) {
+                    std::string capitalName = *value->Get("capital");
                     if(m_Titles.count(capitalName) > 0 && IsInstance<CountyTitle>(m_Titles[capitalName])) {
                         highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(m_Titles[capitalName]));
                     }
@@ -440,10 +442,10 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             m_Titles[key] = title;
             m_TitlesByType[type].push_back(title);
             titles.push_back(title);
-
-            // if(type == TitleType::EMPIRE) break;
         }
-        catch(const std::runtime_error& e) {}
+        catch(const std::runtime_error& e) {
+            // fmt::println("error: {}", e.what());
+        }
     }
 
     return titles;
@@ -458,37 +460,37 @@ void Mod::Export() {
 void Mod::ExportDefaultMapFile() {
     // Read the file and keep all values except for the terrain flags
     // such as: sea_zones, impassable_seas, lakes, impassable_mountains, river_provinces
-    Parser::Node data = Parser::Parse(m_Dir + "/map_data/default.map");
+    Parser::PNode data = Parser::Parse(m_Dir + "/map_data/default.map");
 
-    data.Put("sea_zones", Parser::Node(std::vector<double>()));
-    data.Put("impassable_seas", Parser::Node(std::vector<double>()));
-    data.Put("lakes", Parser::Node(std::vector<double>()));
-    data.Put("impassable_mountains", Parser::Node(std::vector<double>()));
-    data.Put("river_provinces", Parser::Node(std::vector<double>()));
+    data->Put("sea_zones", Parser::Node(std::vector<double>()));
+    data->Put("impassable_seas", Parser::Node(std::vector<double>()));
+    data->Put("lakes", Parser::Node(std::vector<double>()));
+    data->Put("impassable_mountains", Parser::Node(std::vector<double>()));
+    data->Put("river_provinces", Parser::Node(std::vector<double>()));
 
     // TODO: improve function to use range instead of giant list of ids.
 
     for(const auto& [id, province] : m_ProvincesByIds) {
         if(province->HasFlag(ProvinceFlags::SEA)) {
-            data.Get("sea_zones").Push((double) id);
+            data->Get("sea_zones")->Push((double) id);
             if(province->HasFlag(ProvinceFlags::IMPASSABLE))
-                data.Get("impassable_seas").Push((double) id);
+                data->Get("impassable_seas")->Push((double) id);
         }
         else if(province->HasFlag(ProvinceFlags::IMPASSABLE)) {
-                data.Get("impassable_mountains").Push((double) id);
+                data->Get("impassable_mountains")->Push((double) id);
         }
 
         if(province->HasFlag(ProvinceFlags::LAKE))
-            data.Get("lakes").Push((double) id);
+            data->Get("lakes")->Push((double) id);
             
         if(province->HasFlag(ProvinceFlags::RIVER))
-            data.Get("river_provinces").Push((double) id);
+            data->Get("river_provinces")->Push((double) id);
     }
 
     // TODO: add error log if file can't be opened.
 
     std::ofstream file(m_Dir + "/map_data/default.map", std::ios::out);
-    fmt::println(file, "{}", data);
+    fmt::println(file, "{}", *data);
     file.close();
 }
 

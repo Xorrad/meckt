@@ -40,6 +40,8 @@ namespace Parser {
     class AbstractValueHolder;
     class NodeHolder;
     class LeafHolder;
+
+    using PNode = SharedPtr<Node>;
 }
 
 class Mod;
