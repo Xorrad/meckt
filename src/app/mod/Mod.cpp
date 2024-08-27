@@ -332,10 +332,10 @@ void Mod::LoadProvincesTerrain() {
         province->SetTerrain(defaultTerrain);
     }
 
-    for(const auto& [key, value] : result.GetEntries()) {
+    for(const auto& [key, pair] : result.GetEntries()) {
         if(!std::holds_alternative<double>(key))
             continue;
-
+        const auto& [op, value] = pair;
         int provinceId = std::get<double>(key);
         TerrainType terrain = TerrainTypefromString(value);
 
@@ -357,9 +357,10 @@ void Mod::LoadProvincesHistory() {
     for(const auto& filePath : filesPath) {
         Parser::Node data = Parser::Parse(filePath);
         
-        for(auto& [key, value] : data.GetEntries()) {
+        for(auto& [key, pair] : data.GetEntries()) {
             if(!std::holds_alternative<double>(key))
                 continue;
+            auto& [op, value] = pair;
             int provinceId = std::get<double>(key);
 
             if(value.ContainsKey("culture"))
@@ -406,10 +407,11 @@ void Mod::LoadTitles() {
 std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
     std::vector<SharedPtr<Title>> titles;
 
-    for(auto& [k, value] : data.GetEntries()) {
+    for(auto& [k, pair] : data.GetEntries()) {
         if(!std::holds_alternative<std::string>(k))
             continue;
         std::string key = std::get<std::string>(k);
+        auto& [op, value] = pair;
 
         // Need to check if the key is a title (starts with e_, k_, d_, c_ or b_)
         // because it could be attributes such as color, capital, can_create...

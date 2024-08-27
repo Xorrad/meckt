@@ -4,6 +4,17 @@
 using namespace Parser;
 using namespace Parser::Impl;
 
+std::string Parser::OperatorToString(Operator op) {
+    switch(op) {
+        case Operator::EQUAL: return "=";
+        case Operator::LESS: return "<";
+        case Operator::LESS_EQUAL: return "<=";
+        case Operator::GREATER: return ">";
+        case Operator::GREATER_EQUAL: return ">=";
+    }
+    return "";
+}
+
 ////////////////////////////////
 //         Node class         //
 ////////////////////////////////
@@ -28,7 +39,7 @@ Node::Node(const sf::Color& color) :
     m_Depth(0)
 {}
 
-Node::Node(const std::map<Key, Node>& values) :
+Node::Node(const std::map<Key, std::pair<Operator, Node>>& values) :
     m_Value(MakeShared<NodeHolder>(values)),
     m_Depth(0)
 {}
@@ -107,17 +118,13 @@ void Node::Push(const RawValue& value) {
 Node& Node::Get(const Key& key) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
-
-    // if(this->ContainsKey(key))
-    //     this->Put(key, Node());
-
-    return this->GetNodeHolder()->m_Values[key];
+    return this->GetNodeHolder()->m_Values[key].second;
 }
 
 const Node& Node::Get(const Key& key) const {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Get' on leaf node.");
-    return this->GetNodeHolder()->m_Values[key];
+    return this->GetNodeHolder()->m_Values[key].second;
 }
 
 template <typename T>
@@ -127,7 +134,7 @@ T Node::Get(const Key& key, T defaultValue) const {
     auto it = this->GetNodeHolder()->m_Values.find(key);
     if(it == this->GetNodeHolder()->m_Values.end())
         return defaultValue;
-    return it->second;
+    return it->second.second;
 }
 
 template int Node::Get<int>(const Key&, int) const;
@@ -143,29 +150,23 @@ template RawValue Node::Get<RawValue>(const Key&, RawValue) const;
 template Key Node::Get<Key>(const Key&, Key) const;
 template sf::Color Node::Get<sf::Color>(const Key&, sf::Color) const;
 
-std::map<Key, Node>& Node::GetEntries() {
+Operator Node::GetOperator(const Key& key) {
+    if(!this->Is(ValueType::NODE))
+        throw std::runtime_error("error: invalid use of 'Node::GetOperator' on leaf node.");
+    return this->GetNodeHolder()->m_Values[key].first;
+}
+
+std::map<Key, std::pair<Operator, Node>>& Node::GetEntries() {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
     return this->GetNodeHolder()->m_Values;
 }
 
-const std::map<Key, Node>& Node::GetEntries() const {
+const std::map<Key, std::pair<Operator, Node>>& Node::GetEntries() const {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::GetEntries' on leaf node.");
     return this->GetNodeHolder()->m_Values;
 }
-
-// std::vector<Node&> Node::GetValues() {
-//     if(!this->Is(ValueType::NODE)
-//         throw std::runtime_error("error: invalid use of 'Node::GetValues' on leaf node.");
-    
-//     std::vector<Node&> values;
-//     auto holder = this->GetNodeHolder();
-//     for(auto& [key, value] : holder->m_Values)
-//         values.push_back(value);
-        
-//     return values;
-// }
 
 std::vector<Key> Node::GetKeys() const {
     if(!this->Is(ValueType::NODE))
@@ -173,7 +174,7 @@ std::vector<Key> Node::GetKeys() const {
     
     std::vector<Key> keys;
     auto holder = this->GetNodeHolder();
-    for(const auto& [key, value] : holder->m_Values)
+    for(const auto& [key, pair] : holder->m_Values)
         keys.push_back(key);
 
     return keys;
@@ -185,21 +186,21 @@ bool Node::ContainsKey(const Key& key) const{
     return this->GetNodeHolder()->m_Values.count(key) > 0;
 }
 
-void Node::Put(const Key& key, const Node& node) {
+void Node::Put(const Key& key, const Node& node, Operator op) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Put' on leaf node.");
-    this->GetNodeHolder()->m_Values[key] = node;
-    this->GetNodeHolder()->m_Values[key].SetDepth(m_Depth + 1);
+    this->GetNodeHolder()->m_Values[key] = std::make_pair(op, node);
+    this->GetNodeHolder()->m_Values[key].second.SetDepth(m_Depth + 1);
 }
 
-void Node::Put(const Key& key, const RawValue& value) {
-    this->Put(key, Node(value));
+void Node::Put(const Key& key, const RawValue& value, Operator op) {
+    this->Put(key, Node(value), op);
 }
 
 Node Node::Remove(const Key& key) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Remove' on leaf node.");
-    Node value = std::move(this->GetNodeHolder()->m_Values[key]);
+    Node value = std::move(this->GetNodeHolder()->m_Values[key].second);
     this->GetNodeHolder()->m_Values.erase(key);
     return value;
 }
@@ -348,12 +349,12 @@ NodeHolder::NodeHolder() {
 }
 
 NodeHolder::NodeHolder(const NodeHolder& n) {
-    for(auto [key, value] : n.m_Values) {
-        m_Values[key] = *(&value);
+    for(auto [key, pair] : n.m_Values) {
+        m_Values[key] = *(&pair);
     }
 }
 
-NodeHolder::NodeHolder(const std::map<Key, Node>& values) {
+NodeHolder::NodeHolder(const std::map<Key, std::pair<Operator, Node>>& values) {
     m_Values = values;
 }
 
@@ -363,15 +364,15 @@ ValueType NodeHolder::GetType() const {
 
 SharedPtr<AbstractValueHolder> NodeHolder::Copy() const {
     SharedPtr<NodeHolder> copy = MakeShared<NodeHolder>();
-    for(const auto&[key, value] : m_Values) {
-        copy->m_Values[key] = *(&value);
+    for(const auto&[key, pair] : m_Values) {
+        copy->m_Values[key] = *(&pair);
     }
     return copy;
 }
 
 void NodeHolder::SetDepth(uint depth) {
-    for(auto& [key, node] : m_Values)
-        node.SetDepth(depth + 1);
+    for(auto& [key, pair] : m_Values)
+        pair.second.SetDepth(depth + 1);
 }
 
 ////////////////////////////////
@@ -413,6 +414,7 @@ Node Parser::Parse(std::deque<PToken>& tokens, uint depth) {
 
     Node values;
     Key key;
+    Operator op = Operator::EQUAL;
 
     while(!tokens.empty()) {
         PToken token = tokens.front();
@@ -453,11 +455,12 @@ Node Parser::Parse(std::deque<PToken>& tokens, uint depth) {
                     || token->Is(TokenType::GREATER_EQUAL)
                     || token->Is(TokenType::LESS)
                     || token->Is(TokenType::LESS_EQUAL)
-                    // || token->Is(TokenType::TWO_DOTS)
                 ) {
                     state = ParsingState::VALUE;
+                    op = (Operator)(((int) token->GetType()) - 3);
+                    break;
                 }
-                // throw std::runtime_error("Unexpected token while parsing operator.");
+                throw std::runtime_error(fmt::format("Unexpected token while operator ({}).", (int) token->GetType()));
                 break;
                 
             case VALUE:
@@ -474,7 +477,7 @@ Node Parser::Parse(std::deque<PToken>& tokens, uint depth) {
                     // TODO: handle array of nodes?
                 }
                 else {
-                    values[key] = std::move(node);
+                    values.Put(key, std::move(node), op);
                 }
                 state = ParsingState::KEY;
                 break;
@@ -759,5 +762,7 @@ void Parser::Benchmark() {
         fmt::println("depth.1.2.name: {} {}", result.Get("depth").Get(1.0).Get(2.0).Get("name"), result.Get("depth").Get(1.0).Get(2.0).Get("name").GetDepth());
         fmt::println("depth.1.3: {}", result.Get("depth").Get(1.0).Get(2.0).Get(3.0).GetDepth());
         fmt::println("depth.1.3.name: {} {}", result.Get("depth").Get(1.0).Get(2.0).Get(3.0).Get("name"), result.Get("depth").Get(1.0).Get(2.0).Get(3.0).Get("name").GetDepth());
+        
+        fmt::println("operators = {}", result.Get("operators"));
     }
 }

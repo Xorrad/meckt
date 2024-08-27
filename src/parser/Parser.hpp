@@ -9,6 +9,15 @@ namespace Parser {
     using Key = std::variant<double, std::string, Date, ScopedString>;
     using RawValue = std::variant<double, bool, std::string, Date, ScopedString, std::vector<double>, std::vector<bool>, std::vector<std::string>>;
 
+    enum class Operator {
+        EQUAL,
+        LESS,
+        LESS_EQUAL,
+        GREATER,
+        GREATER_EQUAL,
+    };
+    std::string OperatorToString(Operator op);
+
     enum class ValueType {
         NUMBER,
         BOOL,
@@ -27,7 +36,7 @@ namespace Parser {
             Node(const Node& node);
             Node(const RawValue& value);
             Node(const sf::Color& color);
-            Node(const std::map<Key, Node>& values);
+            Node(const std::map<Key, std::pair<Operator, Node>>& values);
 
             ValueType GetType() const;
             bool Is(ValueType type) const;
@@ -43,13 +52,13 @@ namespace Parser {
             Node& Get(const Key& key);
             const Node& Get(const Key& key) const;
             template <typename T> T Get(const Key& key, T defaultValue) const;
-            std::map<Key, Node>& GetEntries();
-            const std::map<Key, Node>& GetEntries() const;
-            // std::vector<Node&> GetValues();
+            Operator GetOperator(const Key& key);
+            std::map<Key, std::pair<Operator, Node>>& GetEntries();
+            const std::map<Key, std::pair<Operator, Node>>& GetEntries() const;
             std::vector<Key> GetKeys() const;
             bool ContainsKey(const Key& key) const;
-            void Put(const Key& key, const Node& node);
-            void Put(const Key& key, const RawValue& value);
+            void Put(const Key& key, const Node& node, Operator op = Operator::EQUAL);
+            void Put(const Key& key, const RawValue& value, Operator op = Operator::EQUAL);
             Node Remove(const Key& key);
 
             // Overload cast for LeafHolder.
@@ -98,14 +107,14 @@ namespace Parser {
         public:
             NodeHolder();
             NodeHolder(const NodeHolder& n);
-            NodeHolder(const std::map<Key, Node>& values);
+            NodeHolder(const std::map<Key, std::pair<Operator, Node>>& values);
 
             virtual ValueType GetType() const;
             virtual SharedPtr<AbstractValueHolder> Copy() const;
             virtual void SetDepth(uint depth);
 
         private:
-            std::map<Key, Node> m_Values;
+            std::map<Key, std::pair<Operator, Node>> m_Values;
     };
 
     class LeafHolder : public AbstractValueHolder {
@@ -220,9 +229,15 @@ public:
     constexpr auto format(const Parser::Node& node, Context& ctx) const {
         if(node.Is(Parser::ValueType::NODE)) {
             auto v = std::views::transform(node.GetEntries(), [](const auto& p) {
-                if(p.second.Is(Parser::ValueType::NUMBER_LIST))
-                    return formatNumbersList(p.first, p.second);
-                return fmt::format("{}{} = {}", std::string(p.second.GetDepth()-1, '\t'), p.first, p.second);
+                if(p.second.second.Is(Parser::ValueType::NUMBER_LIST))
+                    return formatNumbersList(p.first, p.second.second);
+                return fmt::format(
+                    "{}{} {} {}",
+                    std::string(p.second.second.GetDepth()-1, '\t'), // Indentation
+                    p.first, // Key
+                    Parser::OperatorToString(p.second.first), // Operator
+                    p.second.second // Value
+                );
             });
             if(node.GetDepth() == 0)
                 return format_to(ctx.out(), "{}", fmt::join(v, "\n"));
