@@ -246,6 +246,26 @@ void PropertiesTab::RenderTitles() {
                 ImGui::EndChild();
             }
 
+            if(!title->Is(TitleType::COUNTY)) {
+                const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+                
+                ImGui::NewLine();
+                if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
+                    m_SelectingTitle = true;
+                    m_Menu->SwitchMapMode(MapMode::COUNTY, false);
+                    m_Menu->GetSelectionHandler().AddCallback([this, highTitle](SharedPtr<Title> clickedTitle) {
+                        if(!clickedTitle->Is(TitleType::COUNTY))
+                            return SelectionCallbackResult::INTERRUPT;
+                        if(std::find(highTitle->GetDejureTitles().begin(), highTitle->GetDejureTitles().end(), clickedTitle) == highTitle->GetDejureTitles().end())
+                            return SelectionCallbackResult::INTERRUPT;
+                        highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(clickedTitle));
+                        m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
+                        m_SelectingTitle = false;
+                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                    });
+                }
+            }
+
             if(ImGui::Button("delete"))
                 ImGui::OpenPopup("Delete this title");
 
