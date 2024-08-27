@@ -144,7 +144,7 @@ void PropertiesTab::RenderProvinces() {
             }
 
             if(m_Menu->GetApp()->GetMod()->GetTitles().count(province->GetName()) > 0) {
-                if(ImGui::Button("Switch to barony")) {
+                if(ImGui::Button("switch to barony")) {
                     const SharedPtr<Title>& title = m_Menu->GetApp()->GetMod()->GetTitles()[province->GetName()];
                     m_Menu->SwitchMapMode(MapMode::BARONY, true);
                     m_Menu->GetSelectionHandler().Select(title);
@@ -184,7 +184,7 @@ void PropertiesTab::RenderTitles() {
                 const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(title);
                 ImGui::InputInt("province id", &barony->m_ProvinceId);
 
-                if(ImGui::Button("Switch to province")) {
+                if(ImGui::Button("switch to province")) {
                     if(m_Menu->GetApp()->GetMod()->GetProvincesByIds().count(barony->GetProvinceId()) > 0) {
                         const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
                         m_Menu->SwitchMapMode(MapMode::PROVINCES, true);
