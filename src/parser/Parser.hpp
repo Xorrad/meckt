@@ -187,7 +187,7 @@ public:
             case Parser::ValueType::NUMBER:
                 return format_to(ctx.out(), "{}", std::get<double>(value));
             case Parser::ValueType::BOOL:
-                return format_to(ctx.out(), "{}", std::get<bool>(value));
+                return format_to(ctx.out(), "{}", (std::get<bool>(value) ? "yes" : "no"));
             case Parser::ValueType::STRING:
                 return format_to(ctx.out(), "{}", std::get<std::string>(value));
             case Parser::ValueType::DATE:
@@ -203,7 +203,7 @@ public:
             case Parser::ValueType::BOOL_LIST:
                 return format_to(ctx.out(), "{{ {} }}", fmt::join(
                     std::views::transform(std::get<std::vector<bool>>(value), [](const auto& v) {
-                        return fmt::format("{}", v);
+                        return fmt::format("{}", (v ? "yes" : "no"));
                     }), " ")
                 );
             case Parser::ValueType::STRING_LIST:
