@@ -49,6 +49,7 @@ namespace Parser {
             std::vector<Key> GetKeys() const;
             bool ContainsKey(const Key& key) const;
             void Put(const Key& key, const Node& node);
+            void Put(const Key& key, const RawValue& value);
             Node Remove(const Key& key);
 
             // Overload cast for LeafHolder.

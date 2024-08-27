@@ -192,6 +192,10 @@ void Node::Put(const Key& key, const Node& node) {
     this->GetNodeHolder()->m_Values[key].SetDepth(m_Depth + 1);
 }
 
+void Node::Put(const Key& key, const RawValue& value) {
+    this->Put(key, Node(value));
+}
+
 Node Node::Remove(const Key& key) {
     if(!this->Is(ValueType::NODE))
         throw std::runtime_error("error: invalid use of 'Node::Remove' on leaf node.");

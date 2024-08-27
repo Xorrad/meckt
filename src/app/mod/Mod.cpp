@@ -563,21 +563,44 @@ void Mod::ExportProvincesTerrain() {
 }
 
 void Mod::ExportProvincesInfo() {
-    // std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
-    // for(const auto& filePath : filesPath) {
-    //     Parser::Node result = Parser::Parse(filePath);
-    //     for(const auto& [key, value] : result.GetEntries()) {
-    //         if(!std::holds_alternative<double>(key))
-    //             continue;
-    //         int provinceId = std::get<double>(key);
-    //         if(value.ContainsKey("culture"))
-    //             m_ProvincesByIds[provinceId]->SetCulture(value.Get("culture"));
-    //         if(value.ContainsKey("religion"))
-    //             m_ProvincesByIds[provinceId]->SetReligion(value.Get("religion"));
-    //         if(value.ContainsKey("holding"))
-    //             m_ProvincesByIds[provinceId]->SetHolding(ProvinceHoldingFromString(value.Get("holding")));
-    //     }
-    // }
+    // Provinces history are written in a file named after the kingdom tier title
+    // such as: history/provinces/00_k_dorne_prov.txt
 
+    // TODO: it may be a better approach to loop through
+    // the list of kingdoms and write their dejure provinces
+    // instead of looping the provinces and having the file/kingdom
+    // in disorder.
 
+    std::string dir = m_Dir + "/history/provinces";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+
+    std::map<std::string, std::ofstream> files;
+
+    for(const auto& [id, province] : m_ProvincesByIds) {
+        if(!province->HasFlag(ProvinceFlags::LAND))
+            continue;
+        SharedPtr<Title> kingdomTitle = this->GetProvinceLiegeTitle(province, TitleType::KINGDOM);
+        if(kingdomTitle == nullptr) {
+            // TODO: add error log
+            continue;
+        }
+        if(files.count(kingdomTitle->GetName()) == 0) {
+            std::string filePath = fmt::format("{}/00_{}_prov.txt", dir, kingdomTitle->GetName());
+            files[kingdomTitle->GetName()] = std::ofstream(filePath, std::ios::out);
+        }
+        std::ofstream& file = files[kingdomTitle->GetName()];
+
+        Parser::Node data = *province->GetOriginalData();
+        if(!province->GetCulture().empty()) data.Put("culture", province->GetCulture());
+        if(!province->GetReligion().empty()) data.Put("religion", province->GetReligion());
+        data.Put("holding", ProvinceHoldingLabels[(int) province->GetHolding()]);
+        data.SetDepth(1);
+
+        fmt::println(file, "# {}", province->GetName());
+        fmt::println(file, "{} = {}", province->GetId(), data);
+    }
+
+    for(auto& [key, file] : files)
+        file.close();
 }
