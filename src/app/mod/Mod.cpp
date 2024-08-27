@@ -254,7 +254,7 @@ void Mod::Load() {
     this->LoadProvincesDefinition();
     this->LoadDefaultMapFile();
     this->LoadProvincesTerrain();
-    this->LoadProvincesInfo();
+    this->LoadProvincesHistory();
     this->LoadTitles();
     this->LoadTitlesHistory();
 }
@@ -351,7 +351,7 @@ void Mod::LoadProvincesTerrain() {
     }
 }
 
-void Mod::LoadProvincesInfo() {
+void Mod::LoadProvincesHistory() {
     std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
 
     for(const auto& filePath : filesPath) {
@@ -465,7 +465,7 @@ void Mod::Export() {
     this->ExportDefaultMapFile();
     this->ExportProvincesDefinition();
     this->ExportProvincesTerrain();
-    this->ExportProvincesInfo();
+    this->ExportProvincesHistory();
 }
 
 void Mod::ExportDefaultMapFile() {
@@ -562,7 +562,7 @@ void Mod::ExportProvincesTerrain() {
     file.close();
 }
 
-void Mod::ExportProvincesInfo() {
+void Mod::ExportProvincesHistory() {
     // Provinces history are written in a file named after the kingdom tier title
     // such as: history/provinces/00_k_dorne_prov.txt
 

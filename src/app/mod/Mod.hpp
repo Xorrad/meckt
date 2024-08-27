@@ -26,7 +26,7 @@ public:
     void LoadDefaultMapFile();
     void LoadProvincesDefinition();
     void LoadProvincesTerrain();
-    void LoadProvincesInfo();
+    void LoadProvincesHistory();
     void LoadTitles();
     void LoadTitlesHistory();
 
@@ -36,7 +36,7 @@ public:
     void ExportDefaultMapFile();
     void ExportProvincesDefinition();
     void ExportProvincesTerrain();
-    void ExportProvincesInfo();
+    void ExportProvincesHistory();
 
 private:
     std::string m_Dir;
