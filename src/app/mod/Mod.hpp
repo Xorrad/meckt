@@ -36,6 +36,7 @@ public:
     void ExportDefaultMapFile();
     void ExportProvincesDefinition();
     void ExportProvincesTerrain();
+    void ExportProvincesInfo();
 
 private:
     std::string m_Dir;

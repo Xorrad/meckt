@@ -52,6 +52,9 @@ public:
     std::string GetReligion() const;
     ProvinceHolding GetHolding() const;
 
+    std::string GetOriginalFilePath() const;
+    SharedPtr<Parser::Node> GetOriginalData() const;
+
     void SetName(std::string name);
     void SetColor(sf::Color color);
     void SetFlags(ProvinceFlags flags);
@@ -60,6 +63,9 @@ public:
     void SetCulture(std::string culture);
     void SetReligion(std::string religion);
     void SetHolding(ProvinceHolding holding);
+    
+    void SetOriginalFilePath(const std::string& filePath);
+    void SetOriginalData(const Parser::Node& data);
 
 private:
     int m_Id;
@@ -71,6 +77,9 @@ private:
     std::string m_Culture;
     std::string m_Religion;
     ProvinceHolding m_Holding;
+
+    std::string m_OriginalFilePath;
+    SharedPtr<Parser::Node> m_OriginalData;
 
     // Sea-zone for port
     // Terrain

@@ -355,9 +355,9 @@ void Mod::LoadProvincesInfo() {
     std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
 
     for(const auto& filePath : filesPath) {
-        Parser::Node result = Parser::Parse(filePath);
+        Parser::Node data = Parser::Parse(filePath);
         
-        for(const auto& [key, value] : result.GetEntries()) {
+        for(auto& [key, value] : data.GetEntries()) {
             if(!std::holds_alternative<double>(key))
                 continue;
             int provinceId = std::get<double>(key);
@@ -368,6 +368,15 @@ void Mod::LoadProvincesInfo() {
                 m_ProvincesByIds[provinceId]->SetReligion(value.Get("religion"));
             if(value.ContainsKey("holding"))
                 m_ProvincesByIds[provinceId]->SetHolding(ProvinceHoldingFromString(value.Get("holding")));
+
+            // Remove those attributes to avoid duplicates when exporting
+            // and to reduce memory usage a bit.
+            value.Remove("culture");
+            value.Remove("religion");
+            value.Remove("holding");
+
+            m_ProvincesByIds[provinceId]->SetOriginalFilePath(filePath);
+            m_ProvincesByIds[provinceId]->SetOriginalData(value);
         }
     }
 }
@@ -456,6 +465,7 @@ void Mod::Export() {
     this->ExportDefaultMapFile();
     this->ExportProvincesDefinition();
     this->ExportProvincesTerrain();
+    this->ExportProvincesInfo();
 }
 
 void Mod::ExportDefaultMapFile() {
@@ -550,4 +560,24 @@ void Mod::ExportProvincesTerrain() {
     }
 
     file.close();
+}
+
+void Mod::ExportProvincesInfo() {
+    // std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
+    // for(const auto& filePath : filesPath) {
+    //     Parser::Node result = Parser::Parse(filePath);
+    //     for(const auto& [key, value] : result.GetEntries()) {
+    //         if(!std::holds_alternative<double>(key))
+    //             continue;
+    //         int provinceId = std::get<double>(key);
+    //         if(value.ContainsKey("culture"))
+    //             m_ProvincesByIds[provinceId]->SetCulture(value.Get("culture"));
+    //         if(value.ContainsKey("religion"))
+    //             m_ProvincesByIds[provinceId]->SetReligion(value.Get("religion"));
+    //         if(value.ContainsKey("holding"))
+    //             m_ProvincesByIds[provinceId]->SetHolding(ProvinceHoldingFromString(value.Get("holding")));
+    //     }
+    // }
+
+
 }
