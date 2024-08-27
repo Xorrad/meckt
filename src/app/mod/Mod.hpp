@@ -39,6 +39,8 @@ public:
     void ExportProvincesHistory();
     void ExportTitles();
 
+    Parser::Node ExportTitle(const SharedPtr<Title>& title, int depth);
+
 private:
     std::string m_Dir;
     sf::Image m_HeightmapImage;

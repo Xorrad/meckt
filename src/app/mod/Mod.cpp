@@ -623,5 +623,46 @@ void Mod::ExportProvincesHistory() {
 }
 
 void Mod::ExportTitles() {
+    std::string dir = m_Dir + "/common/landed_titles";
+    std::map<std::string, std::ofstream> files;
+    
+    // TODO: handle newly created titles without any original file.
 
+    for(const auto& [name, title] : m_Titles) {
+        if(title->GetLiegeTitle() != nullptr)
+            continue;
+        if(files.count(title->GetOriginalFilePath()) == 0) {
+            files[title->GetOriginalFilePath()] = std::ofstream(title->GetOriginalFilePath(), std::ios::out);
+        }
+        std::ofstream& file = files[title->GetOriginalFilePath()];
+        Parser::Node data = this->ExportTitle(title, 1);
+        fmt::println(file, "{} = {}", title->GetName(), data);
+    }
+
+    for(auto& [key, file] : files)
+        file.close();
+}
+
+Parser::Node Mod::ExportTitle(const SharedPtr<Title>& title, int depth) {
+    Parser::Node data = *title->GetOriginalData();
+    
+    data.Put("color", title->GetColor());
+
+    if(title->Is(TitleType::BARONY)) {
+        SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+        data.Put("province", (double) baronyTitle->GetProvinceId());
+    }
+    else {
+        SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
+
+        if(!title->Is(TitleType::COUNTY) && highTitle->GetCapitalTitle() != nullptr)
+            data.Put("capital", highTitle->GetCapitalTitle()->GetName());
+
+        for(const auto& dejureTitle : highTitle->GetDejureTitles()) {
+            data.Put(dejureTitle->GetName(), this->ExportTitle(dejureTitle, depth+1));
+        }
+    }
+
+    data.SetDepth(depth);
+    return data;
 }
