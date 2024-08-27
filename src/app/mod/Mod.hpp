@@ -30,13 +30,14 @@ public:
     void LoadTitles();
     void LoadTitlesHistory();
 
-    std::vector<SharedPtr<Title>> ParseTitles(Parser::Node& data);
+    std::vector<SharedPtr<Title>> ParseTitles(const std::string& filePath, Parser::Node& data);
 
     void Export();
     void ExportDefaultMapFile();
     void ExportProvincesDefinition();
     void ExportProvincesTerrain();
     void ExportProvincesHistory();
+    void ExportTitles();
 
 private:
     std::string m_Dir;

@@ -52,9 +52,6 @@ public:
     std::string GetReligion() const;
     ProvinceHolding GetHolding() const;
 
-    std::string GetOriginalFilePath() const;
-    SharedPtr<Parser::Node> GetOriginalData() const;
-
     void SetName(std::string name);
     void SetColor(sf::Color color);
     void SetFlags(ProvinceFlags flags);
@@ -64,6 +61,8 @@ public:
     void SetReligion(std::string religion);
     void SetHolding(ProvinceHolding holding);
     
+    std::string GetOriginalFilePath() const;
+    SharedPtr<Parser::Node> GetOriginalData() const;
     void SetOriginalFilePath(const std::string& filePath);
     void SetOriginalData(const Parser::Node& data);
 

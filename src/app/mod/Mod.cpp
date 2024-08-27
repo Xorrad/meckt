@@ -395,7 +395,7 @@ void Mod::LoadTitles() {
     for(const auto& filePath : filesPath) {
         // fmt::println("loading titles from {}", filePath);
         Parser::Node data = Parser::Parse(filePath);
-        std::vector<SharedPtr<Title>> titles = ParseTitles(data);
+        std::vector<SharedPtr<Title>> titles = ParseTitles(filePath, data);
     }
 
     INFO("loaded {} titles from {} files", m_Titles.size(), filesPath.size());
@@ -404,7 +404,7 @@ void Mod::LoadTitles() {
         INFO("loaded {} {} titles", m_TitlesByType[(TitleType) i].size(), TitleTypeLabels[i]);
 }
 
-std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
+std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Parser::Node& data) {
     std::vector<SharedPtr<Title>> titles;
 
     for(auto& [k, pair] : data.GetEntries()) {
@@ -421,26 +421,33 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
             // correspond to a title type.
             TitleType type = GetTitleTypeByName(key);
 
+            sf::Color color = value.Get("color", sf::Color::Black);
             bool landless = value.Get("landless", false);
 
             // Need to use a custom function to create a SharedPtr<Title>
             // to get the right derived class such as BaronyTitle, CountyTitle...
-            SharedPtr<Title> title = MakeTitle(type, key, value.Get("color", sf::Color::Black), landless);
+            SharedPtr<Title> title = MakeTitle(type, key, color, landless);
 
             // TODO: add error log if title color is not specified.
 
             if(type == TitleType::BARONY) {
                 SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
                 baronyTitle->SetProvinceId(value.Get("province", 0));
-
+                
                 // TODO: add error log if province id is not specified.
+
+                value.Remove("province");
             }
             else {
                 SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
-                std::vector<SharedPtr<Title>> dejureTitles = ParseTitles(value);
+                std::vector<SharedPtr<Title>> dejureTitles = ParseTitles(filePath, value);
 
                 for(const auto& dejureTitle : dejureTitles) {
                     highTitle->AddDejureTitle(dejureTitle);
+
+                    // Remove that title from the node tree to keep only
+                    // the title own attributes for its original data.
+                    value.Remove(dejureTitle->GetName());
                 }
 
                 if(type != TitleType::COUNTY && value.ContainsKey("capital")) {
@@ -448,8 +455,14 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(Parser::Node& data) {
                     if(m_Titles.count(capitalName) > 0 && IsInstance<CountyTitle>(m_Titles[capitalName])) {
                         highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(m_Titles[capitalName]));
                     }
+                    value.Remove("capital");
                 }
             }
+
+            value.Remove("color");
+            value.Remove("landless");
+            title->SetOriginalFilePath(filePath);
+            title->SetOriginalData(value);
 
             m_Titles[key] = title;
             m_TitlesByType[type].push_back(title);
@@ -468,6 +481,8 @@ void Mod::Export() {
     this->ExportProvincesDefinition();
     this->ExportProvincesTerrain();
     this->ExportProvincesHistory();
+
+    this->ExportTitles();
 }
 
 void Mod::ExportDefaultMapFile() {
@@ -605,4 +620,8 @@ void Mod::ExportProvincesHistory() {
 
     for(auto& [key, file] : files)
         file.close();
+}
+
+void Mod::ExportTitles() {
+
 }

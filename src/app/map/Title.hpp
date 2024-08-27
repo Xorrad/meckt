@@ -16,19 +16,27 @@ public:
     sf::Color GetColor() const;
     SharedPtr<HighTitle>& GetLiegeTitle();
     bool IsLandless() const;
-    
+
     bool Is(TitleType type) const;
 
     void SetName(std::string name);
     void SetColor(sf::Color color);
     void SetLiegeTitle(SharedPtr<HighTitle> title);
     void SetLandless(bool landless);
+    
+    std::string GetOriginalFilePath() const;
+    SharedPtr<Parser::Node> GetOriginalData() const;
+    void SetOriginalFilePath(const std::string& filePath);
+    void SetOriginalData(const Parser::Node& data);
 
 protected:
     std::string m_Name;
     sf::Color m_Color;
     SharedPtr<HighTitle> m_LiegeTitle;
     bool m_Landless;
+
+    std::string m_OriginalFilePath;
+    SharedPtr<Parser::Node> m_OriginalData;
 };
 
 class HighTitle : public Title, public std::enable_shared_from_this<HighTitle> {
@@ -102,11 +110,6 @@ public:
 
     virtual TitleType GetType() const;
 };
-
-// template <typename ...Args>
-// inline SharedPtr<Title> MakeShared(Args&& ...args) {
-//     return MakeTitle(std::forward<Args>(args)...);
-// }
 
 template <typename ...Args>
 inline SharedPtr<Title> MakeTitle(TitleType type, Args&& ...args) {

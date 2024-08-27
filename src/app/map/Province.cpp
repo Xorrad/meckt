@@ -79,14 +79,6 @@ ProvinceHolding Province::GetHolding() const {
     return m_Holding;
 }
 
-std::string Province::GetOriginalFilePath() const {
-    return m_OriginalFilePath;
-}
-
-SharedPtr<Parser::Node> Province::GetOriginalData() const {
-    return m_OriginalData;
-}
-
 void Province::SetName(std::string name) {
     m_Name = name;
 }
@@ -118,6 +110,14 @@ void Province::SetReligion(std::string religion) {
 
 void Province::SetHolding(ProvinceHolding holding) {
     m_Holding = holding;
+}
+
+std::string Province::GetOriginalFilePath() const {
+    return m_OriginalFilePath;
+}
+
+SharedPtr<Parser::Node> Province::GetOriginalData() const {
+    return m_OriginalData;
 }
 
 void Province::SetOriginalFilePath(const std::string& filePath) {

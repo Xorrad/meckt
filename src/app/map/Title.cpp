@@ -1,4 +1,5 @@
 #include "Title.hpp"
+#include "parser/Parser.hpp"
 
 Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 
@@ -42,14 +43,25 @@ void Title::SetLandless(bool landless) {
     m_Landless = landless;
 }
 
+std::string Title::GetOriginalFilePath() const {
+    return m_OriginalFilePath;
+}
+
+SharedPtr<Parser::Node> Title::GetOriginalData() const {
+    return m_OriginalData;
+}
+
+void Title::SetOriginalFilePath(const std::string& filePath) {
+    m_OriginalFilePath = filePath;
+}
+
+void Title::SetOriginalData(const Parser::Node& data) {
+    m_OriginalData = MakeShared<Parser::Node>(data);
+}
+
 HighTitle::HighTitle() : Title("", sf::Color(0, 0, 0)) {}
 
 HighTitle::HighTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless) {}
-
-// HighTitle::~HighTitle() {
-//     m_DejureTitles.clear();
-//     m_CapitalTitle
-// }
 
 std::vector<SharedPtr<Title>>& HighTitle::GetDejureTitles() {
     return m_DejureTitles;
