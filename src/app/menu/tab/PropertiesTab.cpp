@@ -210,7 +210,14 @@ void PropertiesTab::RenderTitles() {
                 for(auto const& dejure : dejureTitles) {
                     ImGui::PushID(dejure->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
-                    ImGui::Selectable(dejure->GetName().c_str());
+                    if(ImGui::Selectable(dejure->GetName().c_str())) {
+                        m_Menu->SwitchMapMode(TitleTypeToMapMode(dejure->GetType()), true);
+                        m_Menu->GetSelectionHandler().Select(dejure);
+                    }
+                    if(dejure == highTitle->GetCapitalTitle()) {
+                        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-90);
+                        ImGui::TextColored(ImVec4(1.f, 0.6f, 0.f, 1.f), "(Capital)");
+                    }
                     ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
                     if(ImGui::SmallButton("x")) {
                         highTitle->RemoveDejureTitle(dejure);
