@@ -3,7 +3,12 @@
 
 Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 
-Title::Title(std::string name, sf::Color color, bool landless) : m_Name(name), m_Color(color), m_Landless(landless) {}
+Title::Title(std::string name, sf::Color color, bool landless) :
+    m_Name(name),
+    m_Color(color),
+    m_Landless(landless),
+    m_SelectionFocus(true)
+{}
 
 // Title::Title(const Title& title) : Title(title.GetName(), title.GetColor()) {}
 
@@ -57,6 +62,14 @@ void Title::SetOriginalFilePath(const std::string& filePath) {
 
 void Title::SetOriginalData(const Parser::Node& data) {
     m_OriginalData = MakeShared<Parser::Node>(data);
+}
+
+bool Title::HasSelectionFocus() const {
+    return m_SelectionFocus;
+}
+
+void Title::SetSelectionFocus(bool focus) {
+    m_SelectionFocus = focus;
 }
 
 HighTitle::HighTitle() : Title("", sf::Color(0, 0, 0)) {}
@@ -114,6 +127,10 @@ int BaronyTitle::GetProvinceId() const {
 
 void BaronyTitle::SetProvinceId(int id) {
     m_ProvinceId = id;
+}
+
+bool BaronyTitle::HasSelectionFocus() const {
+    return true;
 }
 
 CountyTitle::CountyTitle() : HighTitle() {}

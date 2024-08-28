@@ -169,6 +169,20 @@ SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province,
     }
 }
 
+SharedPtr<Title> Mod::GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type) {
+    if(!m_Titles.count(province->GetName()))
+        return nullptr;
+
+    SharedPtr<Title> barony = m_Titles[province->GetName()];
+    SharedPtr<Title> title = barony;
+
+    while(title->GetLiegeTitle() != nullptr && (int) title->GetType() < (int) type && title->GetLiegeTitle()->HasSelectionFocus()) {
+        title = title->GetLiegeTitle();
+    }
+
+    return title;
+}
+
 std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
     return m_Titles;
 }

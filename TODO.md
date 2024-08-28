@@ -18,6 +18,5 @@
 - Import custom terrain types
 - Import cultures and religions for autocompletion
 - Add button to merge provinces/titles of same type
-- Improve province/title selection highlighting (shader)
 - Change UI colors and style
 - Keep the order of keys after parsing and when exporting

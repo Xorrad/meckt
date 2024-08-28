@@ -234,14 +234,18 @@ void PropertiesTab::RenderTitles() {
                     TitleType dejureType = (TitleType)(((int) highTitle->GetType())-1);
                     m_SelectingTitle = true;
                     m_Menu->SwitchMapMode(TitleTypeToMapMode(dejureType), false);
-                    m_Menu->GetSelectionHandler().AddCallback([this, highTitle, dejureType](SharedPtr<Title> clickedTitle) {
-                        if(!clickedTitle->Is(dejureType))
-                            return SelectionCallbackResult::INTERRUPT;
-                        highTitle->AddDejureTitle(clickedTitle);
-                        m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
-                        m_SelectingTitle = false;
-                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                    });
+                    m_Menu->GetSelectionHandler().AddCallback(
+                        [this, highTitle, dejureType](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> clickedTitle) {
+                            if(button != sf::Mouse::Button::Left)
+                                return SelectionCallbackResult::INTERRUPT;
+                            if(!clickedTitle->Is(dejureType))
+                                return SelectionCallbackResult::INTERRUPT;
+                            highTitle->AddDejureTitle(clickedTitle);
+                            m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
+                            m_SelectingTitle = false;
+                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                        }
+                    );
                 }
                 ImGui::EndChild();
             }
@@ -253,16 +257,20 @@ void PropertiesTab::RenderTitles() {
                 if(ImGui::Button((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
                     m_Menu->SwitchMapMode(MapMode::COUNTY, false);
-                    m_Menu->GetSelectionHandler().AddCallback([this, highTitle](SharedPtr<Title> clickedTitle) {
-                        if(!clickedTitle->Is(TitleType::COUNTY))
-                            return SelectionCallbackResult::INTERRUPT;
-                        if(std::find(highTitle->GetDejureTitles().begin(), highTitle->GetDejureTitles().end(), clickedTitle) == highTitle->GetDejureTitles().end())
-                            return SelectionCallbackResult::INTERRUPT;
-                        highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(clickedTitle));
-                        m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
-                        m_SelectingTitle = false;
-                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                    });
+                    m_Menu->GetSelectionHandler().AddCallback(
+                        [this, highTitle](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> clickedTitle) {
+                            if(button != sf::Mouse::Button::Left)
+                                return SelectionCallbackResult::INTERRUPT;
+                            if(!clickedTitle->Is(TitleType::COUNTY))
+                                return SelectionCallbackResult::INTERRUPT;
+                            if(std::find(highTitle->GetDejureTitles().begin(), highTitle->GetDejureTitles().end(), clickedTitle) == highTitle->GetDejureTitles().end())
+                                return SelectionCallbackResult::INTERRUPT;
+                            highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(clickedTitle));
+                            m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
+                            m_SelectingTitle = false;
+                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                        }
+                    );
                 }
             }
 

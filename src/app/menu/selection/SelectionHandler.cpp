@@ -68,22 +68,22 @@ std::size_t SelectionHandler::GetCount() const {
     return m_Count;
 }
 
-void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(SharedPtr<Province>)> callback) {
+void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>)> callback) {
     m_ProvinceCallbacks.push_back(callback);
 }
 
-void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(SharedPtr<Title>)> callback) {
+void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>, SharedPtr<Title>)> callback) {
     m_TitleCallbacks.push_back(callback);
 }
 
-void SelectionHandler::OnClick(SharedPtr<Province> province) {
+void SelectionHandler::OnClick(sf::Mouse::Button button, SharedPtr<Province> province) {
     if(province == nullptr)
         return;
 
     bool updateMap = false;
 
     for(auto it = m_ProvinceCallbacks.end(); it-- != m_ProvinceCallbacks.begin();) {
-        SelectionCallbackResult res = (*it)(province);
+        SelectionCallbackResult res = (*it)(button, province);
         if((int)(res & SelectionCallbackResult::DELETE_CALLBACK))
             it = m_ProvinceCallbacks.erase(it);
         if((int)(res & SelectionCallbackResult::UPDATE_MAP))
@@ -96,14 +96,14 @@ void SelectionHandler::OnClick(SharedPtr<Province> province) {
         m_Menu->RefreshMapMode(false);
 }
 
-void SelectionHandler::OnClick(SharedPtr<Title> title) {
+void SelectionHandler::OnClick(sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> title) {
     if(title == nullptr)
         return;
 
     bool updateMap = false;
 
    for(auto it = m_TitleCallbacks.end(); it-- != m_TitleCallbacks.begin();) {
-        SelectionCallbackResult res = (*it)(title);
+        SelectionCallbackResult res = (*it)(button, province, title);
         if((int)(res & SelectionCallbackResult::DELETE_CALLBACK))
             it = m_TitleCallbacks.erase(it);
         if((int)(res & SelectionCallbackResult::UPDATE_MAP))

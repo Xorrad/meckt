@@ -18,11 +18,11 @@ public:
     std::vector<sf::Glsl::Vec4>& GetColors();
     std::size_t GetCount() const;
 
-    void AddCallback(std::function<SelectionCallbackResult(SharedPtr<Province>)> callback);
-    void AddCallback(std::function<SelectionCallbackResult(SharedPtr<Title>)> callback);
+    void AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>)> callback);
+    void AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>, SharedPtr<Title>)> callback);
 
-    void OnClick(SharedPtr<Province> province);
-    void OnClick(SharedPtr<Title> title);
+    void OnClick(sf::Mouse::Button button, SharedPtr<Province> province);
+    void OnClick(sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> title);
     void Update();
     
 private:
@@ -35,8 +35,8 @@ private:
     std::vector<SharedPtr<Province>> m_Provinces;
     std::vector<SharedPtr<Title>> m_Titles;
 
-    std::vector<std::function<SelectionCallbackResult(SharedPtr<Province>)>> m_ProvinceCallbacks;
-    std::vector<std::function<SelectionCallbackResult(SharedPtr<Title>)>> m_TitleCallbacks;
+    std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>)>> m_ProvinceCallbacks;
+    std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>, SharedPtr<Title>)>> m_TitleCallbacks;
 
     // This vector is passed to the fragment shader to change
     // color of pixels in selected provinces.

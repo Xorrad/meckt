@@ -238,29 +238,32 @@ void EditorMenu::Event(const sf::Event& event) {
         }
     }
     else if(event.type == sf::Event::MouseButtonReleased) {
+        
+        int d = 0;
         if(event.mouseButton.button == sf::Mouse::Button::Left) {
             m_Dragging = false;
-            
             sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
             int dx = (mousePosition.x - m_LastClickMousePosition.x);
             int dy = (mousePosition.y - m_LastClickMousePosition.y);
-            int d = sqrt(dx*dx + dy*dy);
+            d = sqrt(dx*dx + dy*dy);
+        }
 
-            if(d < 5) {
-                if(m_MapMode == MapMode::PROVINCES || MapModeIsTitle(m_MapMode)) {
-                    SharedPtr<Province> province = this->GetHoveredProvince();
-                    if(province != nullptr) {
+        if(d < 5) {
 
-                        if(MapModeIsTitle(m_MapMode)) {
-                            SharedPtr<Title> title = m_App->GetMod()->GetProvinceLiegeTitle(province, MapModeToTileType(m_MapMode));
-                            if(title == nullptr)
-                                return;
-                            m_SelectionHandler.OnClick(title);
-                        }
-                        m_SelectionHandler.OnClick(province);
+            if(m_MapMode == MapMode::PROVINCES || MapModeIsTitle(m_MapMode)) {
+                SharedPtr<Province> province = this->GetHoveredProvince();
+                if(province != nullptr) {
+
+                    if(MapModeIsTitle(m_MapMode)) {
+                        SharedPtr<Title> title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+                        if(title == nullptr)
+                            return;
+                        m_SelectionHandler.OnClick(event.mouseButton.button, province, title);
                     }
+                    m_SelectionHandler.OnClick(event.mouseButton.button, province);
                 }
             }
+
         }
     }
 }
@@ -304,34 +307,60 @@ void EditorMenu::Render() {
 }
 
 void EditorMenu::InitSelectionCallbacks() {
-    m_SelectionHandler.AddCallback([&](SharedPtr<Province> province) {
-        if(m_MapMode != MapMode::PROVINCES)
+    m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, SharedPtr<Province> province) {
+        if(m_MapMode != MapMode::PROVINCES || button != sf::Mouse::Button::Left)
             return SelectionCallbackResult::CONTINUE;
 
         bool isSelected = m_SelectionHandler.IsSelected(province);
+        bool severalSelected = m_SelectionHandler.GetProvinces().size() > 1;
 
-        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+        // Clear selection without LSHIFT.
+        if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+            m_SelectionHandler.ClearSelection();
+        }
+
+        // Unselect if selected and LSHIFT, select otherwise.
+        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
             m_SelectionHandler.Deselect(province);
         }
-        else if(!isSelected) {
-            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                m_SelectionHandler.ClearSelection();
+        else if(!isSelected || severalSelected) {
             m_SelectionHandler.Select(province);
         }
+
         return SelectionCallbackResult::CONTINUE;
     });
-    
-    m_SelectionHandler.AddCallback([&](SharedPtr<Title> title) {
-        bool isSelected = m_SelectionHandler.IsSelected(title);
 
-        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-            m_SelectionHandler.Deselect(title);
-        }
-        else if(!isSelected) {
-            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+    m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> title) {
+        bool isSelected = m_SelectionHandler.IsSelected(title);
+        bool severalSelected = m_SelectionHandler.GetTitles().size() > 1;
+
+        if(button == sf::Mouse::Button::Left) {
+
+            // Unwrap dejure titles when CTRL+LMB.
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+                title->SetSelectionFocus(false);
+                return SelectionCallbackResult::CONTINUE;
+            }
+
+            // Clear selection without LSHIFT.
+            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
                 m_SelectionHandler.ClearSelection();
-            m_SelectionHandler.Select(title);
+            }
+
+            // Unselect if selected and LSHIFT, select otherwise.
+            if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                m_SelectionHandler.Deselect(title);
+            }
+            else if(!isSelected || severalSelected) {
+                m_SelectionHandler.Select(title);
+            }
         }
+
+        // Wrap a title when MMB and the title was unfocus (unwrapped).
+        if(button == sf::Mouse::Button::Right) {
+            if(title->GetLiegeTitle() != nullptr) title->GetLiegeTitle()->SetSelectionFocus(true);
+        }
+
         return SelectionCallbackResult::CONTINUE;
     });
 }

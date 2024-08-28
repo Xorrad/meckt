@@ -29,6 +29,9 @@ public:
     void SetOriginalFilePath(const std::string& filePath);
     void SetOriginalData(const Parser::Node& data);
 
+    virtual bool HasSelectionFocus() const;
+    void SetSelectionFocus(bool focus);
+
 protected:
     std::string m_Name;
     sf::Color m_Color;
@@ -37,6 +40,8 @@ protected:
 
     std::string m_OriginalFilePath;
     SharedPtr<Parser::Node> m_OriginalData;
+
+    bool m_SelectionFocus;
 };
 
 class HighTitle : public Title, public std::enable_shared_from_this<HighTitle> {
@@ -70,6 +75,8 @@ public:
     virtual TitleType GetType() const;
     int GetProvinceId() const;
     void SetProvinceId(int id);
+
+    virtual bool HasSelectionFocus() const override;
 
 private:
     int m_ProvinceId;

@@ -14,6 +14,7 @@ public:
     std::map<uint32_t, SharedPtr<Province>>& GetProvinces();
     std::map<int, SharedPtr<Province>>& GetProvincesByIds();
     SharedPtr<Title> GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type);
+    SharedPtr<Title> GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type);
     
     std::map<std::string, SharedPtr<Title>>& GetTitles();
     std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
