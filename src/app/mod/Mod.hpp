@@ -5,9 +5,10 @@ public:
     Mod(const std::string& dir);
 
     std::string GetDir() const;
-    sf::Image& getHeightmapImage();
-    sf::Image& getProvinceImage();
-    sf::Image& getRiversImage();
+    sf::Image& GetHeightmapImage();
+    sf::Image& GetProvinceImage();
+    sf::Image& GetRiversImage();
+    sf::Image GetTitleImage(TitleType type);
     bool HasMap() const;
 
     std::map<uint32_t, SharedPtr<Province>>& GetProvinces();
@@ -18,9 +19,6 @@ public:
     std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
 
     void HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color color, float hue, float saturation);
-
-    void LoadMapModeTexture(sf::Texture& texture, MapMode mode);
-    void UpdateTitlesImages(sf::Texture& texture, TitleType type);
 
     void Load();
     void LoadDefaultMapFile();
@@ -46,8 +44,6 @@ private:
     sf::Image m_HeightmapImage;
     sf::Image m_ProvinceImage;
     sf::Image m_RiversImage;
-
-    sf::Image m_TitlesImage;
 
     std::map<uint32_t, SharedPtr<Province>> m_Provinces;
     std::map<int, SharedPtr<Province>> m_ProvincesByIds;

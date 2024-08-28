@@ -172,7 +172,7 @@ void PropertiesTab::RenderTitles() {
             sf::Color color = title->GetColor();
             if(ImGui::ColorEdit3("color", &color)) {
                 title->SetColor(color);
-                m_Menu->SwitchMapMode(m_Menu->GetMapMode(), false);
+                m_Menu->RefreshMapMode(false);
                 m_Menu->GetSelectionHandler().Update();
             }
 
@@ -225,7 +225,7 @@ void PropertiesTab::RenderTitles() {
                         // Update the map to remove the dejure title from the title color.
                         // TODO: it would be better not having to redraw the entire map
                         // but only the relevant colors.
-                        m_Menu->SwitchMapMode(m_Menu->GetMapMode(), false);
+                        m_Menu->RefreshMapMode();
                     }
                     ImGui::PopID();
                 }
@@ -298,7 +298,7 @@ void PropertiesTab::RenderTitles() {
                     mod->GetTitles().erase(title->GetName());
                     l.erase(std::remove(l.begin(), l.end(), title));
 
-                    m_Menu->SwitchMapMode(m_Menu->GetMapMode(), true);
+                    m_Menu->RefreshMapMode(true);
                 }
 
                 ImGui::SetItemDefaultFocus();

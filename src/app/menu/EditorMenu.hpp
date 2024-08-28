@@ -14,7 +14,11 @@ public:
 
     void UpdateHoveringText();
     void ToggleCamera(bool enabled);
-    void SwitchMapMode(MapMode mode, bool clearSelection = true);
+
+    void SwitchMapMode(MapMode mode, bool clearSelection = false);
+    void RefreshMapMode(bool clearSelection = false);
+    void UpdateTexture(MapMode mode);
+    void UpdateTextures();
 
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);
@@ -32,8 +36,8 @@ private:
 
     sf::View m_Camera;
     sf::Clock m_Clock;
-    sf::Texture m_ProvinceTexture;
-    sf::Texture m_MapTexture;
+
+    std::map<MapMode, sf::Texture> m_MapTextures;
     sf::Sprite m_MapSprite;
 
     bool m_Dragging;

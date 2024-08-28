@@ -16,12 +16,10 @@ m_SelectionHandler(SelectionHandler(this)),
 m_DisplayBorders(true),
 m_ExitToMainMenu(false)
 {
-    m_App->GetMod()->LoadMapModeTexture(m_ProvinceTexture, MapMode::PROVINCES);
-    Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", m_ProvinceTexture);
-    Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTextureSize", sf::Vector2f(m_ProvinceTexture.getSize()));
-
-    m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
-    m_MapSprite.setTexture(m_MapTexture);
+    // Update all the textures for the shader and then apply
+    // the current map mode texture to the map sprite.
+    this->UpdateTextures();
+    this->SwitchMapMode(m_MapMode);
 
     m_Camera = m_App->GetWindow().getDefaultView();
 
@@ -51,7 +49,7 @@ SharedPtr<Province> EditorMenu::GetHoveredProvince() {
     SharedPtr<Mod> mod = m_App->GetMod();
     sf::Vector2f mapMousePosition = mousePosition - m_MapSprite.getPosition();
 
-    sf::Color color = mod->getProvinceImage().getPixel(mapMousePosition.x, mapMousePosition.y);
+    sf::Color color = mod->GetProvinceImage().getPixel(mapMousePosition.x, mapMousePosition.y);
     uint32_t colorId = (color.r << 16) + (color.g << 8) + color.b;
 
     if(mod->GetProvinces().count(colorId) == 0)
@@ -108,12 +106,79 @@ void EditorMenu::ToggleCamera(bool enabled) {
 }
 
 void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
+    // Update the map sprite with the corresponding map mode.
+    //
+    // This function does not update the base image, EditorMenu::UpdateTexture(mode)
+    // needs to be called if any province/title/... has been modified.
+
     m_MapMode = mode;
     if(clearSelection)
         m_SelectionHandler.ClearSelection();
+    m_MapSprite.setTexture(m_MapTextures[m_MapMode]);
+}
+
+void EditorMenu::RefreshMapMode(bool clearSelection) {
+    // Recreate the image for the current map mode, update the shader
+    // and update the map sprite on the screen.
+    this->UpdateTexture(m_MapMode);
+    this->SwitchMapMode(m_MapMode, clearSelection);
+}
+
+void EditorMenu::UpdateTexture(MapMode mode) {
+    // Update the pixels of the specified image (from scratch) and then
+    // update the corresponding texture in the shader.
+    const SharedPtr<Mod>& mod = m_App->GetMod();
+    switch(mode) {
+        case MapMode::PROVINCES:
+            // TODO: update pixel colors in mod->m_ProvinceImage
+            m_MapTextures[mode].loadFromImage(mod->GetProvinceImage());
+            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", m_MapTextures[mode]);
+            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("textureSize", sf::Vector2f(m_MapTextures[mode].getSize()));
+            break;
+        case MapMode::HEIGHTMAP:
+            m_MapTextures[mode].loadFromImage(mod->GetHeightmapImage());
+            break;
+        case MapMode::RIVERS:
+            m_MapTextures[mode].loadFromImage(mod->GetRiversImage());
+            break;
+        case MapMode::CULTURE:
+            break;
+        case MapMode::RELIGION:
+            break;
+        case MapMode::BARONY:
+        case MapMode::COUNTY:
+        case MapMode::DUCHY:
+        case MapMode::KINGDOM:
+        case MapMode::EMPIRE: {
+            TitleType type = MapModeToTileType(mode);
+            m_MapTextures[mode].loadFromImage(mod->GetTitleImage(type));
+            Configuration::shaders.Get(Shaders::PROVINCES).setUniform(
+                String::ToLowercase(TitleTypeLabels[(int) type]) + "Texture",
+                m_MapTextures[mode]
+            );
+            break;
+        }
+        default:
+            break;
+    }
     
-    m_App->GetMod()->LoadMapModeTexture(m_MapTexture, m_MapMode);
-    m_MapSprite.setTexture(m_MapTexture);
+}
+
+void EditorMenu::UpdateTextures() {
+    // Update the textures for all map modes. This includes:
+    // - Redraw titles/provinces image pixels (with colors from Province/Title objects).
+    // - Update titles and provinces textures in the shader.
+    std::vector<UniquePtr<sf::Thread>> threads;
+
+    for(MapMode mode = MapMode::PROVINCES; mode < MapMode::COUNT; mode = (MapMode)((int) mode + 1)) {
+        threads.push_back(MakeUnique<sf::Thread>([&, mode](){
+            this->UpdateTexture(mode);
+        }));
+        threads[threads.size()-1]->launch();
+    }
+
+    for(auto& thread : threads)
+        thread->wait();
 }
 
 void EditorMenu::Update(sf::Time delta) {

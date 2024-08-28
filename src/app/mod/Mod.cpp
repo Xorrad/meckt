@@ -13,135 +13,19 @@ std::string Mod::GetDir() const {
     return m_Dir;
 }
 
-sf::Image& Mod::getHeightmapImage() {
+sf::Image& Mod::GetHeightmapImage() {
     return m_HeightmapImage;
 }
 
-sf::Image& Mod::getProvinceImage() {
+sf::Image& Mod::GetProvinceImage() {
     return m_ProvinceImage;
 }
 
-sf::Image& Mod::getRiversImage() {
+sf::Image& Mod::GetRiversImage() {
     return m_RiversImage;
 }
 
-bool Mod::HasMap() const {
-    return std::filesystem::exists(m_Dir + "/map_data/provinces.png");
-}
-
-std::map<uint32_t, SharedPtr<Province>>& Mod::GetProvinces() {
-    return m_Provinces;
-}
-
-std::map<int, SharedPtr<Province>>& Mod::GetProvincesByIds() {
-    return m_ProvincesByIds;
-}
-
-SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type) {
-    if(!m_Titles.count(province->GetName()))
-        return nullptr;
-
-    const SharedPtr<Title>& barony = m_Titles[province->GetName()];
-
-    #define RETURN_IF_NULL(v) if(v == nullptr) return nullptr;
-
-    // Determine which liege title to choose depending on type.
-    switch(type) {
-        case TitleType::BARONY:  return barony;
-        case TitleType::COUNTY:  return barony->GetLiegeTitle();
-        case TitleType::DUCHY:
-            RETURN_IF_NULL(barony->GetLiegeTitle());
-            return barony->GetLiegeTitle()->GetLiegeTitle();
-        case TitleType::KINGDOM:
-            RETURN_IF_NULL(barony->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
-            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
-        case TitleType::EMPIRE:
-            RETURN_IF_NULL(barony->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
-            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
-        default: return nullptr;
-    }
-}
-
-std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
-    return m_Titles;
-}
-
-std::map<TitleType, std::vector<SharedPtr<Title>>>& Mod::GetTitlesByType() {
-    return m_TitlesByType;
-}
-
-void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float hue, float saturation) {
-    // Generate a list of colors with uniformly spaced saturations around
-    // the saturation of the original color while picking a random hue.
-    sf::HSVColor defaultColor = rgb;
-    std::vector<sf::HSVColor> colors;
-
-    // Define the range of values for hue and saturation.
-    float hues[] = { std::max(0.f, defaultColor.h - hue), std::min(360.f, defaultColor.h + hue) };
-    float saturations[] = { std::max(0.f, defaultColor.s - saturation), std::min(1.f, defaultColor.s + saturation) };
-
-    // Initialize first saturation value and the speed/step at which to increment it.
-    float s = saturations[0];
-    float saturationStep = (saturations[1] - saturations[0]) / (float) titles.size();
-
-    while(colors.size() < titles.size()) {
-        // TODO: check if the color isn't already used by another title when generating one.
-
-        float h = Math::RandomFloat(hues[0], hues[1]);
-        sf::HSVColor color = sf::HSVColor(h, s, defaultColor.v);
-        colors.push_back(color);
-        s += saturationStep;
-    }
-
-    // Shuffle the colors not to have a gradient but random
-    // distribution which may make it easier to discern titles.
-    std::random_shuffle(colors.begin(), colors.end());
-
-    // Apply those colors to the titles.
-    for(int i = 0; i < titles.size(); i++) {
-        titles[i]->SetColor(colors[i]);
-    }
-}
-
-void Mod::LoadMapModeTexture(sf::Texture& texture, MapMode mode) {
-    switch(mode) {
-        case MapMode::PROVINCES:
-            texture.loadFromImage(m_ProvinceImage);
-            return;
-        case MapMode::HEIGHTMAP:
-            texture.loadFromImage(m_HeightmapImage);
-            return;
-        case MapMode::RIVERS:
-            texture.loadFromImage(m_RiversImage);
-            return;
-        case MapMode::CULTURE:
-            return;
-        case MapMode::RELIGION:
-            return;
-        case MapMode::BARONY:
-            UpdateTitlesImages(texture, TitleType::BARONY);
-            return;
-        case MapMode::COUNTY:
-            UpdateTitlesImages(texture, TitleType::COUNTY);
-            return;
-        case MapMode::DUCHY:
-            UpdateTitlesImages(texture, TitleType::DUCHY);
-            return;
-        case MapMode::KINGDOM:
-            UpdateTitlesImages(texture, TitleType::KINGDOM);
-            return;
-        case MapMode::EMPIRE:
-            UpdateTitlesImages(texture, TitleType::EMPIRE);
-            return;
-        default:
-            return;
-    }
-}
-
-void Mod::UpdateTitlesImages(sf::Texture& texture, TitleType type) {
+sf::Image Mod::GetTitleImage(TitleType type) {
     // Used for benchmarking.
     sf::Clock clock;
     
@@ -237,9 +121,93 @@ void Mod::UpdateTitlesImages(sf::Texture& texture, TitleType type) {
         thread->wait();
     // fmt::println("filling pixels: {}", String::DurationFormat(clock.restart()));
 
-    // m_TitlesImage.create(width, height, titlesPixels.data());
-    texture.update(titlesPixels.data());
+    sf::Image image;
+    image.create(width, height, titlesPixels.data());
+    // texture.update(titlesPixels.data());
     // fmt::println("initializing image: {}", String::DurationFormat(clock.restart()));
+
+    return image;
+}
+
+bool Mod::HasMap() const {
+    return std::filesystem::exists(m_Dir + "/map_data/provinces.png");
+}
+
+std::map<uint32_t, SharedPtr<Province>>& Mod::GetProvinces() {
+    return m_Provinces;
+}
+
+std::map<int, SharedPtr<Province>>& Mod::GetProvincesByIds() {
+    return m_ProvincesByIds;
+}
+
+SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type) {
+    if(!m_Titles.count(province->GetName()))
+        return nullptr;
+
+    const SharedPtr<Title>& barony = m_Titles[province->GetName()];
+
+    #define RETURN_IF_NULL(v) if(v == nullptr) return nullptr;
+
+    // Determine which liege title to choose depending on type.
+    switch(type) {
+        case TitleType::BARONY:  return barony;
+        case TitleType::COUNTY:  return barony->GetLiegeTitle();
+        case TitleType::DUCHY:
+            RETURN_IF_NULL(barony->GetLiegeTitle());
+            return barony->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::KINGDOM:
+            RETURN_IF_NULL(barony->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
+            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::EMPIRE:
+            RETURN_IF_NULL(barony->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
+            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+        default: return nullptr;
+    }
+}
+
+std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
+    return m_Titles;
+}
+
+std::map<TitleType, std::vector<SharedPtr<Title>>>& Mod::GetTitlesByType() {
+    return m_TitlesByType;
+}
+
+void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float hue, float saturation) {
+    // Generate a list of colors with uniformly spaced saturations around
+    // the saturation of the original color while picking a random hue.
+    sf::HSVColor defaultColor = rgb;
+    std::vector<sf::HSVColor> colors;
+
+    // Define the range of values for hue and saturation.
+    float hues[] = { std::max(0.f, defaultColor.h - hue), std::min(360.f, defaultColor.h + hue) };
+    float saturations[] = { std::max(0.f, defaultColor.s - saturation), std::min(1.f, defaultColor.s + saturation) };
+
+    // Initialize first saturation value and the speed/step at which to increment it.
+    float s = saturations[0];
+    float saturationStep = (saturations[1] - saturations[0]) / (float) titles.size();
+
+    while(colors.size() < titles.size()) {
+        // TODO: check if the color isn't already used by another title when generating one.
+
+        float h = Math::RandomFloat(hues[0], hues[1]);
+        sf::HSVColor color = sf::HSVColor(h, s, defaultColor.v);
+        colors.push_back(color);
+        s += saturationStep;
+    }
+
+    // Shuffle the colors not to have a gradient but random
+    // distribution which may make it easier to discern titles.
+    std::random_shuffle(colors.begin(), colors.end());
+
+    // Apply those colors to the titles.
+    for(int i = 0; i < titles.size(); i++) {
+        titles[i]->SetColor(colors[i]);
+    }
 }
 
 void Mod::Load() {

@@ -2,7 +2,12 @@
 
 uniform sampler2D texture;
 uniform sampler2D provincesTexture;
-uniform vec2 provincesTextureSize;
+uniform sampler2D countyTexture;
+uniform sampler2D duchyTexture;
+uniform sampler2D kingdomTexture;
+uniform sampler2D empireTexture;
+uniform vec2 textureSize;
+
 uniform float time;
 uniform int mapMode;
 uniform bool displayBorders;
@@ -22,7 +27,7 @@ bool IsSelected(vec4 color) {
 
 bool IsBorder(sampler2D tex) {
     // Calculate the texel size based on the texture dimensions
-    vec2 texelSize = 1.0 / provincesTextureSize;
+    vec2 texelSize = 1.0 / textureSize;
 
     // Sample the current pixel and its neighbors
     vec4 currentColor = texture2D(tex, gl_TexCoord[0].xy);

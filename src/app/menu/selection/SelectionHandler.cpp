@@ -93,7 +93,7 @@ void SelectionHandler::OnClick(SharedPtr<Province> province) {
     }
 
     if(updateMap)
-        m_Menu->SwitchMapMode(m_Menu->GetMapMode(), false);
+        m_Menu->RefreshMapMode(false);
 }
 
 void SelectionHandler::OnClick(SharedPtr<Title> title) {
@@ -113,7 +113,7 @@ void SelectionHandler::OnClick(SharedPtr<Title> title) {
     }
 
     if(updateMap)
-        m_Menu->SwitchMapMode(m_Menu->GetMapMode(), false);
+        m_Menu->RefreshMapMode(false);
 }
 
 void SelectionHandler::Update() {
