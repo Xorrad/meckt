@@ -125,44 +125,41 @@ void SelectionHandler::UpdateColors() {
     m_Colors.clear();
     m_Count = 0;
 
-    if(m_Menu->m_MapMode == MapMode::PROVINCES) {
-        for(const auto& province : m_Provinces) {
-            sf::Color c = province->GetColor();
-            m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-        }
-        m_Count = m_Provinces.size();
+    for(const auto& province : m_Provinces) {
+        sf::Color c = province->GetColor();
+        m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, 0.f));
     }
-    else if(MapModeIsTitle(m_Menu->m_MapMode)) {
-        // The shader need the colors of provinces.
-        // Ttherefore, we have to loop recursively through
-        // each titles until we reach a barony tier and get the color.
-        // std::function<void(const SharedPtr<Title>&)> PushTitleProvincesColor = [&](const SharedPtr<Title>& title) {
-        //     if(title->Is(TitleType::BARONY)) {
-        //         const SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
-        //         const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
-        //         sf::Color c = province->GetColor();
-        //         m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-        //         m_Count++;
-        //     }
-        //     else {
-        //         const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
-        //         for(const auto& dejureTitle : highTitle->GetDejureTitles())
-        //             PushTitleProvincesColor(dejureTitle);
-        //     }
-        // };
-        // for(const auto& title : m_Titles)
-        //     PushTitleProvincesColor(title);
+    m_Count = m_Provinces.size();
 
-        for(const auto& title : m_Titles) {
-            sf::Color c = title->GetColor();
-            m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-        }
-        m_Count = m_Titles.size();
+    // The shader need the colors of provinces.
+    // Ttherefore, we have to loop recursively through
+    // each titles until we reach a barony tier and get the color.
+    // std::function<void(const SharedPtr<Title>&)> PushTitleProvincesColor = [&](const SharedPtr<Title>& title) {
+    //     if(title->Is(TitleType::BARONY)) {
+    //         const SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
+    //         const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
+    //         sf::Color c = province->GetColor();
+    //         m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
+    //         m_Count++;
+    //     }
+    //     else {
+    //         const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+    //         for(const auto& dejureTitle : highTitle->GetDejureTitles())
+    //             PushTitleProvincesColor(dejureTitle);
+    //     }
+    // };
+    // for(const auto& title : m_Titles)
+    //     PushTitleProvincesColor(title);
+
+    for(const auto& title : m_Titles) {
+        sf::Color c = title->GetColor();
+        m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, ((int) title->GetType()) + 1.f));
     }
+    m_Count += m_Titles.size();
 }
 
 void SelectionHandler::UpdateShader() {
     sf::Shader& provinceShader = Configuration::shaders.Get(Shaders::PROVINCES);
-    provinceShader.setUniformArray("selectedProvinces", m_Colors.data(), m_Colors.size());
-    provinceShader.setUniform("selectedProvincesCount", (int) m_Count);
+    provinceShader.setUniformArray("selectedEntities", m_Colors.data(), m_Colors.size());
+    provinceShader.setUniform("selectedEntitiesCount", (int) m_Count);
 }
