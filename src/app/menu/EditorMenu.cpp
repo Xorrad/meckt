@@ -80,7 +80,7 @@ void EditorMenu::UpdateHoveringText() {
         return;
     }
     else if(MapModeIsTitle(m_MapMode)) {
-        const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceLiegeTitle(province, MapModeToTileType(m_MapMode));
+        const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
         if(title == nullptr)
             goto Hide;
         m_HoverText.setString(fmt::format("{}", title->GetName()));
@@ -117,14 +117,14 @@ void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
     m_MapSprite.setTexture(m_MapTextures[m_MapMode]);
 }
 
-void EditorMenu::RefreshMapMode(bool clearSelection) {
+void EditorMenu::RefreshMapMode(bool clearSelection, bool resetFocus) {
     // Recreate the image for the current map mode, update the shader
     // and update the map sprite on the screen.
-    this->UpdateTexture(m_MapMode);
+    this->UpdateTexture(m_MapMode, resetFocus);
     this->SwitchMapMode(m_MapMode, clearSelection);
 }
 
-void EditorMenu::UpdateTexture(MapMode mode) {
+void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
     // Update the pixels of the specified image (from scratch) and then
     // update the corresponding texture in the shader.
     const SharedPtr<Mod>& mod = m_App->GetMod();
@@ -156,6 +156,13 @@ void EditorMenu::UpdateTexture(MapMode mode) {
                 String::ToLowercase(TitleTypeLabels[(int) type]) + "Texture",
                 m_MapTextures[mode]
             );
+
+            // Reset the selection focus for every titles of that tier or below.
+            if(resetFocus) {
+                for(const auto& title : mod->GetTitlesByType()[type]) {
+                    title->SetSelectionFocus(true);
+                }
+            }
             break;
         }
         default:
@@ -339,6 +346,7 @@ void EditorMenu::InitSelectionCallbacks() {
             // Unwrap dejure titles when CTRL+LMB.
             if(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
                 title->SetSelectionFocus(false);
+                this->RefreshMapMode(true, false);
                 return SelectionCallbackResult::CONTINUE;
             }
 
@@ -358,7 +366,10 @@ void EditorMenu::InitSelectionCallbacks() {
 
         // Wrap a title when MMB and the title was unfocus (unwrapped).
         if(button == sf::Mouse::Button::Right) {
-            if(title->GetLiegeTitle() != nullptr) title->GetLiegeTitle()->SetSelectionFocus(true);
+            if(title->GetLiegeTitle() != nullptr) {
+                title->GetLiegeTitle()->SetSelectionFocus(true);
+                this->RefreshMapMode(true, false);
+            }
         }
 
         return SelectionCallbackResult::CONTINUE;

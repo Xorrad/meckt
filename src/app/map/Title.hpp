@@ -30,7 +30,7 @@ public:
     void SetOriginalData(const Parser::Node& data);
 
     virtual bool HasSelectionFocus() const;
-    void SetSelectionFocus(bool focus);
+    virtual void SetSelectionFocus(bool focus);
 
 protected:
     std::string m_Name;
@@ -60,6 +60,7 @@ public:
     void RemoveDejureTitle(SharedPtr<Title> title);
     void SetCapitalTitle(SharedPtr<CountyTitle> title);
 
+    virtual void SetSelectionFocus(bool focus) override;
 protected:
     std::vector<SharedPtr<Title>> m_DejureTitles;
     SharedPtr<CountyTitle> m_CapitalTitle;

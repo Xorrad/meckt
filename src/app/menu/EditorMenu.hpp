@@ -16,8 +16,8 @@ public:
     void ToggleCamera(bool enabled);
 
     void SwitchMapMode(MapMode mode, bool clearSelection = false);
-    void RefreshMapMode(bool clearSelection = false);
-    void UpdateTexture(MapMode mode);
+    void RefreshMapMode(bool clearSelection = false, bool resetFocus = true);
+    void UpdateTexture(MapMode mode, bool resetFocus = true);
     void UpdateTextures();
 
     virtual void Update(sf::Time delta);

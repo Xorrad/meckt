@@ -5,11 +5,11 @@
 - Add way to focus camera on province or title on map
 - Import coastal, island and land flags from files for provinces???
 - Fix exportation for newly created titles (no original file)
+- Fix wrong title texture send to shader after unwrapping/wrapping titles
 
 # IN FUTURE
 - Add console tab with logs, errors...
 - Add history for titles
-- Improve map drawing to be able to display all kinds of titles at the same time (i.e baronies and d_xxxxx)
 - Add button to open .txt file of title / province
 - Add button to change a province sea-zone for port
 - Improve ExportDefaultMap to use range and not only list

@@ -38,7 +38,8 @@ sf::Image Mod::GetTitleImage(TitleType type) {
         if(m_Titles.count(province->GetName()) == 0)
             continue;
 
-        const SharedPtr<Title>& liege = GetProvinceLiegeTitle(province, type);
+        const SharedPtr<Title>& liege = this->GetProvinceFocusedTitle(province, type);
+        // const SharedPtr<Title>& liege = GetProvinceLiegeTitle(province, type);
 
         if(liege == nullptr)
             continue;

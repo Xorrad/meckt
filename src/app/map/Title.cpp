@@ -113,6 +113,14 @@ void HighTitle::SetCapitalTitle(SharedPtr<CountyTitle> title) {
     m_CapitalTitle = title;
 }
 
+void HighTitle::SetSelectionFocus(bool focus) {
+    m_SelectionFocus = focus;
+    if(focus) {
+        for(const auto& dejureTitle : m_DejureTitles)
+            dejureTitle->SetSelectionFocus(true);
+    }
+}
+
 BaronyTitle::BaronyTitle() : Title() {}
 BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless) {}
 BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless, int provinceId) : Title(name, color, landless), m_ProvinceId(provinceId) {}
