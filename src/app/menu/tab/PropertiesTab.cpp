@@ -250,7 +250,7 @@ void PropertiesTab::RenderTitles() {
                 const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
                 
                 ImGui::NewLine();
-                if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
+                if(ImGui::Button((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
                     m_Menu->SwitchMapMode(MapMode::COUNTY, false);
                     m_Menu->GetSelectionHandler().AddCallback([this, highTitle](SharedPtr<Title> clickedTitle) {
