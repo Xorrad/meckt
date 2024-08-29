@@ -347,8 +347,10 @@ void EditorMenu::InitSelectionCallbacks() {
 
             // Unwrap dejure titles when CTRL+LMB.
             if(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-                title->SetSelectionFocus(false);
-                this->RefreshMapMode(true, false);
+                if(!title->Is(TitleType::BARONY)) {
+                    title->SetSelectionFocus(false);
+                    this->RefreshMapMode(true, false);
+                }
                 return SelectionCallbackResult::CONTINUE;
             }
 
@@ -368,7 +370,7 @@ void EditorMenu::InitSelectionCallbacks() {
 
         // Wrap a title when MMB and the title was unfocus (unwrapped).
         if(button == sf::Mouse::Button::Right) {
-            if(title->GetLiegeTitle() != nullptr) {
+            if(title->GetLiegeTitle() != nullptr && !title->GetLiegeTitle()->HasSelectionFocus()) {
                 title->GetLiegeTitle()->SetSelectionFocus(true);
                 this->RefreshMapMode(true, false);
             }
