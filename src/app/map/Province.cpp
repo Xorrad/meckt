@@ -11,7 +11,7 @@ ProvinceFlags operator&(ProvinceFlags a, ProvinceFlags b) {
 }
 
 ProvinceFlags operator~(ProvinceFlags a) {
-    return static_cast<ProvinceFlags>(static_cast<int>(~a));
+    return static_cast<ProvinceFlags>(~static_cast<int>(a));
 }
 
 ProvinceFlags& operator|=(ProvinceFlags& a, ProvinceFlags b) {
