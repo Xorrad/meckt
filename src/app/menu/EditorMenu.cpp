@@ -606,8 +606,9 @@ void EditorMenu::RenderModals() {
 
                 mod->GetProvincesByIds()[provinceId]->SetName(name);
             }
-
             this->SwitchMapMode(TitleTypeToMapMode(type), true);
+            this->RefreshMapMode();
+            m_SelectionHandler.Select(title);
         }
         if(isNameTaken) ImGui::EndDisabled();
 
@@ -653,7 +654,7 @@ void EditorMenu::RenderModals() {
             ImGui::CloseCurrentPopup();
             initialized = false;
             mod->HarmonizeTitlesColors(m_SelectionHandler.GetTitles(), color, hue/100.f, saturation/100.f);
-            this->SwitchMapMode(m_MapMode, true);
+            this->RefreshMapMode(true, false);
         }
         if(!hasTitlesSelected) ImGui::EndDisabled();
 
