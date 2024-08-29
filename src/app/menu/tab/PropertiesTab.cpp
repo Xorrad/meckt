@@ -39,7 +39,6 @@ void PropertiesTab::Render() {
     if(m_SelectingTitle)
         m_Menu->GetApp()->GetWindow().draw(m_SelectingTitleText);
 
-    // const SharedPtr<Mod> mod = this->GetMod();
     if(m_Menu->GetSelectionHandler().GetProvinces().size() > 0) {
         this->RenderProvinces();
     }
@@ -55,30 +54,24 @@ void PropertiesTab::RenderProvinces() {
         if(ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::PushID(province->GetId());                        
 
-            // Province id.
+            // PROVINCE: id (field)
             ImGui::BeginDisabled();
             std::string id = std::to_string(province->GetId());
             ImGui::InputText("id", &id);
             ImGui::EndDisabled();
 
-            // Province barony name.
+            // PROVINCE: name (field)
             ImGui::InputText("name", &province->m_Name);
 
-            // Province color code.
-            float color[4] = {
-                province->GetColor().r/255.f,
-                province->GetColor().g/255.f,
-                province->GetColor().b/255.f,
-                province->GetColor().a/255.f
-            };
+            // PROVINCE: color (colorpicker)
+            sf::Color color = province->GetColor();
             ImGui::BeginDisabled();
-            if(ImGui::ColorEdit3("color", color)) {
-                province->SetColor(sf::Color(color[0]*255, color[1]*255, color[2]*255, color[3]*255));
+            if(ImGui::ColorEdit3("color", &color)) {
+                province->SetColor(color);
             }
             ImGui::EndDisabled();
 
-            // Province terrain type.
-            // if(province->IsSea()) ImGui::BeginDisabled();
+            // PROVINCE: terrain (combobox)
             if (ImGui::BeginCombo("terrain type", TerrainTypeLabels[(int) province->GetTerrain()])) {
                 for (int i = 0; i < (int) TerrainType::COUNT; i++) {
                     const bool isSelected = ((int) province->GetTerrain() == i);
@@ -91,9 +84,8 @@ void PropertiesTab::RenderProvinces() {
                 }
                 ImGui::EndCombo();
             }
-            // if(province->IsSea()) ImGui::EndDisabled();
             
-            // ProvinceFlag checkboxes.
+            // PROVINCE: flags (checkbox)
             bool isCoastal = province->HasFlag(ProvinceFlags::COASTAL);
             bool isLake = province->HasFlag(ProvinceFlags::LAKE);
             bool isIsland = province->HasFlag(ProvinceFlags::ISLAND);
@@ -103,7 +95,6 @@ void PropertiesTab::RenderProvinces() {
             bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
 
             if (ImGui::BeginTable("province flags", 2)) {
-            
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 if(ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
@@ -129,9 +120,13 @@ void PropertiesTab::RenderProvinces() {
                 ImGui::EndTable();
             }
 
+            // PROVINCE: culture (field)
             ImGui::InputText("culture", &province->m_Culture);
+
+            // PROVINCE: religion (field)
             ImGui::InputText("religion", &province->m_Religion);
 
+            // PROVINCE: holding type (combobox)
             if (ImGui::BeginCombo("holding", ProvinceHoldingLabels[(int) province->GetHolding()])) {
                 for (int i = 0; i < (int) ProvinceHolding::COUNT; i++) {
                     const bool isSelected = ((int) province->GetHolding() == i);
@@ -143,6 +138,7 @@ void PropertiesTab::RenderProvinces() {
                 ImGui::EndCombo();
             }
 
+            // PROVINCE: switch to barony (button)
             if(m_Menu->GetApp()->GetMod()->GetTitles().count(province->GetName()) > 0) {
                 if(ImGui::Button("switch to barony")) {
                     const SharedPtr<Title>& title = m_Menu->GetApp()->GetMod()->GetTitles()[province->GetName()];
@@ -162,13 +158,16 @@ void PropertiesTab::RenderTitles() {
         if(ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::PushID(title->GetName().c_str());
 
+            // TITLE: name/tag (field)
             ImGui::InputText("name", &title->m_Name);
 
+            // TITLE: tier/type (combo)
             ImGui::BeginDisabled();
             if(ImGui::BeginCombo("type", TitleTypeLabels[(int) title->GetType()]))
                 ImGui::EndCombo();
             ImGui::EndDisabled();
 
+            // TITLE: color (colorpicker)
             sf::Color color = title->GetColor();
             if(ImGui::ColorEdit3("color", &color)) {
                 title->SetColor(color);
@@ -176,14 +175,36 @@ void PropertiesTab::RenderTitles() {
                 m_Menu->GetSelectionHandler().Update();
             }
 
+            // TITLE: landless (checkbox)
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
             ImGui::Checkbox("Landless", &title->m_Landless);
             ImGui::PopStyleVar();
 
             if(title->Is(TitleType::BARONY)) {
+
+                // BARONY: province id (field)
                 const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(title);
                 ImGui::InputInt("province id", &barony->m_ProvinceId);
 
+                // BARONY: province id (field)
+                ImGui::NewLine();
+                if(ImGui::Button((m_SelectingTitle) ? "click on a province..." : "change province") && !m_SelectingTitle) {
+                    m_SelectingTitle = true;
+                    MapMode previousMapMode = m_Menu->GetMapMode();
+                    m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
+                    m_Menu->GetSelectionHandler().AddCallback(
+                        [this, barony, previousMapMode](sf::Mouse::Button button, SharedPtr<Province> province) {
+                            if(button != sf::Mouse::Button::Left)
+                                return SelectionCallbackResult::INTERRUPT;
+                            barony->SetProvinceId(province->GetId());
+                            m_Menu->SwitchMapMode(previousMapMode, false);
+                            m_SelectingTitle = false;
+                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                        }
+                    );
+                }
+
+                // BARONY: Switch to province (button)
                 if(ImGui::Button("switch to province")) {
                     if(m_Menu->GetApp()->GetMod()->GetProvincesByIds().count(barony->GetProvinceId()) > 0) {
                         const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
@@ -195,6 +216,7 @@ void PropertiesTab::RenderTitles() {
             else {
                 const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
 
+                // HIGHTITLE: dejure titles (list)
                 ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY | ImGuiChildFlags_Border, ImGuiWindowFlags_None);
 
                 if(ImGui::BeginMenuBar()) {
@@ -229,6 +251,8 @@ void PropertiesTab::RenderTitles() {
                     }
                     ImGui::PopID();
                 }
+
+                // HIGHTITLE: add new dejure title (button)
                 ImGui::NewLine();
                 if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
                     TitleType dejureType = (TitleType)(((int) highTitle->GetType())-1);
@@ -248,35 +272,39 @@ void PropertiesTab::RenderTitles() {
                     );
                 }
                 ImGui::EndChild();
-            }
 
-            if(!title->Is(TitleType::COUNTY)) {
-                const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
-                
-                ImGui::NewLine();
-                if(ImGui::Button((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
-                    m_SelectingTitle = true;
-                    m_Menu->SwitchMapMode(MapMode::COUNTY, false);
-                    m_Menu->GetSelectionHandler().AddCallback(
-                        [this, highTitle](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> clickedTitle) {
-                            if(button != sf::Mouse::Button::Left)
-                                return SelectionCallbackResult::INTERRUPT;
-                            if(!clickedTitle->Is(TitleType::COUNTY))
-                                return SelectionCallbackResult::INTERRUPT;
-                            if(std::find(highTitle->GetDejureTitles().begin(), highTitle->GetDejureTitles().end(), clickedTitle) == highTitle->GetDejureTitles().end())
-                                return SelectionCallbackResult::INTERRUPT;
-                            highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(clickedTitle));
-                            m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
-                            m_SelectingTitle = false;
-                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                        }
-                    );
+                if(!title->Is(TitleType::COUNTY)) {
+                    const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+                    
+                    // HIGHTITLE: change capital county (button)
+                    ImGui::NewLine();
+                    if(ImGui::Button((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
+                        m_SelectingTitle = true;
+                        m_Menu->SwitchMapMode(MapMode::COUNTY, false);
+                        m_Menu->GetSelectionHandler().AddCallback(
+                            [this, highTitle](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> clickedTitle) {
+                                if(button != sf::Mouse::Button::Left)
+                                    return SelectionCallbackResult::INTERRUPT;
+                                if(!clickedTitle->Is(TitleType::COUNTY))
+                                    return SelectionCallbackResult::INTERRUPT;
+                                if(std::find(highTitle->GetDejureTitles().begin(), highTitle->GetDejureTitles().end(), clickedTitle) == highTitle->GetDejureTitles().end())
+                                    return SelectionCallbackResult::INTERRUPT;
+                                highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(clickedTitle));
+                                m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
+                                m_SelectingTitle = false;
+                                return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                            }
+                        );
+                    }
                 }
+
             }
 
+            // TITLE: delete title (button)
             if(ImGui::Button("delete"))
                 ImGui::OpenPopup("Delete this title");
 
+            // TITLE: delete title (modal)
             ImVec2 center = ImGui::GetMainViewport()->GetCenter();
             ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
             if(ImGui::BeginPopupModal("Delete this title", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
