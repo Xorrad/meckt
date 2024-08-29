@@ -29,6 +29,8 @@ public:
 
     void SetupDockspace();
     void RenderMenuBar();
+    void RenderMenuBarSelection();
+    void RenderModals();
 
 private:
     MapMode m_MapMode;
@@ -50,6 +52,7 @@ private:
 
     std::map<Tabs, SharedPtr<Tab>> m_Tabs;
     bool m_DisplayBorders;
+    std::string m_ModalName;
 
     bool m_ExitToMainMenu;
 };
