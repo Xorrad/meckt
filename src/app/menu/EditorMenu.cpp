@@ -469,6 +469,7 @@ void EditorMenu::RenderMenuBar() {
         }
 
         this->RenderMenuBarSelection();
+        this->RenderMenuBarTools();
 
         ImGui::EndMainMenuBar();
     }
@@ -487,6 +488,17 @@ void EditorMenu::RenderMenuBarSelection() {
         
         if(ImGui::MenuItem("Harmonize colors")) {
             m_ModalName = "Harmonize colors";
+        }
+
+        ImGui::EndMenu();
+    }
+}
+
+void EditorMenu::RenderMenuBarTools() {
+    if(ImGui::BeginMenu("Tools")) {
+
+        if(ImGui::MenuItem("Generate missing provinces")) {
+            m_ModalName = "Generate missing provinces";
         }
 
         ImGui::EndMenu();
@@ -669,4 +681,24 @@ void EditorMenu::RenderModals() {
         ImGui::EndPopup();
     }
     // HARMONIZE COLOR: modal end
+
+    // GENERATE PROVINCES: modal begin
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Generate missing provinces", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
+        ImGui::Separator();
+
+        if(ImGui::Button("Generate", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            m_App->GetMod()->GenerateMissingProvinces();
+        }
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    // GENERATE PROVINCES: modal end
 }

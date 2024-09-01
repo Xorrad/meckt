@@ -30,6 +30,7 @@ public:
     void SetupDockspace();
     void RenderMenuBar();
     void RenderMenuBarSelection();
+    void RenderMenuBarTools();
     void RenderModals();
 
 private:
