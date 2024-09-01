@@ -323,10 +323,17 @@ void Mod::LoadDefaultMapFile() {
 }
 
 void Mod::LoadProvincesDefinition() {
-    std::vector<std::vector<std::string>> lines = File::ReadCSV(m_Dir + "/map_data/definition.csv");
+    std::string filePath = m_Dir + "/map_data/definition.csv";
+    
+    // Create an empty definition file if it does not exist.
+    if(std::filesystem::exists(filePath))
+        std::ofstream {filePath};
+    
+    std::vector<std::vector<std::string>> lines = File::ReadCSV(filePath);
     
     // Skip the first line.
-    lines.erase(lines.begin());
+    if(!lines.empty())
+        lines.erase(lines.begin());
 
     for(const auto& line : lines) {
         int id = std::stoi(line[0]);
