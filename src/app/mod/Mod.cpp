@@ -184,6 +184,10 @@ SharedPtr<Title> Mod::GetProvinceFocusedTitle(const SharedPtr<Province>& provinc
     return title;
 }
 
+int Mod::GetMaxProvinceId() const {
+    return m_ProvincesByIds.empty() ? -1 : m_ProvincesByIds.rbegin()->first;
+}
+
 std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
     return m_Titles;
 }
@@ -222,6 +226,46 @@ void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf:
     // Apply those colors to the titles.
     for(int i = 0; i < titles.size(); i++) {
         titles[i]->SetColor(colors[i]);
+    }
+}
+
+void Mod::GenerateMissingProvinces() {
+    // Loop through the province image and generate provinces for any color
+    // that does not already have one.
+
+    int nextId = this->GetMaxProvinceId() + 1;
+
+    uint width = m_ProvinceImage.getSize().x;
+    uint height = m_ProvinceImage.getSize().y;
+    uint pixels = width * height * 4;
+    const sf::Uint8* provincesPixels = m_ProvinceImage.getPixelsPtr();
+
+    uint index = 0;
+    sf::Uint32 provinceColor = 0x000000FF;
+    sf::Uint32 previousProvinceColor = 0x00000000;
+
+    // Cast to edit directly the bytes of the color and pixels.
+    // - colorPtr is used to read the color from the provinces map image.
+    char* colorPtr = static_cast<char*>((void*) &provinceColor);
+
+    while(index < pixels) {
+        // Copy the four bytes corresponding to RGBA from the provinces image pixels
+        // to the array for the titles image.
+        // The bytes need to be flipped, otherwise provinceColor would
+        // be ABGR and we couldn't find the associated title color in the map.
+        colorPtr[3] = provincesPixels[index++]; // R
+        colorPtr[2] = provincesPixels[index++]; // G
+        colorPtr[1] = provincesPixels[index++]; // B
+        index++;
+        if(previousProvinceColor != provinceColor) {
+            if(m_Provinces.count(provinceColor) == 0) {
+                SharedPtr<Province> province = MakeShared<Province>(nextId, sf::Color(provinceColor), fmt::format("province_{}", nextId));
+                m_Provinces[province->GetColorId()] = province;
+                m_ProvincesByIds[province->GetId()] = province;
+                nextId++;
+            }
+        }
+        previousProvinceColor = provinceColor;
     }
 }
 

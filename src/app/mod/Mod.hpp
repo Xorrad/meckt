@@ -15,11 +15,13 @@ public:
     std::map<int, SharedPtr<Province>>& GetProvincesByIds();
     SharedPtr<Title> GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type);
     SharedPtr<Title> GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type);
-    
+    int GetMaxProvinceId() const;
+
     std::map<std::string, SharedPtr<Title>>& GetTitles();
     std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
 
     void HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color color, float hue, float saturation);
+    void GenerateMissingProvinces();
 
     void Load();
     void LoadDefaultMapFile();
