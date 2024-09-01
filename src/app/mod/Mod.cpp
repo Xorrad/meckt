@@ -291,7 +291,7 @@ void Mod::LoadDefaultMapFile() {
 
     // TODO: Coastal provinces??
     
-    std::vector<double> lakes = result.Get("lakes");
+    const std::vector<double>& lakes = result.Get("lakes", std::vector<double>{});
     for(double provinceId : lakes) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAKE, true);
     }
@@ -299,24 +299,24 @@ void Mod::LoadDefaultMapFile() {
     // TODO: Islands provinces??
     // TODO: Land provinces??
 
-    const std::vector<double>& seaZones = result.Get("sea_zones");
+    const std::vector<double>& seaZones = result.Get("sea_zones", std::vector<double>{});
     for(double provinceId : seaZones) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
     }
 
-    const std::vector<double>& rivers = result.Get("river_provinces");
+    const std::vector<double>& rivers = result.Get("river_provinces", std::vector<double>{});
     for(double provinceId : rivers) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::RIVER, true);
     }
     
-    std::vector<double>& impassable = result.Get("impassable_seas");
-    for(double provinceId : impassable) {
+    const std::vector<double>& impassableSeas = result.Get("impassable_seas", std::vector<double>{});
+    for(double provinceId : impassableSeas) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
     }
     
-    impassable = result.Get("impassable_mountains");
-    for(double provinceId : impassable) {
+    const std::vector<double>& impassableMountains = result.Get("impassable_mountains", std::vector<double>{});
+    for(double provinceId : impassableMountains) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
     }
