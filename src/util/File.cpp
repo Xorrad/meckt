@@ -3,8 +3,10 @@
 
 std::set<std::string> File::ListFiles(const std::string& dirPath) {
     std::set<std::string> files;
-    for (const auto& entry : std::filesystem::directory_iterator(dirPath))
-        files.insert(entry.path());
+    if(std::filesystem::exists(dirPath)) {
+        for (const auto& entry : std::filesystem::directory_iterator(dirPath))
+            files.insert(entry.path());
+    }
     return files;
 }
 

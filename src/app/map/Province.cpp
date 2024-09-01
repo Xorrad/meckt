@@ -48,7 +48,7 @@ sf::Color Province::GetColor() const {
 }
  
 uint32_t Province::GetColorId() const {
-    return (m_Color.r << 16) + (m_Color.g << 8) + m_Color.b;
+    return m_Color.toInteger();
 }
 
 std::string Province::GetName() const {

@@ -233,7 +233,7 @@ void Mod::GenerateMissingProvinces() {
     // Loop through the province image and generate provinces for any color
     // that does not already have one.
 
-    int nextId = this->GetMaxProvinceId() + 1;
+    int nextId = 1;
 
     uint width = m_ProvinceImage.getSize().x;
     uint height = m_ProvinceImage.getSize().y;
@@ -249,7 +249,7 @@ void Mod::GenerateMissingProvinces() {
     char* colorPtr = static_cast<char*>((void*) &provinceColor);
 
     while(index < pixels) {
-        // Copy the four bytes corresponding to RGBA from the provinces image pixels
+        // Copy the four bytes corresponding to RGB from the provinces image pixels
         // to the array for the titles image.
         // The bytes need to be flipped, otherwise provinceColor would
         // be ABGR and we couldn't find the associated title color in the map.
@@ -259,6 +259,10 @@ void Mod::GenerateMissingProvinces() {
         index++;
         if(previousProvinceColor != provinceColor) {
             if(m_Provinces.count(provinceColor) == 0) {
+                // Skip ids that are already taken by another province.
+                while(m_ProvincesByIds.count(nextId) != 0)
+                    nextId++;
+
                 SharedPtr<Province> province = MakeShared<Province>(nextId, sf::Color(provinceColor), fmt::format("province_{}", nextId));
                 m_Provinces[province->GetColorId()] = province;
                 m_ProvincesByIds[province->GetId()] = province;
@@ -353,9 +357,9 @@ void Mod::LoadProvincesDefinition() {
 void Mod::LoadProvincesTerrain() {
     Parser::Node result = Parser::Parse(m_Dir + "/common/province_terrain/00_province_terrain.txt");
 
-    m_DefaultLandTerrain = TerrainTypefromString(result.Get("default_land"));
-    m_DefaultSeaTerrain = TerrainTypefromString(result.Get("default_sea"));
-    m_DefaultCoastalSeaTerrain = TerrainTypefromString(result.Get("default_coastal_sea"));
+    m_DefaultLandTerrain = TerrainTypefromString(result.Get("default_land", std::string("plains")));
+    m_DefaultSeaTerrain = TerrainTypefromString(result.Get("default_sea", std::string("sea")));
+    m_DefaultCoastalSeaTerrain = TerrainTypefromString(result.Get("default_coastal_sea", std::string("sea")));
 
     for(const auto& [colorId, province] : m_Provinces) {
         TerrainType defaultTerrain = m_DefaultLandTerrain;

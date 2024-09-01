@@ -41,7 +41,7 @@ void App::Init() {
     // Initialize SFML.
     m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Meckt");
     // m_Window.setFramerateLimit(60);
-    // m_Window.setVerticalSyncEnabled(true);
+    m_Window.setVerticalSyncEnabled(true);
     
     // Initialize ImGui.
     if(!ImGui::SFML::Init(m_Window)) {

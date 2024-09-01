@@ -51,7 +51,7 @@ SharedPtr<Province> EditorMenu::GetHoveredProvince() {
     sf::Vector2f mapMousePosition = mousePosition - m_MapSprite.getPosition();
 
     sf::Color color = mod->GetProvinceImage().getPixel(mapMousePosition.x, mapMousePosition.y);
-    uint32_t colorId = (color.r << 16) + (color.g << 8) + color.b;
+    uint32_t colorId = color.toInteger();
 
     if(mod->GetProvinces().count(colorId) == 0)
         return nullptr;
