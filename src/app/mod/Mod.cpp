@@ -330,7 +330,7 @@ void Mod::LoadProvincesDefinition() {
     std::string filePath = m_Dir + "/map_data/definition.csv";
     
     // Create an empty definition file if it does not exist.
-    if(std::filesystem::exists(filePath))
+    if(!std::filesystem::exists(filePath))
         std::ofstream {filePath};
     
     std::vector<std::vector<std::string>> lines = File::ReadCSV(filePath);
