@@ -613,6 +613,15 @@ void EditorMenu::RenderModals() {
                         continue;
                     highTitle->AddDejureTitle(selectedTitle);
                 }
+
+                if(!title->Is(TitleType::COUNTY) && hasSelectedTitle) {
+                    SharedPtr<Title> capitalTitle = m_SelectionHandler.GetTitles()[0];
+                    if(!title->Is(TitleType::DUCHY)) {
+                        while(capitalTitle != nullptr && !capitalTitle->Is(TitleType::COUNTY))
+                            capitalTitle = CastSharedPtr<HighTitle>(capitalTitle)->GetCapitalTitle();
+                    }
+                    highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(capitalTitle));
+                }
             }
             else {
                 // If no province is currently selected, the default province id for the barony will be 0.
