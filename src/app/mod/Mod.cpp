@@ -674,7 +674,6 @@ void Mod::ExportTitles() {
             filePath = dir + "/01_landed_titles.txt";
         if(files.count(filePath) == 0)
             files[filePath] = std::ofstream(filePath, std::ios::out);
-        fmt::println("{}", filePath);
         std::ofstream& file = files[filePath];
         Parser::Node data = this->ExportTitle(title, 1);
         fmt::println(file, "{} = {}", title->GetName(), data);

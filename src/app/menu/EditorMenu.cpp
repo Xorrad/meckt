@@ -547,7 +547,7 @@ void EditorMenu::RenderModals() {
 
             if(hasSelectedTitle) {
                 const SharedPtr<Title>& selectedTitle = m_SelectionHandler.GetTitles()[0];
-                type = (TitleType) (std::max((int) selectedTitle->GetType() + 1, (int) TitleType::EMPIRE));
+                type = (TitleType) (std::min((int) selectedTitle->GetType() + 1, (int) TitleType::EMPIRE));
                 name = GetTitlePrefixByType(type) + "_";
             }
             else if(hasSelectedProvince) {
@@ -630,8 +630,10 @@ void EditorMenu::RenderModals() {
 
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine();
-        if(ImGui::Button("Cancel", ImVec2(120, 0)))
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
+            initialized = false;
+        }
         ImGui::EndPopup();
     }
     // CREATE TITLE: modal end
