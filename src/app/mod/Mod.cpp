@@ -662,17 +662,20 @@ void Mod::ExportProvincesHistory() {
 
 void Mod::ExportTitles() {
     std::string dir = m_Dir + "/common/landed_titles";
+    std::filesystem::create_directories(dir);
+
     std::map<std::string, std::ofstream> files;
-    
-    // TODO: handle newly created titles without any original file.
 
     for(const auto& [name, title] : m_Titles) {
         if(title->GetLiegeTitle() != nullptr)
             continue;
-        if(files.count(title->GetOriginalFilePath()) == 0) {
-            files[title->GetOriginalFilePath()] = std::ofstream(title->GetOriginalFilePath(), std::ios::out);
-        }
-        std::ofstream& file = files[title->GetOriginalFilePath()];
+        std::string filePath = title->GetOriginalFilePath();
+        if(filePath.empty())
+            filePath = dir + "/01_landed_titles.txt";
+        if(files.count(filePath) == 0)
+            files[filePath] = std::ofstream(filePath, std::ios::out);
+        fmt::println("{}", filePath);
+        std::ofstream& file = files[filePath];
         Parser::Node data = this->ExportTitle(title, 1);
         fmt::println(file, "{} = {}", title->GetName(), data);
     }
@@ -682,7 +685,7 @@ void Mod::ExportTitles() {
 }
 
 Parser::Node Mod::ExportTitle(const SharedPtr<Title>& title, int depth) {
-    Parser::Node data = *title->GetOriginalData();
+    Parser::Node data = (title->GetOriginalData() == nullptr) ? Parser::Node() : *title->GetOriginalData();
     
     data.Put("color", title->GetColor());
 
