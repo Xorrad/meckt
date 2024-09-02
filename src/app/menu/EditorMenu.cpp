@@ -383,6 +383,7 @@ void EditorMenu::InitSelectionCallbacks() {
 void EditorMenu::InitTabs() {
     m_Tabs[Tabs::TITLES] = MakeShared<TitlesTab>(this, true);
     m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(this, true);
+    m_Tabs[Tabs::PROVINCES] = MakeShared<ProvincesTab>(this, true);
 }
 
 void EditorMenu::SetupDockspace() {
@@ -418,6 +419,7 @@ void EditorMenu::SetupDockspace() {
 
         // Create docked windows
         ImGui::DockBuilderDockWindow("Titles", dockRight);
+        ImGui::DockBuilderDockWindow("Provinces", dockRight);
         ImGui::DockBuilderDockWindow("Properties", dockDown);
 
         ImGui::DockBuilderFinish(dockspaceID);

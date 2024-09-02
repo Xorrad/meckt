@@ -3,6 +3,7 @@
 enum class Tabs {
     TITLES,
     PROPERTIES,
+    PROVINCES,
 };
 
 class Tab {
@@ -33,3 +34,4 @@ protected:
 
 #include "TitlesTab.hpp"
 #include "PropertiesTab.hpp"
+#include "ProvincesTab.hpp"
