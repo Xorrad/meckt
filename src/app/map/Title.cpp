@@ -32,6 +32,16 @@ bool Title::Is(TitleType type) const {
     return this->GetType() == type;
 }
 
+bool Title::IsVassal(SharedPtr<HighTitle> title) const {
+    SharedPtr<HighTitle> liege = this->m_LiegeTitle;
+    while(liege != nullptr) {
+        if(liege == title)
+            return true;
+        liege = liege->GetLiegeTitle();
+    }
+    return false;
+}
+
 void Title::SetName(std::string name) {
     m_Name = name;
 }

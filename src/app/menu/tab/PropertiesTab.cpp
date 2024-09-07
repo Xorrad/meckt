@@ -299,13 +299,19 @@ void PropertiesTab::RenderTitles() {
                         m_Menu->SwitchMapMode(MapMode::COUNTY, false);
                         m_Menu->GetSelectionHandler().AddCallback(
                             [this, highTitle](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> clickedTitle) {
+                                if(button != sf::Mouse::Button::Right)
+                                    goto DeleteCallback;
                                 if(button != sf::Mouse::Button::Left)
                                     return SelectionCallbackResult::INTERRUPT;
                                 if(!clickedTitle->Is(TitleType::COUNTY))
                                     return SelectionCallbackResult::INTERRUPT;
-                                if(std::find(highTitle->GetDejureTitles().begin(), highTitle->GetDejureTitles().end(), clickedTitle) == highTitle->GetDejureTitles().end())
+                                
+                                // Check if clicked title is a direct or undirect vassal of the title.
+                                if(!clickedTitle->IsVassal(highTitle))
                                     return SelectionCallbackResult::INTERRUPT;
                                 highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(clickedTitle));
+                                
+                                DeleteCallback:
                                 m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
                                 m_SelectingTitle = false;
                                 return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;

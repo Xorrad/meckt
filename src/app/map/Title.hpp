@@ -18,6 +18,7 @@ public:
     bool IsLandless() const;
 
     bool Is(TitleType type) const;
+    bool IsVassal(SharedPtr<HighTitle> title) const;
 
     void SetName(std::string name);
     void SetColor(sf::Color color);
@@ -28,6 +29,7 @@ public:
     SharedPtr<Parser::Node> GetOriginalData() const;
     void SetOriginalFilePath(const std::string& filePath);
     void SetOriginalData(const Parser::Node& data);
+
 
     virtual bool HasSelectionFocus() const;
     virtual void SetSelectionFocus(bool focus);
