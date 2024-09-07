@@ -64,7 +64,7 @@ void TitlesTab::Render() {
             ImGui::TableNextColumn();
 
             if(title->Is(TitleType::BARONY)) {
-                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
                 if(m_Menu->GetSelectionHandler().IsSelected(title))
                     flags |= ImGuiTreeNodeFlags_Selected;
                 
@@ -83,7 +83,7 @@ void TitlesTab::Render() {
             else {
                 SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
 
-                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAllColumns;
                 if(m_Menu->GetSelectionHandler().IsSelected(title))
                     flags |= ImGuiTreeNodeFlags_Selected;
 

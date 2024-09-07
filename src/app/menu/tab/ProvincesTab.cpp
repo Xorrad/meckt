@@ -38,7 +38,7 @@ void ProvincesTab::Render() {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
             if(m_Menu->GetSelectionHandler().IsSelected(province))
                 flags |= ImGuiTreeNodeFlags_Selected;
             
