@@ -375,7 +375,18 @@ void Mod::LoadProvincesTerrain() {
             continue;
         const auto& [op, value] = pair;
         int provinceId = std::get<double>(key);
-        TerrainType terrain = TerrainTypefromString(value);
+        TerrainType terrain = TerrainType::PLAINS;
+
+        // If the province id has been assigned several terrain type
+        // then we only pick the first one, and send a warning to the user.
+        if(!value.Is(Parser::ValueType::STRING)) {
+            std::vector<std::string> values = value;
+            terrain = TerrainTypefromString(values[0]);
+            // TODO: add warning message to console.
+        }
+        else {
+            terrain = TerrainTypefromString(value);
+        }
 
         if(m_ProvincesByIds.count(provinceId) == 0) {
             INFO("A province's terrain is defined but the province does not exist: {}", provinceId);
