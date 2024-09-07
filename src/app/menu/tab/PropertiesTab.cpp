@@ -229,14 +229,29 @@ void PropertiesTab::RenderTitles() {
                 // Make a copy to be able to use highTitle->RemoveDejureTitle
                 // without causing a crash while iterating.
                 std::vector<SharedPtr<Title>> dejureTitles = highTitle->GetDejureTitles();
+                int n = 0;
                 for(auto const& dejure : dejureTitles) {
                     ImGui::PushID(dejure->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
-                    if(ImGui::Selectable(dejure->GetName().c_str())) {
+                    ImGui::Selectable(dejure->GetName().c_str());
+
+                    // Switch to the properties of the dejure title if not dragging the mouse.
+                    if(ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
                         m_Menu->SwitchMapMode(TitleTypeToMapMode(dejure->GetType()), true);
                         m_Menu->GetSelectionHandler().Select(dejure);
                     }
-                    if(dejure == highTitle->GetCapitalTitle()) {
+
+                    // Reorder the dejure titles by dragging the mouse.
+                    else if(ImGui::IsItemActive() && !ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped)) {
+                        int nNext = n + (ImGui::GetMouseDragDelta(0).y < 0.f ? -1 : 1);
+                        if(nNext >= 0 && nNext < dejureTitles.size()) {
+                            std::iter_swap(highTitle->GetDejureTitles().begin() + n, highTitle->GetDejureTitles().begin() + nNext);
+                            ImGui::ResetMouseDragDelta();
+                        }
+                    }
+
+                    // First barony of a county is the capital.
+                    if(dejure == highTitle->GetCapitalTitle() || (highTitle->Is(TitleType::COUNTY) && n == 0)) {
                         ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-90);
                         ImGui::TextColored(ImVec4(1.f, 0.6f, 0.f, 1.f), "(Capital)");
                     }
@@ -250,6 +265,7 @@ void PropertiesTab::RenderTitles() {
                         m_Menu->RefreshMapMode();
                     }
                     ImGui::PopID();
+                    n++;
                 }
 
                 // HIGHTITLE: add new dejure title (button)

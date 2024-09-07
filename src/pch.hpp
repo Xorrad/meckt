@@ -9,6 +9,7 @@
 #include <set>
 #include <functional>
 #include <random>
+#include <algorithm>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
