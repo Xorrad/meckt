@@ -384,6 +384,7 @@ void EditorMenu::InitTabs() {
     m_Tabs[Tabs::TITLES] = MakeShared<TitlesTab>(this, true);
     m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(this, true);
     m_Tabs[Tabs::PROVINCES] = MakeShared<ProvincesTab>(this, true);
+    m_Tabs[Tabs::LOG] = MakeShared<LogTab>(this, true);
 }
 
 void EditorMenu::SetupDockspace() {
@@ -415,12 +416,14 @@ void EditorMenu::SetupDockspace() {
 
         // Split the right dockspace into top and bottom
         ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Right, 0.25f, nullptr, &dockspaceID);
-        ImGuiID dockDown = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.6f, nullptr, &dockRight);
+        ImGuiID dockRightDown = ImGui::DockBuilderSplitNode(dockRight, ImGuiDir_Down, 0.6f, nullptr, &dockRight);
+        ImGuiID dockDown = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Down, 0.1f, nullptr, &dockspaceID);
 
         // Create docked windows
         ImGui::DockBuilderDockWindow("Titles", dockRight);
         ImGui::DockBuilderDockWindow("Provinces", dockRight);
-        ImGui::DockBuilderDockWindow("Properties", dockDown);
+        ImGui::DockBuilderDockWindow("Properties", dockRightDown);
+        ImGui::DockBuilderDockWindow("Log", dockDown);
 
         ImGui::DockBuilderFinish(dockspaceID);
     }
