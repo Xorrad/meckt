@@ -33,6 +33,7 @@ namespace Logger {
         std::string GetTimeHMS() const;
 
         std::string ToString() const;
+        sf::Color GetColor() const;
     private:
         time_t m_Time;
         std::string m_File;
@@ -54,6 +55,7 @@ namespace Logger {
         void PrintMessage(SharedPtr<Message> message);
 
         void Clear();
+        void Close();
 
         static UniquePtr<Logger> s_Instance;
     private:

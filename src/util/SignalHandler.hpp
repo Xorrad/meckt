@@ -117,6 +117,8 @@ public:
       st.load_here(32, reinterpret_cast<void *>(uctx), info->si_addr);
     }
 
+    Logger::Get()->Close();
+
     std::ofstream file(CRASH_FILE, std::ios::out);
     if(file.good()) {
         backward::Printer printer;
@@ -324,6 +326,8 @@ private:
     st.set_thread_handle(thread_handle());
     st.load_here(32 + skip_frames, ctx());
     st.skip_n_firsts(skip_frames);
+
+    Logger::Get()->Close();
 
     std::ofstream file(CRASH_FILE, std::ios::out);
     if(file.good()) {

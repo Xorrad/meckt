@@ -58,14 +58,23 @@ std::string Logger::Message::ToString() const {
     );
 }
 
+sf::Color Logger::Message::GetColor() const {
+    switch(m_Type) {
+        case FATAL: return sf::Color(255, 0, 0);
+        case ERROR: return sf::Color(255, 0, 0);
+        case WARNING: return sf::Color(255, 130, 0);
+        case INFO: return sf::Color(0, 140, 255);
+        default: return sf::Color::White;
+    }
+}
+
 Logger::Logger::Logger(std::string filePath) {
     std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
     m_OutputFile.open(filePath, std::ios::out);
 }
 
 Logger::Logger::~Logger() {
-    if(m_OutputFile)
-        m_OutputFile.close();
+    this->Close();
 }
 
 std::deque<SharedPtr<Logger::Message>>& Logger::Logger::GetMessages() {
@@ -90,6 +99,11 @@ void Logger::Logger::Clear() {
     std::filesystem::remove(LOGS_FILE);
     std::filesystem::remove(CRASH_FILE);
     m_Messages.clear();
+}
+
+void Logger::Logger::Close() {
+    if(m_OutputFile)
+        m_OutputFile.close();
 }
 
 UniquePtr<Logger::Logger> Logger::Logger::s_Instance = MakeUnique<Logger>(LOGS_FILE);
