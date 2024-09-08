@@ -34,7 +34,6 @@ void App::Init() {
     srand(time(NULL));
 
     // Initialize app-related functionalities.
-    Logger::ClearLogs();
     Configuration::Initialize();
     m_DeltaClock.restart();
 

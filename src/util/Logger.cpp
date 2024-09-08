@@ -1,17 +1,99 @@
 #include "Logger.hpp"
 
-std::string Logger::GetTime()
-{
-    time_t now = time(0);
+Logger::Message::Message() : Message(time(0), "", 0, "", MessageType::INFO, "") {}
+
+Logger::Message::Message(std::string file, uint line, std::string function, MessageType type, std::string text) :
+    Message(time(0), file, line, function, type, text)
+{}
+
+Logger::Message::Message(time_t time, std::string file, uint line, std::string function, MessageType type, std::string text) :
+    m_Time(time),
+    m_File(file),
+    m_Line(line),
+    m_Function(function),
+    m_Type(type),
+    m_Text(text)
+{}
+
+time_t Logger::Message::GetTime() const {
+    return m_Time;
+}
+
+std::string Logger::Message::GetFile() const {
+    return m_File;
+}
+
+uint Logger::Message::GetLine() const {
+    return m_Line;
+}
+
+std::string Logger::Message::GetFunction() const {
+    return m_Function;
+}
+
+Logger::MessageType Logger::Message::GetType() const {
+    return m_Type;
+}
+
+std::string Logger::Message::GetText() const {
+    return m_Text;
+}
+
+std::string Logger::Message::GetTimeHMS() const {
     tm time;
     char buf[80];
-    time = *localtime(&now);
-    strftime(buf, sizeof(buf), "[%X]", &time);
+    time = *localtime(&m_Time);
+    strftime(buf, sizeof(buf), "%X", &time);
     return std::string(buf);
 }
 
-void Logger::ClearLogs()
-{
+std::string Logger::Message::ToString() const {
+    return fmt::format("[{}][{}:{}][{}] {}: {}",
+        this->GetTimeHMS(),
+        m_File,
+        m_Line,
+        m_Function,
+        MessageTypeLabels[(int) m_Type],
+        m_Text
+    );
+}
+
+Logger::Logger::Logger(std::string filePath) {
+    std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+    m_OutputFile.open(filePath, std::ios::out);
+}
+
+Logger::Logger::~Logger() {
+    if(m_OutputFile)
+        m_OutputFile.close();
+}
+
+std::deque<SharedPtr<Logger::Message>>& Logger::Logger::GetMessages() {
+    return m_Messages;
+}
+
+void Logger::Logger::PushMessage(SharedPtr<Message> message) {
+    m_Messages.push_back(message);
+}
+
+void Logger::Logger::RemoveMessage(SharedPtr<Message> message) {
+    m_Messages.erase(std::remove(m_Messages.begin(), m_Messages.end(), message));
+}
+
+void Logger::Logger::PrintMessage(SharedPtr<Message> message) {
+    if(!m_OutputFile.is_open())
+        return;
+    m_OutputFile << message->ToString() << std::endl;
+}
+
+void Logger::Logger::Clear() {
     std::filesystem::remove(LOGS_FILE);
     std::filesystem::remove(CRASH_FILE);
+    m_Messages.clear();
+}
+
+UniquePtr<Logger::Logger> Logger::Logger::s_Instance = MakeUnique<Logger>(LOGS_FILE);
+
+UniquePtr<Logger::Logger>& Logger::Get() {
+    return Logger::Logger::s_Instance;
 }
