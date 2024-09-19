@@ -67,6 +67,8 @@ void PropertiesTab::RenderProvinces() {
             sf::Color color = province->GetColor();
             ImGui::BeginDisabled();
             if(ImGui::ColorEdit3("color", &color)) {
+                // TODO: error if color is already taken by another province.
+                // TODO: change pixels color in provinces.png.
                 province->SetColor(color);
             }
             ImGui::EndDisabled();
@@ -184,7 +186,11 @@ void PropertiesTab::RenderTitles() {
 
                 // BARONY: province id (field)
                 const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(title);
-                ImGui::InputInt("province id", &barony->m_ProvinceId);
+                if(ImGui::InputInt("province id", &barony->m_ProvinceId)) {
+                    if(m_Menu->GetApp()->GetMod()->GetProvincesByIds().count(barony->m_ProvinceId) == 0) {
+                        ERROR("Barony with undefined province id: {},{}", barony->GetName(), barony->GetProvinceId());
+                    }
+                }
 
                 // BARONY: province id (field)
                 ImGui::NewLine();

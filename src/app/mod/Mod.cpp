@@ -277,10 +277,15 @@ void Mod::Load() {
     if(!this->HasMap())
         return;
 
-    // TODO: catch exceptions.
-    m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png");
-    m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png");
-    m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png");
+    if(!m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
+        ERROR("Failed to load heightmap image at ", m_Dir + "/map_data/heightmap.png");
+    }
+    if(!m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png")) {
+        FATAL("Failed to load provinces image at ", m_Dir + "/map_data/provinces.png");
+    }
+    if(!m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
+        ERROR("Failed to load rivers image at ", m_Dir + "/map_data/rivers.png");
+    }
 
     this->LoadProvincesDefinition();
     this->LoadDefaultMapFile();
@@ -334,10 +339,12 @@ void Mod::LoadProvincesDefinition() {
         std::ofstream {filePath};
     
     std::vector<std::vector<std::string>> lines = File::ReadCSV(filePath);
-    
+
     // Skip the first line.
     if(!lines.empty())
         lines.erase(lines.begin());
+
+    int lastId = 0;
 
     for(const auto& line : lines) {
         int id = std::stoi(line[0]);
@@ -347,10 +354,17 @@ void Mod::LoadProvincesDefinition() {
         std::string name = line[4];
 
         SharedPtr<Province> province = MakeShared<Province>(id, sf::Color(r, g, b), name);
+
+        if(m_ProvincesByIds.count(id) > 0)
+            ERROR("Several provinces with same id: {}", id);
         if(m_Provinces.count(province->GetColorId()) > 0)
-            INFO("Several provinces with same color: {}", id);
+            ERROR("Several provinces with same color: {},{}", id, m_Provinces.at(province->GetColorId())->GetId());
+        if(id != lastId+1)
+            ERROR("Ids in definitions.csv are not sequential: {} to {}", lastId, id);
+
         m_Provinces[province->GetColorId()] = province;
         m_ProvincesByIds[province->GetId()] = province;
+        lastId = id;
     }
 }
 
@@ -382,14 +396,14 @@ void Mod::LoadProvincesTerrain() {
         if(!value.Is(Parser::ValueType::STRING)) {
             std::vector<std::string> values = value;
             terrain = TerrainTypefromString(values[0]);
-            // TODO: add warning message to console.
+            WARNING("Province assigned several terrain types: {}", provinceId);
         }
         else {
             terrain = TerrainTypefromString(value);
         }
 
         if(m_ProvincesByIds.count(provinceId) == 0) {
-            INFO("A province's terrain is defined but the province does not exist: {}", provinceId);
+            WARNING("Terrain type assigned to undefined province: {}", provinceId);
             continue;
         }
 
@@ -477,19 +491,28 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Pars
             // to get the right derived class such as BaronyTitle, CountyTitle...
             SharedPtr<Title> title = MakeTitle(type, key, color, landless);
 
-            // TODO: add error log if title color is not specified.
+            if(!value.ContainsKey("color"))
+                WARNING("Title missing color in definition: {}", key);
 
             if(type == TitleType::BARONY) {
                 SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
                 baronyTitle->SetProvinceId(value.Get("province", 0));
                 
-                // TODO: add error log if province id is not specified.
+                if(!value.ContainsKey("province"))
+                    ERROR("Barony title missing province id in definition: {}", key);
+                if(m_ProvincesByIds.count(baronyTitle->GetProvinceId()) == 0)
+                    ERROR("Barony title with undefined province id in definition: {},{}", key, baronyTitle->GetProvinceId());
 
                 value.Remove("province");
             }
             else {
                 SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
                 std::vector<SharedPtr<Title>> dejureTitles = ParseTitles(filePath, value);
+
+                if(landless && !dejureTitles.empty())
+                    ERROR("Landless title has dejure vassals in definition: {}", key);
+                else if(!landless && dejureTitles.empty())
+                    ERROR("Title does not have any dejure vassals in definition: {}", key);
 
                 for(const auto& dejureTitle : dejureTitles) {
                     highTitle->AddDejureTitle(dejureTitle);
@@ -499,12 +522,17 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Pars
                     value.Remove(dejureTitle->GetName());
                 }
 
-                if(type != TitleType::COUNTY && value.ContainsKey("capital")) {
-                    std::string capitalName = value.Get("capital");
-                    if(m_Titles.count(capitalName) > 0 && IsInstance<CountyTitle>(m_Titles[capitalName])) {
-                        highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(m_Titles[capitalName]));
+                if(type != TitleType::COUNTY) {
+                    if(value.ContainsKey("capital")) {
+                        std::string capitalName = value.Get("capital");
+                        if(m_Titles.count(capitalName) > 0 && IsInstance<CountyTitle>(m_Titles[capitalName])) {
+                            highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(m_Titles[capitalName]));
+                        }
+                        value.Remove("capital");
                     }
-                    value.Remove("capital");
+                    else {
+                        ERROR("Title missing county capital in definition: {}", key);
+                    }
                 }
             }
 
@@ -648,7 +676,7 @@ void Mod::ExportProvincesHistory() {
             continue;
         SharedPtr<Title> kingdomTitle = this->GetProvinceLiegeTitle(province, TitleType::KINGDOM);
         if(kingdomTitle == nullptr) {
-            // TODO: add error log
+            ERROR("Province cannot be saved because missing dejure kingdom tier liege: {}", id);
             continue;
         }
         if(files.count(kingdomTitle->GetName()) == 0) {
