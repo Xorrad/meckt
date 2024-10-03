@@ -288,6 +288,7 @@ void Mod::Load() {
     }
 
     this->LoadProvincesDefinition();
+    this->LoadProvinceImage();
     this->LoadDefaultMapFile();
     this->LoadProvincesTerrain();
     this->LoadProvincesHistory();
@@ -328,6 +329,49 @@ void Mod::LoadDefaultMapFile() {
     for(double provinceId : impassableMountains) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
+    }
+}
+
+void Mod::LoadProvinceImage() {
+    const auto& pixels = m_ProvinceImage.getPixelsPtr();
+    std::map<uint32_t, bool> colors;
+
+    uint width = m_ProvinceImage.getSize().x;
+    uint height = m_ProvinceImage.getSize().y;
+    uint totalPixels = width * height * 4;
+    uint32_t previousColor = 0x0;
+
+    for(uint index = 0; index <= totalPixels; index += 4) {
+        uint32_t color = (pixels[index] << 24) + (pixels[index+1] << 16) + (pixels[index+2] << 8) + (pixels[index+3]);
+        
+        uint x = (index / 4) % width;
+        uint y = floor(index / (4*height));
+
+        if((color & 0xFF) != 0xFF) {
+            ERROR("Transparent pixel in province image at coordinates ({},{})", x, y);
+            continue;
+        }
+
+        const auto& province = m_Provinces.find(color);
+        bool hasProvince = (province == m_Provinces.end());
+        bool alreadySeen = (previousColor == color || colors.count(color) > 0);
+
+        previousColor = color;
+
+        if(!alreadySeen) {
+            colors[color] = true;
+        }
+
+        if(!alreadySeen && !hasProvince) {
+            ERROR("Color found in image but missing province from definition.csv: ({},{},{})", pixels[index], pixels[index+1], pixels[index+2]);
+            continue;
+        }
+
+        if(hasProvince) {
+            if(!alreadySeen)
+                province->second->SetImagePosition(sf::Vector2i(x, y));
+            province->second->IncrementImagePixelsCount();
+        }
     }
 }
 

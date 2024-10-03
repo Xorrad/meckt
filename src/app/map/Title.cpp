@@ -1,4 +1,6 @@
 #include "Title.hpp"
+#include "app/mod/Mod.hpp"
+#include "app/map/Province.hpp"
 #include "parser/Parser.hpp"
 
 Title::Title() : Title("", sf::Color(0, 0, 0)) {}
@@ -131,6 +133,12 @@ void HighTitle::SetSelectionFocus(bool focus) {
     }
 }
 
+sf::Vector2i HighTitle::GetImagePosition(SharedPtr<Mod> mod) const {
+    if(m_DejureTitles.empty())
+        return sf::Vector2i(0, 0);
+    return m_DejureTitles.front()->GetImagePosition(mod);
+}
+
 BaronyTitle::BaronyTitle() : Title() {}
 BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless) {}
 BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless, int provinceId) : Title(name, color, landless), m_ProvinceId(provinceId) {}
@@ -149,6 +157,10 @@ void BaronyTitle::SetProvinceId(int id) {
 
 bool BaronyTitle::HasSelectionFocus() const {
     return true;
+}
+
+sf::Vector2i BaronyTitle::GetImagePosition(SharedPtr<Mod> mod) const {
+    return mod->GetProvincesByIds()[m_ProvinceId]->GetImagePosition();
 }
 
 CountyTitle::CountyTitle() : HighTitle() {}

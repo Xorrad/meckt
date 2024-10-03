@@ -30,9 +30,10 @@ public:
     void SetOriginalFilePath(const std::string& filePath);
     void SetOriginalData(const Parser::Node& data);
 
-
     virtual bool HasSelectionFocus() const;
     virtual void SetSelectionFocus(bool focus);
+
+    virtual sf::Vector2i GetImagePosition(SharedPtr<Mod> mod) const = 0;
 
 protected:
     std::string m_Name;
@@ -63,6 +64,8 @@ public:
     void SetCapitalTitle(SharedPtr<CountyTitle> title);
 
     virtual void SetSelectionFocus(bool focus) override;
+
+    virtual sf::Vector2i GetImagePosition(SharedPtr<Mod> mod) const;
 protected:
     std::vector<SharedPtr<Title>> m_DejureTitles;
     SharedPtr<CountyTitle> m_CapitalTitle;
@@ -80,6 +83,8 @@ public:
     void SetProvinceId(int id);
 
     virtual bool HasSelectionFocus() const override;
+
+    virtual sf::Vector2i GetImagePosition(SharedPtr<Mod> mod) const;
 
 private:
     int m_ProvinceId;

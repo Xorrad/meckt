@@ -67,6 +67,10 @@ SelectionHandler& EditorMenu::GetSelectionHandler() {
     return m_SelectionHandler;
 }
 
+sf::View& EditorMenu::GetCamera() {
+    return m_Camera;
+}
+
 void EditorMenu::UpdateHoveringText() {
     SharedPtr<Province> province = this->GetHoveredProvince();
     sf::Vector2i mousePosition = sf::Mouse::getPosition(m_App->GetWindow());

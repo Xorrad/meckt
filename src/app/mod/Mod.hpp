@@ -24,6 +24,7 @@ public:
     void GenerateMissingProvinces();
 
     void Load();
+    void LoadProvinceImage();
     void LoadDefaultMapFile();
     void LoadProvincesDefinition();
     void LoadProvincesTerrain();

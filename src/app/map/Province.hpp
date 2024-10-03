@@ -65,6 +65,12 @@ public:
     SharedPtr<Parser::Node> GetOriginalData() const;
     void SetOriginalFilePath(const std::string& filePath);
     void SetOriginalData(const Parser::Node& data);
+    
+    sf::Vector2i GetImagePosition() const;
+    uint GetImagePixelsCount() const;
+    void SetImagePosition(sf::Vector2i pos);
+    void SetImagePixelsCount(uint count);
+    void IncrementImagePixelsCount();
 
 private:
     int m_Id;
@@ -79,6 +85,9 @@ private:
 
     std::string m_OriginalFilePath;
     SharedPtr<Parser::Node> m_OriginalData;
+
+    sf::Vector2i m_ImagePosition;
+    uint m_ImagePixelsCount;
 
     // Sea-zone for port
     // Terrain

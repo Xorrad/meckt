@@ -11,6 +11,7 @@ public:
     SharedPtr<Province> GetHoveredProvince();
     MapMode GetMapMode() const;
     SelectionHandler& GetSelectionHandler();
+    sf::View& GetCamera();
 
     void UpdateHoveringText();
     void ToggleCamera(bool enabled);

@@ -70,9 +70,13 @@ void TitlesTab::Render() {
                 
                 ImGui::TreeNodeEx(title->GetName().c_str(), flags);
 
-                if(ImGui::IsItemClicked()) {
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                     m_Menu->GetSelectionHandler().ClearSelection();
                     m_Menu->GetSelectionHandler().Select(title);
+                }
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                    sf::Vector2i titlePos = title->GetImagePosition(mod);
+                    m_Menu->GetCamera().setCenter(titlePos.x, titlePos.y - m_Menu->GetCamera().getSize().y/2);
                 }
 
                 ImGui::TableNextColumn();
@@ -89,9 +93,13 @@ void TitlesTab::Render() {
 
                 bool open = ImGui::TreeNodeEx(title->GetName().c_str(), flags);
                 
-                if(ImGui::IsItemClicked()) {
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                     m_Menu->GetSelectionHandler().ClearSelection();
                     m_Menu->GetSelectionHandler().Select(title);
+                }
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                    sf::Vector2i titlePos = title->GetImagePosition(mod);
+                    m_Menu->GetCamera().setCenter(titlePos.x, titlePos.y - m_Menu->GetCamera().getSize().y/2);
                 }
 
                 ImGui::TableNextColumn();
