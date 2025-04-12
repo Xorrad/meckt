@@ -82,7 +82,7 @@ PToken Parser::ReadToken(Reader& reader) {
                 if(token != nullptr)
                     return token;
             }
-            if(String::IsAlphaNumeric(ch) || ch == '-') {
+            if(String::IsAlphaNumeric(ch) || ch == '-' || ch == '@') {
                 PToken token = ReadIdentifier(reader);
                 if(token != nullptr)
                     return token;
@@ -141,11 +141,11 @@ PToken Parser::ReadNumber(Reader& reader) {
 }
 
 PToken Parser::ReadIdentifier(Reader& reader) {
-    // An IDENTIFIER can have only have digits, letters, '.' and '_' and ''' and '-',
+    // An IDENTIFIER can have only have digits, letters, '.' and '_' and ''' and '-' and '@',
     // whereas a BOOLEAN is either 'yes' or 'no',
     // and a DATE is formatted as: yyyy.mm.dd
 
-    while(String::IsAlphaNumeric(reader.Peek()) || reader.Peek() == '.' || reader.Peek() == '\'' || reader.Peek() == '-')
+    while(String::IsAlphaNumeric(reader.Peek()) || reader.Peek() == '.' || reader.Peek() == '\'' || reader.Peek() == '-' || reader.Peek() == '@')
         reader.Advance();
     std::string str = reader.End();
 
