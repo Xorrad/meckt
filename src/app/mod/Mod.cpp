@@ -738,12 +738,19 @@ void Mod::LoadProvincesHistory() {
             auto& [op, value] = pair;
             int provinceId = std::get<double>(key);
 
+            const auto GetStringOrFirstElement = [&](std::string key) {
+                if(!value->GetObject(key)->Is(Parser::ObjectType::STRING))
+                    return value->Get<std::vector<std::string>>(key).front();
+                return value->Get<std::string>(key);
+            };
+
             if(value->ContainsKey("culture"))
-                m_ProvincesByIds[provinceId]->SetCulture(value->Get<std::string>("culture"));
+                m_ProvincesByIds[provinceId]->SetCulture(GetStringOrFirstElement("culture"));
             if(value->ContainsKey("religion"))
-                m_ProvincesByIds[provinceId]->SetReligion(value->Get<std::string>("religion"));
-            if(value->ContainsKey("holding"))
-                m_ProvincesByIds[provinceId]->SetHolding(value->Get<std::string>("holding"));
+                m_ProvincesByIds[provinceId]->SetReligion(GetStringOrFirstElement("religion"));
+            if(value->ContainsKey("holding")) {
+                m_ProvincesByIds[provinceId]->SetHolding(GetStringOrFirstElement("holding"));
+            }
 
             if(!m_HoldingTypes.contains(m_ProvincesByIds[provinceId]->GetHolding())) {
                 LOG_WARNING("Undefined holding type '{}' assigned to province {}", m_ProvincesByIds[provinceId]->GetHolding(), provinceId);
