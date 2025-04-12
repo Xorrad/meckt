@@ -654,6 +654,13 @@ SharedPtr<Object> Parser::Parse(std::deque<PToken>& tokens, uint depth) {
                     op = (Operator)(((int) token->GetType()) - 3);
                     break;
                 }
+                else {
+                    LOG_ERROR("Unexpected token while parsing operator (key={}, type={}). Using '=' operator by default.", key, (int) token->GetType());
+                    state = ParsingState::VALUE;
+                    op = Operator::EQUAL;
+                    tokens.emplace_front(token);
+                    break;
+                }
                 throw std::runtime_error(fmt::format("Unexpected token while parsing operator (key={}, type={}).", key, (int) token->GetType()));
                 break;
                 
