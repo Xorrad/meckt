@@ -25,15 +25,30 @@ std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath)
 
     std::string line;
 
+    // Read lines one by one, and then character by character
+    // and push new values for cells when encountering ';'. 
     while (std::getline(file, line)) {
-        std::stringstream lineStream(line);
         std::vector<std::string> rows;
-        std::string cell;
+        std::string buffer = "";
 
-        while (std::getline(lineStream, cell, ';'))
-            rows.push_back(cell);
+        for (int i = 0; i < line.size(); i++) {
+            // Set buffer as new column value.
+            if (line[i] == ';' || line[i] == '#') {
+                if (!buffer.empty()) {
+                    rows.push_back(buffer);
+                    buffer = "";
+                }
+                // To handle comments, just set the value for the cell before
+                // skipping to next line.
+                if (line[i] == '#')
+                    break;
+                continue;
+            }
+            buffer += line[i];
+        }
 
-        lines.push_back(std::move(rows));
+        if (!rows.empty())
+            lines.push_back(std::move(rows));
     }
 
     file.close();
