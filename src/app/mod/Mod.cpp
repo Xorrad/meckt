@@ -429,7 +429,6 @@ void Mod::LoadHoldingTypes() {
 
     // Manually define this type as it's not really type.
     m_HoldingTypes = OrderedMap<std::string, HoldingType>();
-    m_HoldingTypes.insert("none", HoldingType("none"));
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
@@ -449,23 +448,22 @@ void Mod::LoadHoldingTypes() {
         }
     }
 
-    // If no holding types are defined, vanilla holdings are used as default.
-    if(m_HoldingTypes.empty()) {
-        auto vanillaTypes = {
-            HoldingType("tribal_holding"),
-            HoldingType("castle_holding"),
-            HoldingType("city_holding"),
-            HoldingType("church_holding"),
-        };
-
-        for(auto type : vanillaTypes) {
-            m_HoldingTypes.insert(type.GetName(), type);
-        }
-        LOG_INFO("Loaded vanilla holding types as no user-defined types have been found");
-        return;
-    }
-
     LOG_INFO("Loaded {} holding types from {} files", m_HoldingTypes.size(), filesPath.size());
+
+    // Insert vanilla holdings if they are not already added.
+    // NB: holding type 'none' is added by default.
+    auto vanillaTypes = {
+        HoldingType("none"),
+        HoldingType("tribal_holding"),
+        HoldingType("castle_holding"),
+        HoldingType("city_holding"),
+        HoldingType("church_holding"),
+    };
+
+    for(auto type : vanillaTypes) {
+        if(!m_HoldingTypes.contains(type.GetName()))
+            m_HoldingTypes.insert(type.GetName(), type);
+    }
 }
 
 void Mod::LoadTerrainTypes() {
@@ -493,33 +491,30 @@ void Mod::LoadTerrainTypes() {
         }
     }
 
-    // If no terrain types are defined, vanilla terrains are used as default.
-    if(m_TerrainTypes.empty()) {
-        auto vanillaTypes = {
-            TerrainType("plains", sf::Color(204, 163, 102)),
-            TerrainType("farmlands", sf::Color(255, 50, 50)),
-            TerrainType("hills", sf::Color(200, 200, 200)),
-            TerrainType("mountains", sf::Color(255, 255, 255)),
-            TerrainType("desert", sf::Color(255, 255, 0)),
-            TerrainType("desert Mountains", sf::Color(100, 100, 0)),
-            TerrainType("oasis", sf::Color(100, 100, 255)),
-            TerrainType("jungle", sf::Color(100, 0, 0)),
-            TerrainType("forest", sf::Color(255, 0, 0)),
-            TerrainType("wetlands", sf::Color(100, 20, 20)),
-            TerrainType("steppe", sf::Color(200, 100, 200)),
-            TerrainType("floodplains", sf::Color(50, 50, 255)),
-            TerrainType("drylands", sf::Color(200, 200, 0)),
-            TerrainType("sea", sf::Color(0, 0, 255))
-        };
-
-        for(auto type : vanillaTypes) {
-            m_TerrainTypes.insert(type.GetName(), type);
-        }
-        LOG_INFO("Loaded vanilla terrain types as no user-defined types have been found");
-        return;
-    }
-    
     LOG_INFO("Loaded {} terrain types from {} files", m_TerrainTypes.size(), filesPath.size());
+
+    // Insert vanilla terrains that are not already loaded.
+    auto vanillaTypes = {
+        TerrainType("plains", sf::Color(204, 163, 102)),
+        TerrainType("farmlands", sf::Color(255, 50, 50)),
+        TerrainType("hills", sf::Color(200, 200, 200)),
+        TerrainType("mountains", sf::Color(255, 255, 255)),
+        TerrainType("desert", sf::Color(255, 255, 0)),
+        TerrainType("desert Mountains", sf::Color(100, 100, 0)),
+        TerrainType("oasis", sf::Color(100, 100, 255)),
+        TerrainType("jungle", sf::Color(100, 0, 0)),
+        TerrainType("forest", sf::Color(255, 0, 0)),
+        TerrainType("wetlands", sf::Color(100, 20, 20)),
+        TerrainType("steppe", sf::Color(200, 100, 200)),
+        TerrainType("floodplains", sf::Color(50, 50, 255)),
+        TerrainType("drylands", sf::Color(200, 200, 0)),
+        TerrainType("sea", sf::Color(0, 0, 255))
+    };
+
+    for(auto type : vanillaTypes) {
+        if(!m_TerrainTypes.contains(type.GetName()))
+            m_TerrainTypes.insert(type.GetName(), type);
+    }
 }
 
 void Mod::LoadDefaultMapFile() {
@@ -740,7 +735,7 @@ void Mod::LoadProvincesHistory() {
 
             const auto GetStringOrFirstElement = [&](std::string key) {
                 if(!value->GetObject(key)->Is(Parser::ObjectType::STRING))
-                    return value->Get<std::vector<std::string>>(key).front();
+                    return value->GetArray<std::string>(key).front();
                 return value->Get<std::string>(key);
             };
 
