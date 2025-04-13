@@ -27,6 +27,12 @@ public:
     const OrderedMap<std::string, HoldingType>& GetHoldingTypes() const;
     const OrderedMap<std::string, TerrainType>& GetTerrainTypes() const;
 
+    std::map<std::string, std::map<std::string, std::string>>& GetLocCulturalNames();
+    std::map<std::string, std::string>& GetLocCulturalNames(const std::string& lang);
+    std::string& GetLocCulturalName(const std::string& lang, const std::string& key);
+    std::string GetLocCulturalName(const std::string& lang, const std::string& key) const;
+    void SetLocCulturalName(const std::string& lang, const std::string& key, std::string name);
+
     void AddTitle(SharedPtr<Title> title);
     void RemoveTitle(SharedPtr<Title> title);
     void RenameTitle(SharedPtr<Title> title, std::string formerName);
@@ -61,6 +67,8 @@ public:
     void ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int depth);
 
     void ExportLocalization();
+    void ExportTitlesLocalization();
+    void ExportCulturalNamesLocalization();
     void DeleteTitlesLocalization();
 
 private:
@@ -87,4 +95,7 @@ private:
     std::string m_DefaultCoastalSeaTerrain;
 
     std::string m_TitlesLocalizationFilePath;
+    std::string m_CulturalNamesLocalizationFilePath;
+
+    std::map<std::string, std::map<std::string, std::string>> m_LocCulturalNames;
 };

@@ -9,8 +9,10 @@
 #include <filesystem>
 #include <fmt/ostream.h>
 
-Mod::Mod(const std::string& dir)
-: m_Dir(dir), m_TitlesLocalizationFilePath(dir + "/localization/english/00_titles_l_english.yml")
+Mod::Mod(const std::string& dir) :
+    m_Dir(dir),
+    m_TitlesLocalizationFilePath(dir + "/localization/english/00_titles_l_english.yml"),
+    m_CulturalNamesLocalizationFilePath(dir + "/localization/english/00_cultural_titles_l_english.yml")
 {}
 
 std::string Mod::GetDir() const {
@@ -237,6 +239,28 @@ const OrderedMap<std::string, HoldingType>& Mod::GetHoldingTypes() const {
 
 const OrderedMap<std::string, TerrainType>& Mod::GetTerrainTypes() const {
     return m_TerrainTypes;
+}
+
+std::map<std::string, std::map<std::string, std::string>>& Mod::GetLocCulturalNames() {
+    return m_LocCulturalNames;
+}
+
+std::map<std::string, std::string>& Mod::GetLocCulturalNames(const std::string& lang) {
+    return m_LocCulturalNames[lang];
+}
+
+std::string& Mod::GetLocCulturalName(const std::string& lang, const std::string& key) {
+    return m_LocCulturalNames[lang][key];
+}
+
+std::string Mod::GetLocCulturalName(const std::string& lang, const std::string& key) const {
+    if(!m_LocCulturalNames.contains(lang) || !m_LocCulturalNames.at(lang).contains(key))
+        return "";
+    return m_LocCulturalNames.at(lang).at(key);
+}
+
+void Mod::SetLocCulturalName(const std::string& lang, const std::string& key, std::string name) {
+    m_LocCulturalNames[lang][key] = name;
 }
 
 void Mod::AddTitle(SharedPtr<Title> title) {
@@ -874,8 +898,10 @@ void Mod::LoadLocalization() {
     uint countNames = 0;
     uint countAdjectives = 0;
     uint countArticles = 0;
+    uint countCulturalNamesTotal = 0;
 
     uint maxCount = 0;
+    uint maxCountCulturalNames = 0;
 
     if(filesPath.empty())
         LOG_WARNING("No localization files have been found in /localization/english/, nor /localization/replace/english/");
@@ -883,7 +909,7 @@ void Mod::LoadLocalization() {
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".yml"))
             continue;
-        if(filePath.find("titles") == std::string::npos)
+        if(filePath.find("titles") == std::string::npos && filePath.find("cultural") == std::string::npos)
             continue;
 
         std::map<std::string, std::string> loc = Yaml::ParseFile(filePath);
@@ -892,9 +918,17 @@ void Mod::LoadLocalization() {
 
         // Count the number of localization for this file.
         uint count = countNames + countAdjectives;
+        uint countCulturalNames = 0;
 
         for(auto [key, value] : loc) {
             // TODO: handle cultural names.
+
+            // Parse a cultural name.
+            if(key.starts_with("cn_")) {
+                this->SetLocCulturalName("english", key, value);
+                countCulturalNames++;
+                continue;
+            }
 
             // Skip localization that are not related to titles.
             if(!key.starts_with("b_")
@@ -939,6 +973,7 @@ void Mod::LoadLocalization() {
         }
 
         count = countNames + countAdjectives + countArticles - count;
+        countCulturalNamesTotal += countCulturalNames;
 
         // Use the most used localization file for titles
         // as the main file for export.
@@ -946,10 +981,18 @@ void Mod::LoadLocalization() {
             maxCount = count;
             m_TitlesLocalizationFilePath = filePath;
         }
+        
+        // Same for cultural names.
+        if(countCulturalNames > maxCountCulturalNames) {
+            maxCountCulturalNames = countCulturalNames;
+            m_CulturalNamesLocalizationFilePath = filePath;
+        }
     }
 
     LOG_INFO("Default titles localization file will be {}", m_TitlesLocalizationFilePath);
     LOG_INFO("Loaded {} titles names, {} adjectives and {} articles from {} localization files", countNames, countAdjectives, countArticles, filesPath.size());
+    LOG_INFO("Default cultural names localization file will be {}", m_CulturalNamesLocalizationFilePath);
+    LOG_INFO("Loaded {} cultural names from {} localization files", countCulturalNamesTotal, filesPath.size());
 }
 
 void Mod::LoadTitles() {
@@ -1429,6 +1472,11 @@ void Mod::ExportLocalization() {
     // in order to centralize the loc and avoid duplicates.
     this->DeleteTitlesLocalization();
 
+    this->ExportTitlesLocalization();
+    this->ExportCulturalNamesLocalization();
+}
+
+void Mod::ExportTitlesLocalization() {
     std::ofstream file(m_TitlesLocalizationFilePath);
 
     fmt::println(file, "l_english:");
@@ -1447,6 +1495,17 @@ void Mod::ExportLocalization() {
     file.close();
 }
 
+void Mod::ExportCulturalNamesLocalization() {
+    std::ofstream file(m_CulturalNamesLocalizationFilePath);
+
+    fmt::println(file, "l_english:");
+    for(auto [key, name] : m_LocCulturalNames["english"]) {
+        if(!name.empty()) fmt::println(file, " {}: \"{}\"", key, name);
+    }
+
+    file.close();
+}
+
 void Mod::DeleteTitlesLocalization() {
     std::set<std::string> filesPath = File::ListFiles(m_Dir + "/localization/english/");
     std::set<std::string> filesPath2 = File::ListFiles(m_Dir + "/localization/replace/english/");
@@ -1455,7 +1514,7 @@ void Mod::DeleteTitlesLocalization() {
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".yml"))
             continue;
-        if(filePath.find("titles") == std::string::npos)
+        if(filePath.find("titles") == std::string::npos && filePath.find("cultural") == std::string::npos)
             continue;
         if(filePath == m_TitlesLocalizationFilePath)
             continue;
@@ -1482,6 +1541,11 @@ void Mod::DeleteTitlesLocalization() {
             // If the line is empty or contains a comment, then we keep it.
             if(key.empty()) {
                 fmt::println(tmpFile, "{}", line);
+                continue;
+            }
+
+            // Ignore lines with a cultural name.
+            if(key.starts_with("cn_")) {
                 continue;
             }
 
