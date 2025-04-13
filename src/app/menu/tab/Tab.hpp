@@ -5,6 +5,7 @@ enum class Tabs {
     PROPERTIES,
     PROVINCES,
     LOG,
+    CULTURAL_NAMES,
 };
 
 class Tab {
@@ -37,3 +38,4 @@ protected:
 #include "PropertiesTab.hpp"
 #include "ProvincesTab.hpp"
 #include "LogTab.hpp"
+#include "CulturalNamesTab.hpp"

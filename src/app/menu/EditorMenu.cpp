@@ -404,6 +404,7 @@ void EditorMenu::InitTabs() {
     m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(this, true);
     m_Tabs[Tabs::PROVINCES] = MakeShared<ProvincesTab>(this, true);
     m_Tabs[Tabs::LOG] = MakeShared<LogTab>(this, true);
+    m_Tabs[Tabs::CULTURAL_NAMES] = MakeShared<CulturalNamesTab>(this, false);
 }
 
 void EditorMenu::SetupDockspace() {
@@ -441,6 +442,7 @@ void EditorMenu::SetupDockspace() {
         // Create docked windows
         ImGui::DockBuilderDockWindow("Titles", dockRight);
         ImGui::DockBuilderDockWindow("Provinces", dockRight);
+        ImGui::DockBuilderDockWindow("Cultural Names", dockRight);
         ImGui::DockBuilderDockWindow("Properties", dockRightDown);
         ImGui::DockBuilderDockWindow("Log", dockDown);
 
