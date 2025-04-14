@@ -1180,18 +1180,18 @@ void Mod::ExportDefaultMapFile() {
 
     std::ofstream file(m_Dir + "/map_data/default.map", std::ios::out);
 
-    #define PRINT_DATA(key) fmt::println(file, "{} = {}", key, data->GetObject(key)); data->Remove(key)
+    #define PRINT_DATA(key, def) fmt::println(file, "{} = {}", key, data->Get<std::string>(key, def)); data->Remove(key)
     #define FORMAT_LIST(key) Parser::Format::FormatNumbersList<double>(key, zonesData->GetObject(key), 0)
 
-    PRINT_DATA("definitions");
-    PRINT_DATA("provinces");
-    PRINT_DATA("rivers");
-    PRINT_DATA("topology");
-    PRINT_DATA("continent");
-    PRINT_DATA("adjacencies");
-    PRINT_DATA("island_region");
-    PRINT_DATA("geographical_region");
-    PRINT_DATA("seasons");
+    PRINT_DATA("definitions", "\"definition.csv\"");
+    PRINT_DATA("provinces", "\"provinces.png\"");
+    PRINT_DATA("rivers", "\"rivers.png\"");
+    PRINT_DATA("topology", "\"heightmap.heightmap\"");
+    PRINT_DATA("continent", "\"continent.txt\"");
+    PRINT_DATA("adjacencies", "\"adjacencies.csv\"");
+    PRINT_DATA("island_region", "\"island_region.txt\"");
+    PRINT_DATA("geographical_region", "\"geographical_region.txt\"");
+    PRINT_DATA("seasons", "\"seasons.txt\"");
 
     fmt::println(
         file, 
