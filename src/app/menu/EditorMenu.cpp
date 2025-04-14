@@ -404,7 +404,7 @@ void EditorMenu::InitTabs() {
     m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(this, true);
     m_Tabs[Tabs::PROVINCES] = MakeShared<ProvincesTab>(this, true);
     m_Tabs[Tabs::LOG] = MakeShared<LogTab>(this, true);
-    m_Tabs[Tabs::CULTURAL_NAMES] = MakeShared<CulturalNamesTab>(this, false);
+    m_Tabs[Tabs::CULTURAL_NAMES] = MakeShared<CulturalNamesTab>(this, true);
 }
 
 void EditorMenu::SetupDockspace() {
