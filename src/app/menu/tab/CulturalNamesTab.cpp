@@ -30,6 +30,7 @@ void CulturalNamesTab::Render() {
         if(mod->GetLocCulturalNames("english").count(newCulturalName) > 0)
             return;
         mod->SetLocCulturalName("english", newCulturalName, " ");
+        newCulturalName = "";
     };
     if(ImGui::InputText("##key", &newCulturalName, ImGuiInputTextFlags_EnterReturnsTrue)) {
         AddNewCulturalName();
@@ -55,18 +56,22 @@ void CulturalNamesTab::Render() {
 
             ImGui::TableNextRow();
             
+            ImGui::PushID(key.c_str());
+
             ImGui::TableNextColumn();
             ImGui::Text("%s", key.c_str());
-
+            
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(-FLT_MIN);
             ImGui::InputText("##name", &name);
-
+            
             ImGui::TableNextColumn();
             if(ImGui::Button("x")) {
                 it = culturalNames.erase(it);
                 continue;
             }
+            
+            ImGui::PopID();
 
             ++it;
         }

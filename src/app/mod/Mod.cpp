@@ -1243,6 +1243,7 @@ void Mod::ExportProvincesDefinition() {
 }
 
 void Mod::ExportProvincesTerrain() {
+    std::filesystem::create_directories(m_Dir + "/common/province_terrain/");
     std::ofstream file(m_Dir + "/common/province_terrain/00_province_terrain.txt", std::ios::out);
 
     fmt::println(file, "default_land={}", m_DefaultLandTerrain);
@@ -1479,6 +1480,7 @@ void Mod::ExportLocalization() {
 }
 
 void Mod::ExportTitlesLocalization() {
+    std::filesystem::create_directories(std::filesystem::path(m_TitlesLocalizationFilePath).parent_path());
     std::ofstream file(m_TitlesLocalizationFilePath);
 
     fmt::println(file, "l_english:");
@@ -1498,6 +1500,7 @@ void Mod::ExportTitlesLocalization() {
 }
 
 void Mod::ExportCulturalNamesLocalization() {
+    std::filesystem::create_directories(std::filesystem::path(m_CulturalNamesLocalizationFilePath).parent_path());
     std::ofstream file(m_CulturalNamesLocalizationFilePath);
 
     fmt::println(file, "l_english:");
