@@ -27,9 +27,10 @@ void CulturalNamesTab::Render() {
 
     static std::string newCulturalName = "";
     const auto& AddNewCulturalName = [&]() {
-        if(mod->GetLocCulturalNames("english").count(newCulturalName) > 0)
+        std::string key = "cn_" + newCulturalName;
+        if(mod->GetLocCulturalNames("english").count(key) > 0)
             return;
-        mod->SetLocCulturalName("english", newCulturalName, " ");
+        mod->SetLocCulturalName("english", key, " ");
         newCulturalName = "";
     };
     if(ImGui::InputText("##key", &newCulturalName, ImGuiInputTextFlags_EnterReturnsTrue)) {
