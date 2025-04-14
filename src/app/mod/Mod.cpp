@@ -1452,7 +1452,7 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
             EXPORT_PROPERTIES("capital", highTitle->GetCapitalTitle()->GetName());
             
         if(title->IsLandless())
-            EXPORT_PROPERTIES("capital", "yes");
+            EXPORT_PROPERTIES("landless", "yes");
 
         ExportCulturalNames();
 
