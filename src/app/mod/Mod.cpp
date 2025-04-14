@@ -506,6 +506,8 @@ void Mod::LoadTerrainTypes() {
                     continue;
                 std::string key = std::get<std::string>(k);
                 auto [op, value] = pair;
+                if(!value->Is(Parser::ObjectType::OBJECT))
+                    continue;
                 sf::Color color = value->Get<sf::Color>("color", sf::Color::Black);
                 m_TerrainTypes.insert(key, TerrainType(key, color));
             }
