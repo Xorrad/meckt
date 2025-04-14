@@ -381,14 +381,20 @@ void PropertiesTab::RenderTitles() {
                     for(auto it = culturalNames.begin(); it != culturalNames.end(); ) {
                         std::string culture = it->first;
                         std::string& name = it->second;
+
+                        ImGui::PushID(culture.c_str());
+
                         if(ImGui::Button("x")) {
                             it = culturalNames.erase(it);
                         }
                         else {
                             ++it;
                         }
+
                         ImGui::SameLine();
                         ImGui::InputText(culture.c_str(), &name);
+
+                        ImGui::PopID();
                     }
                 }
                 ImGui::EndChild();
