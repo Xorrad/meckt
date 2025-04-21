@@ -7,7 +7,7 @@ GTKFLAGS = $(shell pkg-config --cflags gtk+-3.0)
 GTKLIBS = $(shell pkg-config --libs gtk+-3.0)
 
 # Compiler flags
-CXX      := g++
+CXX      := g++-13
 CXXFLAGS := -std=c++20 -pedantic-errors -Wall -Wno-format-security -Wno-sign-compare
 
 # Targets
@@ -19,7 +19,7 @@ INCLUDE_DIR := src
 VENDOR_DIR  := vendor
 BIN_DIR     := bin
 OBJ_DIR     := bin/obj
-INCLUDE     := -I$(INCLUDE_DIR) -I$(VENDOR_DIR)/includes
+INCLUDE     := -I$(INCLUDE_DIR) -I$(VENDOR_DIR)/includes -I$(VENDOR_DIR)/includes/jomini-parser/src
 
 # Sources and objects
 #$(VENDOR_DIR)/includes/imgui/sfml/imgui-SFML.cpp
@@ -30,7 +30,8 @@ SRC          := $(call rwildcard,$(SRC_DIR),*.cpp) \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_widgets.cpp \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_draw.cpp \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_tables.cpp \
-				$(VENDOR_DIR)/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp 
+				$(VENDOR_DIR)/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp \
+				$(VENDOR_DIR)/includes/jomini-parser/src/Jomini.cpp
 PCH_HEADER   := $(SRC_DIR)/pch.hpp
 PCH          := $(PCH_HEADER:%.h=$(OBJ_DIR)/%.gch)
 OBJECTS      := $(SRC:%.cpp=$(OBJ_DIR)/%.o)

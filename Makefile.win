@@ -17,7 +17,7 @@ INCLUDE_DIR := src
 VENDOR_DIR  := vendor
 BIN_DIR     := bin
 OBJ_DIR     := bin/obj
-INCLUDE     := -I$(INCLUDE_DIR) -I$(VENDOR_DIR)/includes -I$(SFML_DIR)/include
+INCLUDE     := -I$(INCLUDE_DIR) -I$(VENDOR_DIR)/includes -I$(VENDOR_DIR)/includes/jomini-parser/src -I$(SFML_DIR)/include
 
 # Sources and objects
 SRC := $(call rwildcard,$(SRC_DIR),*.cpp) \
@@ -27,7 +27,8 @@ SRC := $(call rwildcard,$(SRC_DIR),*.cpp) \
        $(VENDOR_DIR)/includes/imgui/imgui/imgui_widgets.cpp \
        $(VENDOR_DIR)/includes/imgui/imgui/imgui_draw.cpp \
        $(VENDOR_DIR)/includes/imgui/imgui/imgui_tables.cpp \
-       $(VENDOR_DIR)/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp
+       $(VENDOR_DIR)/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp \
+	   $(VENDOR_DIR)/includes/jomini-parser/src/Jomini.cpp
 
 PCH_HEADER   := $(SRC_DIR)/pch.hpp
 PCH          := $(PCH_HEADER:%.h=$(OBJ_DIR)/%.gch)
