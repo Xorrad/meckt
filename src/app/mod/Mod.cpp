@@ -3,8 +3,7 @@
 #include "app/mod/Religion.hpp"
 #include "app/map/Province.hpp"
 #include "app/map/Title.hpp"
-#include "parser/Parser.hpp"
-#include "parser/Yaml.hpp"
+#include "util/Yaml.hpp"
 
 #include <filesystem>
 #include <fmt/ostream.h>
@@ -301,7 +300,7 @@ void Mod::RemoveTitle(SharedPtr<Title> title) {
 void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
     for(auto [n, t] : m_Titles) {
         for(auto [date, history] : t->GetHistory()) {
-            if(history->ContainsKey("liege") && history->Get<std::string>("liege") == formerName) {
+            if(history->Contains("liege") && history->Get("liege")->As<std::string>() == formerName) {
                 history->Put("liege", title->GetName());
             }
         }
@@ -458,12 +457,9 @@ void Mod::LoadHoldingTypes() {
         if(!filePath.ends_with(".txt"))
             continue;
         try {
-            SharedPtr<Parser::Object> data = Parser::ParseFile(filePath);
+            SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
 
-            for(auto& [k, pair] : data->GetEntries()) {
-                if(!std::holds_alternative<std::string>(k))
-                    continue;
-                std::string key = std::get<std::string>(k);
+            for(auto& [key, pair] : data->GetMap()) {
                 m_HoldingTypes.insert(key, HoldingType(key));
             }
         }
@@ -499,16 +495,13 @@ void Mod::LoadTerrainTypes() {
         if(!filePath.ends_with(".txt"))
             continue;
         try {
-            SharedPtr<Parser::Object> data = Parser::ParseFile(filePath);
+            SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
 
-            for(auto& [k, pair] : data->GetEntries()) {
-                if(!std::holds_alternative<std::string>(k))
-                    continue;
-                std::string key = std::get<std::string>(k);
+            for(auto& [key, pair] : data->GetMap()) {
                 auto [op, value] = pair;
-                if(!value->Is(Parser::ObjectType::OBJECT))
+                if(!value->Is(Jomini::Type::OBJECT))
                     continue;
-                sf::Color color = value->Get<sf::Color>("color", sf::Color::Black);
+                sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::Black);
                 m_TerrainTypes.insert(key, TerrainType(key, color));
             }
         }
@@ -544,11 +537,11 @@ void Mod::LoadTerrainTypes() {
 }
 
 void Mod::LoadDefaultMapFile() {
-    SharedPtr<Parser::Object> result = Parser::ParseFile(m_Dir + "/map_data/default.map");
+    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/map_data/default.map");
 
     // TODO: Coastal provinces??
     
-    const std::vector<double>& lakes = result->GetArray("lakes", std::vector<double>{});
+    const std::vector<double>& lakes = result->Get("lakes")->AsArray<double>(std::vector<double>{});
     for(double provinceId : lakes) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAKE, true);
     }
@@ -556,23 +549,23 @@ void Mod::LoadDefaultMapFile() {
     // TODO: Islands provinces??
     // TODO: Land provinces??
 
-    const std::vector<double>& seaZones = result->GetArray("sea_zones", std::vector<double>{});
+    const std::vector<double>& seaZones = result->Get("sea_zones")->AsArray<double>(std::vector<double>{});
     for(double provinceId : seaZones) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
     }
 
-    const std::vector<double>& rivers = result->GetArray("river_provinces", std::vector<double>{});
+    const std::vector<double>& rivers = result->Get("river_provinces")->AsArray<double>(std::vector<double>{});
     for(double provinceId : rivers) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::RIVER, true);
     }
     
-    const std::vector<double>& impassableSeas = result->GetArray("impassable_seas", std::vector<double>{});
+    const std::vector<double>& impassableSeas = result->Get("impassable_seas")->AsArray<double>(std::vector<double>{});
     for(double provinceId : impassableSeas) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
     }
     
-    const std::vector<double>& impassableMountains = result->GetArray("impassable_mountains", std::vector<double>{});
+    const std::vector<double>& impassableMountains = result->Get("impassable_mountains")->AsArray<double>(std::vector<double>{});
     for(double provinceId : impassableMountains) {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
@@ -696,11 +689,11 @@ void Mod::LoadProvincesDefinition() {
 }
 
 void Mod::LoadProvincesTerrain() {
-    SharedPtr<Parser::Object> result = Parser::ParseFile(m_Dir + "/common/province_terrain/00_province_terrain.txt");
+    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/common/province_terrain/00_province_terrain.txt");
 
-    m_DefaultLandTerrain = result->Get("default_land", std::string("plains"));
-    m_DefaultSeaTerrain = result->Get("default_sea", std::string("sea"));
-    m_DefaultCoastalSeaTerrain = result->Get("default_coastal_sea", std::string("sea"));
+    m_DefaultLandTerrain = result->Get("default_land")->As<std::string>("plains");
+    m_DefaultSeaTerrain = result->Get("default_sea")->As<std::string>("sea");
+    m_DefaultCoastalSeaTerrain = result->Get("default_coastal_sea")->As<std::string>("sea");
 
     // Set default terrain for all provinces (especially for those without any in files).
     for(const auto& [colorId, province] : m_Provinces) {
@@ -710,22 +703,20 @@ void Mod::LoadProvincesTerrain() {
         province->SetTerrain(defaultTerrain);
     }
 
-    for(const auto& [key, pair] : result->GetEntries()) {
-        if(!std::holds_alternative<double>(key))
-            continue;
+    for(const auto& [key, pair] : result->GetMap()) {
+        // TODO: check if key is an integer.
         const auto& [op, value] = pair;
-        int provinceId = std::get<double>(key);
+        int provinceId = String::ParseInt(key);
         std::string terrain = "";
 
         // If the province id has been assigned several terrain type
         // then we only pick the first one, and send a warning to the user.
-        if(!value->Is(Parser::ObjectType::STRING)) {
-            std::vector<std::string> values = (*value);
-            terrain = values[0];
+        if(!value->Is(Jomini::Type::SCALAR)) {
+            terrain = value->AsArray<std::string>().front();
             LOG_WARNING("Province assigned several terrain types: {}", provinceId);
         }
         else {
-            terrain = (std::string) (*value);
+            terrain = value->As<std::string>();
         }
 
         if(m_ProvincesByIds.count(provinceId) == 0) {
@@ -751,25 +742,24 @@ void Mod::LoadProvincesHistory() {
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
             continue;
-        SharedPtr<Parser::Object> data = Parser::ParseFile(filePath);
+        SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
         
-        for(auto& [key, pair] : data->GetEntries()) {
-            if(!std::holds_alternative<double>(key))
-                continue;
+        for(auto& [key, pair] : data->GetMap()) {
+            // TODO: check if the key is an integer.
             auto& [op, value] = pair;
-            int provinceId = std::get<double>(key);
+            int provinceId = String::ParseInt(key);
 
             const auto GetStringOrFirstElement = [&](std::string key) {
-                if(!value->GetObject(key)->Is(Parser::ObjectType::STRING))
-                    return value->GetArray<std::string>(key).front();
-                return value->Get<std::string>(key);
+                if(!value->Get(key)->Is(Jomini::Type::SCALAR))
+                    return value->Get(key)->AsArray<std::string>().front();
+                return value->Get(key)->As<std::string>();
             };
 
-            if(value->ContainsKey("culture"))
+            if(value->Contains("culture"))
                 m_ProvincesByIds[provinceId]->SetCulture(GetStringOrFirstElement("culture"));
-            if(value->ContainsKey("religion"))
+            if(value->Contains("religion"))
                 m_ProvincesByIds[provinceId]->SetReligion(GetStringOrFirstElement("religion"));
-            if(value->ContainsKey("holding")) {
+            if(value->Contains("holding")) {
                 m_ProvincesByIds[provinceId]->SetHolding(GetStringOrFirstElement("holding"));
             }
 
@@ -796,14 +786,11 @@ void Mod::LoadTitlesHistory() {
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
             continue;
-        SharedPtr<Parser::Object> data = Parser::ParseFile(filePath);
+        SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
         
         // 1. Loop over titles key in the file.
-        for(auto& [k, pair] : data->GetEntries()) {
-            if(!std::holds_alternative<std::string>(k))
-                continue;
+        for(auto& [key, pair] : data->GetMap()) {
             auto& [op, value] = pair;
-            std::string key = std::get<std::string>(k);
 
             if(m_Titles.count(key) == 0) {
                 LOG_WARNING("Undefined title {} found in {}", key, filePath);
@@ -813,13 +800,10 @@ void Mod::LoadTitlesHistory() {
             m_Titles[key]->SetOriginalHistoryFilePath(filePath);
 
             // 2. Loop over dates in the title history.
-            for(auto& [k2, pair2] : value->GetEntries()) {
-                if(!std::holds_alternative<Date>(k2))
-                    continue;
+            for(auto& [date, pair2] : value->GetMap()) {
+                // TODO: check if key is a correct date.
                 auto& [op2, history] = pair2;
-                std::string date = std::get<Date>(k2);
-
-                m_Titles[key]->AddHistory(date, history);
+                m_Titles[key]->AddHistory(Jomini::Date(date), history);
             }
         }
     }
@@ -832,15 +816,12 @@ void Mod::LoadCultures() {
         if(!filePath.ends_with(".txt"))
             continue;
         try {
-            SharedPtr<Parser::Object> data = Parser::ParseFile(filePath);
+            SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
 
-            for(auto& [k, pair] : data->GetEntries()) {
-                if(!std::holds_alternative<std::string>(k))
-                    continue;
-                std::string key = std::get<std::string>(k);
+            for(auto& [key, pair] : data->GetMap()) {
                 auto& [op, value] = pair;
 
-                sf::Color color = value->Get("color", sf::Color::White);
+                sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::White);
                 SharedPtr<Culture> culture = MakeShared<Culture>(key, color);
                 m_Cultures[culture->GetName()] = culture;
             }
@@ -862,23 +843,17 @@ void Mod::LoadReligions() {
         if(!filePath.ends_with(".txt"))
             continue;
         try {
-            SharedPtr<Parser::Object> data = Parser::ParseFile(filePath);
+            SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
 
-            for(auto& [k, pair] : data->GetEntries()) {
-                if(!std::holds_alternative<std::string>(k))
-                    continue;
-                std::string key = std::get<std::string>(k);
+            for(auto& [key, pair] : data->GetMap()) {
                 auto& [op, value] = pair;
-                if(!value->ContainsKey("faiths"))
+                if(!value->Contains("faiths"))
                     continue;
 
-                for(auto& [k2, faithPair] : value->GetObject("faiths")->GetEntries()) {
-                    if(!std::holds_alternative<std::string>(k2))
-                        continue;
-                    std::string faithKey = std::get<std::string>(k2);
+                for(auto& [faithKey, faithPair] : value->Get("faiths")->GetMap()) {
                     auto& [op2, faithValue] = faithPair;
 
-                    sf::Color color = faithValue->Get("color", sf::Color::White);
+                    sf::Color color = faithValue->Get("color")->As<sf::Color>(sf::Color::White);
                     SharedPtr<Religion> religion = MakeShared<Religion>(faithKey, color);
                     m_Religions[religion->GetName()] = religion;
                 }
@@ -1007,7 +982,7 @@ void Mod::LoadTitles() {
         if(!filePath.ends_with(".txt"))
             continue;
         // fmt::println("loading titles from {}", filePath);
-        SharedPtr<Parser::Object> data = Parser::ParseFile(filePath);
+        SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
         std::vector<SharedPtr<Title>> titles = ParseTitles(filePath, data);
     }
 
@@ -1017,13 +992,10 @@ void Mod::LoadTitles() {
         LOG_INFO("Loaded {} {} titles", m_TitlesByType[(TitleType) i].size(), TitleTypeLabels[i]);
 }
 
-std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, SharedPtr<Parser::Object> data) {
+std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data) {
     std::vector<SharedPtr<Title>> titles;
 
-    for(auto& [k, pair] : data->GetEntries()) {
-        if(!std::holds_alternative<std::string>(k))
-            continue;
-        std::string key = std::get<std::string>(k);
+    for(auto& [key, pair] : data->GetMap()) {
         auto& [op, value] = pair;
 
         // Need to check if the key is a title (starts with e_, k_, d_, c_ or b_)
@@ -1034,21 +1006,21 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
             // correspond to a title type.
             TitleType type = GetTitleTypeByName(key);
 
-            sf::Color color = value->Get("color", sf::Color::Black);
-            bool landless = value->Get("landless", false);
+            sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::Black);
+            bool landless = value->Get("landless")->As<bool>(false);
 
             // Need to use a custom function to create a SharedPtr<Title>
             // to get the right derived class such as BaronyTitle, CountyTitle...
             SharedPtr<Title> title = MakeTitle(type, key, color, landless);
 
-            if(!value->ContainsKey("color"))
+            if(!value->Contains("color"))
                 LOG_WARNING("Title missing color in definition: {}", key);
 
             if(type == TitleType::BARONY) {
                 SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
-                baronyTitle->SetProvinceId(value->Get("province", 0.0));
+                baronyTitle->SetProvinceId(value->Get("province")->As<int>(0));
                 
-                if(!value->ContainsKey("province"))
+                if(!value->Contains("province"))
                     LOG_ERROR("Barony title missing province id in definition: {}", key);
                 if(m_ProvincesByIds.count(baronyTitle->GetProvinceId()) == 0)
                     LOG_ERROR("Barony title with undefined province id in definition: {},{}", key, baronyTitle->GetProvinceId());
@@ -1078,8 +1050,8 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
                 }
 
                 if(type != TitleType::COUNTY) {
-                    if(value->ContainsKey("capital")) {
-                        std::string capitalName = value->Get<std::string>("capital");
+                    if(value->Contains("capital")) {
+                        std::string capitalName = value->Get("capital")->As<std::string>();
                         if(m_Titles.count(capitalName) > 0 && IsInstance<CountyTitle>(m_Titles[capitalName])) {
                             highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(m_Titles[capitalName]));
                         }
@@ -1090,21 +1062,21 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
                     }
                 }
 
-                if(value->ContainsKey("cultural_names")) {
-                    SharedPtr<Parser::Object> culturalNames = value->GetObject("cultural_names");
-                    if(culturalNames->Is(Parser::ObjectType::OBJECT)) {
+                if(value->Contains("cultural_names")) {
+                    SharedPtr<Jomini::Object> culturalNames = value->Get("cultural_names");
+                    if(culturalNames->Is(Jomini::Type::OBJECT)) {
                         // TODO: Rewrite this whole chunk of code correctly.
-                        for(auto [culture, p] : culturalNames->GetEntries()) {
+                        for(auto [culture, p] : culturalNames->GetMap()) {
                             auto [op, o] = p;
                             std::string name = "";
-                            if(o->Is(Parser::ObjectType::ARRAY)) {
-                                name = std::get<std::vector<std::string>>(o->AsArray()).front();
+                            if(o->Is(Jomini::Type::ARRAY)) {
+                                name = o->AsArray<std::string>().front();
                             }
-                            else if(o->Is(Parser::ObjectType::STRING)) {
-                                name = (std::string) *o;
+                            else if(o->Is(Jomini::Type::SCALAR)) {
+                                name = o->As<std::string>();
                             }
                             if(!name.empty()) {
-                                title->AddCulturalName(std::get<std::string>(culture), name);
+                                title->AddCulturalName(culture, name);
                             }
                         }
                     }
@@ -1144,15 +1116,18 @@ void Mod::Export() {
 void Mod::ExportDefaultMapFile() {
     // Read the file and keep all values except for the terrain flags
     // such as: sea_zones, impassable_seas, lakes, impassable_mountains, river_provinces
-    SharedPtr<Parser::Object> data = Parser::ParseFile(m_Dir + "/map_data/default.map");
+    SharedPtr<Jomini::Object> data = Jomini::ParseFile(m_Dir + "/map_data/default.map");
 
-    SharedPtr<Parser::Object> zonesData = MakeShared<Parser::Object>();
+    SharedPtr<Jomini::Object> zonesData = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
 
     zonesData->Put("sea_zones", std::vector<double>());
     zonesData->Put("impassable_seas", std::vector<double>());
     zonesData->Put("river_provinces", std::vector<double>());
     zonesData->Put("lakes", std::vector<double>());
     zonesData->Put("impassable_mountains", std::vector<double>());
+
+    for (auto [key, object] : zonesData->GetMap())
+        object.second->SetFlag(Jomini::Flags::RANGE, true);
 
     // Remove those keys since they are printed seperately.
     data->Remove("sea_zones");
@@ -1163,27 +1138,27 @@ void Mod::ExportDefaultMapFile() {
 
     for(const auto& [id, province] : m_ProvincesByIds) {
         if(province->HasFlag(ProvinceFlags::SEA)) {
-            zonesData->GetObject("sea_zones")->Push((double) id);
+            zonesData->Get("sea_zones")->Push<int>(id);
             if(province->HasFlag(ProvinceFlags::IMPASSABLE))
-                zonesData->GetObject("impassable_seas")->Push((double) id);
+                zonesData->Get("impassable_seas")->Push<int>(id);
         }
         else if(province->HasFlag(ProvinceFlags::IMPASSABLE)) {
-            zonesData->GetObject("impassable_mountains")->Push((double) id);
+            zonesData->Get("impassable_mountains")->Push<int>(id);
         }
 
         if(province->HasFlag(ProvinceFlags::LAKE))
-            zonesData->GetObject("lakes")->Push((double) id);
+            zonesData->Get("lakes")->Push<int>(id);
             
         if(province->HasFlag(ProvinceFlags::RIVER))
-            zonesData->GetObject("river_provinces")->Push((double) id);
+            zonesData->Get("river_provinces")->Push<int>(id);
     }
 
     // TODO: add error log if file can't be opened.
 
     std::ofstream file(m_Dir + "/map_data/default.map", std::ios::out);
 
-    #define PRINT_DATA(key, def) fmt::println(file, "{} = {}", key, data->Get<std::string>(key, def)); data->Remove(key)
-    #define FORMAT_LIST(key) Parser::Format::FormatNumbersList<double>(key, zonesData->GetObject(key), 0)
+    #define PRINT_DATA(key, def) fmt::println(file, "{} = {}", key, data->Get(key)->As<std::string>(def)); data->Remove(key)
+    #define FORMAT_LIST(key) zonesData->Get(key)->SerializeArrayRange(key, Jomini::Operator::EQUAL, 0)
 
     PRINT_DATA("definitions", "\"definition.csv\"");
     PRINT_DATA("provinces", "\"provinces.png\"");
@@ -1198,7 +1173,7 @@ void Mod::ExportDefaultMapFile() {
     fmt::println(
         file, 
         "\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}",
-        data,
+        data->Serialize(),
         FORMAT_LIST("sea_zones"),
         FORMAT_LIST("impassable_seas"),
         FORMAT_LIST("river_provinces"),
@@ -1300,16 +1275,16 @@ void Mod::ExportProvincesHistory() {
                     if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
                         continue;
                     
-                    SharedPtr<Parser::Object> data = province->GetOriginalData();
+                    SharedPtr<Jomini::Object> data = province->GetOriginalData();
                     if(!province->GetCulture().empty()) data->Put("culture", province->GetCulture());
                     if(!province->GetReligion().empty()) data->Put("religion", province->GetReligion());
                     data->Put("holding", province->GetHolding().empty() ? "none" : province->GetHolding());
 
-                    SharedPtr<Parser::Object> object = MakeShared<Parser::Object>();
-                    object->Put(province->GetId(), data);
+                    SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+                    object->Put(std::to_string(province->GetId()), data);
 
                     fmt::println(file, "# {}", province->GetName());
-                    fmt::println(file, "{}", object);
+                    fmt::println(file, "{}", object->Serialize());
                 }
 
                 fmt::println(file, "\n");
@@ -1390,18 +1365,18 @@ void Mod::ExportTitlesHistory() {
             files[filePath] = std::ofstream(filePath, std::ios::out);
         std::ofstream& file = files[filePath];
         
-        SharedPtr<Parser::Object> history = MakeShared<Parser::Object>();
+        SharedPtr<Jomini::Object> history = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
         for(auto const& [date, data] : title->GetHistory()) {
-            history->Put(date, data);
+            history->Put((std::string) date, data);
         }
 
         // Because of indentation and curly brackets, we
         // need to put the history inside an object and
         // print that object.
-        SharedPtr<Parser::Object> object = MakeShared<Parser::Object>();
+        SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
         object->Put(title->GetName(), history);
 
-        fmt::println(file, "{}", object);
+        fmt::println(file, "{}", object->Serialize());
     }
 
     for(auto& [key, file] : files)
@@ -1410,7 +1385,7 @@ void Mod::ExportTitlesHistory() {
 
 void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int depth) {
     std::string indent = std::string(depth, '\t');
-    SharedPtr<Parser::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Parser::Object>() : title->GetOriginalData();
+    SharedPtr<Jomini::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Jomini::Object>(Jomini::ObjectMap{}) : title->GetOriginalData();
 
     #define EXPORT_PROPERTIES(key, value) fmt::println(file, "{}{} = {}", indent, key, value)
 
@@ -1433,8 +1408,8 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
 
         ExportCulturalNames();
 
-        if(!data->GetEntries().empty())
-            fmt::println(file, "{}", Parser::Format::FormatObject(data, depth, true));
+        if(!data->GetMap().empty())
+            fmt::println(file, "{}", data->Serialize(depth, true));
     }
     else {
         SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
@@ -1459,8 +1434,8 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
 
         ExportCulturalNames();
 
-        if(!data->GetEntries().empty())
-            fmt::println(file, "\n{}", Parser::Format::FormatObject(data, depth, true));
+        if(!data->GetMap().empty())
+            fmt::println(file, "\n{}", data->Serialize(depth, true));
 
         for(const auto& dejureTitle : highTitle->GetDejureTitles()) {
             fmt::println(file, "\n{}{} = {{", indent, dejureTitle->GetName());

@@ -6,7 +6,6 @@
 #include "app/mod/Mod.hpp"
 #include "app/map/Province.hpp"
 #include "app/map/Title.hpp"
-#include "parser/Parser.hpp"
 
 #include "imgui/imgui.hpp"
 #include "app/menu/ImGuiStyle.hpp"
@@ -410,8 +409,8 @@ void PropertiesTab::RenderTitles() {
 
                     const auto& AddNewDate = [&]() {
                         try {
-                            Date newDate = Date(date);
-                            title->AddHistory(newDate, MakeShared<Parser::Object>());
+                            Jomini::Date newDate = Jomini::Date(date);
+                            title->AddHistory(newDate, MakeShared<Jomini::Object>(Jomini::ObjectMap{}));
                             isDateValid = true;
                         }
                         catch(std::exception& e) {
@@ -447,7 +446,7 @@ void PropertiesTab::RenderTitles() {
 
                             if(historyStates.count(stateKey) == 0) {
                                 historyStates[stateKey] = TitleHistoryState{
-                                    fmt::format("{}", *data),
+                                    fmt::format("{}", data->Serialize()),
                                     "",
                                 };
                             }
@@ -455,7 +454,7 @@ void PropertiesTab::RenderTitles() {
                             ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 10);
                             if(ImGui::InputTextMultiline("data", &historyStates[stateKey].rawData, ImVec2(0,0), ImGuiInputTextFlags_AllowTabInput)) {
                                 try {
-                                    SharedPtr<Parser::Object> newData = Parser::Parse(historyStates[stateKey].rawData);
+                                    SharedPtr<Jomini::Object> newData = Jomini::ParseString(historyStates[stateKey].rawData);
                                     historyStates[stateKey].parsingError = "";
                                     title->AddHistory(date, newData);
                                 }

@@ -1,7 +1,6 @@
 #include "Title.hpp"
 #include "app/mod/Mod.hpp"
 #include "app/map/Province.hpp"
-#include "parser/Parser.hpp"
 
 Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 
@@ -9,7 +8,7 @@ Title::Title(std::string name, sf::Color color, bool landless) :
     m_Name(name),
     m_Color(color),
     m_Landless(landless),
-    m_OriginalData(MakeShared<Parser::Object>()),
+    m_OriginalData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
     m_SelectionFocus(true)
 {}
 
@@ -65,7 +64,7 @@ std::string Title::GetOriginalFilePath() const {
     return m_OriginalFilePath;
 }
 
-SharedPtr<Parser::Object> Title::GetOriginalData() const {
+SharedPtr<Jomini::Object> Title::GetOriginalData() const {
     return m_OriginalData;
 }
 
@@ -73,7 +72,7 @@ void Title::SetOriginalFilePath(const std::string& filePath) {
     m_OriginalFilePath = filePath;
 }
 
-void Title::SetOriginalData(SharedPtr<Parser::Object> data) {
+void Title::SetOriginalData(SharedPtr<Jomini::Object> data) {
     m_OriginalData = data;
 }
 
@@ -85,15 +84,15 @@ void Title::SetOriginalHistoryFilePath(const std::string& filePath) {
     m_OriginalHistoryFilePath = filePath;
 }
 
-std::map<Date, SharedPtr<Parser::Object>>& Title::GetHistory() {
+std::map<Jomini::Date, SharedPtr<Jomini::Object>>& Title::GetHistory() {
     return m_History;
 }
 
-void Title::AddHistory(Date date, SharedPtr<Parser::Object> data) {
+void Title::AddHistory(Jomini::Date date, SharedPtr<Jomini::Object> data) {
     m_History[date] = data;
 }
 
-void Title::RemoveHistory(Date date) {
+void Title::RemoveHistory(Jomini::Date date) {
     m_History.erase(date);
 }
 

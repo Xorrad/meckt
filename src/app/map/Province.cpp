@@ -1,5 +1,4 @@
 #include "Province.hpp"
-#include "parser/Parser.hpp"
 
 HoldingType::HoldingType() : m_Name("") {}
 
@@ -65,7 +64,7 @@ Province::Province(int id, sf::Color color, std::string name) {
     m_Flags = ProvinceFlags::NONE;
     m_Holding = "none";
     m_Terrain = "";
-    m_OriginalData = MakeShared<Parser::Object>();
+    m_OriginalData = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
     m_ImagePosition = sf::Vector2i(0, 0);
     m_ImagePixelsCount = 0;
 }
@@ -147,7 +146,7 @@ std::string Province::GetOriginalFilePath() const {
     return m_OriginalFilePath;
 }
 
-SharedPtr<Parser::Object> Province::GetOriginalData() const {
+SharedPtr<Jomini::Object> Province::GetOriginalData() const {
     return m_OriginalData;
 }
 
@@ -155,7 +154,7 @@ void Province::SetOriginalFilePath(const std::string& filePath) {
     m_OriginalFilePath = filePath;
 }
 
-void Province::SetOriginalData(SharedPtr<Parser::Object> data) {
+void Province::SetOriginalData(SharedPtr<Jomini::Object> data) {
     m_OriginalData = data;
 }
 

@@ -26,15 +26,15 @@ public:
     void SetLandless(bool landless);
     
     std::string GetOriginalFilePath() const;
-    SharedPtr<Parser::Object> GetOriginalData() const;
+    SharedPtr<Jomini::Object> GetOriginalData() const;
     void SetOriginalFilePath(const std::string& filePath);
-    void SetOriginalData(SharedPtr<Parser::Object> data);
+    void SetOriginalData(SharedPtr<Jomini::Object> data);
 
     std::string GetOriginalHistoryFilePath() const;
     void SetOriginalHistoryFilePath(const std::string& filePath);
-    std::map<Date, SharedPtr<Parser::Object>>& GetHistory();
-    void AddHistory(Date date, SharedPtr<Parser::Object> data);
-    void RemoveHistory(Date date);
+    std::map<Jomini::Date, SharedPtr<Jomini::Object>>& GetHistory();
+    void AddHistory(Jomini::Date date, SharedPtr<Jomini::Object> data);
+    void RemoveHistory(Jomini::Date date);
 
     std::map<std::string, std::string>& GetCulturalNames();
     void AddCulturalName(const std::string& culture, std::string name);
@@ -67,10 +67,10 @@ protected:
     bool m_Landless;
 
     std::string m_OriginalFilePath;
-    SharedPtr<Parser::Object> m_OriginalData;
+    SharedPtr<Jomini::Object> m_OriginalData;
 
     std::string m_OriginalHistoryFilePath;
-    std::map<Date, SharedPtr<Parser::Object>> m_History;
+    std::map<Jomini::Date, SharedPtr<Jomini::Object>> m_History;
     std::map<std::string, std::string> m_CulturalNames;
 
     std::map<std::string, std::string> m_LocNames;

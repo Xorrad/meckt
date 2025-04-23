@@ -3,7 +3,6 @@
 #include "menu/HomeMenu.hpp"
 #include "menu/EditorMenu.hpp"
 #include "menu/ImGuiStyle.hpp"
-#include "parser/Parser.hpp"
 
 #if _WIN32
 #include <windows.h>
@@ -61,7 +60,6 @@ void App::Init() {
 
 #ifdef DEBUG
     LOG_INFO("DEBUG_MODE is enabled", "");
-    Parser::Tests();
     this->DebugSettings();
 #elif _WIN32
     ShowWindow(GetConsoleWindow(), SW_HIDE);

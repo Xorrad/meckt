@@ -71,9 +71,9 @@ public:
     void SetReligion(std::string religion);
     
     std::string GetOriginalFilePath() const;
-    SharedPtr<Parser::Object> GetOriginalData() const;
+    SharedPtr<Jomini::Object> GetOriginalData() const;
     void SetOriginalFilePath(const std::string& filePath);
-    void SetOriginalData(SharedPtr<Parser::Object> data);
+    void SetOriginalData(SharedPtr<Jomini::Object> data);
     
     sf::Vector2i GetImagePosition() const;
     uint GetImagePixelsCount() const;
@@ -94,7 +94,7 @@ private:
     std::string m_Religion;
 
     std::string m_OriginalFilePath;
-    SharedPtr<Parser::Object> m_OriginalData;
+    SharedPtr<Jomini::Object> m_OriginalData;
 
     sf::Vector2i m_ImagePosition;
     uint m_ImagePixelsCount;

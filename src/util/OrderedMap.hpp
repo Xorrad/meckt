@@ -78,7 +78,7 @@ public:
 
     std::vector<K> keys() const {
         std::vector<K> keys;
-        for(auto const& [key, value] : m_Items)
+        for(auto [key, value] : m_Items)
             keys.push_back(key);
         return keys;
     }

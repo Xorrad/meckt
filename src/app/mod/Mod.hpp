@@ -55,7 +55,7 @@ public:
     void LoadReligions();
     void LoadLocalization();
 
-    std::vector<SharedPtr<Title>> ParseTitles(const std::string& filePath, SharedPtr<Parser::Object> data);
+    std::vector<SharedPtr<Title>> ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data);
 
     void Export();
     void ExportDefaultMapFile();

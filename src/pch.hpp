@@ -23,19 +23,12 @@ typedef unsigned int uint;
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 
+#include <Jomini.hpp>
+
 // Custom backward::SignalHandling to print stacktrace to file.
 class SignalHandler;
 
 class App;
-
-namespace Parser {
-    class Token;
-    class Object;
-    class AbstractHolder;
-    class ScalarHolder;
-    class ArrayHolder;
-    class ObjectHolder;
-}
 
 class Mod;
 class Culture;
