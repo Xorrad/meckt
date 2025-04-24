@@ -47,7 +47,10 @@ void App::Init() {
     m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Meckt");
     // m_Window.setFramerateLimit(60);
     m_Window.setVerticalSyncEnabled(true);
-    
+#if _WIN32
+    ShowWindow(m_Window.getSystemHandle(), SW_MAXIMIZE);
+#endif
+
     // Initialize ImGui.
     if(!ImGui::SFML::Init(m_Window)) {
         LOG_ERROR("Failed to initialize ImGui for SFML.", "");
@@ -63,7 +66,6 @@ void App::Init() {
     this->DebugSettings();
 #elif _WIN32
     ShowWindow(GetConsoleWindow(), SW_HIDE);
-    ShowWindow(m_Window.getSystemHandle(), SW_MAXIMIZE);
 #endif
 }
 
