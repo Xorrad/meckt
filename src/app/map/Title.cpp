@@ -122,6 +122,13 @@ std::string Title::GetLocName(const std::string& lang) const {
     return m_LocNames.at(lang);
 }
 
+bool Title::HasLocName(const std::string& lang) const {
+    auto it = m_LocNames.find(lang);
+    if (it == m_LocNames.end())
+        return false;
+    return it->second.empty();
+}
+
 void Title::SetLocName(const std::string& lang, std::string name) {
     m_LocNames[lang] = name;
 }
@@ -140,6 +147,13 @@ std::string Title::GetLocAdjective(const std::string& lang) const {
     return m_LocAdjectives.at(lang);
 }
 
+bool Title::HasLocAdjective(const std::string& lang) const {
+    auto it = m_LocAdjectives.find(lang);
+    if (it == m_LocAdjectives.end())
+        return false;
+    return it->second.empty();
+}
+
 void Title::SetLocAdjective(const std::string& lang, std::string adjective) {
     m_LocAdjectives[lang] = adjective;
 }
@@ -156,6 +170,13 @@ std::string Title::GetLocArticle(const std::string& lang) const {
     if(m_LocArticles.count(lang) == 0)
         return "";
     return m_LocArticles.at(lang);
+}
+
+bool Title::HasLocArticle(const std::string& lang) const {
+    auto it = m_LocArticles.find(lang);
+    if (it == m_LocArticles.end())
+        return false;
+    return it->second.empty();
 }
 
 void Title::SetLocArticle(const std::string& lang, std::string article) {

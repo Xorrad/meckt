@@ -531,6 +531,10 @@ void EditorMenu::RenderMenuBarTools() {
         if(ImGui::MenuItem("Generate missing baronies")) {
             m_ModalName = "Generate missing baronies";
         }
+        
+        if(ImGui::MenuItem("Generate titles localization")) {
+            m_ModalName = "Generate titles localization";
+        }
 
         ImGui::EndMenu();
     }
@@ -762,6 +766,37 @@ void EditorMenu::RenderModals() {
         ImGui::EndPopup();
     }
     // GENERATE BARONIES: modal end
+    
+    // GENERATE TITLES LOCALIZATION: modal begin
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Generate titles localization", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
+        ImGui::Separator();
+
+        static bool generateNames = true;
+        static bool generateAdjectives = true;
+
+        ImGui::Checkbox("names   ", &generateNames);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "k_isle_of_man -> Isle of Man");
+
+        ImGui::Checkbox("adjectives   ", &generateAdjectives);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "k_bavaria -> Bavarian");
+
+        if(ImGui::Button("Generate", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            m_App->GetMod()->GenerateTitlesLocalization("english", generateNames, generateAdjectives, false);
+        }
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    // GENERATE TITLES LOCALIZATION: modal end
     
     // EXPORT : modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));

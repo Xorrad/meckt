@@ -43,16 +43,19 @@ public:
     std::map<std::string, std::string>& GetLocNames();
     std::string& GetLocName(const std::string& lang);
     std::string GetLocName(const std::string& lang) const;
+    bool HasLocName(const std::string& lang) const;
     void SetLocName(const std::string& lang, std::string name);
 
     std::map<std::string, std::string>& GetLocAdjectives();
     std::string& GetLocAdjective(const std::string& lang);
     std::string GetLocAdjective(const std::string& lang) const;
+    bool HasLocAdjective(const std::string& lang) const;
     void SetLocAdjective(const std::string& lang, std::string adjective);
     
     std::map<std::string, std::string>& GetLocArticles();
     std::string& GetLocArticle(const std::string& lang);
     std::string GetLocArticle(const std::string& lang) const;
+    bool HasLocArticle(const std::string& lang) const;
     void SetLocArticle(const std::string& lang, std::string article);
 
     virtual bool HasSelectionFocus() const;

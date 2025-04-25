@@ -40,6 +40,7 @@ public:
     void HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color color, float hue, float saturation);
     void GenerateMissingProvinces();
     void GenerateMissingBaronies();
+    void GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles);
 
     void Load();
     void LoadHoldingTypes();

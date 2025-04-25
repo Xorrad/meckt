@@ -419,6 +419,56 @@ void Mod::GenerateMissingBaronies() {
     LOG_INFO("Generated {} new barony titles for passable land provinces without any", count);
 }
 
+void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles) {
+    const auto FormatLocName = [&](const std::string& key) {
+        std::string str = "";
+        bool capitalize = true;
+        for (size_t i = 2; i < key.size(); i++) {
+            char ch = key[i];
+            if (ch == '_') {
+                str += ' ';
+                capitalize = true;
+            }
+            else {
+                str += (capitalize ? std::toupper(ch) : ch);
+                capitalize = false;
+            }
+        }
+        return str;
+    };
+    const auto FormatLocAdjective = [&](const std::string& key) {
+        std::string str = FormatLocName(key);
+        if (str.ends_with("ian"))
+            return str;
+        if (str.ends_with("i") || str.ends_with("y"))
+            str.pop_back();
+        if (str.ends_with("e"))
+            return str + "an";
+        if (str.ends_with("ea") || str.ends_with("ia"))
+            return str + "n";
+        if (str.ends_with("land"))
+            return str + "er";
+        return str + "ian";
+    };
+
+    uint countNames = 0;
+    uint countAdjectives = 0;
+
+    for (auto [key, title] : m_Titles) {
+        if (names && !title->HasLocName(lang)) {
+            title->SetLocName(lang, FormatLocName(key));
+            countNames++;
+        }
+        if (adjectives && !title->HasLocAdjective(lang)) {
+            title->SetLocAdjective(lang, FormatLocAdjective(key));
+            countAdjectives++;
+        }
+    }
+
+    LOG_INFO("Generated name localization for {} titles.", countNames);
+    LOG_INFO("Generated adjective localization for {} titles.", countAdjectives);
+}
+
 void Mod::Load() {
     if(!this->HasMap())
         return;
