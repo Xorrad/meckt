@@ -300,8 +300,11 @@ void Mod::RemoveTitle(SharedPtr<Title> title) {
 void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
     for(auto [n, t] : m_Titles) {
         for(auto [date, history] : t->GetHistory()) {
-            if(history->Contains("liege") && history->Get("liege")->As<std::string>() == formerName) {
+            if(history->Contains("liege") && history->Get("liege")->As<std::string>("") == formerName) {
                 history->Put("liege", title->GetName());
+            }
+            if(history->Contains("de_jure_liege") && history->Get("de_jure_liege")->As<std::string>("") == formerName) {
+                history->Put("de_jure_liege", title->GetName());
             }
         }
     }
