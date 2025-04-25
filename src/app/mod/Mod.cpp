@@ -493,19 +493,21 @@ void Mod::Load() {
     if(!m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
         LOG_ERROR("Failed to load rivers image at ", m_Dir + "/map_data/rivers.png");
     }
+    
+    #define LOAD_CATCH(arg, name) try { arg(); } catch (std::exception& e) { throw std::runtime_error(fmt::format("Failed to load {}\n{}", name, e.what())); }
 
-    this->LoadHoldingTypes();
-    this->LoadTerrainTypes();
-    this->LoadProvincesDefinition();
-    this->LoadProvinceImage();
-    this->LoadDefaultMapFile();
-    this->LoadProvincesTerrain();
-    this->LoadProvincesHistory();
-    this->LoadTitles();
-    this->LoadTitlesHistory();
-    this->LoadCultures();
-    this->LoadReligions();
-    this->LoadLocalization();
+    LOAD_CATCH(LoadHoldingTypes, "holding types");
+    LOAD_CATCH(LoadTerrainTypes, "terrain types");
+    LOAD_CATCH(LoadProvincesDefinition, "provinces definition");
+    LOAD_CATCH(LoadProvinceImage, "provinces image");
+    LOAD_CATCH(LoadDefaultMapFile, "default map");
+    LOAD_CATCH(LoadProvincesTerrain, "provinces terrain");
+    LOAD_CATCH(LoadProvincesHistory, "provinces history");
+    LOAD_CATCH(LoadTitles, "titles");
+    LOAD_CATCH(LoadTitlesHistory, "titles history");
+    LOAD_CATCH(LoadCultures, "cultures");
+    LOAD_CATCH(LoadReligions, "religions");
+    LOAD_CATCH(LoadLocalization, "localization");
 }
 
 void Mod::LoadHoldingTypes() {
@@ -806,9 +808,20 @@ void Mod::LoadProvincesHistory() {
         SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
         
         for(auto& [key, pair] : data->GetMap()) {
-            // TODO: check if the key is an integer.
             auto& [op, value] = pair;
-            int provinceId = String::ParseInt(key);
+            int provinceId = 0;
+            try {
+                provinceId = String::ParseInt(key);
+            }
+            catch (std::exception& e) {
+                LOG_ERROR("Non-integer province id {} in {}", key, filePath);
+                continue;
+            }
+
+            if (!value->Is(Jomini::Type::OBJECT)) {
+                LOG_ERROR("Wrong value for province {} in {}", key, filePath);
+                continue;
+            }
 
             const auto GetStringOrFirstElement = [&](std::string key) {
                 if(!value->Get(key)->Is(Jomini::Type::SCALAR))

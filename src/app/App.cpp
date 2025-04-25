@@ -45,7 +45,6 @@ void App::Init() {
 
     // Initialize SFML.
     m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Meckt");
-    // m_Window.setFramerateLimit(60);
     m_Window.setVerticalSyncEnabled(true);
 #if _WIN32
     ShowWindow(m_Window.getSystemHandle(), SW_MAXIMIZE);
@@ -65,7 +64,7 @@ void App::Init() {
     LOG_INFO("DEBUG_MODE is enabled", "");
     this->DebugSettings();
 #elif _WIN32
-    // ShowWindow(GetConsoleWindow(), SW_HIDE);
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
 }
 
