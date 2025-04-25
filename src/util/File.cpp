@@ -66,3 +66,12 @@ void File::EncodeToUTF8BOM(std::ofstream& file) {
     unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
     file.write(reinterpret_cast<char*>(bom), sizeof(bom));
 }
+
+void File::OpenFile(const std::string& path) {
+#ifdef _WIN32
+    ShellExecuteA(NULL, "open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+#elif __linux__
+    std::string command = "xdg-open \"" + path + "\"";
+    system(command.c_str());
+#endif
+}

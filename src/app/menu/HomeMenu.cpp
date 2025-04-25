@@ -37,11 +37,19 @@ void HomeMenu::Render() {
     ImGui::SetCursorPos(ImVec2(centerX - logoTexture.getSize().x*0.5f, startY));
     ImGui::Image(logoTexture);
 
-    ImVec2 textSize = ImGui::CalcTextSize(error.c_str());
-    ImGui::SetCursorPos(ImVec2(centerX - textSize.x*0.5f, startY + logoTexture.getSize().y - textSize.y*0.5f));
-    if(!error.empty()) {
-        ImGui::TextColored(ImVec4(1.0, 0, 0, 1.0), error.c_str());
-    }
+    // ImVec2 textSize = ImGui::CalcTextSize(error.c_str());
+    // ImGui::SetCursorPos(ImVec2(centerX - textSize.x*0.5f, startY + logoTexture.getSize().y - textSize.y*0.5f));
+    // if(!error.empty()) {
+    //     ImGui::TextColored(ImVec4(1.0, 0, 0, 1.0), error.c_str());
+
+    //     ImGui::SameLine();
+
+    //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 102, 204, 255));
+    //     if (ImGui::Selectable("logs", false, ImGuiSelectableFlags_DontClosePopups)) {
+    //         File::OpenFile("logs/logs.txt");
+    //     }
+    //     ImGui::PopStyleColor();
+    // }
 
     ImGui::SetCursorPos(ImVec2(centerX - buttonSize.x*0.5f, startY + logoTexture.getSize().y + spacing));
     if(ImGui::Button("Open mod", buttonSize)) {
@@ -51,12 +59,18 @@ void HomeMenu::Render() {
         if(result == NFD_OKAY) {
             SharedPtr<Mod> mod = MakeShared<Mod>(std::string(dirPath));
             if(mod->HasMap()) {
-                m_App->OpenMod(mod);
-                LOG_INFO("Opened mod at {}", dirPath);
+                try {
+                    m_App->OpenMod(mod);
+                    LOG_INFO("Opened mod at {}", dirPath);
+                }
+                catch (std::exception& e) {
+                    LOG_INFO("Failed to load mod at {}\n{}", dirPath, e.what());
+                    error = "Failed to load mod.\nOpen an issue on GitHub or contact the developper\non Discord if the issue persists.";
+                }
             }
             else {
-                LOG_INFO("Opened mod without custom map at {}", dirPath);
-                error = "This mod does not have a custom map.";
+                LOG_INFO("Opened mod missing 'map_data/provinces.png' at {}", dirPath);
+                error = "This mod does not have a provinces image.";
             }
         }
         else if(result != NFD_CANCEL) {
@@ -74,7 +88,7 @@ void HomeMenu::Render() {
         m_App->GetWindow().close();
     }
 
-    textSize = ImGui::CalcTextSize(Configuration::buildVersion.c_str());
+    ImVec2 textSize = ImGui::CalcTextSize(Configuration::buildVersion.c_str());
     ImGui::SetCursorPos(ImVec2(5.0f, windowSize.y - textSize.y - 5.0f));
     ImGui::Text(Configuration::buildVersion.c_str());
 
@@ -104,4 +118,26 @@ void HomeMenu::Render() {
 
     ImGui::End();
 
+    // ERROR : modal begin
+    if (!error.empty())
+        ImGui::OpenPopup("Error");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), error.c_str());
+        ImGui::Separator();
+
+        if(ImGui::Button("Open logs", ImVec2(120, 0))) {
+            File::OpenFile("logs/logs.txt");
+        }
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Close", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            error = "";
+        }
+        ImGui::EndPopup();
+    }
+    // ERROR: modal end
 }
