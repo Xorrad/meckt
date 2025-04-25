@@ -27,6 +27,9 @@ public:
     const OrderedMap<std::string, HoldingType>& GetHoldingTypes() const;
     const OrderedMap<std::string, TerrainType>& GetTerrainTypes() const;
 
+    const std::string& GetTitlesLocalizationFilePath() const;
+    const std::string& GetCulturalNamesLocalizationFilePath() const;
+
     std::map<std::string, std::map<std::string, std::string>>& GetLocCulturalNames();
     std::map<std::string, std::string>& GetLocCulturalNames(const std::string& lang);
     std::string& GetLocCulturalName(const std::string& lang, const std::string& key);
@@ -58,7 +61,7 @@ public:
 
     std::vector<SharedPtr<Title>> ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data);
 
-    void Export();
+    void Export(bool defaultMap = true, bool provincesDefinition = true, bool provincesTerrain = true, bool provincesHistory = true, bool titles = true, bool titlesHistory = true, bool titlesLocalization = true, bool culturalNamesLocalization = true);
     void ExportDefaultMapFile();
     void ExportProvincesDefinition();
     void ExportProvincesTerrain();
@@ -67,10 +70,9 @@ public:
     void ExportTitlesHistory();
     void ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int depth);
 
-    void ExportLocalization();
     void ExportTitlesLocalization();
     void ExportCulturalNamesLocalization();
-    void DeleteTitlesLocalization();
+    void DeleteTitlesLocalization(bool titlesLocalization, bool culturalNamesLocalization);
 
 private:
     std::string m_Dir;

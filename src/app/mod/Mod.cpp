@@ -240,6 +240,14 @@ const OrderedMap<std::string, TerrainType>& Mod::GetTerrainTypes() const {
     return m_TerrainTypes;
 }
 
+const std::string& Mod::GetTitlesLocalizationFilePath() const {
+    return m_TitlesLocalizationFilePath;
+}
+
+const std::string& Mod::GetCulturalNamesLocalizationFilePath() const {
+    return m_CulturalNamesLocalizationFilePath;
+}
+
 std::map<std::string, std::map<std::string, std::string>>& Mod::GetLocCulturalNames() {
     return m_LocCulturalNames;
 }
@@ -1154,16 +1162,31 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
     return titles;
 }
 
-void Mod::Export() {
-    this->ExportDefaultMapFile();
-    this->ExportProvincesDefinition();
-    this->ExportProvincesTerrain();
-    this->ExportProvincesHistory();
+void Mod::Export(bool defaultMap, bool provincesDefinition, bool provincesTerrain, bool provincesHistory, bool titles, bool titlesHistory, bool titlesLocalization, bool culturalNamesLocalization) {
 
-    this->ExportTitles();
-    this->ExportTitlesHistory();
+    if (defaultMap)
+        this->ExportDefaultMapFile();
+    if (provincesDefinition)
+        this->ExportProvincesDefinition();
+    if (provincesTerrain)
+        this->ExportProvincesTerrain();
+    if (provincesHistory)
+        this->ExportProvincesHistory();
 
-    this->ExportLocalization();
+    if (titles)
+        this->ExportTitles();
+    if (titlesHistory)
+        this->ExportTitlesHistory();
+
+    // Remove all localization related to titles from the files
+    // in order to centralize the loc and avoid duplicates.
+    if (titlesLocalization || culturalNamesLocalization)
+        this->DeleteTitlesLocalization(titlesLocalization, culturalNamesLocalization);
+
+    if (titlesLocalization)
+        this->ExportTitlesLocalization();
+    if (culturalNamesLocalization)
+        this->ExportCulturalNamesLocalization();
 }
 
 void Mod::ExportDefaultMapFile() {
@@ -1498,15 +1521,6 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
     }
 }
 
-void Mod::ExportLocalization() {
-    // Remove all localization related to titles from the files
-    // in order to centralize the loc and avoid duplicates.
-    this->DeleteTitlesLocalization();
-
-    this->ExportTitlesLocalization();
-    this->ExportCulturalNamesLocalization();
-}
-
 void Mod::ExportTitlesLocalization() {
     std::filesystem::create_directories(std::filesystem::path(m_TitlesLocalizationFilePath).parent_path());
     std::ofstream file(m_TitlesLocalizationFilePath);
@@ -1539,7 +1553,7 @@ void Mod::ExportCulturalNamesLocalization() {
     file.close();
 }
 
-void Mod::DeleteTitlesLocalization() {
+void Mod::DeleteTitlesLocalization(bool titlesLocalization, bool culturalNamesLocalization) {
     std::set<std::string> filesPath = File::ListFiles(m_Dir + "/localization/english/");
     std::set<std::string> filesPath2 = File::ListFiles(m_Dir + "/localization/replace/english/");
     filesPath.insert(filesPath2.begin(), filesPath2.end());
@@ -1578,16 +1592,16 @@ void Mod::DeleteTitlesLocalization() {
             }
 
             // Ignore lines with a cultural name.
-            if(key.starts_with("cn_")) {
+            if(key.starts_with("cn_") && culturalNamesLocalization) {
                 continue;
             }
 
             // If the line is not related to titles, then we keep it.
-            if(!key.starts_with("b_")
+            if(!titlesLocalization || (!key.starts_with("b_")
             && !key.starts_with("c_")
             && !key.starts_with("d_")
             && !key.starts_with("k_")
-            && !key.starts_with("e_")) {
+            && !key.starts_with("e_"))) {
                 fmt::println(tmpFile, "{}", line);
                 continue;
             }

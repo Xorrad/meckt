@@ -807,9 +807,54 @@ void EditorMenu::RenderModals() {
         ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone, so make sure to back-up your files.");
         ImGui::Separator();
 
+        static bool defaultMap = true;
+        static bool provincesDefinition = true;
+        static bool provincesTerrain = true;
+        static bool provincesHistory = true;
+        static bool titles = true;
+        static bool titlesHistory = true;
+        static bool titlesLocalization = true;
+        static bool culturalNamesLocalization = true;
+
+        ImGui::Checkbox("default map  ", &defaultMap);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "map_data/default.map");
+        
+        ImGui::Checkbox("provinces definition  ", &provincesDefinition);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "map_data/definition.csv");
+        
+        ImGui::Checkbox("provinces terrain  ", &provincesTerrain);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "common/province_terrain/");
+        
+        ImGui::Checkbox("provinces history  ", &provincesHistory);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "history/provinces/");
+        
+        ImGui::Checkbox("titles  ", &titles);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "common/landed_titles/");
+        
+        ImGui::Checkbox("titles history  ", &titlesHistory);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "history/titles/");
+        
+        std::string titlesLocalizationPath = m_App->GetMod()->GetTitlesLocalizationFilePath();
+        titlesLocalizationPath = titlesLocalizationPath.substr(m_App->GetMod()->GetDir().size());
+        ImGui::Checkbox("titles localization  ", &titlesLocalization);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), titlesLocalizationPath.c_str());
+        
+        std::string culturalNamesLocalizationPath = m_App->GetMod()->GetCulturalNamesLocalizationFilePath();
+        culturalNamesLocalizationPath = culturalNamesLocalizationPath.substr(m_App->GetMod()->GetDir().size());
+        ImGui::Checkbox("cultural names localization  ", &culturalNamesLocalization);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), culturalNamesLocalizationPath.c_str());
+
         if(ImGui::Button("Export", ImVec2(120, 0))) {
             SharedPtr<Mod> mod = m_App->GetMod();
-            mod->Export();
+            mod->Export(defaultMap, provincesDefinition, provincesTerrain, provincesHistory, titles, titlesHistory, titlesLocalization, culturalNamesLocalization);
             ImGui::CloseCurrentPopup();
         }
 
