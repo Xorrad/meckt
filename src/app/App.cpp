@@ -65,7 +65,7 @@ void App::Init() {
     LOG_INFO("DEBUG_MODE is enabled", "");
     this->DebugSettings();
 #elif _WIN32
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    // ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
 }
 

@@ -37,20 +37,6 @@ void HomeMenu::Render() {
     ImGui::SetCursorPos(ImVec2(centerX - logoTexture.getSize().x*0.5f, startY));
     ImGui::Image(logoTexture);
 
-    // ImVec2 textSize = ImGui::CalcTextSize(error.c_str());
-    // ImGui::SetCursorPos(ImVec2(centerX - textSize.x*0.5f, startY + logoTexture.getSize().y - textSize.y*0.5f));
-    // if(!error.empty()) {
-    //     ImGui::TextColored(ImVec4(1.0, 0, 0, 1.0), error.c_str());
-
-    //     ImGui::SameLine();
-
-    //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 102, 204, 255));
-    //     if (ImGui::Selectable("logs", false, ImGuiSelectableFlags_DontClosePopups)) {
-    //         File::OpenFile("logs/logs.txt");
-    //     }
-    //     ImGui::PopStyleColor();
-    // }
-
     ImGui::SetCursorPos(ImVec2(centerX - buttonSize.x*0.5f, startY + logoTexture.getSize().y + spacing));
     if(ImGui::Button("Open mod", buttonSize)) {
         nfdchar_t *dirPath = NULL;
@@ -128,7 +114,7 @@ void HomeMenu::Render() {
         ImGui::Separator();
 
         if(ImGui::Button("Open logs", ImVec2(120, 0))) {
-            File::OpenFile("logs/logs.txt");
+            File::OpenFile("logs");
         }
 
         ImGui::SetItemDefaultFocus();

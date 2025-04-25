@@ -69,7 +69,10 @@ void File::EncodeToUTF8BOM(std::ofstream& file) {
 
 void File::OpenFile(const std::string& path) {
 #ifdef _WIN32
-    ShellExecuteA(NULL, "open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    std::string windowsPath = path;
+    std::replace(windowsPath.begin(), windowsPath.end(), '/', '\\');
+    std::string command = "start \"\" \"" + windowsPath + "\"";
+    std::system(command.c_str());
 #elif __linux__
     std::string command = "xdg-open \"" + path + "\"";
     system(command.c_str());
