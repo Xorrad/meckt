@@ -410,7 +410,8 @@ void PropertiesTab::RenderTitles() {
                     const auto& AddNewDate = [&]() {
                         try {
                             Jomini::Date newDate = Jomini::Date(date);
-                            title->AddHistory(newDate, MakeShared<Jomini::Object>(Jomini::ObjectMap{}));
+                            if (!title->GetHistory().contains(newDate))
+                                title->AddHistory(newDate, MakeShared<Jomini::Object>(Jomini::ObjectMap{}));
                             isDateValid = true;
                         }
                         catch(std::exception& e) {

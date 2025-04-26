@@ -873,9 +873,17 @@ void Mod::LoadTitlesHistory() {
             m_Titles[key]->SetOriginalHistoryFilePath(filePath);
 
             // 2. Loop over dates in the title history.
-            for(auto& [date, pair2] : value->GetMap()) {
+            for(const auto& [strDate, pair2] : value->GetMap()) {
                 // TODO: check if key is a correct date.
                 auto& [op2, history] = pair2;
+                Jomini::Date date = Jomini::Date(strDate);
+                if (history->Is(Jomini::Type::ARRAY)) {
+                    LOG_ERROR("Invalid date syntax '{}' for title '{}' history in {}. Probably duplicate date definition.", strDate, key, filePath);
+                    Jomini::ObjectArray array = history->GetArray();
+                    if (!array.empty() && array.front()->Is(Jomini::Type::OBJECT))
+                        m_Titles[key]->AddHistory(Jomini::Date(date), array.front());
+                    continue;
+                }
                 m_Titles[key]->AddHistory(Jomini::Date(date), history);
             }
         }
