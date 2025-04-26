@@ -470,7 +470,7 @@ void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool a
             title->SetLocName(lang, FormatLocName(key));
             countNames++;
         }
-        if (adjectives && !title->HasLocAdjective(lang)) {
+        if (adjectives && !title->Is(TitleType::BARONY) && !title->HasLocAdjective(lang)) {
             title->SetLocAdjective(lang, FormatLocAdjective(key));
             countAdjectives++;
         }
