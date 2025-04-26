@@ -1,7 +1,7 @@
 #include "Yaml.hpp"
 
 std::map<std::string, std::string> Yaml::ParseFile(const std::string& filePath) {
-    std::ifstream file(filePath);
+    std::ifstream file(filePath, std::ios::binary);
     std::string content = File::ReadString(file);
     file.close();
     return Parse(content);
@@ -31,7 +31,12 @@ std::map<std::string, std::string> Yaml::Parse(const std::string& content) {
         }
     };
 
-    for(i = 0; i < content.size(); i++) {
+    // Ignore first three UTF8 BOM bytes.
+    if (content.size() > 2 && content.at(0) == '\xEF' && content.at(1) == '\xBB' && content.at(2) == '\xBF') {
+        i = 3;
+    }
+
+    for(; i < content.size(); i++) {
         // Ignore special characters.
         if(content[i] == '\n' || content[i] == '\t' || content[i] == '\r' || content[i] == ' ')
             continue;
