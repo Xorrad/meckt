@@ -1,5 +1,11 @@
 #pragma once
 
+#define ASSERT_IS_OBJECT(property, value, key, filePath) \
+    if (!value->Is(Jomini::Type::OBJECT)) { \
+        LOG_ERROR("Wrong value for {} '{}' in {}\nThis is probably caused by duplicates definition of key '{}'.", property, key, filePath, key); \
+        continue; \
+    } \
+
 class Mod {
 public:
     Mod(const std::string& dir);

@@ -818,10 +818,7 @@ void Mod::LoadProvincesHistory() {
                 continue;
             }
 
-            if (!value->Is(Jomini::Type::OBJECT)) {
-                LOG_ERROR("Wrong value for province {} in {}", key, filePath);
-                continue;
-            }
+            ASSERT_IS_OBJECT("province", value, key, filePath);
 
             const auto GetStringOrFirstElement = [&](std::string key) {
                 if(!value->Get(key)->Is(Jomini::Type::SCALAR))
@@ -871,6 +868,8 @@ void Mod::LoadTitlesHistory() {
                 continue;
             }
 
+            ASSERT_IS_OBJECT("title", value, key, filePath);
+
             m_Titles[key]->SetOriginalHistoryFilePath(filePath);
 
             // 2. Loop over dates in the title history.
@@ -894,6 +893,8 @@ void Mod::LoadCultures() {
 
             for(auto& [key, pair] : data->GetMap()) {
                 auto& [op, value] = pair;
+
+                ASSERT_IS_OBJECT("culture", value, key, filePath);
 
                 sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::White);
                 SharedPtr<Culture> culture = MakeShared<Culture>(key, color);
@@ -921,11 +922,16 @@ void Mod::LoadReligions() {
 
             for(auto& [key, pair] : data->GetMap()) {
                 auto& [op, value] = pair;
+
+                ASSERT_IS_OBJECT("religion", value, key, filePath);
+
                 if(!value->Contains("faiths"))
                     continue;
 
                 for(auto& [faithKey, faithPair] : value->Get("faiths")->GetMap()) {
                     auto& [op2, faithValue] = faithPair;
+
+                    ASSERT_IS_OBJECT("faith", faithValue, key, filePath);
 
                     sf::Color color = faithValue->Get("color")->As<sf::Color>(sf::Color::White);
                     SharedPtr<Religion> religion = MakeShared<Religion>(faithKey, color);
