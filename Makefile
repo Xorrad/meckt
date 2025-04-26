@@ -38,7 +38,7 @@ OBJECTS      := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES := $(OBJECTS:.o=.d)
 
 # Build type (default, debug, release)
-BUILD_TYPE := debug
+BUILD_TYPE := release
 ifeq ($(BUILD_TYPE),debug)
     CXXFLAGS += -O0 -DDEBUG -g #-fsanitize=address
 else ifeq ($(BUILD_TYPE),release)
@@ -75,7 +75,8 @@ build:
 	@clear
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(OBJ_DIR)
-	@cp -r assets $(BIN_DIR)/assets
+	@mkdir -p $(BIN_DIR)/assets
+	@cp -ar assets/. $(BIN_DIR)/assets
 
 run:
 	@./$(BIN_DIR)/$(TARGET)

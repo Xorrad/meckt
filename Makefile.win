@@ -77,7 +77,7 @@ build:
 	@clear
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(OBJ_DIR)
-	@cp -r assets $(BIN_DIR)/assets
+	@cp -ar assets/. $(BIN_DIR)/assets
 
 run:
 	@./$(BIN_DIR)/$(TARGET)
