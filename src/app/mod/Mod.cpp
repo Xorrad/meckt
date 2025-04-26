@@ -1078,6 +1078,8 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
     for(auto& [key, pair] : data->GetMap()) {
         auto& [op, value] = pair;
 
+        ASSERT_IS_OBJECT("title", value, key, filePath);
+
         // Need to check if the key is a title (starts with e_, k_, d_, c_ or b_)
         // because it could be attributes such as color, capital, can_create...
 
