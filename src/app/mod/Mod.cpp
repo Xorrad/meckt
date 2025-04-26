@@ -1078,8 +1078,6 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
     for(auto& [key, pair] : data->GetMap()) {
         auto& [op, value] = pair;
 
-        ASSERT_IS_OBJECT("title", value, key, filePath);
-
         // Need to check if the key is a title (starts with e_, k_, d_, c_ or b_)
         // because it could be attributes such as color, capital, can_create...
 
@@ -1253,6 +1251,7 @@ void Mod::ExportDefaultMapFile() {
     // TODO: add error log if file can't be opened.
 
     std::ofstream file(m_Dir + "/map_data/default.map", std::ios::out);
+    File::EncodeToUTF8BOM(file);
 
     #define PRINT_DATA(key, def) fmt::println(file, "{} = {}", key, data->Get(key)->As<std::string>(def)); data->Remove(key)
     #define FORMAT_LIST(key) zonesData->Get(key)->SerializeArrayRange(key, Jomini::Operator::EQUAL, 0)
@@ -1317,6 +1316,7 @@ void Mod::ExportProvincesDefinition() {
 void Mod::ExportProvincesTerrain() {
     std::filesystem::create_directories(m_Dir + "/common/province_terrain/");
     std::ofstream file(m_Dir + "/common/province_terrain/00_province_terrain.txt", std::ios::out);
+    File::EncodeToUTF8BOM(file);
 
     fmt::println(file, "default_land={}", m_DefaultLandTerrain);
     fmt::println(file, "default_sea={}", m_DefaultSeaTerrain);
@@ -1355,6 +1355,7 @@ void Mod::ExportProvincesHistory() {
         // Provinces history are grouped by kingdoms.
         std::string filePath = fmt::format("{}/00_{}_prov.txt", dir, kingdomTitle->GetName());
         std::ofstream file = std::ofstream(filePath, std::ios::out);
+        File::EncodeToUTF8BOM(file);
 
         for(const auto& duchyTitle : kingdomHighTitle->GetDejureTitles()) {
             SharedPtr<HighTitle> duchyHighTitle = CastSharedPtr<HighTitle>(duchyTitle);
@@ -1458,8 +1459,10 @@ void Mod::ExportTitlesHistory() {
         std::string filePath = title->GetOriginalHistoryFilePath();
         if(filePath.empty())
             filePath = dir + "/" + GetTitleFileName(title) + ".txt";
-        if(files.count(filePath) == 0)
+        if(files.count(filePath) == 0) {
             files[filePath] = std::ofstream(filePath, std::ios::out);
+            File::EncodeToUTF8BOM(files[filePath]);
+        }
         std::ofstream& file = files[filePath];
         
         SharedPtr<Jomini::Object> history = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
@@ -1544,7 +1547,8 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
 
 void Mod::ExportTitlesLocalization() {
     std::filesystem::create_directories(std::filesystem::path(m_TitlesLocalizationFilePath).parent_path());
-    std::ofstream file(m_TitlesLocalizationFilePath);
+    std::ofstream file(m_TitlesLocalizationFilePath, std::ios::out);
+    File::EncodeToUTF8BOM(file);
 
     fmt::println(file, "l_english:");
     for(auto [type, titles] : m_TitlesByType) {
@@ -1564,7 +1568,8 @@ void Mod::ExportTitlesLocalization() {
 
 void Mod::ExportCulturalNamesLocalization() {
     std::filesystem::create_directories(std::filesystem::path(m_CulturalNamesLocalizationFilePath).parent_path());
-    std::ofstream file(m_CulturalNamesLocalizationFilePath);
+    std::ofstream file(m_CulturalNamesLocalizationFilePath, std::ios::out);
+    File::EncodeToUTF8BOM(file);
 
     fmt::println(file, "l_english:");
     for(auto [key, name] : m_LocCulturalNames["english"]) {

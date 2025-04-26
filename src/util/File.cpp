@@ -64,6 +64,7 @@ std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath)
 
 void File::EncodeToUTF8BOM(std::ofstream& file) {
     unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
+    file.seekp(file.beg);
     file.write(reinterpret_cast<char*>(bom), sizeof(bom));
 }
 
@@ -72,9 +73,11 @@ void File::OpenFile(const std::string& path) {
     std::string windowsPath = path;
     std::replace(windowsPath.begin(), windowsPath.end(), '/', '\\');
     std::string command = "start \"\" \"" + windowsPath + "\"";
-    std::system(command.c_str());
+    if(!std::system(command.c_str()))
+        return;
 #elif __linux__
     std::string command = "xdg-open \"" + path + "\"";
-    system(command.c_str());
+    if(!system(command.c_str()))
+        return;
 #endif
 }
