@@ -126,7 +126,7 @@ bool Title::HasLocName(const std::string& lang) const {
     auto it = m_LocNames.find(lang);
     if (it == m_LocNames.end())
         return false;
-    return it->second.empty();
+    return !it->second.empty();
 }
 
 void Title::SetLocName(const std::string& lang, std::string name) {
@@ -151,7 +151,7 @@ bool Title::HasLocAdjective(const std::string& lang) const {
     auto it = m_LocAdjectives.find(lang);
     if (it == m_LocAdjectives.end())
         return false;
-    return it->second.empty();
+    return !it->second.empty();
 }
 
 void Title::SetLocAdjective(const std::string& lang, std::string adjective) {
@@ -176,7 +176,7 @@ bool Title::HasLocArticle(const std::string& lang) const {
     auto it = m_LocArticles.find(lang);
     if (it == m_LocArticles.end())
         return false;
-    return it->second.empty();
+    return !it->second.empty();
 }
 
 void Title::SetLocArticle(const std::string& lang, std::string article) {

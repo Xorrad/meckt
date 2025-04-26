@@ -776,6 +776,8 @@ void EditorMenu::RenderModals() {
         static bool generateNames = true;
         static bool generateAdjectives = true;
 
+        ImGui::Text("This will not overwrite existing localization.");
+
         ImGui::Checkbox("names   ", &generateNames);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "k_isle_of_man -> Isle of Man");
