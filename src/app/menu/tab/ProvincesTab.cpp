@@ -33,7 +33,7 @@ void ProvincesTab::Render() {
         ImGui::TableHeadersRow();
 
         for(const auto& [colorId, province] : mod->GetProvinces()) {
-            if(filteredProvinces.count(province->GetName()) > 0 && !filteredProvinces[province->GetName()])
+            if(filteredProvinces.contains(province->GetName()) && !filteredProvinces[province->GetName()])
                 continue;
 
             ImGui::TableNextRow();

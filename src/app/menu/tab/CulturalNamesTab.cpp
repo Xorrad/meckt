@@ -12,16 +12,14 @@ void CulturalNamesTab::Render() {
 
     const SharedPtr<Mod> mod = this->GetMod();
 
-    // Generate a map of whether a title is filtered by name or not.
+    // Generate a map of whether a cultural name is filtered by name or not.
     static std::string filter = "";
     static std::map<std::string, bool> filteredNames;
     if(ImGui::InputText("filter", &filter)) {
         filteredNames.clear();
 
         for(const auto& [key, name] : mod->GetLocCulturalNames("english")) {
-            if(key.find(filter) == std::string::npos && name.find(filter) == std::string::npos)
-                continue;
-            filteredNames[key] = true;
+            filteredNames[key] = (key.find(filter) != std::string::npos || name.find(filter) != std::string::npos);
         }
     }
 
@@ -52,8 +50,10 @@ void CulturalNamesTab::Render() {
             std::string key = it->first;
             std::string& name = it->second;
 
-            if(filteredNames.count(key) > 0 && !filteredNames[key])
-                return;
+            if(filteredNames.contains(key) && !filteredNames[key]) {
+                ++it;
+                continue;
+            }
 
             ImGui::TableNextRow();
             

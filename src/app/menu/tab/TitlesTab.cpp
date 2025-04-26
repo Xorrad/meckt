@@ -57,7 +57,7 @@ void TitlesTab::Render() {
         ImGui::TableHeadersRow();
 
         std::function<void(const SharedPtr<Title>&)> DisplayTitle = [&](const SharedPtr<Title>& title) {
-            if(filteredTitles.count(title->GetName()) > 0 && !filteredTitles[title->GetName()])
+            if(filteredTitles.contains(title->GetName()) && !filteredTitles[title->GetName()])
                 return;
 
             ImGui::TableNextRow();
