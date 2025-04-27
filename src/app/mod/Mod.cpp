@@ -876,15 +876,22 @@ void Mod::LoadTitlesHistory() {
             for(const auto& [strDate, pair2] : value->GetMap()) {
                 // TODO: check if key is a correct date.
                 auto& [op2, history] = pair2;
-                Jomini::Date date = Jomini::Date(strDate);
+                Jomini::Date date;
+                try {
+                    Jomini::Date date = Jomini::Date(strDate);
+                }
+                catch (std::exception& e) {
+                    LOG_ERROR("Invalid date syntax '{}' for title '{}' in {}", strDate, key, filePath);
+                    continue;
+                }
                 if (history->Is(Jomini::Type::ARRAY)) {
                     LOG_ERROR("Invalid date syntax '{}' for title '{}' history in {}. Probably duplicate date definition.", strDate, key, filePath);
                     Jomini::ObjectArray array = history->GetArray();
                     if (!array.empty() && array.front()->Is(Jomini::Type::OBJECT))
-                        m_Titles[key]->AddHistory(Jomini::Date(date), array.front());
+                        m_Titles[key]->AddHistory(date, array.front());
                     continue;
                 }
-                m_Titles[key]->AddHistory(Jomini::Date(date), history);
+                m_Titles[key]->AddHistory(date, history);
             }
         }
     }
