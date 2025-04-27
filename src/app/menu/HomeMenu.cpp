@@ -105,7 +105,7 @@ void HomeMenu::Render() {
 
     ImGui::End();
     
-    if (showUpdateModal && !m_App->GetUpdateDetails().shouldUpdate)
+    if (showUpdateModal && m_App->GetUpdateDetails().shouldUpdate)
         ImGui::OpenPopup("Update");
     else if (!error.empty())
         ImGui::OpenPopup("Error");
