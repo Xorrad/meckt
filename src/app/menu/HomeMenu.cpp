@@ -17,6 +17,7 @@ void HomeMenu::Event(const sf::Event& event) {
 
 void HomeMenu::Render() {
     static std::string error = "";
+    static bool showUpdateModal = true;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10));
     ImGui::SetNextWindowSize(ImVec2(m_App->GetWindow().getSize().x - 20, m_App->GetWindow().getSize().y - 20), ImGuiCond_Always);
@@ -103,11 +104,49 @@ void HomeMenu::Render() {
     }
 
     ImGui::End();
-
-    // ERROR : modal begin
-    if (!error.empty())
+    
+    if (showUpdateModal && !m_App->GetUpdateDetails().shouldUpdate)
+        ImGui::OpenPopup("Update");
+    else if (!error.empty())
         ImGui::OpenPopup("Error");
+
+    // UPDATE : modal begin
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(400.f, 0.f));
+    if(ImGui::BeginPopupModal("Update", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("A newer version is available!");
+        ImGui::Text(fmt::format("Current: v{} -> Latest: v{}", Configuration::buildVersion, m_App->GetUpdateDetails().lastBuildVersion).c_str());
+
+        bool hasError = !m_App->GetUpdateDetails().error.empty();
+        if (hasError) {
+            ImGui::PushTextWrapPos();
+            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_App->GetUpdateDetails().error.c_str());
+            ImGui::PopTextWrapPos();
+        }
+        ImGui::Separator();
+
+        ImGui::SetItemDefaultFocus();
+        if (hasError) ImGui::BeginDisabled();
+        if(ImGui::Button("Download", ImVec2(120, 0))) {
+            m_App->GetUpdateDetails().error = Update::Update(m_App->GetUpdateDetails());
+
+            // Only restart if the download has been successful.
+            if (m_App->GetUpdateDetails().error.empty())
+                m_App->GetWindow().close();
+        }
+        if (hasError) ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        if(ImGui::Button("Close", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            showUpdateModal = false;
+        }
+        ImGui::EndPopup();
+    }
+    // UPDATE: modal end
+    
+    // ERROR : modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), error.c_str());

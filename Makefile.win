@@ -45,7 +45,7 @@ endif
 
 # Libraries
 LDFLAGS := -L$(VENDOR_DIR)/lib/fmt -lfmt_win \
-           -L$(VENDOR_DIR)/lib/nfd -lnfd_win -lcomctl32 -lole32 -luuid \
+           -L$(VENDOR_DIR)/lib/nfd -lnfd_win -lcomctl32 -lole32 -luuid -lcurl \
            -L$(SFML_DIR)/lib/ -lsfml-graphics-s -lsfml-window-s -lsfml-system-s \
            -lopengl32 -lfreetype -lgdi32 -lwinmm -ldsound -lws2_32 \
            -ldbghelp -lpsapi \

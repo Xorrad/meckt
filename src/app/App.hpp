@@ -6,6 +6,7 @@
 
 #include "menu/Menu.hpp"
 #include "mod/Mod.hpp"
+#include "Update.hpp"
 
 class App {
 public:
@@ -15,6 +16,7 @@ public:
 
     sf::RenderWindow& GetWindow();
     SharedPtr<Mod> GetMod();
+    Update::Details& GetUpdateDetails();
 
     void DebugSettings();
     void OpenMod(SharedPtr<Mod> mod);
@@ -33,4 +35,6 @@ private:
 
     UniquePtr<Menu> m_ActiveMenu;
     SharedPtr<Mod> m_ActiveMod;
+
+    Update::Details m_UpdateDetails;
 };

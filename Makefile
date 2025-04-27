@@ -8,7 +8,7 @@ GTKLIBS = $(shell pkg-config --libs gtk+-3.0)
 
 # Compiler flags
 CXX      := g++-13
-CXXFLAGS := -std=c++20 -pedantic-errors -Wall -Wno-format-security -Wno-sign-compare
+CXXFLAGS := -std=c++20 -pedantic-errors -Wall -Wno-format-security -Wno-sign-compare -Wno-unused-but-set-variable
 
 # Targets
 TARGET   := meckt
@@ -49,7 +49,7 @@ endif
 LDFLAGS :=  -L$(VENDOR_DIR)/lib/fmt -lfmt \
 			-L$(VENDOR_DIR)/lib/backward/ -lbackward \
 			-L$(VENDOR_DIR)/lib/nfd/ -lnfd \
-			-L/usr/lib -lstdc++ -lm -lbfd -ldl -ldw -lsfml-graphics -lsfml-window -lsfml-system -lGL
+			-L/usr/lib -lstdc++ -lm -lbfd -ldl -ldw -lsfml-graphics -lsfml-window -lsfml-system -lGL -lcurl
 
 .PHONY: all build clean info run
 all: build $(BIN_DIR)/$(TARGET)

@@ -20,6 +20,10 @@ SharedPtr<Mod> App::GetMod() {
     return m_ActiveMod;
 }
 
+Update::Details& App::GetUpdateDetails() {
+    return m_UpdateDetails;
+}
+
 void App::DebugSettings() {
     this->OpenMod(MakeShared<Mod>("tests/mods/test_hae/"));
 }
@@ -59,6 +63,10 @@ void App::Init() {
     ImGui::SetupSettings();
     ImGui::SetupFonts();
     ImGui::SetupStyle();
+
+    m_UpdateDetails = Update::QueryDetails();
+    if (!m_UpdateDetails.error.empty())
+        LOG_ERROR("Failed to check for updates: {}", m_UpdateDetails.error);
 
 #ifdef DEBUG
     LOG_INFO("DEBUG_MODE is enabled", "");
