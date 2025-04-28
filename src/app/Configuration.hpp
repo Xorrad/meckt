@@ -27,7 +27,12 @@ public:
     inline static std::string buildVersion = "1.6.0";
     inline static std::string buildCredits = "made by Xorrad";
     inline static std::string githubURL = "https://github.com/Xorrad/meckt";
+    
+    // Saved settings
+    inline static std::string settingsFile = "settings.yml";
+    inline static std::list<std::string> recentMods = std::list<std::string>{};
 
+    // Graphics
     inline static sf::Vector2u windowResolution = {800, 600};
     
     // Resources
@@ -36,6 +41,8 @@ public:
     inline static ResourceManager<sf::Shader, Shaders> shaders = ResourceManager<sf::Shader, Shaders>();
 
     static void Initialize();
+    static void Load();
+    static void Save();
 
 private:
     static void InitializeTextures();

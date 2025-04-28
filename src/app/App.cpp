@@ -25,7 +25,7 @@ Update::Details& App::GetUpdateDetails() {
 }
 
 void App::DebugSettings() {
-    this->OpenMod(MakeShared<Mod>("tests/mods/test_hae/"));
+    // this->OpenMod(MakeShared<Mod>("tests/mods/test_hae/"));
 }
 
 void App::OpenMenu(UniquePtr<Menu> menu) {
@@ -33,6 +33,11 @@ void App::OpenMenu(UniquePtr<Menu> menu) {
 }
 
 void App::OpenMod(SharedPtr<Mod> mod) {
+    // Remove the mod from the recent mods list
+    // and add it back at the top of the list.
+    Configuration::recentMods.erase(std::remove(Configuration::recentMods.begin(), Configuration::recentMods.end(), mod->GetDir()), Configuration::recentMods.end());
+    Configuration::recentMods.push_front(mod->GetDir());
+
     m_ActiveMod = mod;
     Logger::Get()->Clear();
     mod->Load();
@@ -133,4 +138,8 @@ void App::Run() {
     }
 
     ImGui::SFML::Shutdown();
+
+    // TODO: Move that else where, i.e make a App::Exit or Stop function
+    // that is called whenever the app closes.
+    Configuration::Save();
 }
