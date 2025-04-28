@@ -49,6 +49,10 @@ void HomeMenu::Render() {
                 try {
                     m_App->OpenMod(mod);
                     LOG_INFO("Opened mod at {}", dirPath);
+
+                    // End the current window to avoid crash.
+                    ImGui::End();
+                    return;
                 }
                 catch (std::exception& e) {
                     LOG_INFO("Failed to load mod at {}\n{}", dirPath, e.what());
