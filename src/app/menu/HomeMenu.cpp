@@ -1,11 +1,15 @@
 #include "HomeMenu.hpp"
 #include "EditorMenu.hpp"
 #include "app/App.hpp"
+#include "ImGuiStyle.hpp"
 #include "imgui/imgui.hpp"
 #include "nfd/nfd.h"
 
 HomeMenu::HomeMenu(App* app)
-: Menu(app, "Home") {}
+: Menu(app, "Home"), m_LoadingError("") {}
+
+HomeMenu::HomeMenu(App* app, std::string loadingError)
+: Menu(app, "Home"), m_LoadingError(loadingError) {}
 
 void HomeMenu::Update(sf::Time delta) {
 
@@ -16,7 +20,6 @@ void HomeMenu::Event(const sf::Event& event) {
 }
 
 void HomeMenu::Render() {
-    static std::string error = "";
     static bool showUpdateModal = true;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10));
@@ -56,17 +59,17 @@ void HomeMenu::Render() {
                 }
                 catch (std::exception& e) {
                     LOG_INFO("Failed to load mod at {}\n{}", dirPath, e.what());
-                    error = "Failed to load mod.\nOpen an issue on GitHub or contact the developper\non Discord if the issue persists.";
+                    m_LoadingError = "Failed to load mod.\nOpen an issue on GitHub or contact the developper\non Discord if the issue persists.";
                 }
             }
             else {
                 LOG_INFO("Opened mod missing 'map_data/provinces.png' at {}", dirPath);
-                error = "This mod does not have a provinces image.";
+                m_LoadingError = "This mod does not have a provinces image.";
             }
         }
         else if(result != NFD_CANCEL) {
             LOG_ERROR("Failed to open mod at {}", NFD_GetError());
-            error = fmt::format("Failed to open mod ({})", NFD_GetError());
+            m_LoadingError = fmt::format("Failed to open mod ({})", NFD_GetError());
         }
         free(dirPath);
     }
@@ -111,7 +114,7 @@ void HomeMenu::Render() {
     
     if (showUpdateModal && m_App->GetUpdateDetails().shouldUpdate)
         ImGui::OpenPopup("Update");
-    else if (!error.empty())
+    else if (!m_LoadingError.empty())
         ImGui::OpenPopup("Error");
 
     // UPDATE : modal begin
@@ -153,7 +156,7 @@ void HomeMenu::Render() {
     // ERROR : modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), error.c_str());
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_LoadingError.c_str());
         ImGui::Separator();
 
         if(ImGui::Button("Open logs", ImVec2(120, 0))) {
@@ -164,7 +167,7 @@ void HomeMenu::Render() {
         ImGui::SameLine();
         if(ImGui::Button("Close", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            error = "";
+            m_LoadingError = "";
         }
         ImGui::EndPopup();
     }

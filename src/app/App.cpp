@@ -1,6 +1,7 @@
 #include "App.hpp"
 #include "imgui/imgui.hpp"
 #include "menu/HomeMenu.hpp"
+#include "menu/LoadingMenu.hpp"
 #include "menu/EditorMenu.hpp"
 #include "menu/ImGuiStyle.hpp"
 
@@ -10,7 +11,7 @@
 #endif
 
 App::App()
-: m_ActiveMenu(MakeUnique<HomeMenu>(this)) {}
+: m_ActiveMenu(MakeShared<HomeMenu>(this)) {}
 
 sf::RenderWindow& App::GetWindow() {
     return m_Window;
@@ -28,8 +29,8 @@ void App::DebugSettings() {
     // this->OpenMod(MakeShared<Mod>("tests/mods/test_hae/"));
 }
 
-void App::OpenMenu(UniquePtr<Menu> menu) {
-    m_ActiveMenu = std::move(menu);
+void App::OpenMenu(SharedPtr<Menu> menu) {
+    m_ActiveMenu = menu;
 }
 
 void App::OpenMod(SharedPtr<Mod> mod) {
@@ -40,8 +41,14 @@ void App::OpenMod(SharedPtr<Mod> mod) {
 
     m_ActiveMod = mod;
     Logger::Get()->Clear();
-    mod->Load();
-    this->OpenMenu(MakeUnique<EditorMenu>(this));
+
+    SharedPtr<LoadingMenu> menu = MakeShared<LoadingMenu>(
+        this,
+        [&](){ this->OpenMenu(MakeShared<EditorMenu>(this)); },
+        [&](const std::string& error){ this->OpenMenu(MakeShared<HomeMenu>(this, error)); }
+    );
+    m_ActiveMenu = menu;
+    menu->Start();
 }
 
 void App::Init() {

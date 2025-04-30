@@ -20,7 +20,7 @@ public:
 
     void DebugSettings();
     void OpenMod(SharedPtr<Mod> mod);
-    void OpenMenu(UniquePtr<Menu> menu);
+    void OpenMenu(SharedPtr<Menu> menu);
 
     void Init();
     void Run();
@@ -33,7 +33,7 @@ private:
     SignalHandler m_SignalHandler;
     #endif
 
-    UniquePtr<Menu> m_ActiveMenu;
+    SharedPtr<Menu> m_ActiveMenu;
     SharedPtr<Mod> m_ActiveMod;
 
     Update::Details m_UpdateDetails;

@@ -51,7 +51,7 @@ public:
     void GenerateMissingBaronies();
     void GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles);
 
-    void Load();
+    void Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback);
     void LoadHoldingTypes();
     void LoadTerrainTypes();
     void LoadProvinceImage();

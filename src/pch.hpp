@@ -60,6 +60,7 @@ class PropertiesTab;
 #include "util/Image.hpp"
 #include "util/OrderedMap.hpp"
 #include "app/Configuration.hpp"
+#include "app/mod/LoadingState.hpp"
 
 #include "app/map/TitleType.hpp"
 #include "app/map/MapMode.hpp"

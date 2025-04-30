@@ -480,34 +480,43 @@ void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool a
     LOG_INFO("Generated adjective localization for {} titles.", countAdjectives);
 }
 
-void Mod::Load() {
-    if(!this->HasMap())
+void Mod::Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback) {
+    if(!this->HasMap()) {
+        errorCallback(fmt::format("File {} is missing and required to load the mod.", m_Dir + "/map_data/provinces.png"));
         return;
+    }
+
+    changeCallback(LoadingState::TEXTURES);
 
     if(!m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
         LOG_ERROR("Failed to load heightmap image at ", m_Dir + "/map_data/heightmap.png");
     }
     if(!m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png")) {
-        FATAL("Failed to load provinces image at ", m_Dir + "/map_data/provinces.png");
+        std::string error = fmt::format("Failed to load provinces image at ", m_Dir + "/map_data/provinces.png");
+        LOG_ERROR("{}", error);
+        errorCallback(error);
+        return;
     }
     if(!m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
         LOG_ERROR("Failed to load rivers image at ", m_Dir + "/map_data/rivers.png");
     }
     
-    #define LOAD_CATCH(arg, name) try { arg(); } catch (std::exception& e) { throw std::runtime_error(fmt::format("Failed to load {}\n{}", name, e.what())); }
+    #define LOAD_CATCH(arg, type, name) try { changeCallback(type); arg(); } catch (std::exception& e) { errorCallback(fmt::format("Failed to load {}\n{}", name, e.what())); return; }
 
-    LOAD_CATCH(LoadHoldingTypes, "holding types");
-    LOAD_CATCH(LoadTerrainTypes, "terrain types");
-    LOAD_CATCH(LoadProvincesDefinition, "provinces definition");
-    LOAD_CATCH(LoadProvinceImage, "provinces image");
-    LOAD_CATCH(LoadDefaultMapFile, "default map");
-    LOAD_CATCH(LoadProvincesTerrain, "provinces terrain");
-    LOAD_CATCH(LoadProvincesHistory, "provinces history");
-    LOAD_CATCH(LoadTitles, "titles");
-    LOAD_CATCH(LoadTitlesHistory, "titles history");
-    LOAD_CATCH(LoadCultures, "cultures");
-    LOAD_CATCH(LoadReligions, "religions");
-    LOAD_CATCH(LoadLocalization, "localization");
+    LOAD_CATCH(LoadHoldingTypes, LoadingState::HOLDING_TYPES, "holding types");
+    LOAD_CATCH(LoadTerrainTypes, LoadingState::TERRAIN_TYPES, "terrain types");
+    LOAD_CATCH(LoadProvincesDefinition, LoadingState::PROVINCES_DEFINITION, "provinces definition");
+    LOAD_CATCH(LoadProvinceImage, LoadingState::PROVINCES_IMAGE, "provinces image");
+    LOAD_CATCH(LoadDefaultMapFile, LoadingState::DEFAULT_MAP, "default map");
+    LOAD_CATCH(LoadProvincesTerrain, LoadingState::PROVINCES_TERRAIN, "provinces terrain");
+    LOAD_CATCH(LoadProvincesHistory, LoadingState::PROVINCES_HISTORY, "provinces history");
+    LOAD_CATCH(LoadTitles, LoadingState::TITLES, "titles");
+    LOAD_CATCH(LoadTitlesHistory, LoadingState::TITLES_HISTORY, "titles history");
+    LOAD_CATCH(LoadCultures, LoadingState::CULTURES, "cultures");
+    LOAD_CATCH(LoadReligions, LoadingState::RELIGIONS, "religions");
+    LOAD_CATCH(LoadLocalization, LoadingState::LOCALIZATION, "localization");
+
+    completeCallback();
 }
 
 void Mod::LoadHoldingTypes() {
