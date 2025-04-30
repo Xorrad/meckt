@@ -1,7 +1,0 @@
-key1 = value1
-key2 = value2
-key0 = value2
-key3 = {
-    key2 = value2
-    key1 = value1
-}
