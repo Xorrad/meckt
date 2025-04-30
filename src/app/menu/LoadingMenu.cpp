@@ -48,8 +48,10 @@ void LoadingMenu::Render() {
     float centerX = windowSize.x * 0.5f + windowPos.x;
 
     ImGui::SetCursorPos(ImVec2(centerX - progressbarSize.x*0.5f, startY));
+    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.40f, 0.40f, 0.90f, 0.45f));
     ImGui::ProgressBar(((float) m_State)/LoadingStateLabels.size(), ImVec2(0.0f, 0.0f), LoadingStateLabels.at(m_State).c_str());
-
+    ImGui::PopStyleColor();
+    
     ImGui::End();
 }
 

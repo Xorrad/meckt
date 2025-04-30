@@ -26,7 +26,7 @@ Update::Details& App::GetUpdateDetails() {
 }
 
 void App::DebugSettings() {
-    // this->OpenMod(MakeShared<Mod>("tests/mods/test_hae/"));
+    this->OpenMod(MakeShared<Mod>("tests/mods/test_hae/"));
 }
 
 void App::OpenMenu(SharedPtr<Menu> menu) {
