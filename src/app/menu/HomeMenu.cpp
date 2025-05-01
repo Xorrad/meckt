@@ -5,6 +5,8 @@
 #include "imgui/imgui.hpp"
 #include "nfd/nfd.h"
 
+bool HomeMenu::s_PromptUpdate = true;
+
 HomeMenu::HomeMenu(App* app)
 : Menu(app, "Home"), m_LoadingError("") {}
 
@@ -20,7 +22,6 @@ void HomeMenu::Event(const sf::Event& event) {
 }
 
 void HomeMenu::Render() {
-    static bool showUpdateModal = true;
     std::string openedModDir("");
 
     float margin = 40.0f;
@@ -49,7 +50,6 @@ void HomeMenu::Render() {
     ImGui::PopFont();
 
     ImGui::NewLine();
-    // ImGui::SetNextItemWidth(windowSize.x - leftMargin);
     ImGui::Separator();
     ImGui::Dummy(ImVec2(0.0f, spacing));
 
@@ -150,12 +150,61 @@ void HomeMenu::Render() {
     
     ImGui::End();
 
-    if (showUpdateModal && m_App->GetUpdateDetails().shouldUpdate)
+    // Determine which modal should be displayed.
+    if (s_PromptUpdate && m_App->GetUpdateDetails().shouldUpdate) {
         ImGui::OpenPopup("Update");
-    else if (!m_LoadingError.empty())
+        this->RenderUpdateModal();
+    }
+    else if (!m_LoadingError.empty()) {
         ImGui::OpenPopup("Error");
+        this->RenderErrorModal();
+    }
 
-    // UPDATE : modal begin
+    this->RenderNewModModal();
+
+    // Open the mod at the end to avoid crashes because of ImGui.
+    if (!openedModDir.empty()) {
+        SharedPtr<Mod> mod = MakeShared<Mod>(openedModDir);
+        if(mod->HasMap()) {
+            try {
+                m_App->OpenMod(mod);
+                LOG_INFO("Opened mod at {}", openedModDir);
+            }
+            catch (std::exception& e) {
+                LOG_INFO("Failed to load mod at {}\n{}", openedModDir, e.what());
+                m_LoadingError = "Failed to load mod.\nOpen an issue on GitHub or contact the developper\non Discord if the issue persists.";
+            }
+        }
+        else {
+            LOG_INFO("Opened mod missing 'map_data/provinces.png' at {}", openedModDir);
+            m_LoadingError = "This mod does not have a provinces image.";
+        }
+        openedModDir.clear();
+    }
+}
+
+void HomeMenu::RenderErrorModal() {
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_LoadingError.c_str());
+        ImGui::Separator();
+
+        if(ImGui::Button("Open logs", ImVec2(120, 0))) {
+            File::OpenFile("logs");
+        }
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Close", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            m_LoadingError = "";
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void HomeMenu::RenderUpdateModal() {
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(400.f, 0.f));
@@ -185,49 +234,12 @@ void HomeMenu::Render() {
         ImGui::SameLine();
         if(ImGui::Button("Close", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            showUpdateModal = false;
+            s_PromptUpdate = false;
         }
         ImGui::EndPopup();
     }
-    // UPDATE: modal end
-    
-    // ERROR : modal begin
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if(ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_LoadingError.c_str());
-        ImGui::Separator();
+}
 
-        if(ImGui::Button("Open logs", ImVec2(120, 0))) {
-            File::OpenFile("logs");
-        }
+void HomeMenu::RenderNewModModal() {
 
-        ImGui::SetItemDefaultFocus();
-        ImGui::SameLine();
-        if(ImGui::Button("Close", ImVec2(120, 0))) {
-            ImGui::CloseCurrentPopup();
-            m_LoadingError = "";
-        }
-        ImGui::EndPopup();
-    }
-    // ERROR: modal end
-
-    // Open the mod at the end to avoid crashes because of ImGui.
-    if (!openedModDir.empty()) {
-        SharedPtr<Mod> mod = MakeShared<Mod>(openedModDir);
-        if(mod->HasMap()) {
-            try {
-                m_App->OpenMod(mod);
-                LOG_INFO("Opened mod at {}", openedModDir);
-            }
-            catch (std::exception& e) {
-                LOG_INFO("Failed to load mod at {}\n{}", openedModDir, e.what());
-                m_LoadingError = "Failed to load mod.\nOpen an issue on GitHub or contact the developper\non Discord if the issue persists.";
-            }
-        }
-        else {
-            LOG_INFO("Opened mod missing 'map_data/provinces.png' at {}", openedModDir);
-            m_LoadingError = "This mod does not have a provinces image.";
-        }
-        openedModDir.clear();
-    }
 }
