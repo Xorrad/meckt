@@ -60,7 +60,7 @@ void App::Init() {
     m_DeltaClock.restart();
 
     // Initialize SFML.
-    m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), "Meckt");
+    m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), fmt::format("meckt - v{}", Configuration::buildVersion));
     m_Window.setVerticalSyncEnabled(true);
 #if _WIN32
     ShowWindow(m_Window.getSystemHandle(), SW_MAXIMIZE);
