@@ -21,51 +21,59 @@ void HomeMenu::Event(const sf::Event& event) {
 
 void HomeMenu::Render() {
     static bool showUpdateModal = true;
+    std::string openedModDir("");
+
+    float margin = 40.0f;
+    float spacing = 2.5f;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10));
     ImGui::SetNextWindowSize(ImVec2(m_App->GetWindow().getSize().x - 20, m_App->GetWindow().getSize().y - 20), ImGuiCond_Always);
-    ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(margin, 0.0f));
+    ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
 
     ImVec2 windowSize = ImGui::GetWindowSize();
     ImVec2 windowPos = ImGui::GetWindowPos();
+    float marginTop = 0.08f * windowSize.y;
 
-    float spacing = 20.0f;
-    ImVec2 buttonSize = ImVec2(200.0f, 50.0f);
+    ImGui::SetCursorPos(ImVec2(margin, marginTop));
 
-    const sf::Texture& logoTexture = Configuration::textures.Get(Textures::LOGO);
+    // Title.
+    ImGui::PushFont(ImGui::notoSansLargeFont);
+    ImGui::TextColored(ImVec4(0.26f, 0.59f, 0.98f, 1.00f), "meckt");
+    ImGui::PopFont();
 
-    float totalHeight = logoTexture.getSize().y + buttonSize.y * 2 + spacing * 2;
-    float startY = (windowSize.y - totalHeight) * 0.4f + windowPos.y;
-    float centerX = windowSize.x * 0.5f + windowPos.x;
+    // Version and credits.
+    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), fmt::format("v{} - {}", Configuration::buildVersion, Configuration::buildCredits).c_str());
+    ImGui::PopFont();
 
-    ImGui::SetCursorPos(ImVec2(centerX - logoTexture.getSize().x*0.5f, startY));
-    ImGui::Image(logoTexture);
+    ImGui::NewLine();
+    // ImGui::SetNextItemWidth(windowSize.x - leftMargin);
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, spacing));
 
-    ImGui::SetCursorPos(ImVec2(centerX - buttonSize.x*0.5f, startY + logoTexture.getSize().y + spacing));
-    if(ImGui::Button("Open mod", buttonSize)) {
+    // Start section (new project, open directory...).
+    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::Text("Start");
+    ImGui::PopFont();
+
+    ImGui::PushFont(ImGui::notoSansNormalFont);
+
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+    if (ImGui::TextButton("📝  New Mod...")) {
+
+    }
+    if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("Create a mod from scratch.");
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+    if (ImGui::TextButton("📁  Open Folder...")) {
         nfdchar_t *dirPath = NULL;
         nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
             
         if(result == NFD_OKAY) {
-            SharedPtr<Mod> mod = MakeShared<Mod>(std::string(dirPath));
-            if(mod->HasMap()) {
-                try {
-                    m_App->OpenMod(mod);
-                    LOG_INFO("Opened mod at {}", dirPath);
-
-                    // End the current window to avoid crash.
-                    ImGui::End();
-                    return;
-                }
-                catch (std::exception& e) {
-                    LOG_INFO("Failed to load mod at {}\n{}", dirPath, e.what());
-                    m_LoadingError = "Failed to load mod.\nOpen an issue on GitHub or contact the developper\non Discord if the issue persists.";
-                }
-            }
-            else {
-                LOG_INFO("Opened mod missing 'map_data/provinces.png' at {}", dirPath);
-                m_LoadingError = "This mod does not have a provinces image.";
-            }
+            openedModDir = std::string(dirPath);
         }
         else if(result != NFD_CANCEL) {
             LOG_ERROR("Failed to open mod at {}", NFD_GetError());
@@ -74,44 +82,74 @@ void HomeMenu::Render() {
         free(dirPath);
     }
     if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("Select a mod directory (with descriptor file)");
+        ImGui::SetTooltip("Select a mod root directory.");
     }
 
-    ImGui::SetCursorPos(ImVec2(centerX - buttonSize.x*0.5f, startY + logoTexture.getSize().y + spacing * 2 + buttonSize.y));
-    if(ImGui::Button("Exit", buttonSize)) {
-        m_App->GetWindow().close();
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+    ImGui::BeginDisabled();
+    if (ImGui::TextButton("🔧  Fix Files...")) {
+
     }
+    if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("Not implemented yet.");
+    }
+    ImGui::EndDisabled();
 
-    ImVec2 textSize = ImGui::CalcTextSize(Configuration::buildVersion.c_str());
-    ImGui::SetCursorPos(ImVec2(5.0f, windowSize.y - textSize.y - 5.0f));
-    ImGui::Text(Configuration::buildVersion.c_str());
+    ImGui::PopFont();
 
-    textSize = ImGui::CalcTextSize(Configuration::buildCredits.c_str());
-    ImVec2 creditsPos = ImVec2(windowSize.x - textSize.x - 5.0f, windowSize.y - textSize.y - 5.0f);
-    ImGui::SetCursorPos(creditsPos);
-    creditsPos = ImGui::GetCursorScreenPos();
-    ImGui::Text(Configuration::buildCredits.c_str());
-    if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+    ImGui::NewLine();
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+
+    // Recent section (last opened mod directories).
+    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::Text("Recent");
+    ImGui::PopFont();
+
+    ImGui::PushFont(ImGui::notoSansNormalFont);
+    int i = 0;
+    for (auto dir : Configuration::recentMods) {
+        if (i == 5) break;
+        if (dir.ends_with("/")) dir.pop_back();
+        std::filesystem::path path(dir);
+
+        ImGui::Dummy(ImVec2(0.0f, spacing));
+        if (ImGui::TextButton(path.filename().c_str())) {
+            openedModDir = dir;
+            break;
+        }
+        ImGui::SameLine();
+        ImGui::Dummy(ImVec2(5.0f, 0.0f));
+        ImGui::SameLine();
+        ImGui::Text(std::filesystem::absolute(path).c_str());
+        i++;
+    }
+    ImGui::PopFont();
+
+    ImGui::NewLine();
+    ImGui::Separator();
+    ImGui::NewLine();
+
+    // Other section.
+    ImGui::PushFont(ImGui::notoSansNormalFont);
+    if (ImGui::TextButton("🐛 Report an issue")) {
         std::string command;
 #ifdef _WIN32
-        command = "start " + Configuration::githubURL;
+        command = "start " + Configuration::githubURL + "/issues";
 #else
-        command = "xdg-open " + Configuration::githubURL + "&>/dev/null";
+        command = "xdg-open " + Configuration::githubURL + "/issues" + "&>/dev/null";
 #endif
         if(std::system(command.c_str())) {}
     }
-    if(ImGui::IsItemHovered()) {
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        draw_list->AddLine(
-            ImVec2(creditsPos.x - 2.0f, creditsPos.y + textSize.y + 0.5f),
-            ImVec2(creditsPos.x + textSize.x + 2.0f, creditsPos.y + textSize.y + 0.5f),
-            ImGui::GetColorU32(ImGuiCol_Text),
-            1.0f
-        );
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+    if (ImGui::TextButton("❌ Exit")) {
+        m_App->GetWindow().close();
     }
-
-    ImGui::End();
+    ImGui::PopFont();
     
+    ImGui::End();
+    ImGui::PopStyleVar();
+
     if (showUpdateModal && m_App->GetUpdateDetails().shouldUpdate)
         ImGui::OpenPopup("Update");
     else if (!m_LoadingError.empty())
@@ -172,4 +210,24 @@ void HomeMenu::Render() {
         ImGui::EndPopup();
     }
     // ERROR: modal end
+
+    // Open the mod at the end to avoid crashes because of ImGui.
+    if (!openedModDir.empty()) {
+        SharedPtr<Mod> mod = MakeShared<Mod>(openedModDir);
+        if(mod->HasMap()) {
+            try {
+                m_App->OpenMod(mod);
+                LOG_INFO("Opened mod at {}", openedModDir);
+            }
+            catch (std::exception& e) {
+                LOG_INFO("Failed to load mod at {}\n{}", openedModDir, e.what());
+                m_LoadingError = "Failed to load mod.\nOpen an issue on GitHub or contact the developper\non Discord if the issue persists.";
+            }
+        }
+        else {
+            LOG_INFO("Opened mod missing 'map_data/provinces.png' at {}", openedModDir);
+            m_LoadingError = "This mod does not have a provinces image.";
+        }
+        openedModDir.clear();
+    }
 }
