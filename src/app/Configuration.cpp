@@ -39,7 +39,7 @@ void Configuration::Save() {
 }
 
 void Configuration::InitializeTextures() {
-    textures.Load(Textures::LOGO, "assets/textures/logo.png");
+    // textures.Load(Textures::LOGO, "assets/textures/logo.png");
 }
 
 void Configuration::InitializeFonts() {
