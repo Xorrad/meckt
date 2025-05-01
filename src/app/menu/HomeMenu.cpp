@@ -30,6 +30,7 @@ void HomeMenu::Render() {
     ImGui::SetNextWindowSize(ImVec2(m_App->GetWindow().getSize().x - 20, m_App->GetWindow().getSize().y - 20), ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(margin, 0.0f));
     ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PopStyleVar();
 
     ImVec2 windowSize = ImGui::GetWindowSize();
     ImVec2 windowPos = ImGui::GetWindowPos();
@@ -148,7 +149,6 @@ void HomeMenu::Render() {
     ImGui::PopFont();
     
     ImGui::End();
-    ImGui::PopStyleVar();
 
     if (showUpdateModal && m_App->GetUpdateDetails().shouldUpdate)
         ImGui::OpenPopup("Update");
