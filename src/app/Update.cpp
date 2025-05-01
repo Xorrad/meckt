@@ -42,22 +42,23 @@ Update::Details Update::QueryDetails() {
             // Parse JSON to get the latest build version and appropriate download url.
             auto json = nlohmann::json::parse(buffer);
             result.lastBuildVersion = std::string(json["tag_name"]).substr(1);
+            result.lastBuildURL = std::string(json["html_url"]);
 
             for (auto asset : json["assets"]) {
     #ifdef _WIN32
                 if (asset["name"].starts_with("win")) {
-                    result.lastBuildURL = asset["browser_download_url"];
+                    result.lastBuildDownloadURL = asset["browser_download_url"];
                     break;
                 }
     #elif __linux__
                 if (std::string(asset["name"]).starts_with("deb")) {
-                    result.lastBuildURL = asset["browser_download_url"];
+                    result.lastBuildDownloadURL = asset["browser_download_url"];
                     break;
                 }
     #endif
             }
 
-            if (result.lastBuildURL.empty())
+            if (result.lastBuildDownloadURL.empty())
                 result.error = fmt::format("Failed to find download URL.");
 
             try {
@@ -105,7 +106,7 @@ std::string Update::Update(const Details& details) {
         if (!file)
             return fmt::format("Failed to open file for writing: {}; {}", errno, strerror(errno));
         
-        curl_easy_setopt(curl, CURLOPT_URL, details.lastBuildURL.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, details.lastBuildDownloadURL.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteFileCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);

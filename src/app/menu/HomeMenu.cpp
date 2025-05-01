@@ -232,6 +232,17 @@ void HomeMenu::RenderUpdateModal() {
         if (hasError) ImGui::EndDisabled();
 
         ImGui::SameLine();
+        if(ImGui::Button("Open GitHub", ImVec2(120, 0))) {
+            std::string command;
+#ifdef _WIN32
+            command = "start " + m_App->GetUpdateDetails().lastBuildURL;
+#else
+            command = "xdg-open " + m_App->GetUpdateDetails().lastBuildURL + "&>/dev/null";
+#endif
+            if(std::system(command.c_str())) {}
+        }
+
+        ImGui::SameLine();
         if(ImGui::Button("Close", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
             s_PromptUpdate = false;
