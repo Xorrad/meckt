@@ -501,7 +501,7 @@ void Mod::Load(std::function<void()> completeCallback, std::function<void(Loadin
         LOG_ERROR("Failed to load rivers image at ", m_Dir + "/map_data/rivers.png");
     }
     
-    #define LOAD_CATCH(arg, type, name) try { changeCallback(type); arg(); } catch (std::exception& e) { errorCallback(fmt::format("Failed to load {}\n{}", name, e.what())); return; }
+    #define LOAD_CATCH(arg, type, name) try { changeCallback(type); arg(); } catch (std::exception& e) { std::string msg = fmt::format("Failed to load {}\n{}", name, e.what()); LOG_ERROR("{}", msg); errorCallback(msg); return; }
 
     LOAD_CATCH(LoadHoldingTypes, LoadingState::HOLDING_TYPES, "holding types");
     LOAD_CATCH(LoadTerrainTypes, LoadingState::TERRAIN_TYPES, "terrain types");
