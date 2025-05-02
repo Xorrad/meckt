@@ -205,7 +205,7 @@ void NewModMenu::UpdateProvincesImage(const std::string& filePath) {
 }
 
 void NewModMenu::UpdateLandmassTextures() {
-    {
+    if (m_HeightmapTexture.getSize().x > 0) {
         // Update the landmass texture using the water level and the heightmap.
         sf::Shader& shader = Configuration::shaders.Get(Shaders::HEIGHTMAP_LANDMASS);
         shader.setUniform("texture", sf::Shader::CurrentTexture);
