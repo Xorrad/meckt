@@ -12,8 +12,8 @@ enum class TemplateType {
     HEIGHTMAP_IMAGE // Generate a provinces image using Voronoi and simulate conquests between neighbours.
 };
 const std::map<TemplateType, std::pair<std::string, std::string>> TemplateTypeLabels = {
-    { TemplateType::DEFAULT, {"Default", "Default Atlantis template."} },
-    { TemplateType::BLANK, {"Blank", "Empty map without any provinces or titles."} },
+    { TemplateType::DEFAULT, {"Default", "Clone the default Atlantis template."} },
+    { TemplateType::BLANK, {"Blank", "Create an empty map without any provinces or titles."} },
     { TemplateType::PROVINCES_IMAGE, {"Provinces Image", "Generate provinces from an image."} },
     { TemplateType::HEIGHTMAP_IMAGE, {"Heightmap Image", "Generate provinces from an heightmap."} }
 };
