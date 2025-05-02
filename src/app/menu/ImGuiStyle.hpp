@@ -1,5 +1,6 @@
 #pragma once
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui/imgui.hpp>
 
 namespace ImGui {
@@ -14,4 +15,5 @@ namespace ImGui {
     bool ColorEdit3(const char* label, sf::Color* color, ImGuiColorEditFlags flags = 0);
     bool CheckBoxTristate(const char* label, int* v_tristate);
     bool TextButton(const char* label);
+    bool InputTextLocked(const char* label, std::string* str);
 }

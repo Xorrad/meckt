@@ -1,0 +1,167 @@
+#include "NewModMenu.hpp"
+
+#include "app/App.hpp"
+
+#include "HomeMenu.hpp"
+#include "EditorMenu.hpp"
+
+#include "ImGuiStyle.hpp"
+#include "imgui/imgui.hpp"
+#include "nfd/nfd.h"
+#include <filesystem>
+
+NewModMenu::NewModMenu(App* app) :
+    Menu(app, "New Mod"),
+    m_ModName("My Mod"),
+    m_ModPath(std::filesystem::current_path().string() + "/my_mod"),
+    m_TemplateType(TemplateType::DEFAULT),
+    m_ProvincesImagePath(""),
+    m_HeightmapImagePath(""),
+    m_WaterLevel(3.8f)
+{}
+
+void NewModMenu::Update(sf::Time delta) {
+
+}
+
+void NewModMenu::Event(const sf::Event& event) {
+
+}
+
+void NewModMenu::Render() {
+    float margin = 40.0f;
+    float spacing = 2.5f;
+
+    ImGui::SetNextWindowPos(ImVec2(10, 10));
+    ImGui::SetNextWindowSize(ImVec2(m_App->GetWindow().getSize().x - 20, m_App->GetWindow().getSize().y - 20), ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(margin, 0.0f));
+    ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PopStyleVar();
+
+    ImVec2 windowSize = ImGui::GetWindowSize();
+    ImVec2 windowPos = ImGui::GetWindowPos();
+    float marginTop = 0.08f * windowSize.y;
+    float availableWidth = windowSize.x - 2.0f*margin - spacing;
+
+    ImGui::SetCursorPos(ImVec2(margin, marginTop));
+
+    // Menu Title.
+    ImGui::PushFont(ImGui::notoSansLargeFont);
+    ImGui::TextColored(ImVec4(0.26f, 0.59f, 0.98f, 1.00f), "Create a new mod");
+    ImGui::PopFont();
+
+    ImGui::NewLine();
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+
+    // Configuration section.
+    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::Text("Configuration");
+    ImGui::PopFont();
+
+    ImGui::PushFont(ImGui::notoSansNormalFont);
+
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+
+    //  Text input for mod name.
+    ImGui::SetNextItemWidth(availableWidth/4.f);
+    ImGui::InputText("name", &m_ModName);
+
+    // Text input for path to the mod directory.
+    ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
+    if (ImGui::InputTextLocked("path", &m_ModPath)) {
+        nfdchar_t *dirPath = NULL;
+        nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
+            
+        if(result == NFD_OKAY) {
+            m_ModPath = std::string(dirPath);
+        }
+        else if(result != NFD_CANCEL) {
+            // TODO: display errors.
+        }
+        free(dirPath);
+    }
+
+    // Combobox for the template preset (Default, Blank, Provinces, Heightmap...).
+    ImGui::SetNextItemWidth(availableWidth/4.0f);
+    if (ImGui::BeginCombo("template", TemplateTypeLabels.at(m_TemplateType).first.c_str())) {
+        for (int i = 0; i < TemplateTypeLabels.size(); i++) {
+            TemplateType type = (TemplateType) i;
+            const bool isSelected = (m_TemplateType == type);
+            if (ImGui::Selectable(TemplateTypeLabels.at(type).first.c_str(), isSelected))
+                m_TemplateType = type;
+            if(ImGui::IsItemHovered())
+                ImGui::SetTooltip(TemplateTypeLabels.at(type).second.c_str());
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    if (m_TemplateType == TemplateType::PROVINCES_IMAGE || m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
+        // Text input for the path to the heightmap image.
+        ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
+        if (ImGui::InputTextLocked("heightmap image", &m_HeightmapImagePath)) {
+            nfdchar_t* filePath = NULL;
+            nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
+                
+            if(result == NFD_OKAY) {
+                m_HeightmapImagePath = std::string(filePath);
+            }
+            else if(result != NFD_CANCEL) {
+                // TODO: display errors.
+            }
+            free(filePath);
+        }
+    }
+    if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+        // Text input for the path to the provinces image.
+        ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
+        if (ImGui::InputTextLocked("provinces image", &m_ProvincesImagePath)) {
+            nfdchar_t* filePath = NULL;
+            nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
+                
+            if(result == NFD_OKAY) {
+                m_ProvincesImagePath = std::string(filePath);
+            }
+            else if(result != NFD_CANCEL) {
+                // TODO: display errors.
+            }
+            free(filePath);
+        }
+    }
+
+    // Float input for the world water level (will be used to generate provinces).
+    ImGui::SetNextItemWidth(availableWidth/4.0f);
+    if (ImGui::InputFloat("water level", &m_WaterLevel, 0.01f, 0.1f, "%.3f"))
+        m_WaterLevel = std::max(0.0f, m_WaterLevel);
+
+    ImGui::PopFont();
+
+    ImGui::NewLine();
+    ImGui::Separator();
+    ImGui::Dummy(ImVec2(0.0f, spacing));
+
+    // Preview section (display the expected maps).
+    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::Text("Preview");
+    ImGui::PopFont();
+
+    ImGui::NewLine();
+    ImGui::Separator();
+    ImGui::NewLine();
+
+    ImGui::PushFont(ImGui::notoSansNormalFont);
+    if (ImGui::TextButton("🔨 Create")) {
+
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 2*spacing));
+    if (ImGui::TextButton("❌ Back")) {
+        m_App->OpenMenu(MakeShared<HomeMenu>(m_App));
+    }
+    
+    ImGui::PopFont();
+    
+    ImGui::End();
+}

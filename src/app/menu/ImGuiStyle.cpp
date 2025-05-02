@@ -139,3 +139,50 @@ bool ImGui::TextButton(const char* label)
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
     return pressed;
 }
+
+// Copy paste of ImGui::InputTextEx but without the cursor, nor the selection.
+bool ImGui::InputTextLocked(const char* label, std::string* str) {
+    ImGuiWindow* window = GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& g = *GImGui;
+    ImGuiIO& io = g.IO;
+    const ImGuiStyle& style = g.Style;
+
+    const ImGuiID id = window->GetID(label);
+    const ImVec2 label_size = CalcTextSize(label, NULL, true);
+    const ImVec2 frame_size = CalcItemSize(ImVec2(0, 0), CalcItemWidth(), label_size.y + style.FramePadding.y * 2.0f);
+    const ImVec2 total_size = ImVec2(frame_size.x + (label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f), frame_size.y);
+
+    const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + frame_size);
+    const ImRect total_bb(frame_bb.Min, frame_bb.Min + total_size);
+
+    ImGuiWindow* draw_window = window;
+    ImVec2 inner_size = frame_size;
+
+    ItemSize(total_bb, style.FramePadding.y);
+
+    const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.InFlags);
+    const bool pressed = hovered && io.MouseClicked[0];
+
+    // Render frame
+    RenderNavHighlight(frame_bb, id);
+    RenderFrame(frame_bb.Min, frame_bb.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
+
+    const ImVec4 clip_rect(frame_bb.Min.x, frame_bb.Min.y, frame_bb.Min.x + inner_size.x, frame_bb.Min.y + inner_size.y); // Not using frame_bb.Max because we have adjusted size
+    ImVec2 draw_pos = frame_bb.Min + style.FramePadding;
+    ImVec2 text_size(0.0f, 0.0f);
+
+    const char* buf_display = str->c_str();
+    const char* buf_display_end = buf_display + strlen(buf_display);
+
+    // Render text only (no selection, no cursor)
+    ImU32 col = GetColorU32(ImGuiCol_Text);
+    draw_window->DrawList->AddText(g.Font, g.FontSize, draw_pos, col, buf_display, buf_display_end, 0.0f, &clip_rect);
+
+    if (label_size.x > 0)
+        RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
+
+    return pressed;
+}

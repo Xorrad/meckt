@@ -43,6 +43,8 @@ class EmpireTitle;
 
 class Menu;
 class HomeMenu;
+class LoadingMenu;
+class NewModMenu;
 class EditorMenu;
 
 class Tab;

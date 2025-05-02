@@ -15,7 +15,6 @@ public:
 
     void RenderErrorModal();
     void RenderUpdateModal();
-    void RenderNewModModal();
 
 private:
     std::string m_LoadingError;

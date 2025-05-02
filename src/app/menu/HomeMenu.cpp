@@ -1,5 +1,6 @@
 #include "HomeMenu.hpp"
 #include "EditorMenu.hpp"
+#include "NewModMenu.hpp"
 #include "app/App.hpp"
 #include "ImGuiStyle.hpp"
 #include "imgui/imgui.hpp"
@@ -62,7 +63,7 @@ void HomeMenu::Render() {
 
     ImGui::Dummy(ImVec2(0.0f, spacing));
     if (ImGui::TextButton("📝  New Mod...")) {
-
+        m_App->OpenMenu(MakeShared<NewModMenu>(m_App));
     }
     if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         ImGui::SetTooltip("Create a mod from scratch.");
@@ -83,7 +84,7 @@ void HomeMenu::Render() {
         free(dirPath);
     }
     if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("Select a mod root directory.");
+        ImGui::SetTooltip("Open an existing mod.");
     }
 
     ImGui::Dummy(ImVec2(0.0f, spacing));
@@ -159,8 +160,6 @@ void HomeMenu::Render() {
         ImGui::OpenPopup("Error");
         this->RenderErrorModal();
     }
-
-    this->RenderNewModModal();
 
     // Open the mod at the end to avoid crashes because of ImGui.
     if (!openedModDir.empty()) {
@@ -249,8 +248,4 @@ void HomeMenu::RenderUpdateModal() {
         }
         ImGui::EndPopup();
     }
-}
-
-void HomeMenu::RenderNewModModal() {
-
 }
