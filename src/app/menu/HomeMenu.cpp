@@ -149,6 +149,7 @@ void HomeMenu::Render() {
     }
     ImGui::PopFont();
     
+    ImGui::NewLine();
     ImGui::End();
 
     // Determine which modal should be displayed.

@@ -106,7 +106,7 @@ void NewModMenu::Render() {
             nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
                 
             if(result == NFD_OKAY) {
-                m_HeightmapImagePath = std::string(filePath);
+                this->UpdateHeightmapImage(filePath);
             }
             else if(result != NFD_CANCEL) {
                 // TODO: display errors.
@@ -122,7 +122,7 @@ void NewModMenu::Render() {
             nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
                 
             if(result == NFD_OKAY) {
-                m_ProvincesImagePath = std::string(filePath);
+                this->UpdateProvincesImage(filePath);
             }
             else if(result != NFD_CANCEL) {
                 // TODO: display errors.
@@ -133,8 +133,10 @@ void NewModMenu::Render() {
 
     // Float input for the world water level (will be used to generate provinces).
     ImGui::SetNextItemWidth(availableWidth/4.0f);
-    if (ImGui::InputFloat("water level", &m_WaterLevel, 0.01f, 0.1f, "%.3f"))
+    if (ImGui::InputFloat("water level", &m_WaterLevel, 0.1f, 1.0f, "%.3f")) {
         m_WaterLevel = std::max(0.0f, m_WaterLevel);
+        this->UpdateLandmassTextures();
+    }
 
     ImGui::PopFont();
 
@@ -146,6 +148,16 @@ void NewModMenu::Render() {
     ImGui::PushFont(ImGui::notoSansMediumFont);
     ImGui::Text("Preview");
     ImGui::PopFont();
+
+    float previewWidth = (windowSize.x-2*margin) / 4.0f;
+    float scale = previewWidth / std::max(1U, std::max(m_HeightmapTexture.getSize().x, m_ProvincesTexture.getSize().x));
+    ImGui::Image(m_HeightmapTexture, sf::Vector2f(m_HeightmapTexture.getSize().x*scale, m_HeightmapTexture.getSize().y*scale));
+    ImGui::SameLine();
+    ImGui::Image(m_HeightmapLandmassTexture, sf::Vector2f(m_HeightmapLandmassTexture.getSize().x*scale, m_HeightmapLandmassTexture.getSize().y*scale));
+    ImGui::SameLine();
+    ImGui::Image(m_ProvincesTexture, sf::Vector2f(m_ProvincesTexture.getSize().x*scale, m_ProvincesTexture.getSize().y*scale));
+    ImGui::SameLine();
+    ImGui::Image(m_ProvincesLandTexture, sf::Vector2f(m_ProvincesLandTexture.getSize().x*scale, m_ProvincesLandTexture.getSize().y*scale));
 
     ImGui::NewLine();
     ImGui::Separator();
@@ -160,8 +172,58 @@ void NewModMenu::Render() {
     if (ImGui::TextButton("❌ Back")) {
         m_App->OpenMenu(MakeShared<HomeMenu>(m_App));
     }
-    
     ImGui::PopFont();
     
+    ImGui::NewLine();
     ImGui::End();
+}
+
+void NewModMenu::UpdateHeightmapImage(const std::string& filePath) {
+    m_HeightmapImagePath = filePath;
+    m_HeightmapTexture = sf::Texture();
+    m_HeightmapLandmassTexture = sf::Texture();
+
+    if (!m_HeightmapTexture.loadFromFile(m_HeightmapImagePath)) {
+        // TODO: handle errors
+        return;
+    }
+
+    this->UpdateLandmassTextures();
+}
+
+void NewModMenu::UpdateProvincesImage(const std::string& filePath) {
+    m_ProvincesImagePath = filePath;
+    m_ProvincesTexture = sf::Texture();
+    m_ProvincesLandTexture = sf::Texture();
+
+    if (!m_ProvincesTexture.loadFromFile(m_ProvincesImagePath)) {
+        // TODO: handle errors
+        return;
+    }
+
+    this->UpdateLandmassTextures();
+}
+
+void NewModMenu::UpdateLandmassTextures() {
+    {
+        // Update the landmass texture using the water level and the heightmap.
+        sf::Shader& shader = Configuration::shaders.Get(Shaders::HEIGHTMAP_LANDMASS);
+        shader.setUniform("texture", sf::Shader::CurrentTexture);
+        shader.setUniform("waterLevel", m_WaterLevel);
+
+        sf::RenderTexture renderTexture;
+        if (!renderTexture.create(m_HeightmapTexture.getSize().x, m_HeightmapTexture.getSize().y))
+            return;
+        renderTexture.clear();
+
+        sf::Sprite sprite(m_HeightmapTexture);
+        renderTexture.draw(sprite, &shader);
+        renderTexture.display();
+
+        m_HeightmapLandmassTexture = renderTexture.getTexture();
+    }
+
+    {
+        // TODO: update land provinces texture.
+    }
 }

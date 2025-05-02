@@ -14,6 +14,8 @@ enum class Fonts : int {
 
 enum class Shaders : int {
     PROVINCES,
+    HEIGHTMAP_LANDMASS,
+    PROVINCES_LANDMASS,
     COUNT
 };
 

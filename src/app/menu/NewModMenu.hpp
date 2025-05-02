@@ -26,6 +26,11 @@ public:
     virtual void Event(const sf::Event& event);
     virtual void Render();
 
+    void UpdateHeightmapImage(const std::string& filePath);
+    void UpdateProvincesImage(const std::string& filePath);
+
+    void UpdateLandmassTextures();
+
 private:
     std::string m_ModName;
     std::string m_ModPath;
@@ -33,4 +38,10 @@ private:
     std::string m_ProvincesImagePath;
     std::string m_HeightmapImagePath;
     float m_WaterLevel;
+
+    sf::Texture m_HeightmapTexture;
+    sf::Texture m_HeightmapLandmassTexture;
+
+    sf::Texture m_ProvincesTexture;
+    sf::Texture m_ProvincesLandTexture;
 };
