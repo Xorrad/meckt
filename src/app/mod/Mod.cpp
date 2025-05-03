@@ -397,7 +397,7 @@ void Mod::GenerateMissingProvinces() {
         }
         previousProvinceColor = provinceColor;
     }
-    LOG_INFO("Generated {} new provinces based on the province image", count);
+    LOG_INFO("Generated {} new provinces based on the province image.", count);
 }
 
 void Mod::GenerateMissingBaronies() {
@@ -427,7 +427,7 @@ void Mod::GenerateMissingBaronies() {
         this->AddTitle(title);
         count++;
     }
-    LOG_INFO("Generated {} new barony titles for passable land provinces without any", count);
+    LOG_INFO("Generated {} new barony titles for passable land provinces without any barony.", count);
 }
 
 void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles) {

@@ -30,6 +30,7 @@ public:
     void UpdateProvincesImage(const std::string& filePath);
 
     void UpdateLandmassTextures();
+    // sf::Texture GenerateLandProvincesTexture() const;
 
 private:
     std::string m_ModName;

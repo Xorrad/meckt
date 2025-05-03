@@ -49,5 +49,6 @@ void Configuration::InitializeFonts() {
 void Configuration::InitializeShaders() {
     shaders.Load(Shaders::PROVINCES, "assets/shaders/provinces.vert", "assets/shaders/provinces.frag");
     shaders.Load(Shaders::HEIGHTMAP_LANDMASS, "assets/shaders/provinces.vert", "assets/shaders/heightmap_landmass.frag");
+    shaders.Load(Shaders::PROVINCES_LANDMASS, "assets/shaders/provinces.vert", "assets/shaders/provinces_landmass.frag");
     // shaders.Load(Shaders::PROVINCES, "assets/shaders/provinces.frag", sf::Shader::Fragment);
 }
