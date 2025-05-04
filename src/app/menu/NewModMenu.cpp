@@ -97,6 +97,10 @@ void NewModMenu::Render() {
         }
         ImGui::EndCombo();
     }
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("?", "https://github.com/bombusfrigidus/Atlantis");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Each template is using Atlantis as the base structure.\nClick to open on GitHub.");
 
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE || m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
         // Text input for the path to the heightmap image.
