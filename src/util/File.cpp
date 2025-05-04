@@ -1,5 +1,8 @@
 #include "File.hpp"
+#include "app/Update.hpp"
+
 #include <filesystem>
+#include <curl/curl.h>
 
 std::set<std::string> File::ListFiles(const std::string& dirPath, bool recursive) {
     std::set<std::string> files;
@@ -79,5 +82,48 @@ void File::OpenFile(const std::string& path) {
     std::string command = "xdg-open \"" + path + "\"";
     if(!system(command.c_str()))
         return;
+#endif
+}
+
+bool File::DownloadFile(const std::string& url, const std::string& dest) {
+    CURL* curl;
+    CURLcode curlRes;
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+    if (curl) {
+        FILE* file = fopen(dest.c_str(), "wb");
+
+        if (!file)
+            return false;
+        
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, Update::WriteFileCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+
+        curlRes = curl_easy_perform(curl);
+        fclose(file);
+
+        if (curlRes != CURLE_OK) {
+            std::remove(dest.c_str());
+            return false;
+        }
+        
+        curl_easy_cleanup(curl);
+    }
+    else {
+        return false;
+    }
+    curl_global_cleanup();
+
+    return true;
+}
+
+bool File::UnzipFile(const std::string& src, const std::string& dest) {
+#ifdef _WIN32
+    return (bool) std::system(std::string("powershell -Command \"Expand-Archive -Force '" + src + "' '" + dest + "'\"").c_str());
+#else
+    return (bool) std::system(std::string("unzip -o " + src + " -d " + dest).c_str());
 #endif
 }

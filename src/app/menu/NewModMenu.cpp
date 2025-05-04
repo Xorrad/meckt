@@ -282,11 +282,18 @@ void NewModMenu::CreateMod() {
 
     // Clone Atlantis into the mod directory.
     m_CreationState = CreationState::CLONING;
-    sf::sleep(sf::seconds(1));
+    std::filesystem::path parentPath = std::filesystem::path(m_ModPath).parent_path();
+    std::filesystem::path atlantisPath = parentPath / "atlantis.zip";
+    File::DownloadFile(Configuration::atlantisURL, atlantisPath);
+    // TODO: handle errors.
+
+    // Unzip the files.
+    m_CreationState = CreationState::UNZIPPING;
+    File::UnzipFile(atlantisPath, parentPath);
 
     // Setup the Atlantis template.
     m_CreationState = CreationState::SETTING_UP;
-    sf::sleep(sf::seconds(1));
+    std::rename((parentPath / "Atlantis-main").c_str(), m_ModPath.c_str());
     
     // Copy heightmap and provinces images into the mod directory.
     if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {

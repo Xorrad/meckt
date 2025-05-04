@@ -17,4 +17,6 @@ namespace File {
     void EncodeToUTF8BOM(std::ofstream& file);
 
     void OpenFile(const std::string& path);
+    bool DownloadFile(const std::string& url, const std::string& dest);
+    bool UnzipFile(const std::string& src, const std::string& dest);
 }

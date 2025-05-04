@@ -20,6 +20,7 @@ const std::map<TemplateType, std::pair<std::string, std::string>> TemplateTypeLa
 
 enum class CreationState {
     CLONING, // Clone the Atlantis GitHub repository.
+    UNZIPPING, // Unzipping Atlantis files.
     SETTING_UP, // Delete and edit some files from the Atlantis template.
 
     COPYING_IMAGES, // Depending on template type: if images are provided.
@@ -31,6 +32,7 @@ enum class CreationState {
 };
 const std::map<CreationState, std::string> CreationStateLabels = {
     { CreationState::CLONING, "Cloning Atlantis repository" },
+    { CreationState::UNZIPPING, "Unzipping Atlantis files" },
     { CreationState::SETTING_UP, "Setting-up template files" },
     { CreationState::COPYING_IMAGES, "Copying images to project" },
     { CreationState::GENERATING_WORLD, "Generating world based on heightmap image" },

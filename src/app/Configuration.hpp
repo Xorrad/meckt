@@ -29,6 +29,7 @@ public:
     inline static std::string buildVersion = "1.6.0";
     inline static std::string buildCredits = "made by Xorrad";
     inline static std::string githubURL = "https://github.com/Xorrad/meckt";
+    inline static std::string atlantisURL = "https://codeload.github.com/bombusfrigidus/Atlantis/zip/refs/heads/main";
     
     // Saved settings
     inline static std::string settingsFile = "settings.yml";
