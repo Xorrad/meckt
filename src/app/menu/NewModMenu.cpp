@@ -57,6 +57,8 @@ void NewModMenu::Render() {
     ImGui::Dummy(ImVec2(0.0f, spacing));
 
     if (!m_IsCreating)  {
+        bool isDirEmpty = !std::filesystem::exists(m_ModPath) || File::ListFiles(m_ModPath, false).empty();
+
         // Configuration section.
         ImGui::PushFont(ImGui::notoSansMediumFont);
         ImGui::Text("Configuration");
@@ -175,17 +177,26 @@ void NewModMenu::Render() {
         ImGui::NewLine();
 
         ImGui::PushFont(ImGui::notoSansNormalFont);
+
+        if (!isDirEmpty) {
+            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The mod directory is not empty!");
+        }
+        
+        ImGui::Dummy(ImVec2(0.0f, 2*spacing));
+        if (!isDirEmpty) ImGui::BeginDisabled();
         if (ImGui::TextButton("🔨 Create")) {
             m_CreationThread = MakeShared<sf::Thread>([&]() {
                 this->CreateMod();
             });
             m_CreationThread->launch();
         }
+        if (!isDirEmpty) ImGui::EndDisabled();
 
         ImGui::Dummy(ImVec2(0.0f, 2*spacing));
         if (ImGui::TextButton("❌ Back")) {
             m_App->OpenMenu(MakeShared<HomeMenu>(m_App));
         }
+
         ImGui::PopFont();
     }
     else {
@@ -278,7 +289,7 @@ void NewModMenu::UpdateLandmassTextures() {
 }
 
 void NewModMenu::CreateMod() {
-    if (std::filesystem::exists(m_ModPath))
+    if (std::filesystem::exists(m_ModPath) && !File::ListFiles(m_ModPath, false).empty())
         return;
 
     m_IsCreating = true;
