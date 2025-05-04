@@ -18,6 +18,27 @@ const std::map<TemplateType, std::pair<std::string, std::string>> TemplateTypeLa
     { TemplateType::HEIGHTMAP_IMAGE, {"Heightmap Image", "Generate provinces from an heightmap."} }
 };
 
+enum class CreationState {
+    CLONING, // Clone the Atlantis GitHub repository.
+    SETTING_UP, // Delete and edit some files from the Atlantis template.
+
+    COPYING_IMAGES, // Depending on template type: if images are provided.
+    GENERATING_WORLD, // Only for heightmap template type: use voronoi and conquests to generate provinces.
+    GENERATING_PROVINCES, // Generate province objects for each colors in the image.
+    GENERATE_TERRAIN, // Determine the terrain (land or sea) of provinces depending on heightmap.
+
+    FINISHED
+};
+const std::map<CreationState, std::string> CreationStateLabels = {
+    { CreationState::CLONING, "Cloning Atlantis repository" },
+    { CreationState::SETTING_UP, "Setting-up template files" },
+    { CreationState::COPYING_IMAGES, "Copying images to project" },
+    { CreationState::GENERATING_WORLD, "Generating world based on heightmap image" },
+    { CreationState::GENERATING_PROVINCES, "Generating provinces from image" },
+    { CreationState::GENERATE_TERRAIN, "Determining provinces type (land, sea...)" },
+    { CreationState::FINISHED, "Finished" },
+};
+
 class NewModMenu : public Menu {
 public:
     NewModMenu(App* app);
@@ -32,6 +53,8 @@ public:
     void UpdateLandmassTextures();
     // sf::Texture GenerateLandProvincesTexture() const;
 
+    void CreateMod();
+
 private:
     std::string m_ModName;
     std::string m_ModPath;
@@ -45,4 +68,8 @@ private:
 
     sf::Texture m_ProvincesTexture;
     sf::Texture m_ProvincesLandTexture;
+
+    bool m_IsCreating;
+    CreationState m_CreationState;
+    SharedPtr<sf::Thread> m_CreationThread;
 };

@@ -17,7 +17,9 @@ NewModMenu::NewModMenu(App* app) :
     m_TemplateType(TemplateType::DEFAULT),
     m_ProvincesImagePath(""),
     m_HeightmapImagePath(""),
-    m_WaterLevel(3.8f)
+    m_WaterLevel(3.8f),
+    m_IsCreating(false),
+    m_CreationState(CreationState::CLONING)
 {}
 
 void NewModMenu::Update(sf::Time delta) {
@@ -54,136 +56,160 @@ void NewModMenu::Render() {
     ImGui::Separator();
     ImGui::Dummy(ImVec2(0.0f, spacing));
 
-    // Configuration section.
-    ImGui::PushFont(ImGui::notoSansMediumFont);
-    ImGui::Text("Configuration");
-    ImGui::PopFont();
+    if (!m_IsCreating)  {
+        // Configuration section.
+        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::Text("Configuration");
+        ImGui::PopFont();
 
-    ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont);
 
-    ImGui::Dummy(ImVec2(0.0f, spacing));
+        ImGui::Dummy(ImVec2(0.0f, spacing));
 
-    //  Text input for mod name.
-    ImGui::SetNextItemWidth(availableWidth/4.f);
-    ImGui::InputText("name", &m_ModName);
+        //  Text input for mod name.
+        ImGui::SetNextItemWidth(availableWidth/4.f);
+        ImGui::InputText("name", &m_ModName);
 
-    // Text input for path to the mod directory.
-    ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
-    if (ImGui::InputTextLocked("path", &m_ModPath)) {
-        nfdchar_t *dirPath = NULL;
-        nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
-            
-        if(result == NFD_OKAY) {
-            m_ModPath = std::string(dirPath);
-        }
-        else if(result != NFD_CANCEL) {
-            // TODO: display errors.
-        }
-        free(dirPath);
-    }
-
-    // Combobox for the template preset (Default, Blank, Provinces, Heightmap...).
-    ImGui::SetNextItemWidth(availableWidth/4.0f);
-    if (ImGui::BeginCombo("template", TemplateTypeLabels.at(m_TemplateType).first.c_str())) {
-        for (int i = 0; i < TemplateTypeLabels.size(); i++) {
-            TemplateType type = (TemplateType) i;
-            const bool isSelected = (m_TemplateType == type);
-            if (ImGui::Selectable(TemplateTypeLabels.at(type).first.c_str(), isSelected))
-                m_TemplateType = type;
-            if(ImGui::IsItemHovered())
-                ImGui::SetTooltip(TemplateTypeLabels.at(type).second.c_str());
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-    ImGui::SameLine();
-    ImGui::TextLinkOpenURL("?", "https://github.com/bombusfrigidus/Atlantis");
-    if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Each template is using Atlantis as the base structure.\nClick to open on GitHub.");
-
-    if (m_TemplateType == TemplateType::PROVINCES_IMAGE || m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
-        // Text input for the path to the heightmap image.
+        // Text input for path to the mod directory.
         ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
-        if (ImGui::InputTextLocked("heightmap image", &m_HeightmapImagePath)) {
-            nfdchar_t* filePath = NULL;
-            nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
+        if (ImGui::InputTextLocked("path", &m_ModPath)) {
+            nfdchar_t *dirPath = NULL;
+            nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
                 
             if(result == NFD_OKAY) {
-                this->UpdateHeightmapImage(filePath);
+                m_ModPath = std::string(dirPath);
             }
             else if(result != NFD_CANCEL) {
                 // TODO: display errors.
             }
-            free(filePath);
+            free(dirPath);
         }
-    }
-    if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
-        // Text input for the path to the provinces image.
-        ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
-        if (ImGui::InputTextLocked("provinces image", &m_ProvincesImagePath)) {
-            nfdchar_t* filePath = NULL;
-            nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
-                
-            if(result == NFD_OKAY) {
-                this->UpdateProvincesImage(filePath);
+
+        // Combobox for the template preset (Default, Blank, Provinces, Heightmap...).
+        ImGui::SetNextItemWidth(availableWidth/4.0f);
+        if (ImGui::BeginCombo("template", TemplateTypeLabels.at(m_TemplateType).first.c_str())) {
+            for (int i = 0; i < TemplateTypeLabels.size(); i++) {
+                TemplateType type = (TemplateType) i;
+                const bool isSelected = (m_TemplateType == type);
+                if (ImGui::Selectable(TemplateTypeLabels.at(type).first.c_str(), isSelected))
+                    m_TemplateType = type;
+                if(ImGui::IsItemHovered())
+                    ImGui::SetTooltip(TemplateTypeLabels.at(type).second.c_str());
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
             }
-            else if(result != NFD_CANCEL) {
-                // TODO: display errors.
-            }
-            free(filePath);
+            ImGui::EndCombo();
         }
-    }
-
-    // Float input for the world water level (will be used to generate provinces).
-    ImGui::SetNextItemWidth(availableWidth/4.0f);
-    if (ImGui::InputFloat("water level", &m_WaterLevel, 0.1f, 1.0f, "%.3f")) {
-        m_WaterLevel = std::max(0.0f, m_WaterLevel);
-        this->UpdateLandmassTextures();
-    }
-
-    ImGui::PopFont();
-
-    ImGui::NewLine();
-    ImGui::Separator();
-    ImGui::Dummy(ImVec2(0.0f, spacing));
-
-    // Preview section (display the expected maps).
-    ImGui::PushFont(ImGui::notoSansMediumFont);
-    ImGui::Text("Preview");
-    ImGui::PopFont();
-
-    float previewWidth = (windowSize.x-2*margin-5*ImGui::GetStyle().ItemSpacing.x) / 4.0f;
-    float scale = previewWidth / std::max(1U, std::max(m_HeightmapTexture.getSize().x, m_ProvincesTexture.getSize().x));
-    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
-        ImGui::Image(m_HeightmapTexture, sf::Vector2f(m_HeightmapTexture.getSize().x*scale, m_HeightmapTexture.getSize().y*scale));
         ImGui::SameLine();
-        ImGui::Image(m_HeightmapLandmassTexture, sf::Vector2f(m_HeightmapLandmassTexture.getSize().x*scale, m_HeightmapLandmassTexture.getSize().y*scale));
-    }
-    if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
-        ImGui::SameLine();
-        ImGui::Image(m_ProvincesTexture, sf::Vector2f(m_ProvincesTexture.getSize().x*scale, m_ProvincesTexture.getSize().y*scale));
-        ImGui::SameLine();
-        ImGui::Image(m_ProvincesLandTexture, sf::Vector2f(m_ProvincesLandTexture.getSize().x*scale, m_ProvincesLandTexture.getSize().y*scale));
-    }
+        ImGui::TextLinkOpenURL("?", "https://github.com/bombusfrigidus/Atlantis");
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Each template is using Atlantis as the base structure.\nClick to open on GitHub.");
 
-    ImGui::NewLine();
-    ImGui::Separator();
-    ImGui::NewLine();
+        if (m_TemplateType == TemplateType::PROVINCES_IMAGE || m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
+            // Text input for the path to the heightmap image.
+            ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
+            if (ImGui::InputTextLocked("heightmap image", &m_HeightmapImagePath)) {
+                nfdchar_t* filePath = NULL;
+                nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
+                    
+                if(result == NFD_OKAY) {
+                    this->UpdateHeightmapImage(filePath);
+                }
+                else if(result != NFD_CANCEL) {
+                    // TODO: display errors.
+                }
+                free(filePath);
+            }
+        }
+        if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+            // Text input for the path to the provinces image.
+            ImGui::SetNextItemWidth(3.0f*availableWidth/4.0f);
+            if (ImGui::InputTextLocked("provinces image", &m_ProvincesImagePath)) {
+                nfdchar_t* filePath = NULL;
+                nfdresult_t result = NFD_OpenDialog("png", m_ModPath.c_str(), &filePath);
+                    
+                if(result == NFD_OKAY) {
+                    this->UpdateProvincesImage(filePath);
+                }
+                else if(result != NFD_CANCEL) {
+                    // TODO: display errors.
+                }
+                free(filePath);
+            }
+        }
 
-    ImGui::PushFont(ImGui::notoSansNormalFont);
-    if (ImGui::TextButton("🔨 Create")) {
+        // Float input for the world water level (will be used to generate provinces).
+        ImGui::SetNextItemWidth(availableWidth/4.0f);
+        if (ImGui::InputFloat("water level", &m_WaterLevel, 0.1f, 1.0f, "%.3f")) {
+            m_WaterLevel = std::max(0.0f, m_WaterLevel);
+            this->UpdateLandmassTextures();
+        }
 
+        ImGui::PopFont();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, spacing));
+
+        // Preview section (display the expected maps).
+        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::Text("Preview");
+        ImGui::PopFont();
+
+        float previewWidth = (windowSize.x-2*margin-5*ImGui::GetStyle().ItemSpacing.x) / 4.0f;
+        float scale = previewWidth / std::max(1U, std::max(m_HeightmapTexture.getSize().x, m_ProvincesTexture.getSize().x));
+        if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+            ImGui::Image(m_HeightmapTexture, sf::Vector2f(m_HeightmapTexture.getSize().x*scale, m_HeightmapTexture.getSize().y*scale));
+            ImGui::SameLine();
+            ImGui::Image(m_HeightmapLandmassTexture, sf::Vector2f(m_HeightmapLandmassTexture.getSize().x*scale, m_HeightmapLandmassTexture.getSize().y*scale));
+        }
+        if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+            ImGui::SameLine();
+            ImGui::Image(m_ProvincesTexture, sf::Vector2f(m_ProvincesTexture.getSize().x*scale, m_ProvincesTexture.getSize().y*scale));
+            ImGui::SameLine();
+            ImGui::Image(m_ProvincesLandTexture, sf::Vector2f(m_ProvincesLandTexture.getSize().x*scale, m_ProvincesLandTexture.getSize().y*scale));
+        }
+
+        ImGui::NewLine();
+        ImGui::Separator();
+        ImGui::NewLine();
+
+        ImGui::PushFont(ImGui::notoSansNormalFont);
+        if (ImGui::TextButton("🔨 Create")) {
+            m_CreationThread = MakeShared<sf::Thread>([&]() {
+                this->CreateMod();
+            });
+            m_CreationThread->launch();
+        }
+
+        ImGui::Dummy(ImVec2(0.0f, 2*spacing));
+        if (ImGui::TextButton("❌ Back")) {
+            m_App->OpenMenu(MakeShared<HomeMenu>(m_App));
+        }
+        ImGui::PopFont();
     }
+    else {
+        // Configuration section.
+        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::Text("Creating project...");
+        ImGui::PopFont();
 
-    ImGui::Dummy(ImVec2(0.0f, 2*spacing));
-    if (ImGui::TextButton("❌ Back")) {
-        m_App->OpenMenu(MakeShared<HomeMenu>(m_App));
+        ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::Dummy(ImVec2(0.0f, spacing));
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImGui::GetColorU32(ImGuiCol_Button));
+        ImGui::ProgressBar(((float) m_CreationState)/(CreationStateLabels.size()-1), ImVec2(0.0f, 0.0f), CreationStateLabels.at(m_CreationState).c_str());
+        ImGui::PopStyleColor();
+        ImGui::PopFont();
     }
-    ImGui::PopFont();
     
     ImGui::NewLine();
     ImGui::End();
+
+    // Open the created mod once the generation process is finished.
+    if (m_CreationState == CreationState::FINISHED) {
+        SharedPtr<Mod> mod = MakeShared<Mod>(m_ModPath);
+        m_App->OpenMod(mod);
+    }
 }
 
 void NewModMenu::UpdateHeightmapImage(const std::string& filePath) {
@@ -249,4 +275,44 @@ void NewModMenu::UpdateLandmassTextures() {
 
         m_ProvincesLandTexture = renderTexture.getTexture();
     }
+}
+
+void NewModMenu::CreateMod() {
+    m_IsCreating = true;
+
+    // Clone Atlantis into the mod directory.
+    m_CreationState = CreationState::CLONING;
+    sf::sleep(sf::seconds(1));
+
+    // Setup the Atlantis template.
+    m_CreationState = CreationState::SETTING_UP;
+    sf::sleep(sf::seconds(1));
+    
+    // Copy heightmap and provinces images into the mod directory.
+    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+        m_CreationState = CreationState::COPYING_IMAGES;
+        sf::sleep(sf::seconds(1));
+    }
+    
+    // Generate the world provinces using the heightmap to determine the landmass.
+    // TODO: intermediate preview of the generation?
+    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
+        m_CreationState = CreationState::GENERATING_WORLD;
+        sf::sleep(sf::seconds(1));
+    }
+    
+    // Generate a province for each color in the provinces image.
+    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+        m_CreationState = CreationState::GENERATING_PROVINCES;
+        sf::sleep(sf::seconds(1));
+    }
+    
+    // Determine the type (land, sea...) of each province using the heightmap and water level.
+    // Not done when generating world because the landmass has already been determined.
+    if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+        m_CreationState = CreationState::GENERATE_TERRAIN;
+        sf::sleep(sf::seconds(1));
+    }
+    
+    m_CreationState = CreationState::FINISHED;
 }
