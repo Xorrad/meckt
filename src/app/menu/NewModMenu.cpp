@@ -278,7 +278,12 @@ void NewModMenu::UpdateLandmassTextures() {
 }
 
 void NewModMenu::CreateMod() {
+    if (std::filesystem::exists(m_ModPath))
+        return;
+
     m_IsCreating = true;
+    std::filesystem::path modPath = std::filesystem::path(m_ModPath);
+    std::filesystem::create_directories(modPath);
 
     // Clone Atlantis into the mod directory.
     m_CreationState = CreationState::CLONING;
@@ -293,8 +298,29 @@ void NewModMenu::CreateMod() {
 
     // Setup the Atlantis template.
     m_CreationState = CreationState::SETTING_UP;
-    std::rename((parentPath / "Atlantis-main").c_str(), m_ModPath.c_str());
-    
+    std::rename((parentPath / "Atlantis-main").c_str(), modPath.c_str());
+    std::remove((modPath / "Atlantis.code-workspace").c_str());
+    std::remove((modPath / "Atlantis.mod").c_str());
+    std::remove((modPath / "README.md").c_str());
+    std::remove((modPath / ".gitattributes").c_str());
+    std::remove((modPath / ".gitattributes").c_str());
+    std::remove(atlantisPath.c_str());
+
+    SharedPtr<Jomini::Object> descriptorData = Jomini::ParseFile(modPath / "descriptor.mod");
+    descriptorData->Put("name", "\"" + m_ModName + "\"");
+    std::ofstream descriptorFile(modPath / "descriptor.mod", std::ios::out);
+    descriptorFile << descriptorData->Serialize();
+    descriptorFile.close();
+
+    // Remove spaces and quotes from the mod name for the main descriptor file.
+    std::string modFileName = m_ModName;
+    std::replace(modFileName.begin(), modFileName.end(), ' ', '_');
+    std::replace(modFileName.begin(), modFileName.end(), '\'', '_');
+    descriptorData->Put("path", "\"" + modPath.string() + "\"");
+    descriptorFile.open(modPath / std::string(modFileName + ".mod"), std::ios::out);
+    descriptorFile << descriptorData->Serialize();
+    descriptorFile.close();
+
     // Copy heightmap and provinces images into the mod directory.
     if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::COPYING_IMAGES;
