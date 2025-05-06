@@ -333,9 +333,15 @@ void NewModMenu::CreateMod() {
     descriptorFile.close();
 
     // Copy heightmap and provinces images into the mod directory.
-    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
         m_CreationState = CreationState::COPYING_IMAGES;
-        sf::sleep(sf::seconds(1));
+        if (std::filesystem::exists(m_HeightmapImagePath))
+            std::filesystem::copy(m_HeightmapImagePath, (modPath / "map_data" / "heightmap.png").c_str());
+    }
+    if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+        m_CreationState = CreationState::COPYING_IMAGES;
+        if (std::filesystem::exists(m_ProvincesImagePath))
+            std::filesystem::copy(m_ProvincesImagePath, (modPath / "map_data" / "provinces.png").c_str());
     }
     
     // Generate the world provinces using the heightmap to determine the landmass.
@@ -356,6 +362,7 @@ void NewModMenu::CreateMod() {
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATE_TERRAIN;
         sf::sleep(sf::seconds(1));
+        // TODO: Generate rivers.png image using the landmass.
     }
     
     m_CreationState = CreationState::FINISHED;
