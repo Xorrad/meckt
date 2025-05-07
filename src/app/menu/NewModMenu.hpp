@@ -58,6 +58,8 @@ public:
     void CreateMod();
 
 private:
+    SharedPtr<Mod> m_Mod;
+
     std::string m_ModName;
     std::string m_ModPath;
     TemplateType m_TemplateType;

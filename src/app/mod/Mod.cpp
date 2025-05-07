@@ -8,8 +8,15 @@
 #include <filesystem>
 #include <fmt/ostream.h>
 
-Mod::Mod(const std::string& dir) :
+Mod::Mod(const std::string& dir) : Mod(dir, sf::Image(), sf::Image()) {}
+
+Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage) :
     m_Dir(dir),
+    m_HeightmapImage(heightmapImage),
+    m_ProvinceImage(provincesImage),
+    m_DefaultLandTerrain("plains"),
+    m_DefaultSeaTerrain("sea"),
+    m_DefaultCoastalSeaTerrain("sea"),
     m_TitlesLocalizationFilePath(dir + "/localization/english/00_titles_l_english.yml"),
     m_CulturalNamesLocalizationFilePath(dir + "/localization/english/00_cultural_titles_l_english.yml")
 {}
@@ -480,24 +487,47 @@ void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool a
     LOG_INFO("Generated adjective localization for {} titles.", countAdjectives);
 }
 
-void Mod::Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback) {
-    if(!this->HasMap()) {
+void Mod::ClearProvinces() {
+    m_Provinces.clear();
+    m_ProvincesByIds.clear();
+}
+
+void Mod::ClearTitles() {
+    m_Titles.clear();
+    m_TitlesByType.clear();
+    m_BaroniesByProvinceIds.clear();
+}
+
+void Mod::DetermineProvincesFlags() {
+
+}
+
+void Mod::GenerateRivers() {
+
+}
+
+void Mod::GenerateWorld() {
+
+}
+
+void Mod::Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback, bool loadImages) {
+    if(loadImages && !this->HasMap()) {
         errorCallback(fmt::format("File {} is missing and required to load the mod.", m_Dir + "/map_data/provinces.png"));
         return;
     }
 
     changeCallback(LoadingState::TEXTURES);
 
-    if(!m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
+    if(loadImages && !m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
         LOG_ERROR("Failed to load heightmap image at ", m_Dir + "/map_data/heightmap.png");
     }
-    if(!m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png")) {
+    if(loadImages && !m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png")) {
         std::string error = fmt::format("Failed to load provinces image at ", m_Dir + "/map_data/provinces.png");
         LOG_ERROR("{}", error);
         errorCallback(error);
         return;
     }
-    if(!m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
+    if(loadImages && !m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
         LOG_ERROR("Failed to load rivers image at ", m_Dir + "/map_data/rivers.png");
     }
     

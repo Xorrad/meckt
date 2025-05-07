@@ -1,6 +1,7 @@
 #include "NewModMenu.hpp"
 
 #include "app/App.hpp"
+#include "app/mod/Mod.hpp"
 
 #include "HomeMenu.hpp"
 #include "EditorMenu.hpp"
@@ -23,8 +24,8 @@ NewModMenu::NewModMenu(App* app) :
 {
 #ifdef DEBUG
 m_ModPath = std::filesystem::current_path().string() + "/tests/mods/my_mod";
-this->UpdateHeightmapImage(std::filesystem::current_path().string() + "/tests/mods/my_mod/map_data/heightmap.png");
-this->UpdateProvincesImage(std::filesystem::current_path().string() + "/tests/mods/my_mod/map_data/provinces.png");
+this->UpdateHeightmapImage(std::filesystem::current_path().string() + "/tests/mods/test_hae/map_data/heightmap.png");
+this->UpdateProvincesImage(std::filesystem::current_path().string() + "/tests/mods/test_hae/map_data/provinces.png");
 #endif
 }
 
@@ -343,6 +344,7 @@ void NewModMenu::CreateMod() {
     // Copy heightmap and provinces images into the mod directory.
     if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::COPYING_IMAGES;
+
         if (std::filesystem::exists(m_HeightmapImagePath)) {
             std::filesystem::remove((modPath / "map_data" / "heightmap.png").c_str());
             std::filesystem::copy(m_HeightmapImagePath, (modPath / "map_data" / "heightmap.png").c_str());
@@ -350,30 +352,57 @@ void NewModMenu::CreateMod() {
     }
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::COPYING_IMAGES;
+
         if (std::filesystem::exists(m_ProvincesImagePath)) {
             std::filesystem::remove((modPath / "map_data" / "provinces.png").c_str());
             std::filesystem::copy(m_ProvincesImagePath, (modPath / "map_data" / "provinces.png").c_str());
         }
     }
+
+    m_Mod = MakeShared<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage());
+    m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){}, false);
     
     // Generate the world provinces using the heightmap to determine the landmass.
     // TODO: intermediate preview of the generation?
     if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
         m_CreationState = CreationState::GENERATING_WORLD;
-        sf::sleep(sf::seconds(1));
+
+        m_Mod->ClearProvinces();
+        m_Mod->GenerateWorld();
+        m_Mod->ExportDefaultMapFile();
+        m_Mod->ExportProvincesDefinition();
+        m_Mod->ExportProvincesTerrain();
+
+        // Remove Atlantis' default titles.
+        m_Mod->ClearTitles();
+        m_Mod->ExportTitles();
+        m_Mod->ExportTitlesHistory();
+        m_Mod->ExportTitlesLocalization();
     }
     
     // Generate a province for each color in the provinces image.
-    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
+    if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATING_PROVINCES;
-        sf::sleep(sf::seconds(1));
+
+        m_Mod->ClearProvinces();
+        m_Mod->GenerateMissingProvinces();
+        m_Mod->ExportProvincesDefinition();
+        
+        // Remove Atlantis' default titles.
+        m_Mod->ClearTitles();
+        m_Mod->ExportTitles();
+        m_Mod->ExportTitlesHistory();
+        m_Mod->ExportTitlesLocalization();
     }
     
     // Determine the type (land, sea...) of each province using the heightmap and water level.
     // Not done when generating world because the landmass has already been determined.
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATE_TERRAIN;
-        sf::sleep(sf::seconds(1));
+
+        m_Mod->DetermineProvincesFlags();
+        m_Mod->ExportDefaultMapFile();
+        m_Mod->ExportProvincesTerrain();
         // TODO: Generate rivers.png image using the landmass.
     }
     

@@ -9,6 +9,7 @@
 class Mod {
 public:
     Mod(const std::string& dir);
+    Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage);
 
     std::string GetDir() const;
     sf::Image& GetHeightmapImage();
@@ -51,7 +52,13 @@ public:
     void GenerateMissingBaronies();
     void GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles);
 
-    void Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback);
+    void ClearProvinces(); // Remove all current provinces.
+    void ClearTitles(); // Remove all current titles.
+    void DetermineProvincesFlags(); // Determine province flags (land, sea...) for each province depending on elevation.
+    void GenerateRivers(); // Generate a blank rivers image using the landmass.
+    void GenerateWorld(); // Generate a provinces image using the heightmap, voronoi and conquests.
+
+    void Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback, bool loadImages = true);
     void LoadHoldingTypes();
     void LoadTerrainTypes();
     void LoadProvinceImage();
