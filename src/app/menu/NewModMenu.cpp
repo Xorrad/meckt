@@ -20,7 +20,13 @@ NewModMenu::NewModMenu(App* app) :
     m_WaterLevel(3.8f),
     m_IsCreating(false),
     m_CreationState(CreationState::CLONING)
-{}
+{
+#ifdef DEBUG
+m_ModPath = std::filesystem::current_path().string() + "/tests/mods/my_mod";
+this->UpdateHeightmapImage(std::filesystem::current_path().string() + "/tests/mods/my_mod/map_data/heightmap.png");
+this->UpdateProvincesImage(std::filesystem::current_path().string() + "/tests/mods/my_mod/map_data/provinces.png");
+#endif
+}
 
 void NewModMenu::Update(sf::Time delta) {
 
