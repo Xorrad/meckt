@@ -332,16 +332,22 @@ void NewModMenu::CreateMod() {
     descriptorFile << descriptorData->Serialize();
     descriptorFile.close();
 
+    // TODO: change water level in common/defines/00_defines if it isn't the default value.
+
     // Copy heightmap and provinces images into the mod directory.
-    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
+    if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::COPYING_IMAGES;
-        if (std::filesystem::exists(m_HeightmapImagePath))
+        if (std::filesystem::exists(m_HeightmapImagePath)) {
+            std::filesystem::remove((modPath / "map_data" / "heightmap.png").c_str());
             std::filesystem::copy(m_HeightmapImagePath, (modPath / "map_data" / "heightmap.png").c_str());
+        }
     }
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::COPYING_IMAGES;
-        if (std::filesystem::exists(m_ProvincesImagePath))
+        if (std::filesystem::exists(m_ProvincesImagePath)) {
+            std::filesystem::remove((modPath / "map_data" / "provinces.png").c_str());
             std::filesystem::copy(m_ProvincesImagePath, (modPath / "map_data" / "provinces.png").c_str());
+        }
     }
     
     // Generate the world provinces using the heightmap to determine the landmass.
