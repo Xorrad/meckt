@@ -100,8 +100,10 @@ void NewModMenu::Render() {
             for (int i = 0; i < TemplateTypeLabels.size(); i++) {
                 TemplateType type = (TemplateType) i;
                 const bool isSelected = (m_TemplateType == type);
+                if (type == TemplateType::HEIGHTMAP_IMAGE) ImGui::BeginDisabled();
                 if (ImGui::Selectable(TemplateTypeLabels.at(type).first.c_str(), isSelected))
                     m_TemplateType = type;
+                if (type == TemplateType::HEIGHTMAP_IMAGE) ImGui::EndDisabled();
                 if(ImGui::IsItemHovered())
                     ImGui::SetTooltip(TemplateTypeLabels.at(type).second.c_str());
                 if (isSelected)
