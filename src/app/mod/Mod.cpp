@@ -563,7 +563,18 @@ void Mod::DetermineProvincesFlags() {
 }
 
 void Mod::GenerateRivers() {
+    // - Map provinces colors to pink if sea, white otherwise.
+    // - Copy province image.
+    // - Replace province pixels by their mapped color.
+    sf::Uint32 seaColor = sf::Color(255, 0, 128).toInteger();
+    sf::Uint32 landColor = sf::Color(255, 255, 255).toInteger();
 
+    m_RiversImage = Image::MapPixels(m_ProvinceImage, [&](auto& mappedColors){
+        for(const auto& [provinceColorId, province] : m_Provinces) {
+            mappedColors[province->GetColor().toInteger()] = (province->HasFlag(ProvinceFlags::SEA)) ? seaColor : landColor;
+        }    
+    });
+    m_RiversImage.saveToFile(std::filesystem::path(m_Dir) / "map_data" / "rivers.png");
 }
 
 void Mod::GenerateWorld() {

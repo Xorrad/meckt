@@ -412,7 +412,7 @@ void NewModMenu::CreateMod() {
         m_Mod->DetermineProvincesFlags();
         m_Mod->ExportDefaultMapFile();
         m_Mod->ExportProvincesTerrain();
-        // TODO: Generate rivers.png image using the landmass.
+        m_Mod->GenerateRivers();
     }
     
     m_CreationState = CreationState::FINISHED;
