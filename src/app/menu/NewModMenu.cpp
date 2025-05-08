@@ -366,7 +366,7 @@ void NewModMenu::CreateMod() {
         }
     }
 
-    m_Mod = MakeShared<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage());
+    m_Mod = MakeShared<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage(), m_WaterLevel);
     m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){}, false);
     
     // Generate the world provinces using the heightmap to determine the landmass.
@@ -379,6 +379,7 @@ void NewModMenu::CreateMod() {
         m_Mod->ExportDefaultMapFile();
         m_Mod->ExportProvincesDefinition();
         m_Mod->ExportProvincesTerrain();
+        m_Mod->ExportProvincesHistory();
 
         // Remove Atlantis' default titles.
         m_Mod->ClearTitles();
@@ -394,6 +395,7 @@ void NewModMenu::CreateMod() {
         m_Mod->ClearProvinces();
         m_Mod->GenerateMissingProvinces();
         m_Mod->ExportProvincesDefinition();
+        m_Mod->ExportProvincesHistory();
         
         // Remove Atlantis' default titles.
         m_Mod->ClearTitles();

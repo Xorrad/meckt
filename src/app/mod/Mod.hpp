@@ -9,7 +9,7 @@
 class Mod {
 public:
     Mod(const std::string& dir);
-    Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage);
+    Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel);
 
     std::string GetDir() const;
     sf::Image& GetHeightmapImage();
@@ -92,6 +92,8 @@ private:
     sf::Image m_HeightmapImage;
     sf::Image m_ProvinceImage;
     sf::Image m_RiversImage;
+
+    float m_WaterLevel;
 
     std::map<uint32_t, SharedPtr<Province>> m_Provinces;
     std::map<int, SharedPtr<Province>> m_ProvincesByIds;

@@ -8,12 +8,13 @@
 #include <filesystem>
 #include <fmt/ostream.h>
 
-Mod::Mod(const std::string& dir) : Mod(dir, sf::Image(), sf::Image()) {}
+Mod::Mod(const std::string& dir) : Mod(dir, sf::Image(), sf::Image(), 3.8f) {}
 
-Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage) :
+Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel) :
     m_Dir(dir),
     m_HeightmapImage(heightmapImage),
     m_ProvinceImage(provincesImage),
+    m_WaterLevel(waterLevel),
     m_DefaultLandTerrain("plains"),
     m_DefaultSeaTerrain("sea"),
     m_DefaultCoastalSeaTerrain("sea"),
@@ -499,7 +500,66 @@ void Mod::ClearTitles() {
 }
 
 void Mod::DetermineProvincesFlags() {
+    // Loop through the province image to count the number of
+    // pixels that are below water level, in order to determine
+    // if that province is a sea or land.
 
+    // First uint is the total number of pixels.
+    // Second uint is the number of pixels below water level.
+    std::unordered_map<sf::Uint32, std::pair<uint, uint>> count;
+    count.reserve(m_Provinces.size());
+
+    uint pixels = m_ProvinceImage.getSize().x * m_ProvinceImage.getSize().y * 4;
+    const sf::Uint8* provincesPixels = m_ProvinceImage.getPixelsPtr();
+    const sf::Uint8* heightmapPixels = m_HeightmapImage.getPixelsPtr();
+
+    uint index = 0;
+    sf::Uint32 provinceColor = 0x000000FF;
+    sf::Uint32 previousProvinceColor = 0x00000000;
+
+    // Keep track of the last province iterator to avoid searching
+    // for it on successive colors of the same province.
+    auto it = count.begin();
+
+    // Cast to edit directly the bytes of the color and pixels.
+    // - colorPtr is used to read the color from the provinces map image.
+    char* colorPtr = static_cast<char*>((void*) &provinceColor);
+
+    while (index < pixels) {
+        // Copy the four bytes corresponding to RGB from the provinces image pixels
+        // to the array for the titles image.
+        // The bytes need to be flipped, otherwise provinceColor would
+        // be ABGR and we couldn't find the associated title color in the map.
+        float elevation = ((float) heightmapPixels[index] / 255.f)*100.f;
+        colorPtr[3] = provincesPixels[index++]; // R
+        colorPtr[2] = provincesPixels[index++]; // G
+        colorPtr[1] = provincesPixels[index++]; // B
+        index++;
+        
+        if (previousProvinceColor != provinceColor) {
+            it = count.find(provinceColor);
+            if (it == count.end())
+                it = count.insert({provinceColor, std::pair<uint, uint>(0, 0)}).first;
+        }
+
+        it->second.first++;
+        it->second.second += (elevation >= m_WaterLevel);
+
+        previousProvinceColor = provinceColor;
+    }
+
+    // Assign the province flags depending on the ratio
+    // of pixels below water level.
+    for (const auto& [color, pair] : count) {
+        auto it = m_Provinces.find(color);
+        if (it == m_Provinces.end())
+            continue;
+        bool isLand = (pair.first <= 2*pair.second);
+        it->second->SetFlags(ProvinceFlags::NONE);
+        it->second->SetFlag(ProvinceFlags::LAND, isLand);
+        it->second->SetFlag(ProvinceFlags::SEA, !isLand);
+        it->second->SetTerrain(isLand ? m_DefaultLandTerrain : m_DefaultSeaTerrain);
+    }
 }
 
 void Mod::GenerateRivers() {
@@ -1380,6 +1440,10 @@ void Mod::ExportProvincesTerrain() {
     for(auto& [id, province] : m_ProvincesByIds) {
         if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
             continue;
+        if (province->GetTerrain().empty()) {
+            LOG_ERROR("Land province '{}' does not have any specified terrain.", id);
+            continue;
+        }
         fmt::println(file,
             "{}={}",
             province->GetId(),
