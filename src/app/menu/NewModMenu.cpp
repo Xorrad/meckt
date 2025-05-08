@@ -65,6 +65,8 @@ void NewModMenu::Render() {
 
     if (!m_IsCreating)  {
         bool isDirEmpty = !std::filesystem::exists(m_ModPath) || File::ListFiles(m_ModPath, false).empty();
+        bool hasProvincesImage = m_TemplateType != TemplateType::PROVINCES_IMAGE || std::filesystem::exists(m_ProvincesImagePath);
+        bool canCreate = isDirEmpty && hasProvincesImage;
 
         // Configuration section.
         ImGui::PushFont(ImGui::notoSansMediumFont);
@@ -190,16 +192,19 @@ void NewModMenu::Render() {
         if (!isDirEmpty) {
             ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The mod directory is not empty!");
         }
+        if (!hasProvincesImage) {
+            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "A provinces image is required!");
+        }
         
         ImGui::Dummy(ImVec2(0.0f, 2*spacing));
-        if (!isDirEmpty) ImGui::BeginDisabled();
+        if (!canCreate) ImGui::BeginDisabled();
         if (ImGui::TextButton("🔨 Create")) {
             m_CreationThread = MakeShared<sf::Thread>([&]() {
                 this->CreateMod();
             });
             m_CreationThread->launch();
         }
-        if (!isDirEmpty) ImGui::EndDisabled();
+        if (!canCreate) ImGui::EndDisabled();
 
         ImGui::Dummy(ImVec2(0.0f, 2*spacing));
         if (ImGui::TextButton("❌ Back")) {
