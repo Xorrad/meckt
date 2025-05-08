@@ -87,16 +87,6 @@ void HomeMenu::Render() {
         ImGui::SetTooltip("Open an existing mod.");
     }
 
-    ImGui::Dummy(ImVec2(0.0f, spacing));
-    ImGui::BeginDisabled();
-    if (ImGui::TextButton("🔧  Fix Files...")) {
-
-    }
-    if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("Not implemented yet.");
-    }
-    ImGui::EndDisabled();
-
     ImGui::PopFont();
 
     ImGui::NewLine();
