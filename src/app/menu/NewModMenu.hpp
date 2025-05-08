@@ -27,6 +27,7 @@ enum class CreationState {
     GENERATING_WORLD, // Only for heightmap template type: use voronoi and conquests to generate provinces.
     GENERATING_PROVINCES, // Generate province objects for each colors in the image.
     GENERATE_TERRAIN, // Determine the terrain (land or sea) of provinces depending on heightmap.
+    GENERATE_RIVERS, // Generate the rivers image using the landmass.
 
     FINISHED
 };
@@ -37,7 +38,8 @@ const std::map<CreationState, std::string> CreationStateLabels = {
     { CreationState::COPYING_IMAGES, "Copying images to project" },
     { CreationState::GENERATING_WORLD, "Generating world based on heightmap image" },
     { CreationState::GENERATING_PROVINCES, "Generating provinces from image" },
-    { CreationState::GENERATE_TERRAIN, "Determining provinces type (land, sea...)" },
+    { CreationState::GENERATE_TERRAIN, "Determining provinces type" },
+    { CreationState::GENERATE_RIVERS, "Generating rivers image" },
     { CreationState::FINISHED, "Finished" },
 };
 

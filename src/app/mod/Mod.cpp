@@ -578,7 +578,7 @@ void Mod::GenerateRivers() {
 }
 
 void Mod::GenerateWorld() {
-
+    throw std::runtime_error("Mod::GenerateWorld() has not been implemented yet.");
 }
 
 void Mod::Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback, bool loadImages) {

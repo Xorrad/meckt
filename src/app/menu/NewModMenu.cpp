@@ -408,10 +408,12 @@ void NewModMenu::CreateMod() {
     // Not done when generating world because the landmass has already been determined.
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATE_TERRAIN;
-
+        
         m_Mod->DetermineProvincesFlags();
         m_Mod->ExportDefaultMapFile();
         m_Mod->ExportProvincesTerrain();
+
+        m_CreationState = CreationState::GENERATE_RIVERS;
         m_Mod->GenerateRivers();
     }
     
