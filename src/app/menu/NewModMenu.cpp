@@ -2,6 +2,7 @@
 
 #include "app/App.hpp"
 #include "app/mod/Mod.hpp"
+#include "app/map/Title.hpp"
 
 #include "HomeMenu.hpp"
 #include "EditorMenu.hpp"
@@ -381,11 +382,7 @@ void NewModMenu::CreateMod() {
         m_Mod->ExportProvincesTerrain();
         m_Mod->ExportProvincesHistory();
 
-        // Remove Atlantis' default titles.
-        m_Mod->ClearTitles();
-        m_Mod->ExportTitles();
-        m_Mod->ExportTitlesHistory();
-        m_Mod->ExportTitlesLocalization();
+        this->SetupAtlantisTitles();
     }
     
     // Generate a province for each color in the provinces image.
@@ -397,11 +394,7 @@ void NewModMenu::CreateMod() {
         m_Mod->ExportProvincesDefinition();
         m_Mod->ExportProvincesHistory();
         
-        // Remove Atlantis' default titles.
-        m_Mod->ClearTitles();
-        m_Mod->ExportTitles();
-        m_Mod->ExportTitlesHistory();
-        m_Mod->ExportTitlesLocalization();
+        this->SetupAtlantisTitles();
     }
     
     // Determine the type (land, sea...) of each province using the heightmap and water level.
@@ -418,4 +411,31 @@ void NewModMenu::CreateMod() {
     }
     
     m_CreationState = CreationState::FINISHED;
+}
+
+void NewModMenu::SetupAtlantisTitles() {   
+    // Keep only those five titles to avoid breaking the template.
+    SharedPtr<Title> empire = m_Mod->GetTitles().at("e_atlantis");
+    SharedPtr<Title> kingdom = m_Mod->GetTitles().at("k_atlantis");
+    SharedPtr<DuchyTitle> duchy = CastSharedPtr<DuchyTitle>(m_Mod->GetTitles().at("d_atlantis"));
+    SharedPtr<CountyTitle> county = CastSharedPtr<CountyTitle>(m_Mod->GetTitles().at("c_atlantis"));
+    SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(m_Mod->GetTitles().at("b_atlantis"));
+
+    duchy->ClearDejureTitles();
+    county->ClearDejureTitles();
+    duchy->AddDejureTitle(county);
+    county->AddDejureTitle(barony);
+    barony->SetProvinceId(1);
+
+    // Delete any other titles.
+    m_Mod->ClearTitles();
+    m_Mod->AddTitle(empire);
+    m_Mod->AddTitle(kingdom);
+    m_Mod->AddTitle(duchy);
+    m_Mod->AddTitle(county);
+
+    // Save changes.
+    m_Mod->ExportTitles();
+    m_Mod->ExportTitlesHistory();
+    m_Mod->ExportTitlesLocalization();
 }

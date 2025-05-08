@@ -98,6 +98,7 @@ public:
     void AddDejureTitle(SharedPtr<Title> title);
     void RemoveDejureTitle(SharedPtr<Title> title);
     void SetCapitalTitle(SharedPtr<CountyTitle> title);
+    void ClearDejureTitles();
 
     virtual void SetSelectionFocus(bool focus) override;
 

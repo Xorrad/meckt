@@ -232,6 +232,12 @@ void HighTitle::SetCapitalTitle(SharedPtr<CountyTitle> title) {
     m_CapitalTitle = title;
 }
 
+void HighTitle::ClearDejureTitles() {
+    for (auto& dejure : m_DejureTitles)
+        dejure->SetLiegeTitle(nullptr);
+    m_DejureTitles.clear();
+}
+
 void HighTitle::SetSelectionFocus(bool focus) {
     m_SelectionFocus = focus;
     if(focus) {

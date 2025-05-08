@@ -55,9 +55,9 @@ public:
     void UpdateProvincesImage(const std::string& filePath);
 
     void UpdateLandmassTextures();
-    // sf::Texture GenerateLandProvincesTexture() const;
 
     void CreateMod();
+    void SetupAtlantisTitles();
 
 private:
     SharedPtr<Mod> m_Mod;

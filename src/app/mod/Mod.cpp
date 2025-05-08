@@ -311,6 +311,7 @@ void Mod::RemoveTitle(SharedPtr<Title> title) {
         const SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
         m_BaroniesByProvinceIds.erase(baronyTitle->GetProvinceId());
     }
+    // TODO: search for files where the title was used in every files and log a warning.
 }
 
 void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
@@ -324,6 +325,7 @@ void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
             }
         }
     }
+    // TODO: replace using regex every occurence of 'title:{former_name}' in every files.
 }
 
 void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float hue, float saturation) {
