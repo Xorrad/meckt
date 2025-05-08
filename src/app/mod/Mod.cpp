@@ -588,18 +588,20 @@ void Mod::Load(std::function<void()> completeCallback, std::function<void(Loadin
     }
 
     changeCallback(LoadingState::TEXTURES);
-
-    if(loadImages && !m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
-        LOG_ERROR("Failed to load heightmap image at ", m_Dir + "/map_data/heightmap.png");
-    }
+    
     if(loadImages && !m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png")) {
         std::string error = fmt::format("Failed to load provinces image at ", m_Dir + "/map_data/provinces.png");
         LOG_ERROR("{}", error);
         errorCallback(error);
         return;
     }
+    if(loadImages && !m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
+        LOG_ERROR("Failed to load heightmap image at ", m_Dir + "/map_data/heightmap.png");
+        m_HeightmapImage.create(m_ProvinceImage.getSize().x, m_ProvinceImage.getSize().y, sf::Color::Black);
+    }
     if(loadImages && !m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
         LOG_ERROR("Failed to load rivers image at ", m_Dir + "/map_data/rivers.png");
+        m_RiversImage.create(m_ProvinceImage.getSize().x, m_ProvinceImage.getSize().y, sf::Color::White);
     }
     
     #define LOAD_CATCH(arg, type, name) try { changeCallback(type); arg(); } catch (std::exception& e) { std::string msg = fmt::format("Failed to load {}\n{}", name, e.what()); LOG_ERROR("{}", msg); errorCallback(msg); return; }
