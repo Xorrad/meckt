@@ -143,7 +143,7 @@ void HomeMenu::Render() {
     ImGui::End();
 
     // Determine which modal should be displayed.
-    if (s_PromptUpdate && !m_App->GetUpdateDetails().shouldUpdate) {
+    if (s_PromptUpdate && m_App->GetUpdateDetails().shouldUpdate) {
         ImGui::OpenPopup("Update");
         this->RenderUpdateModal();
     }

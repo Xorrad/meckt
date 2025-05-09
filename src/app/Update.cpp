@@ -112,7 +112,7 @@ std::string Update::HttpGet(const std::string& url, const std::string& filePath)
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "meckt");
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     
-    if (filePath.empty())
+    if (filePath.empty()) {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     }
@@ -126,7 +126,7 @@ std::string Update::HttpGet(const std::string& url, const std::string& filePath)
 
     CURLcode res = curl_easy_perform(curl);
 
-    if (file)
+    if (!filePath.empty())
         fclose(file);
 
     if (res != CURLE_OK) {
