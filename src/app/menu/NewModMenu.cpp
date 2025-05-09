@@ -348,7 +348,17 @@ void NewModMenu::CreateMod() {
     descriptorFile << descriptorData->Serialize();
     descriptorFile.close();
 
-    // TODO: change water level in common/defines/00_defines if it isn't the default value.
+    // Copy the vanilla 00_defines file if the water level is not the default one. 
+    if (m_WaterLevel != Configuration::defaultWaterLevel) {
+        std::filesystem::create_directories((modPath / "common" / "defines").string().c_str());
+
+        // Replace the vanilla water level with what the user specified.
+        std::ofstream outFile((modPath / "common" / "defines" / "01_defines.txt").string(), std::ios::out);
+        outFile << "NJominiMap = {\n";
+        outFile << fmt::format("\tWATERLEVEL = {:2.f}\n", m_WaterLevel);
+        outFile << "}";
+        outFile.close();
+    }
 
     // Copy heightmap and provinces images into the mod directory.
     if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE || m_TemplateType == TemplateType::PROVINCES_IMAGE) {
