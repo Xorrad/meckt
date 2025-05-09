@@ -5,7 +5,7 @@ rwildcard = $(foreach d,$(wildcard $(1:=/*)), $(call rwildcard,$d,$2) $(filter $
 
 # Compiler flags
 CXX      := g++
-CXXFLAGS := -std=c++20 -pedantic-errors -Wno-format-security -Wno-sign-compare -DSFML_STATIC
+CXXFLAGS := -std=c++20 -pedantic-errors -Wno-format-security -Wno-sign-compare -DSFML_STATIC -DIMGUI_USE_WCHAR32
 
 # Targets
 TARGET := meckt.exe
@@ -45,9 +45,9 @@ endif
 
 # Libraries
 LDFLAGS := -L$(VENDOR_DIR)/lib/fmt -lfmt_win \
-           -L$(VENDOR_DIR)/lib/nfd -lnfd_win -lcomctl32 -lole32 -luuid -lcurl \
+           -L$(VENDOR_DIR)/lib/nfd -lnfd_win -lcomctl32 -lole32 -luuid \
            -L$(SFML_DIR)/lib/ -lsfml-graphics-s -lsfml-window-s -lsfml-system-s \
-           -lopengl32 -lfreetype -lgdi32 -lwinmm -ldsound -lws2_32 \
+           -lopengl32 -lfreetype -lgdi32 -lwinmm -ldsound -lws2_32 -lwinhttp \
            -ldbghelp -lpsapi \
            -static-libgcc -static-libstdc++ -static -DSFML_STATIC
 

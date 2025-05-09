@@ -15,7 +15,7 @@
 NewModMenu::NewModMenu(App* app) :
     Menu(app, "New Mod"),
     m_ModName("My Mod"),
-    m_ModPath(std::filesystem::current_path().string() + "/my_mod"),
+    m_ModPath((std::filesystem::current_path() / "my_mod").string()),
     m_TemplateType(TemplateType::DEFAULT),
     m_ProvincesImagePath(""),
     m_HeightmapImagePath(""),
@@ -24,9 +24,9 @@ NewModMenu::NewModMenu(App* app) :
     m_CreationState(CreationState::CLONING)
 {
 #ifdef DEBUG
-m_ModPath = std::filesystem::current_path().string() + "/tests/mods/my_mod";
-this->UpdateHeightmapImage(std::filesystem::current_path().string() + "/tests/mods/test_hae/map_data/heightmap.png");
-this->UpdateProvincesImage(std::filesystem::current_path().string() + "/tests/mods/test_hae/map_data/provinces.png");
+m_ModPath = (std::filesystem::current_path() / "tests/mods/my_mod").string();
+this->UpdateHeightmapImage((std::filesystem::current_path() / "tests/mods/test_hae/map_data/heightmap.png").string());
+this->UpdateProvincesImage((std::filesystem::current_path() / "tests/mods/test_hae/map_data/provinces.png").string());
 #endif
 }
 
@@ -309,30 +309,31 @@ void NewModMenu::CreateMod() {
 
     m_IsCreating = true;
     std::filesystem::path modPath = std::filesystem::path(m_ModPath);
-    std::filesystem::create_directories(modPath);
+    std::filesystem::create_directories(modPath.parent_path().string().c_str());
+    std::filesystem::remove(modPath.string().c_str());
 
     // Clone Atlantis into the mod directory.
     m_CreationState = CreationState::CLONING;
     std::filesystem::path parentPath = std::filesystem::path(m_ModPath).parent_path();
     std::filesystem::path atlantisPath = parentPath / "atlantis.zip";
-    File::DownloadFile(Configuration::atlantisURL, atlantisPath);
+    File::DownloadFile(Configuration::atlantisURL, atlantisPath.string());
     // TODO: handle errors.
 
     // Unzip the files.
     m_CreationState = CreationState::UNZIPPING;
-    File::UnzipFile(atlantisPath, parentPath);
+    File::UnzipFile(atlantisPath.string(), parentPath.string());
 
     // Setup the Atlantis template.
     m_CreationState = CreationState::SETTING_UP;
-    std::rename((parentPath / "Atlantis-main").c_str(), modPath.c_str());
-    std::remove((modPath / "Atlantis.code-workspace").c_str());
-    std::remove((modPath / "Atlantis.mod").c_str());
-    std::remove((modPath / "README.md").c_str());
-    std::remove((modPath / ".gitattributes").c_str());
-    std::remove((modPath / ".gitattributes").c_str());
-    std::remove(atlantisPath.c_str());
+    std::rename((parentPath / "Atlantis-main").string().c_str(), modPath.string().c_str()); 
+    std::remove((modPath / "Atlantis.code-workspace").string().c_str());
+    std::remove((modPath / "Atlantis.mod").string().c_str());
+    std::remove((modPath / "README.md").string().c_str());
+    std::remove((modPath / ".gitattributes").string().c_str());
+    std::remove((modPath / ".gitattributes").string().c_str());
+    std::remove(atlantisPath.string().c_str());
 
-    SharedPtr<Jomini::Object> descriptorData = Jomini::ParseFile(modPath / "descriptor.mod");
+    SharedPtr<Jomini::Object> descriptorData = Jomini::ParseFile((modPath / "descriptor.mod").string());
     descriptorData->Put("name", "\"" + m_ModName + "\"");
     std::ofstream descriptorFile(modPath / "descriptor.mod", std::ios::out);
     descriptorFile << descriptorData->Serialize();
@@ -355,6 +356,7 @@ void NewModMenu::CreateMod() {
 
         if (std::filesystem::exists(m_HeightmapImagePath)) {
             std::filesystem::remove((modPath / "map_data" / "heightmap.png").c_str());
+            std::filesystem::create_directories((modPath / "map_data").c_str());
             std::filesystem::copy(m_HeightmapImagePath, (modPath / "map_data" / "heightmap.png").c_str());
         }
     }
@@ -363,6 +365,7 @@ void NewModMenu::CreateMod() {
 
         if (std::filesystem::exists(m_ProvincesImagePath)) {
             std::filesystem::remove((modPath / "map_data" / "provinces.png").c_str());
+            std::filesystem::create_directories((modPath / "map_data").c_str());
             std::filesystem::copy(m_ProvincesImagePath, (modPath / "map_data" / "provinces.png").c_str());
         }
     }

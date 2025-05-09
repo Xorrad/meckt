@@ -106,14 +106,14 @@ void HomeMenu::Render() {
         std::filesystem::path path(dir);
 
         ImGui::Dummy(ImVec2(0.0f, spacing));
-        if (ImGui::TextButton(path.filename().c_str())) {
+        if (ImGui::TextButton(path.filename().string().c_str())) {
             openedModDir = dir;
             break;
         }
         ImGui::SameLine();
         ImGui::Dummy(ImVec2(5.0f, 0.0f));
         ImGui::SameLine();
-        ImGui::Text(std::filesystem::absolute(path).c_str());
+        ImGui::Text(std::filesystem::absolute(path).string().c_str());
         i++;
     }
     ImGui::PopFont();
@@ -143,7 +143,7 @@ void HomeMenu::Render() {
     ImGui::End();
 
     // Determine which modal should be displayed.
-    if (s_PromptUpdate && m_App->GetUpdateDetails().shouldUpdate) {
+    if (s_PromptUpdate && !m_App->GetUpdateDetails().shouldUpdate) {
         ImGui::OpenPopup("Update");
         this->RenderUpdateModal();
     }
