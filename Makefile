@@ -8,7 +8,7 @@ GTKLIBS = $(shell pkg-config --libs gtk+-3.0)
 
 # Compiler flags
 CXX      := g++-13
-CXXFLAGS := -std=c++20 -pedantic-errors -Wall -Wno-format-security -Wno-sign-compare -Wno-unused-but-set-variable
+CXXFLAGS := -std=c++20 -pedantic-errors -Wall -Wno-format-security -Wno-sign-compare -Wno-unused-but-set-variable -DIMGUI_USE_WCHAR32
 
 # Targets
 TARGET   := meckt
@@ -38,7 +38,7 @@ OBJECTS      := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES := $(OBJECTS:.o=.d)
 
 # Build type (default, debug, release)
-BUILD_TYPE := release
+BUILD_TYPE := debug
 ifeq ($(BUILD_TYPE),debug)
     CXXFLAGS += -O0 -DDEBUG -g #-fsanitize=address
 else ifeq ($(BUILD_TYPE),release)
