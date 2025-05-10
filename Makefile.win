@@ -49,7 +49,7 @@ LDFLAGS := -L$(VENDOR_DIR)/lib/fmt -lfmt_win \
            -L$(SFML_DIR)/lib/ -lsfml-graphics-s -lsfml-window-s -lsfml-system-s \
            -lopengl32 -lfreetype -lgdi32 -lwinmm -ldsound -lws2_32 -lwinhttp \
            -ldbghelp -lpsapi \
-           -static-libgcc -static-libstdc++ -static -DSFML_STATIC
+           -static-libgcc -static-libstdc++ -static
 
 .PHONY: all build clean info run
 
@@ -70,7 +70,8 @@ $(OBJ_DIR)/%.o: %.cpp $(PCH)
 # Executable target
 $(BIN_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $(BIN_DIR)/$(TARGET) $^ $(LDFLAGS)
+	windres $(SRC_DIR)/version.rc -o $(OBJ_DIR)/$(SRC_DIR)/version.o
+	$(CXX) $(CXXFLAGS) $(OBJ_DIR)/$(SRC_DIR)/version.o -o $(BIN_DIR)/$(TARGET) $^ $(LDFLAGS)
 
 # Make commands
 build:

@@ -1,0 +1,31 @@
+#include <windows.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     1,6,0,0
+PRODUCTVERSION  1,6,0,0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       0
+FILEOS          VOS__WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     0
+
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0" // US English + Unicode
+        BEGIN
+            VALUE "CompanyName",      "Xorrad"
+            VALUE "FileDescription",  "A map editor for Crusader Kings 3."
+            VALUE "FileVersion",      "1.6.0"
+            VALUE "InternalName",     "meckt"
+            VALUE "OriginalFilename", "meckt.exe"
+            VALUE "ProductName",      "meckt"
+            VALUE "ProductVersion",   "1.6.0"
+            VALUE "LegalCopyright",   ""
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
