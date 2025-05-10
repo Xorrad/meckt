@@ -17,45 +17,42 @@ void ImGui::SetupSettings() {
 void ImGui::SetupFonts() {
     ImGuiIO& io = ImGui::GetIO();
 
-    // Extend the default ImGui font with NotoSans for missing glyphs.
-    {
-        ImFontConfig config;
-        config.MergeMode = true;
-        config.GlyphOffset = ImVec2(0.0f, 1.0f); // Adjust vertically.
+    io.Fonts->Clear();
 
-        // Define ranges of glyphs to merge into the default ImGui font.
-        const ImWchar ranges[] = {
-            0x0080, 0xFFFF,
-            0
-        };
-        io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-VariableFont_wdth,wght.ttf", 16.0f, &config, ranges);
-    }
+    // Use NotoSans with extended latin as the global default font.
+    ImFontGlyphRangesBuilder builder;
+    ImVector<ImWchar> defaultRanges;
+    builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesDefault()); // Basic Latin + Latin Supplement
+    builder.AddRanges(new ImWchar[]{ 0x0080, 0xFFFF, 0 }); // Latin-1 Supplement + Latin Extended-A + Latin Extended-B 
+    builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesGreek()); // Greek and Coptic
+    builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesCyrillic()); // Cyrillic + Cyrillic Supplement + Cyrillic Extended-A + Cyrillic Extended-B
+    builder.BuildRanges(&defaultRanges);
+    ImFont* defaultFont = io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-VariableFont_wdth,wght.ttf", 18.0f, NULL, defaultRanges.Data);
+    io.FontDefault = defaultFont;
+    
+    // Extend the normal sized noto sans font with emojis.
+    notoSansNormalFont = io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-VariableFont_wdth,wght.ttf", 20.0f);
+    ImFontConfig emojiConfig;
+    emojiConfig.MergeMode = true;
+    emojiConfig.PixelSnapH = true;
+    emojiConfig.GlyphMinAdvanceX = 20.0f;
+    const ImWchar emojiRanges[] = {
+        0x1F300, 0x1F5FF, // Misc Symbols and Pictographs
+        0x1F600, 0x1F64F, // Emoticons
+        0x1F680, 0x1F6FF, // Transport & Map Symbols
+        0x1F900, 0x1F9FF, // Supplemental Symbols and Pictographs
+        0x2600,  0x26FF,  // Misc symbols (sun, umbrella, etc.)
+        0x2700,  0x27BF,  // Dingbats
+        0x200D,  0x200D,  // Zero Width Joiner (for combining emojis)
+        0xFE0F,  0xFE0F,  // Variation Selector-16 (emoji style)
+        0
+    };
+    io.Fonts->AddFontFromFileTTF("assets/fonts/NotoEmoji-VariableFont_wght.ttf", 20.0f, &emojiConfig, emojiRanges);
+
 
     // Load NotoSans in different size for the main menu.
-    notoSansLargeFont = io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-VariableFont_wdth,wght.ttf", 72.0f);
     notoSansMediumFont = io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-VariableFont_wdth,wght.ttf", 30.0f);
-    notoSansNormalFont = io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-VariableFont_wdth,wght.ttf", 20.0f);
-
-    {
-        // Extend the default ImGui font with emojis.
-        ImFontConfig config;
-        config.MergeMode = true;
-        config.PixelSnapH = true;
-        config.GlyphMinAdvanceX = 20.0f;
-        
-        const ImWchar ranges[] = {
-            0x1F300, 0x1F5FF, // Misc Symbols and Pictographs
-            0x1F600, 0x1F64F, // Emoticons
-            0x1F680, 0x1F6FF, // Transport & Map Symbols
-            0x1F900, 0x1F9FF, // Supplemental Symbols and Pictographs
-            0x2600,  0x26FF,  // Misc symbols (sun, umbrella, etc.)
-            0x2700,  0x27BF,  // Dingbats
-            0x200D,  0x200D,  // Zero Width Joiner (for combining emojis)
-            0xFE0F,  0xFE0F,  // Variation Selector-16 (emoji style)
-            0
-        };
-        io.Fonts->AddFontFromFileTTF("assets/fonts/NotoEmoji-VariableFont_wght.ttf", 20.0f, &config, ranges);
-    }
+    notoSansLargeFont = io.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-VariableFont_wdth,wght.ttf", 72.0f);
 
     if(!ImGui::SFML::UpdateFontTexture())
         LOG_ERROR("Failed to extend default font with complementary fonts.");
