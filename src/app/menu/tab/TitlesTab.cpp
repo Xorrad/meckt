@@ -60,6 +60,9 @@ void TitlesTab::Render() {
             if(filteredTitles.contains(title->GetName()) && !filteredTitles[title->GetName()])
                 return;
 
+            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(title);
+            bool severalSelected = m_Menu->GetSelectionHandler().GetTitles().size() > 1;
+
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
@@ -71,8 +74,18 @@ void TitlesTab::Render() {
                 ImGui::TreeNodeEx(title->GetName().c_str(), flags);
 
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                    m_Menu->GetSelectionHandler().ClearSelection();
-                    m_Menu->GetSelectionHandler().Select(title);
+                    // Clear selection without LSHIFT.
+                    if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                        m_Menu->GetSelectionHandler().ClearSelection();
+                    }
+
+                    // Unselect if selected and LSHIFT, select otherwise.
+                    if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                        m_Menu->GetSelectionHandler().Deselect(title);
+                    }
+                    else if(!isSelected || severalSelected) {
+                        m_Menu->GetSelectionHandler().Select(title);
+                    }
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(mod);
@@ -94,8 +107,18 @@ void TitlesTab::Render() {
                 bool open = ImGui::TreeNodeEx(title->GetName().c_str(), flags);
                 
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                    m_Menu->GetSelectionHandler().ClearSelection();
-                    m_Menu->GetSelectionHandler().Select(title);
+                    // Clear selection without LSHIFT.
+                    if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                        m_Menu->GetSelectionHandler().ClearSelection();
+                    }
+
+                    // Unselect if selected and LSHIFT, select otherwise.
+                    if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                        m_Menu->GetSelectionHandler().Deselect(title);
+                    }
+                    else if(!isSelected || severalSelected) {
+                        m_Menu->GetSelectionHandler().Select(title);
+                    }
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(mod);
