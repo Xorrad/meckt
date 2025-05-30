@@ -36,19 +36,32 @@ void ProvincesTab::Render() {
             if(filteredProvinces.contains(province->GetName()) && !filteredProvinces[province->GetName()])
                 continue;
 
+            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(province);
+            bool severalSelected = m_Menu->GetSelectionHandler().GetProvinces().size() > 1;
+
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
-            if(m_Menu->GetSelectionHandler().IsSelected(province))
+            if(isSelected)
                 flags |= ImGuiTreeNodeFlags_Selected;
             
             ImGui::TreeNodeEx(std::to_string(province->GetId()).c_str(), flags);
             ImGui::TableNextColumn();
 
             if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                m_Menu->GetSelectionHandler().ClearSelection();
-                m_Menu->GetSelectionHandler().Select(province);
+                // Clear selection without LSHIFT.
+                if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                    m_Menu->GetSelectionHandler().ClearSelection();
+                }
+
+                // Unselect if selected and LSHIFT, select otherwise.
+                if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                    m_Menu->GetSelectionHandler().Deselect(province);
+                }
+                else if(!isSelected || severalSelected) {
+                    m_Menu->GetSelectionHandler().Select(province);
+                }
             }
             if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                 sf::Vector2i titlePos = province->GetImagePosition();
