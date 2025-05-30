@@ -50,10 +50,11 @@ void TitlesTab::Render() {
         }
     }
     
-    if(ImGui::BeginTable("Titles Tree", 3, ImGuiTableFlags_Resizable)) {
+    if(ImGui::BeginTable("Titles Tree", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY)) {
         ImGui::TableSetupColumn("Name");
         ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 50.0f);
         ImGui::TableSetupColumn("Color", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupScrollFreeze(3, 1);
         ImGui::TableHeadersRow();
 
         std::function<void(const SharedPtr<Title>&)> DisplayTitle = [&](const SharedPtr<Title>& title) {
