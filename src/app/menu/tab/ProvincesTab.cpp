@@ -17,25 +17,27 @@ void ProvincesTab::Render() {
 
     // Generate a map of whether a province is filtered by name or not.
     static std::string filter = "";
-    static std::map<std::string, bool> filteredProvinces;
-    if(ImGui::InputText("filter", &filter)) {
+    static std::vector<SharedPtr<Province>> filteredProvinces;
+    // Keep track of how many provinces there were last time the list was updated.
+    static size_t lastProvincesCount = 0;
+    if(ImGui::InputText("filter", &filter) || mod->GetProvinces().size() != lastProvincesCount) {
         filteredProvinces.clear();
+        lastProvincesCount = mod->GetProvinces().size();
 
         for(const auto& [colorId, province] : mod->GetProvinces()) {
-            filteredProvinces[province->GetName()] = (province->GetName().find(filter) != std::string::npos);
+            if (province->GetName().find(filter) != std::string::npos)
+                filteredProvinces.push_back(province);
         }
     }
     
-    if(ImGui::BeginTable("Provinces Tree", 3, ImGuiTableFlags_Resizable)) {
+    if(ImGui::BeginTable("Provinces Tree", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY)) {
         ImGui::TableSetupColumn("Id", ImGuiTableColumnFlags_WidthFixed, 40.0f);
         ImGui::TableSetupColumn("Name");
         ImGui::TableSetupColumn("Color", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupScrollFreeze(3, 1);
         ImGui::TableHeadersRow();
 
-        for(const auto& [colorId, province] : mod->GetProvinces()) {
-            if(filteredProvinces.contains(province->GetName()) && !filteredProvinces[province->GetName()])
-                continue;
-
+        for(const SharedPtr<Province>& province : filteredProvinces) {
             bool isSelected = m_Menu->GetSelectionHandler().IsSelected(province);
             bool severalSelected = m_Menu->GetSelectionHandler().GetProvinces().size() > 1;
 
