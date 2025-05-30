@@ -18,24 +18,55 @@ void ProvincesTab::Render() {
     // Generate a map of whether a province is filtered by name or not.
     static std::string filter = "";
     static std::vector<SharedPtr<Province>> filteredProvinces;
+    static ImGuiTableColumnSortSpecs lastSortingSpecs;
     // Keep track of how many provinces there were last time the list was updated.
     static size_t lastProvincesCount = 0;
+    bool updated = false;
     if(ImGui::InputText("filter", &filter) || mod->GetProvinces().size() != lastProvincesCount) {
         filteredProvinces.clear();
         lastProvincesCount = mod->GetProvinces().size();
+        updated = true;
 
         for(const auto& [colorId, province] : mod->GetProvinces()) {
             if (province->GetName().find(filter) != std::string::npos)
                 filteredProvinces.push_back(province);
         }
     }
+
+    const auto SortProvinces = [&](int column, ImGuiSortDirection dir) {
+        auto comparator = [&](const SharedPtr<Province>& a, const SharedPtr<Province>& b) {
+            switch (column) {
+                case 0: // Id
+                    return dir == ImGuiSortDirection_Ascending ? a->GetId() < b->GetId() : a->GetId() > b->GetId();
+                case 1: // Name
+                    return dir == ImGuiSortDirection_Ascending ? a->GetName() < b->GetName() : a->GetName() > b->GetName();
+                case 2: // Color
+                    return dir == ImGuiSortDirection_Ascending ? a->GetColorId() < b->GetColorId() : a->GetColorId() > b->GetColorId();
+                default:
+                    return false;
+            }
+        };
+        std::sort(filteredProvinces.begin(), filteredProvinces.end(), comparator);
+    };
     
-    if(ImGui::BeginTable("Provinces Tree", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY)) {
-        ImGui::TableSetupColumn("Id", ImGuiTableColumnFlags_WidthFixed, 40.0f);
+    if(ImGui::BeginTable("Provinces Tree", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable)) {
+        ImGui::TableSetupColumn("Id", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort, 40.0f);
         ImGui::TableSetupColumn("Name");
         ImGui::TableSetupColumn("Color", ImGuiTableColumnFlags_WidthFixed, 100.0f);
         ImGui::TableSetupScrollFreeze(3, 1);
         ImGui::TableHeadersRow();
+
+        // Sort the provinces list using ImGui.
+        ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs();
+        if (sortSpecs && sortSpecs->SpecsDirty && sortSpecs->SpecsCount > 0) {
+            const ImGuiTableColumnSortSpecs& spec = sortSpecs->Specs[0];
+            SortProvinces(spec.ColumnIndex, spec.SortDirection);
+            lastSortingSpecs = spec;
+            sortSpecs->SpecsDirty = false;
+        }
+        else if (updated) {
+            SortProvinces(lastSortingSpecs.ColumnIndex, lastSortingSpecs.SortDirection);
+        }
 
         for(const SharedPtr<Province>& province : filteredProvinces) {
             bool isSelected = m_Menu->GetSelectionHandler().IsSelected(province);
