@@ -692,19 +692,21 @@ void Mod::LoadTerrainTypes() {
     // Insert vanilla terrains that are not already loaded.
     auto vanillaTypes = {
         TerrainType("plains", sf::Color(204, 163, 102)),
+        TerrainType("sea", sf::Color(0, 0, 255)),
+        TerrainType("coastal_sea", sf::Color(255, 255, 230)),
         TerrainType("farmlands", sf::Color(255, 50, 50)),
         TerrainType("hills", sf::Color(200, 200, 200)),
         TerrainType("mountains", sf::Color(255, 255, 255)),
         TerrainType("desert", sf::Color(255, 255, 0)),
         TerrainType("desert Mountains", sf::Color(100, 100, 0)),
         TerrainType("oasis", sf::Color(100, 100, 255)),
-        TerrainType("jungle", sf::Color(100, 0, 0)),
-        TerrainType("forest", sf::Color(255, 0, 0)),
-        TerrainType("wetlands", sf::Color(100, 20, 20)),
-        TerrainType("steppe", sf::Color(200, 100, 200)),
-        TerrainType("floodplains", sf::Color(50, 50, 255)),
-        TerrainType("drylands", sf::Color(200, 200, 0)),
-        TerrainType("sea", sf::Color(0, 0, 255))
+        TerrainType("jungle", sf::Color(10, 60, 35)),
+        TerrainType("forest", sf::Color(50, 255, 25)),
+        TerrainType("taiga", sf::Color(0, 90, 0)),
+        TerrainType("wetlands", sf::Color(75, 200, 200)),
+        TerrainType("steppe", sf::Color(200, 100, 25)),
+        TerrainType("floodplains", sf::Color(200, 50, 100)),
+        TerrainType("drylands", sf::Color(220, 45, 120))
     };
 
     for(auto type : vanillaTypes) {
