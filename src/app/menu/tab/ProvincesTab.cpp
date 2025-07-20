@@ -28,7 +28,7 @@ void ProvincesTab::Render() {
         updated = true;
 
         for(const auto& [colorId, province] : mod->GetProvinces()) {
-            if (province->GetName().find(filter) != std::string::npos)
+            if (province->GetName().find(filter) != std::string::npos || std::to_string(province->GetId()).find(filter) != std::string::npos)
                 filteredProvinces.push_back(province);
         }
     }
