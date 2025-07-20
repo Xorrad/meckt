@@ -698,7 +698,7 @@ void Mod::LoadTerrainTypes() {
         TerrainType("hills", sf::Color(200, 200, 200)),
         TerrainType("mountains", sf::Color(255, 255, 255)),
         TerrainType("desert", sf::Color(255, 255, 0)),
-        TerrainType("desert Mountains", sf::Color(100, 100, 0)),
+        TerrainType("desert_mountains", sf::Color(100, 100, 0)),
         TerrainType("oasis", sf::Color(100, 100, 255)),
         TerrainType("jungle", sf::Color(10, 60, 35)),
         TerrainType("forest", sf::Color(50, 255, 25)),
