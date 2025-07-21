@@ -24,13 +24,15 @@ void Configuration::Load() {
     nlohmann::json data = nlohmann::json::parse(file);
     file.close();
 
-    recentMods = data.value("recent_mods", std::list<std::string>{});
+    Configuration::recentMods = data.value("recent_mods", std::list<std::string>{});
+    Configuration::compactTooltip = data.value("compact_tooltip", false);
 }
 
 void Configuration::Save() {
     // Build a json object with all settings to save.
     nlohmann::json json;
     json["recent_mods"] = Configuration::recentMods;
+    json["compact_tooltip"] = Configuration::compactTooltip;
 
     // Dump that json object into the settings file.
     std::ofstream file(Configuration::settingsFile, std::ios::out);

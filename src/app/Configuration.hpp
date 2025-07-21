@@ -35,6 +35,7 @@ public:
     inline static std::string settingsFile = "settings.yml";
     inline static std::list<std::string> recentMods = std::list<std::string>{};
     inline static float defaultWaterLevel = 3.8f;
+    inline static bool compactTooltip = false;
 
     // Graphics
     inline static sf::Vector2u windowResolution = {800, 600};

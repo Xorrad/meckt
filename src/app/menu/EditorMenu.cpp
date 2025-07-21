@@ -81,7 +81,9 @@ void EditorMenu::UpdateHoveringText() {
     if(province == nullptr)
         goto Hide;
 
-    {
+    // Detailed tooltip always showing the province and liege titles info
+    // regardless of the current map mode.
+    if (!Configuration::compactTooltip) {
         std::string text = fmt::format("#{} - {}", province->GetId(), province->GetName());
 
         const SharedPtr<Title>& barony = m_App->GetMod()->GetProvinceLiegeTitle(province, TitleType::BARONY);
@@ -94,32 +96,33 @@ void EditorMenu::UpdateHoveringText() {
 
         m_HoverText.setString(text);
         m_HoverText.setPosition({(float) mousePosition.x + 12, (float) mousePosition.y - 8});
-        // m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
-        // m_HoverText.setFillColor(brightenColor(province->GetColor()));
+        m_HoverText.setFillColor(sf::Color::Black);
 
         m_HoverShape.setPosition({(float) mousePosition.x + 10, (float) mousePosition.y - 10});
         m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().width + 4, (float) m_HoverText.getGlobalBounds().height + 8});
         return;
     }
 
-    // if(m_MapMode == MapMode::PROVINCES
-    // || m_MapMode == MapMode::TERRAIN
-    // || m_MapMode == MapMode::CULTURE
-    // || m_MapMode == MapMode::RELIGION) {
-    //     m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
-    //     m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
-    //     m_HoverText.setFillColor(brightenColor(province->GetColor()));
-    //     return;
-    // }
-    // else if(MapModeIsTitle(m_MapMode)) {
-    //     const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
-    //     if(title == nullptr)
-    //         goto Hide;
-    //     m_HoverText.setString(fmt::format("{}", title->GetName()));
-    //     m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
-    //     m_HoverText.setFillColor(brightenColor(title->GetColor()));
-    //     return;
-    // }
+    // Legacy compact tooltip displaying the province or title info
+    // depending on the current map mode.
+    if(m_MapMode == MapMode::PROVINCES
+    || m_MapMode == MapMode::TERRAIN
+    || m_MapMode == MapMode::CULTURE
+    || m_MapMode == MapMode::RELIGION) {
+        m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
+        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+        m_HoverText.setFillColor(brightenColor(province->GetColor()));
+        return;
+    }
+    else if(MapModeIsTitle(m_MapMode)) {
+        const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+        if(title == nullptr)
+            goto Hide;
+        m_HoverText.setString(fmt::format("{}", title->GetName()));
+        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+        m_HoverText.setFillColor(brightenColor(title->GetColor()));
+        return;
+    }
 
     Hide:
     m_HoverText.setString("");
@@ -337,7 +340,8 @@ void EditorMenu::Render() {
 
     ToggleCamera(false);
 
-    window.draw(m_HoverShape);
+    if (!Configuration::compactTooltip)
+        window.draw(m_HoverShape);
     window.draw(m_HoverText);
 
     this->RenderMenuBar();
@@ -507,6 +511,9 @@ void EditorMenu::RenderMenuBar() {
             }
             
             ImGui::MenuItem("Borders", "", &m_DisplayBorders);
+            if(ImGui::MenuItem("Compact Tooltip", "", &Configuration::compactTooltip)) {
+                Configuration::Save();
+            }
 
             if(ImGui::BeginMenu("Map")) {
                 for(int i = 0; i < (int) MapMode::COUNT; i++) {
