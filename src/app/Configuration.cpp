@@ -18,6 +18,10 @@ void Configuration::Initialize() {
 }
 
 void Configuration::Load() {
+    // Check if there is a legacy settings file saved as yaml, if so, rename it to json.
+    if (std::filesystem::exists("settings.yml"))
+        std::filesystem::rename("settings.yml", Configuration::settingsFile);
+
     // Import settings from the specified file as an json object.
     std::ifstream file(Configuration::settingsFile, std::ios::binary);
     if (!file) return;
