@@ -51,6 +51,7 @@ private:
     float m_TotalZoom;
 
     sf::Text m_HoverText;
+    sf::RectangleShape m_HoverShape;
 
     std::map<Tabs, SharedPtr<Tab>> m_Tabs;
     bool m_DisplayBorders;

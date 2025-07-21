@@ -647,6 +647,8 @@ void Mod::LoadHoldingTypes() {
 
     LOG_INFO("Loaded {} holding types from {} files", m_HoldingTypes.size(), filesPath.size());
 
+    // TODO: add new nomads holding types.
+
     // Insert vanilla holdings if they are not already added.
     // NB: holding type 'none' is added by default.
     auto vanillaTypes = {

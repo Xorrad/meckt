@@ -31,9 +31,12 @@ m_ExitToMainMenu(false)
 
     m_HoverText.setCharacterSize(12);
     m_HoverText.setString("#");
-    m_HoverText.setFillColor(sf::Color::White);
+    m_HoverText.setFillColor(sf::Color::Black);
     m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
     // m_HoverText.setPosition({5, m_App->GetWindow().getSize().y - m_HoverText.getGlobalBounds().height - 10});
+    m_HoverShape.setOutlineColor(sf::Color::Black);
+    m_HoverShape.setOutlineThickness(1.0f);
+    m_HoverShape.setFillColor(sf::Color::White);
 
     this->InitSelectionCallbacks();
     this->InitTabs();
@@ -78,24 +81,45 @@ void EditorMenu::UpdateHoveringText() {
     if(province == nullptr)
         goto Hide;
 
-    if(m_MapMode == MapMode::PROVINCES
-    || m_MapMode == MapMode::TERRAIN
-    || m_MapMode == MapMode::CULTURE
-    || m_MapMode == MapMode::RELIGION) {
-        m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
-        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
-        m_HoverText.setFillColor(brightenColor(province->GetColor()));
+    {
+        std::string text = fmt::format("#{} - {}", province->GetId(), province->GetName());
+
+        const SharedPtr<Title>& barony = m_App->GetMod()->GetProvinceLiegeTitle(province, TitleType::BARONY);
+        SharedPtr<Title> title = barony;
+
+        while(title != nullptr) {
+            text += fmt::format("\n{}", title->GetName());
+            title = title->GetLiegeTitle();
+        }
+
+        m_HoverText.setString(text);
+        m_HoverText.setPosition({(float) mousePosition.x + 12, (float) mousePosition.y - 8});
+        // m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+        // m_HoverText.setFillColor(brightenColor(province->GetColor()));
+
+        m_HoverShape.setPosition({(float) mousePosition.x + 10, (float) mousePosition.y - 10});
+        m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().width + 4, (float) m_HoverText.getGlobalBounds().height + 8});
         return;
     }
-    else if(MapModeIsTitle(m_MapMode)) {
-        const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
-        if(title == nullptr)
-            goto Hide;
-        m_HoverText.setString(fmt::format("{}", title->GetName()));
-        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
-        m_HoverText.setFillColor(brightenColor(title->GetColor()));
-        return;
-    }
+
+    // if(m_MapMode == MapMode::PROVINCES
+    // || m_MapMode == MapMode::TERRAIN
+    // || m_MapMode == MapMode::CULTURE
+    // || m_MapMode == MapMode::RELIGION) {
+    //     m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
+    //     m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+    //     m_HoverText.setFillColor(brightenColor(province->GetColor()));
+    //     return;
+    // }
+    // else if(MapModeIsTitle(m_MapMode)) {
+    //     const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+    //     if(title == nullptr)
+    //         goto Hide;
+    //     m_HoverText.setString(fmt::format("{}", title->GetName()));
+    //     m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+    //     m_HoverText.setFillColor(brightenColor(title->GetColor()));
+    //     return;
+    // }
 
     Hide:
     m_HoverText.setString("");
@@ -313,6 +337,7 @@ void EditorMenu::Render() {
 
     ToggleCamera(false);
 
+    window.draw(m_HoverShape);
     window.draw(m_HoverText);
 
     this->RenderMenuBar();
