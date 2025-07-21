@@ -1,0 +1,9 @@
+Package: meckt
+Version: 1.7.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Xorrad <monsieurs.aymeric@gmail.com>
+Homepage: https://github.com/Xorrad/meckt
+Description: Meckt - a map editor for Crusader Kings 3.
+  Meckt is a tool whose goal is making total conversion mod easier and less cumbersome. It includes tools to generate provinces from the provinces image, to create and edit titles using a user interface and a map, to manage the history of titles.

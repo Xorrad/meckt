@@ -10,6 +10,11 @@ void Configuration::Initialize() {
     buildVersion = buildVersion + " (debug)";
 #endif
 
+#ifdef DEB
+    Configuration::assetsPath = "/usr/local/share/meckt/assets";
+    Configuration::settingsFile = "/usr/local/share/meckt/" + Configuration::settingsFile;
+#endif
+
     Load();
 
     InitializeTextures();
@@ -45,16 +50,16 @@ void Configuration::Save() {
 }
 
 void Configuration::InitializeTextures() {
-    // textures.Load(Textures::LOGO, "assets/textures/logo.png");
+    // textures.Load(Textures::LOGO, Configuration::assetsPath + "/textures/logo.png");
 }
 
 void Configuration::InitializeFonts() {
-    fonts.Load(Fonts::FIGTREE, "assets/fonts/Figtree-Medium.ttf");
+    fonts.Load(Fonts::FIGTREE, Configuration::assetsPath + "/fonts/Figtree-Medium.ttf");
 }
 
 void Configuration::InitializeShaders() {
-    shaders.Load(Shaders::PROVINCES, "assets/shaders/provinces.vert", "assets/shaders/provinces.frag");
-    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, "assets/shaders/provinces.vert", "assets/shaders/heightmap_landmass.frag");
-    shaders.Load(Shaders::PROVINCES_LANDMASS, "assets/shaders/provinces.vert", "assets/shaders/provinces_landmass.frag");
-    // shaders.Load(Shaders::PROVINCES, "assets/shaders/provinces.frag", sf::Shader::Fragment);
+    shaders.Load(Shaders::PROVINCES, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/provinces.frag");
+    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/heightmap_landmass.frag");
+    shaders.Load(Shaders::PROVINCES_LANDMASS, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/provinces_landmass.frag");
+    // shaders.Load(Shaders::PROVINCES, Configuration::assetsPath + "/shaders/provinces.frag", sf::Shader::Fragment);
 }

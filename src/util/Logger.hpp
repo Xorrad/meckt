@@ -4,8 +4,13 @@
 #include <filesystem>
 #include <fmt/core.h>
 
+#ifdef DEB
+#define LOGS_FILE "/usr/local/share/meckt/logs/logs.txt"
+#define CRASH_FILE "/usr/local/share/meckt/logs/crash.txt"
+#elif
 #define LOGS_FILE "logs/logs.txt"
 #define CRASH_FILE "logs/crash.txt"
+#endif
 
 #define TEST(n) std::cout << n << std::endl
 

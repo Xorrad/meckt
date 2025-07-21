@@ -38,12 +38,15 @@ OBJECTS      := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES := $(OBJECTS:.o=.d)
 
 # Build type (default, debug, release)
-BUILD_TYPE := debug
+BUILD_TYPE := release
 ifeq ($(BUILD_TYPE),debug)
     CXXFLAGS += -O0 -DDEBUG -g #-fsanitize=address
 else ifeq ($(BUILD_TYPE),release)
     CXXFLAGS += -O3 -DNDEBUG
 endif
+
+# Building a deb file
+CXXFLAGS += -DDEB
 
 # Libraries
 LDFLAGS :=  -L$(VENDOR_DIR)/lib/fmt -lfmt \
@@ -51,7 +54,7 @@ LDFLAGS :=  -L$(VENDOR_DIR)/lib/fmt -lfmt \
 			-L$(VENDOR_DIR)/lib/nfd/ -lnfd \
 			-L/usr/lib -lstdc++ -lm -lbfd -ldl -ldw -lsfml-graphics -lsfml-window -lsfml-system -lGL -lcurl
 
-.PHONY: all build clean info run
+.PHONY: all build deb clean info run
 all: build $(BIN_DIR)/$(TARGET)
 
 # Add the PCH target to build the precompiled header
@@ -77,6 +80,17 @@ build:
 	@mkdir -p $(OBJ_DIR)
 	@mkdir -p $(BIN_DIR)/assets
 	@cp -ar assets/. $(BIN_DIR)/assets
+
+deb:
+	@clear
+	@rm -rfd deb/usr/
+	@mkdir -p deb/usr/local/bin
+	@cp $(BIN_DIR)/$(TARGET) deb/usr/local/bin/$(TARGET)
+	@chmod 755 deb/usr/local/bin/$(TARGET)
+	@mkdir -p deb/usr/local/share/meckt
+	@mkdir -p deb/usr/local/share/meckt/logs
+	@cp -rf assets deb/usr/local/share/meckt/assets
+	dpkg-deb --build deb
 
 run:
 	@./$(BIN_DIR)/$(TARGET)
