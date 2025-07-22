@@ -657,6 +657,8 @@ void Mod::LoadHoldingTypes() {
         HoldingType("castle_holding"),
         HoldingType("city_holding"),
         HoldingType("church_holding"),
+        HoldingType("herder_holding"),
+        HoldingType("nomad_holding")
     };
 
     for(auto type : vanillaTypes) {
