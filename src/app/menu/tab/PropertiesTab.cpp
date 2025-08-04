@@ -116,13 +116,17 @@ void PropertiesTab::RenderJointProvinces() {
         if (ImGui::BeginTable("province flags", 2)) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
+            ImGui::BeginDisabled();
             if(ImGui::CheckBoxTristate("Coastal", &isCoastal)) UPDATE_FLAG(COASTAL, isCoastal);
+            ImGui::EndDisabled();
             ImGui::TableSetColumnIndex(1);
             if(ImGui::CheckBoxTristate("Lake", &isLake)) UPDATE_FLAG(LAKE, isLake);
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
+            ImGui::BeginDisabled();
             if(ImGui::CheckBoxTristate("Island", &isIsland)) UPDATE_FLAG(ISLAND, isIsland);
+            ImGui::EndDisabled();
             ImGui::TableSetColumnIndex(1);
             if(ImGui::CheckBoxTristate("Land", &isLand)) UPDATE_FLAG(LAND, isLand);
             
@@ -227,14 +231,19 @@ void PropertiesTab::RenderProvinces() {
 
             if (ImGui::BeginTable("province flags", 2)) {
                 ImGui::TableNextRow();
+                
                 ImGui::TableSetColumnIndex(0);
+                ImGui::BeginDisabled();
                 if(ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
+                ImGui::EndDisabled();
                 ImGui::TableSetColumnIndex(1);
                 if(ImGui::Checkbox("Lake", &isLake)) province->SetFlag(ProvinceFlags::LAKE, isLake);
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
+                ImGui::BeginDisabled();
                 if(ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
+                ImGui::EndDisabled();
                 ImGui::TableSetColumnIndex(1);
                 if(ImGui::Checkbox("Land", &isLand)) province->SetFlag(ProvinceFlags::LAND, isLand);
                 
