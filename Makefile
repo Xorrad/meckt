@@ -17,8 +17,9 @@ TARGET   := meckt
 SRC_DIR     := src
 INCLUDE_DIR := src
 VENDOR_DIR  := vendor
-BIN_DIR     := bin
-OBJ_DIR     := bin/obj
+BIN_DIR     := build/bin
+OBJ_DIR     := build/bin/obj
+DEB_DIR     := build/deb
 INCLUDE     := -I$(INCLUDE_DIR) -I$(VENDOR_DIR)/includes -I$(VENDOR_DIR)/includes/jomini-parser/src
 
 # Sources and objects
@@ -83,14 +84,14 @@ build:
 
 deb:
 	@clear
-	@rm -rfd deb/usr/
-	@mkdir -p deb/usr/local/bin
-	@cp $(BIN_DIR)/$(TARGET) deb/usr/local/bin/$(TARGET)
-	@chmod 755 deb/usr/local/bin/$(TARGET)
-	@mkdir -p deb/usr/local/share/meckt
-	@mkdir -p deb/usr/local/share/meckt/logs
-	@cp -rf assets deb/usr/local/share/meckt/assets
-	dpkg-deb --build deb
+	@rm -rfd $(DEB_DIR)/usr/
+	@mkdir -p $(DEB_DIR)/usr/local/bin
+	@cp $(BIN_DIR)/$(TARGET) $(DEB_DIR)/usr/local/bin/$(TARGET)
+	@chmod 755 $(DEB_DIR)/usr/local/bin/$(TARGET)
+	@mkdir -p $(DEB_DIR)/usr/local/share/meckt
+	@mkdir -p $(DEB_DIR)/usr/local/share/meckt/logs
+	@cp -rf assets $(DEB_DIR)/usr/local/share/meckt/assets
+	dpkg-deb --build $(DEB_DIR)
 
 run:
 	@./$(BIN_DIR)/$(TARGET)

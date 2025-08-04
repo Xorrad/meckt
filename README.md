@@ -1,10 +1,10 @@
-# Meckt - <span style="font-size: 16px; vertical-align: middle;">a map editor for Crusader Kings 3.</span>
+# meckt - <span style="font-size: 16px; vertical-align: middle;">a map editor for Crusader Kings 3.</span>
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![GitHub issues](https://img.shields.io/github/issues/xorrad/ck3-meckt)](https://github.com/xorrad/ck3-meckt/issues)
 [![GitHub stars](https://img.shields.io/github/stars/xorrad/ck3-meckt.svg?style=flat&label=stars)](https://github.com/xorrad/ck3-meckt)
 
-Meckt is a tool whose goal is making total conversion mod easier and less cumbersome. It includes tools to generate provinces from the provinces image, to create and edit titles using a user interface and a map, to manage the history of titles.
+meckt is a tool whose goal is making total conversion mod easier and less cumbersome. It includes tools to generate provinces from the provinces image, to create and edit titles using a user interface and a map, to manage the history of titles.
 
 > **Warning:**  
 > Please use this tool with caution. Exporting modifications will impact significantly the structure and content of your files.  
@@ -58,7 +58,7 @@ make
 git clone --recursive https://github.com/Xorrad/meckt.git
 ```
 
-2. Download [SFML 2.6.2](https://www.sfml-dev.org/download/sfml/2.6.2/).  
+2. Download [SFML 2.5.1](https://www.sfml-dev.org/download/sfml/2.5.1/).  
 Extract the downloaded package into the `vendor/sfml/` directory so that the folder structure looks like:
 ```
 vendor/sfml/include

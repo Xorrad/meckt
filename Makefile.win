@@ -15,8 +15,8 @@ SFML_DIR    := vendor/sfml
 SRC_DIR     := src
 INCLUDE_DIR := src
 VENDOR_DIR  := vendor
-BIN_DIR     := bin
-OBJ_DIR     := bin/obj
+BIN_DIR     := build/bin
+OBJ_DIR     := build/bin/obj
 INCLUDE     := -I$(INCLUDE_DIR) -I$(VENDOR_DIR)/includes -I$(VENDOR_DIR)/includes/jomini-parser/src -I$(SFML_DIR)/include
 
 # Sources and objects
@@ -70,8 +70,8 @@ $(OBJ_DIR)/%.o: %.cpp $(PCH)
 # Executable target
 $(BIN_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)
-	windres $(SRC_DIR)/version.rc -o $(OBJ_DIR)/$(SRC_DIR)/version.o
-	$(CXX) $(CXXFLAGS) $(OBJ_DIR)/$(SRC_DIR)/version.o -o $(BIN_DIR)/$(TARGET) $^ $(LDFLAGS)
+	windres $(SRC_DIR)/build/version.rc -o $(OBJ_DIR)/$(SRC_DIR)/build/version.o
+	$(CXX) $(CXXFLAGS) $(OBJ_DIR)/$(SRC_DIR)/build/version.o -o $(BIN_DIR)/$(TARGET) $^ $(LDFLAGS)
 
 # Make commands
 build:
