@@ -614,6 +614,7 @@ void Mod::Load(std::function<void()> completeCallback, std::function<void(Loadin
     LOAD_CATCH(LoadProvinceImage, LoadingState::PROVINCES_IMAGE, "provinces image");
     LOAD_CATCH(LoadDefaultMapFile, LoadingState::DEFAULT_MAP, "default map");
     LOAD_CATCH(LoadProvincesTerrain, LoadingState::PROVINCES_TERRAIN, "provinces terrain");
+    LOAD_CATCH(LoadProvincesClimate, LoadingState::PROVINCES_CLIMATE, "provinces climate");
     LOAD_CATCH(LoadProvincesHistory, LoadingState::PROVINCES_HISTORY, "provinces history");
     LOAD_CATCH(LoadTitles, LoadingState::TITLES, "titles");
     LOAD_CATCH(LoadTitlesHistory, LoadingState::TITLES_HISTORY, "titles history");
@@ -916,6 +917,94 @@ void Mod::LoadProvincesTerrain() {
 
         if(!m_ProvincesByIds[provinceId]->HasFlag(ProvinceFlags::SEA))
             m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
+    }
+}
+
+void Mod::LoadProvincesClimate() {
+    // Load the province climate type: mild, normal, severe.
+    std::string climateFile = "map_data/climate.txt";
+    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/" + climateFile);
+
+    const auto LoadClimateProvinces = [&](ClimateType type, std::string_view name) {
+        if (!result->Contains(name))
+            return;
+        
+        auto provinces = result->Get(name);
+        if (!provinces->Is(Jomini::Type::ARRAY)) {
+            LOG_WARNING("Invalid value for '{}' in '{}'", name, climateFile);
+            return;
+        }
+
+        std::vector<int> ids = provinces->AsArray<int>();
+        for (int id : ids) {
+            if (m_ProvincesByIds.count(id) == 0) {
+                LOG_WARNING("Undefined province {} for '{}' in '{}'", id, name, climateFile);
+                continue;
+            }
+            m_ProvincesByIds[id]->SetClimateType(type);
+        }
+    };
+    LoadClimateProvinces(ClimateType::MILD_WINTER, "mild_winter");
+    LoadClimateProvinces(ClimateType::NORMAL_WINTER, "normal_winter");
+    LoadClimateProvinces(ClimateType::SEVERE_WINTER, "severe_winter");
+
+    /////////////////////////////////////////////////////////////////////////////////
+
+    // Load province winter properties such as severity or factor override.
+    std::string propertiesFile = "common/province_terrain/01_province_properties.txt";
+    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/" + propertiesFile);
+
+    for(const auto& [key, pair] : result->GetMap()) {
+        // Ignore variables to only keep province ids.
+        if (key.starts_with("@"))
+            continue;
+
+        const auto& [op, value] = pair;
+        int provinceId = String::ParseInt(key);
+
+        if (m_ProvincesByIds.count(provinceId) == 0) {
+            LOG_WARNING("Climate properties assigned to undefined province {} in '{}'", provinceId, propertiesFile);
+            continue;
+        }
+
+        if (!value->Is(Jomini::Type::OBJECT)) {
+            LOG_ERROR("Invalid climate properties for province {} in '{}'", provinceId, propertiesFile);
+            continue;
+        }
+
+        if (value->Contains("winter_severity_bias")) {
+            const auto winterSeverityBias = value->Get("winter_severity_bias");
+            if (!winterSeverityBias->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'winter_severity_bias' value for province {}", provinceId);
+                continue;
+            }
+            m_ProvincesByIds[provinceId]->SetWinterSeverityBias(winterSeverityBias->As<std::string>());
+        }
+        
+        if (value->Contains("mild_winter_factor_override")) {
+            const auto factor = value->Get("mild_winter_factor_override");
+            if (!factor->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'mild_winter_factor_override' value for province {}", provinceId);
+                continue;
+            }
+            m_ProvincesByIds[provinceId]->SetMildWinterFactorOverride(factor->As<std::string>());
+        }
+        if (value->Contains("normal_winter_factor_override")) {
+            const auto factor = value->Get("normal_winter_factor_override");
+            if (!factor->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'normal_winter_factor_override' value for province {}", provinceId);
+                continue;
+            }
+            m_ProvincesByIds[provinceId]->SetNormalWinterFactorOverride(factor->As<std::string>());
+        }
+        if (value->Contains("harsh_winter_factor_override")) {
+            const auto factor = value->Get("harsh_winter_factor_override");
+            if (!factor->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'harsh_winter_factor_override' value for province {}", provinceId);
+                continue;
+            }
+            m_ProvincesByIds[provinceId]->SetHarshWinterFactorOverride(factor->As<std::string>());
+        }
     }
 }
 

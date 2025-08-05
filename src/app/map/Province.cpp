@@ -57,17 +57,22 @@ ProvinceFlags& operator&=(ProvinceFlags& a, ProvinceFlags b) {
     return a = a & b;
 }
 
-Province::Province(int id, sf::Color color, std::string name) {
-    m_Id = id;
-    m_Color = color;
-    m_Name = name;
-    m_Flags = ProvinceFlags::NONE;
-    m_Holding = "none";
-    m_Terrain = "";
-    m_OriginalData = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
-    m_ImagePosition = sf::Vector2i(0, 0);
-    m_ImagePixelsCount = 0;
-}
+Province::Province(int id, sf::Color color, std::string name) :
+    m_Id(id),
+    m_Color(color),
+    m_Name(name),
+    m_Flags(ProvinceFlags::NONE),
+    m_Holding("none"),
+    m_Terrain(""),
+    m_OriginalData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
+    m_ImagePosition(sf::Vector2i(0, 0)),
+    m_ImagePixelsCount(0),
+    m_ClimateType(ClimateType::NONE),
+    m_WinterSeverityBias(""),
+    m_MildWinterFactorOverride(""),
+    m_NormalWinterFactorOverride(""),
+    m_HarshWinterFactorOverride("")
+{}
 
 int Province::GetId() const {
     return m_Id;
@@ -109,6 +114,26 @@ std::string Province::GetReligion() const {
     return m_Religion;
 }
 
+ClimateType Province::GetClimateType() const {
+    return m_ClimateType;
+}
+
+std::string Province::GetWinterSeverityBias() const {
+    return m_WinterSeverityBias;
+}
+
+std::string Province::GetMildWinterFactorOverride() const {
+    return m_MildWinterFactorOverride;
+}
+
+std::string Province::GetNormalWinterFactorOverride() const {
+    return m_NormalWinterFactorOverride;
+}
+
+std::string Province::GetHarshWinterFactorOverride() const {
+    return m_HarshWinterFactorOverride;
+}
+
 void Province::SetName(std::string name) {
     m_Name = name;
 }
@@ -140,6 +165,26 @@ void Province::SetCulture(std::string culture) {
 
 void Province::SetReligion(std::string religion) {
     m_Religion = religion;
+}
+
+void Province::SetClimateType(ClimateType type) {
+    m_ClimateType = type;
+}
+
+void Province::SetWinterSeverityBias(std::string bias) {
+    m_WinterSeverityBias = bias;
+}
+
+void Province::SetMildWinterFactorOverride(std::string factor) {
+    m_MildWinterFactorOverride = factor;
+}
+
+void Province::SetNormalWinterFactorOverride(std::string factor) {
+    m_NormalWinterFactorOverride = factor;
+}
+
+void Province::SetHarshWinterFactorOverride(std::string factor) {
+    m_HarshWinterFactorOverride = factor;
 }
 
 std::string Province::GetOriginalFilePath() const {

@@ -65,6 +65,7 @@ public:
     void LoadDefaultMapFile();
     void LoadProvincesDefinition();
     void LoadProvincesTerrain();
+    void LoadProvincesClimate();
     void LoadProvincesHistory();
     void LoadTitles();
     void LoadTitlesHistory();

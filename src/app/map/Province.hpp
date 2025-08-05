@@ -1,5 +1,12 @@
 #pragma once
 
+enum class ClimateType {
+    NONE,
+    MILD_WINTER,
+    NORMAL_WINTER,
+    SEVERE_WINTER,
+};
+
 class HoldingType {
 public:
     HoldingType();
@@ -60,6 +67,11 @@ public:
     std::string GetTerrain() const;
     std::string GetCulture() const;
     std::string GetReligion() const;
+    ClimateType GetClimateType() const;
+    std::string GetWinterSeverityBias() const;
+    std::string GetMildWinterFactorOverride() const;
+    std::string GetNormalWinterFactorOverride() const;
+    std::string GetHarshWinterFactorOverride() const;
 
     void SetName(std::string name);
     void SetColor(sf::Color color);
@@ -69,6 +81,11 @@ public:
     void SetTerrain(std::string terrain);
     void SetCulture(std::string culture);
     void SetReligion(std::string religion);
+    void SetClimateType(ClimateType type);
+    void SetWinterSeverityBias(std::string bias);
+    void SetMildWinterFactorOverride(std::string factor);
+    void SetNormalWinterFactorOverride(std::string factor);
+    void SetHarshWinterFactorOverride(std::string factor);
     
     std::string GetOriginalFilePath() const;
     SharedPtr<Jomini::Object> GetOriginalData() const;
@@ -98,6 +115,12 @@ private:
 
     sf::Vector2i m_ImagePosition;
     uint m_ImagePixelsCount;
+
+    ClimateType m_ClimateType;
+    std::string m_WinterSeverityBias;
+    std::string m_MildWinterFactorOverride;
+    std::string m_NormalWinterFactorOverride;
+    std::string m_HarshWinterFactorOverride;
 
     // Sea-zone for port
     // Terrain
