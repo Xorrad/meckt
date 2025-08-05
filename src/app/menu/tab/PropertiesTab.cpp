@@ -10,7 +10,11 @@
 #include "imgui/imgui.hpp"
 #include "app/menu/ImGuiStyle.hpp"
 
-PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) : Tab("Properties", Tabs::PROPERTIES, menu, visible), m_SelectingTitle(false) {
+PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) :
+    Tab("Properties", Tabs::PROPERTIES, menu, visible),
+    m_SelectingTitle(false),
+    m_DisplayCulturalNames(false)
+{
     m_SelectingTitleText.setCharacterSize(24);
     m_SelectingTitleText.setString("Click on a title.");
     m_SelectingTitleText.setFillColor(sf::Color::Red);
@@ -365,8 +369,10 @@ void PropertiesTab::RenderTitles() {
             ImGui::PopStyleVar();
 
             // TITLE: cultural names (collapsing header + child window (for borders) + collapsing header for each culture)
-            ImGui::SetNextItemOpen(false, ImGuiCond_Once);
+            ImGui::SetNextItemOpen(m_DisplayCulturalNames);
             if(ImGui::CollapsingHeader("cultural names")) {
+                m_DisplayCulturalNames = true;
+                
                 if(ImGui::BeginChild((title->GetName() + "-cultural-names").c_str(), ImVec2(0, 100), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                     static std::string newCulture = "";
@@ -407,10 +413,15 @@ void PropertiesTab::RenderTitles() {
                 }
                 ImGui::EndChild();
             }
+            else {
+                m_DisplayCulturalNames = false;
+            }
             
             // TITLE: history (collapsing header + child window (for borders) + collapsing header for each dates)
-            ImGui::SetNextItemOpen(false, ImGuiCond_Once);
+            ImGui::SetNextItemOpen(m_DisplayHistory);
             if(ImGui::CollapsingHeader("history")) {
+                m_DisplayHistory = true;
+
                 if(ImGui::BeginChild((title->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                     static std::string date = "";
@@ -487,6 +498,9 @@ void PropertiesTab::RenderTitles() {
                 }
                 ImGui::EndChild();
             }
+            else {
+                m_DisplayHistory = false;
+            }
 
             if(title->Is(TitleType::BARONY)) {
 
@@ -532,8 +546,10 @@ void PropertiesTab::RenderTitles() {
                 const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
 
                 // HIGHTITLE: dejure titles (list)
-                ImGui::SetNextItemOpen(false, ImGuiCond_Once);
+                ImGui::SetNextItemOpen(m_DisplayDejureTitles);
                 if(ImGui::CollapsingHeader("dejure titles")) {
+                    m_DisplayDejureTitles = true;
+
                     ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_None);
 
                     if(ImGui::BeginMenuBar()) {
@@ -605,6 +621,9 @@ void PropertiesTab::RenderTitles() {
                         );
                     }
                     ImGui::EndChild();
+                }
+                else {
+                    m_DisplayDejureTitles = false;
                 }
 
                 if(!title->Is(TitleType::COUNTY)) {

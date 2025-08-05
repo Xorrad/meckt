@@ -16,4 +16,8 @@ private:
 
     sf::Text m_SelectingTitleText;
     bool m_SelectingTitle;
+
+    bool m_DisplayCulturalNames;
+    bool m_DisplayHistory;
+    bool m_DisplayDejureTitles;
 };
