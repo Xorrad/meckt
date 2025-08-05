@@ -13,7 +13,10 @@
 PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
     m_SelectingTitle(false),
-    m_DisplayCulturalNames(false)
+    m_DisplayCulturalNames(false),
+    m_DisplayHistory(false),
+    m_DisplayDejureTitles(false),
+    m_DisplayClimate(false)
 {
     m_SelectingTitleText.setCharacterSize(24);
     m_SelectingTitleText.setString("Click on a title.");
@@ -280,6 +283,49 @@ void PropertiesTab::RenderProvinces() {
                         ImGui::SetItemDefaultFocus();
                 }
                 ImGui::EndCombo();
+            }
+
+            // PROVINCE: climate (collapsing header + child window (for borders) + text inputs)
+            ImGui::SetNextItemOpen(m_DisplayClimate);
+            if(ImGui::CollapsingHeader("climate")) {
+                m_DisplayClimate = true;
+                
+                if(ImGui::BeginChild((province->GetName() + "-climate").c_str(), ImVec2(0, 100), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+
+                    ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate").x - 10);
+                    if (ImGui::BeginCombo("climate", ClimateTypeLabels.at(province->GetClimateType()))) {
+                        for(int i = 0; i < (int) ClimateType::COUNT; i++) {
+                            ClimateType type = (ClimateType) i;
+                            const bool isSelected = (type == province->GetClimateType());
+                            if (ImGui::Selectable(ClimateTypeLabels.at(type), isSelected))
+                                province->SetClimateType(type);
+                            if(isSelected)
+                                ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+                    
+                    // Use the same width for all items below so they are aligned.
+                    int width = 0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("normal winter factor override").x;
+
+                    ImGui::SetNextItemWidth(width);
+                    ImGui::InputText("winter severity bias", &province->m_WinterSeverityBias);
+
+                    ImGui::SetNextItemWidth(width);
+                    ImGui::InputText("mild winter factor override", &province->m_MildWinterFactorOverride);
+
+                    ImGui::SetNextItemWidth(width);
+                    ImGui::InputText("normal winter factor override", &province->m_NormalWinterFactorOverride);
+
+                    ImGui::SetNextItemWidth(width);
+                    ImGui::InputText("harsh winter factor override", &province->m_HarshWinterFactorOverride);
+
+                    ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "note: leave fields empty if you don't want any value.");
+                }
+                ImGui::EndChild();
+            }
+            else {
+                m_DisplayClimate = false;
             }
 
             // PROVINCE: switch to barony (button)

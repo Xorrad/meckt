@@ -20,4 +20,5 @@ private:
     bool m_DisplayCulturalNames;
     bool m_DisplayHistory;
     bool m_DisplayDejureTitles;
+    bool m_DisplayClimate;
 };
