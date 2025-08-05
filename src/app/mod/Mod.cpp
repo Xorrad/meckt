@@ -952,7 +952,7 @@ void Mod::LoadProvincesClimate() {
 
     // Load province winter properties such as severity or factor override.
     std::string propertiesFile = "common/province_terrain/01_province_properties.txt";
-    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/" + propertiesFile);
+    result = Jomini::ParseFile(m_Dir + "/" + propertiesFile);
 
     for(const auto& [key, pair] : result->GetMap()) {
         // Ignore variables to only keep province ids.

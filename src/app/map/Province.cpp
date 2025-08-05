@@ -59,11 +59,13 @@ ProvinceFlags& operator&=(ProvinceFlags& a, ProvinceFlags b) {
 
 Province::Province(int id, sf::Color color, std::string name) :
     m_Id(id),
-    m_Color(color),
     m_Name(name),
+    m_Color(color),
     m_Flags(ProvinceFlags::NONE),
     m_Holding("none"),
     m_Terrain(""),
+    m_Culture(""),
+    m_Religion(""),
     m_OriginalData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
     m_ImagePosition(sf::Vector2i(0, 0)),
     m_ImagePixelsCount(0),
