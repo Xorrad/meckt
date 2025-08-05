@@ -75,10 +75,21 @@ public:
 
     std::vector<SharedPtr<Title>> ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data);
 
-    void Export(bool defaultMap = true, bool provincesDefinition = true, bool provincesTerrain = true, bool provincesHistory = true, bool titles = true, bool titlesHistory = true, bool titlesLocalization = true, bool culturalNamesLocalization = true);
+    void Export(
+        bool defaultMap = true,
+        bool provincesDefinition = true,
+        bool provincesTerrain = true,
+        bool provincesClimate = true,
+        bool provincesHistory = true,
+        bool titles = true,
+        bool titlesHistory = true,
+        bool titlesLocalization = true,
+        bool culturalNamesLocalization = true
+    );
     void ExportDefaultMapFile();
     void ExportProvincesDefinition();
     void ExportProvincesTerrain();
+    void ExportProvincesClimate();
     void ExportProvincesHistory();
     void ExportTitles();
     void ExportTitlesHistory();

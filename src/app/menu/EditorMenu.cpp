@@ -844,6 +844,7 @@ void EditorMenu::RenderModals() {
         static bool defaultMap = true;
         static bool provincesDefinition = true;
         static bool provincesTerrain = true;
+        static bool provincesClimate = true;
         static bool provincesHistory = true;
         static bool titles = true;
         static bool titlesHistory = true;
@@ -861,6 +862,13 @@ void EditorMenu::RenderModals() {
         ImGui::Checkbox("provinces terrain  ", &provincesTerrain);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "common/province_terrain/");
+        
+        
+        ImGui::Checkbox("provinces climate  ", &provincesClimate);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "common/province_terrain/01_province_properties.txt  &");
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "map_data/climate.txt");
         
         ImGui::Checkbox("provinces history  ", &provincesHistory);
         ImGui::SameLine();
@@ -888,7 +896,7 @@ void EditorMenu::RenderModals() {
 
         if(ImGui::Button("Export", ImVec2(120, 0))) {
             SharedPtr<Mod> mod = m_App->GetMod();
-            mod->Export(defaultMap, provincesDefinition, provincesTerrain, provincesHistory, titles, titlesHistory, titlesLocalization, culturalNamesLocalization);
+            mod->Export(defaultMap, provincesDefinition, provincesTerrain, provincesClimate, provincesHistory, titles, titlesHistory, titlesLocalization, culturalNamesLocalization);
             ImGui::CloseCurrentPopup();
         }
 

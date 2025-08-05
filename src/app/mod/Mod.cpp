@@ -1405,7 +1405,17 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
     return titles;
 }
 
-void Mod::Export(bool defaultMap, bool provincesDefinition, bool provincesTerrain, bool provincesHistory, bool titles, bool titlesHistory, bool titlesLocalization, bool culturalNamesLocalization) {
+void Mod::Export(
+    bool defaultMap,
+    bool provincesDefinition,
+    bool provincesTerrain,
+    bool provincesClimate,
+    bool provincesHistory,
+    bool titles,
+    bool titlesHistory,
+    bool titlesLocalization,
+    bool culturalNamesLocalization
+) {
 
     if (defaultMap)
         this->ExportDefaultMapFile();
@@ -1413,6 +1423,8 @@ void Mod::Export(bool defaultMap, bool provincesDefinition, bool provincesTerrai
         this->ExportProvincesDefinition();
     if (provincesTerrain)
         this->ExportProvincesTerrain();
+    if (provincesClimate)
+        this->ExportProvincesClimate();
     if (provincesHistory)
         this->ExportProvincesHistory();
 
@@ -1562,6 +1574,62 @@ void Mod::ExportProvincesTerrain() {
     }
 
     file.close();
+}
+
+void Mod::ExportProvincesClimate() {
+    // Create the directories and files.
+    std::filesystem::create_directories(m_Dir + "/map_data/");
+    std::ofstream climateFile(m_Dir + "/map_data/climate.txt", std::ios::out);
+
+    std::filesystem::create_directories(m_Dir + "/common/province_terrain/");
+    std::ofstream propertiesFile(m_Dir + "/common/province_terrain/01_province_properties.txt", std::ios::out);
+    File::EncodeToUTF8BOM(propertiesFile);
+
+    // Initialize the object for the climate.txt file with the 3 winter types.
+    SharedPtr<Jomini::Object> climateObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+    climateObject->Put("mild_winter", std::vector<int>());
+    climateObject->Put("normal_winter", std::vector<int>());
+    climateObject->Put("severe_winter", std::vector<int>());
+
+    SharedPtr<Jomini::Object> mildWinterObject = climateObject->Get("mild_winter");
+    SharedPtr<Jomini::Object> normalWinterObject = climateObject->Get("normal_winter");
+    SharedPtr<Jomini::Object> severeWinterObject = climateObject->Get("severe_winter");
+
+    for (auto& [id, province] : m_ProvincesByIds) {
+        // Insert the province id to its corresponding climate type.
+        if (province->GetClimateType() != ClimateType::NONE) {
+            switch (province->GetClimateType()) {
+                case ClimateType::MILD_WINTER: mildWinterObject->Push(id); break;
+                case ClimateType::NORMAL_WINTER: normalWinterObject->Push(id); break;
+                case ClimateType::SEVERE_WINTER: severeWinterObject->Push(id); break;
+                default: break;
+            }
+        }
+
+        // Export individual provinces climate properties to 'common/province_terrain/01_province_properties.txt'.
+        bool hasProperty = !province->GetWinterSeverityBias().empty()
+            || !province->GetMildWinterFactorOverride().empty()
+            || province->GetNormalWinterFactorOverride().empty()
+            || province->GetHarshWinterFactorOverride().empty();
+        
+        // Ignore provinces without any specified properties.
+        if (hasProperty) {
+            SharedPtr<Jomini::Object> propertiesObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+            if (!province->GetWinterSeverityBias().empty()) propertiesObject->Put("winter_severity_bias", province->GetWinterSeverityBias());
+            if (!province->GetMildWinterFactorOverride().empty()) propertiesObject->Put("mild_winter_factor_override", province->GetMildWinterFactorOverride());
+            if (!province->GetNormalWinterFactorOverride().empty()) propertiesObject->Put("normal_winter_factor_override", province->GetNormalWinterFactorOverride());
+            if (!province->GetHarshWinterFactorOverride().empty()) propertiesObject->Put("harsh_winter_factor_override", province->GetHarshWinterFactorOverride());
+
+            fmt::println(propertiesFile, "{} = {}", id, propertiesObject->Serialize(1, false, true));
+        }
+    }
+
+    // Export provinces climate type in 'map_data/climate.txt'
+    fmt::println(climateFile, "{}", climateObject->Serialize());
+
+    climateFile.close();
+    propertiesFile.close();
 }
 
 void Mod::ExportProvincesHistory() {
