@@ -119,6 +119,7 @@ private:
 
     OrderedMap<std::string, HoldingType> m_HoldingTypes;
     OrderedMap<std::string, TerrainType> m_TerrainTypes;
+    SharedPtr<Jomini::Object> m_TerrainPropertiesVariables;
 
     std::string m_DefaultLandTerrain;
     std::string m_DefaultSeaTerrain;

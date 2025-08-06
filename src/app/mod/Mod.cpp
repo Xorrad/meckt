@@ -15,6 +15,7 @@ Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesIm
     m_HeightmapImage(heightmapImage),
     m_ProvinceImage(provincesImage),
     m_WaterLevel(waterLevel),
+    m_TerrainPropertiesVariables(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
     m_DefaultLandTerrain("plains"),
     m_DefaultSeaTerrain("sea"),
     m_DefaultCoastalSeaTerrain("sea"),
@@ -955,9 +956,11 @@ void Mod::LoadProvincesClimate() {
     result = Jomini::ParseFile(m_Dir + "/" + propertiesFile);
 
     for(const auto& [key, pair] : result->GetMap()) {
-        // Ignore variables to only keep province ids.
-        if (key.starts_with("@"))
+        // Save and ignore variables to only keep province ids.
+        if (key.starts_with("@")) {
+            m_TerrainPropertiesVariables->Put(key, pair.second);
             continue;
+        }
 
         const auto& [op, value] = pair;
         int provinceId = String::ParseInt(key);
@@ -1594,6 +1597,9 @@ void Mod::ExportProvincesClimate() {
     SharedPtr<Jomini::Object> mildWinterObject = climateObject->Get("mild_winter");
     SharedPtr<Jomini::Object> normalWinterObject = climateObject->Get("normal_winter");
     SharedPtr<Jomini::Object> severeWinterObject = climateObject->Get("severe_winter");
+
+    // Write variables that were in the properties file before loading the mod.
+    fmt::println(propertiesFile, "{}\n", m_TerrainPropertiesVariables->Serialize());
 
     for (auto& [id, province] : m_ProvincesByIds) {
         // Insert the province id to its corresponding climate type.
