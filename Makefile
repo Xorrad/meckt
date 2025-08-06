@@ -32,7 +32,8 @@ SRC          := $(call rwildcard,$(SRC_DIR),*.cpp) \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_draw.cpp \
 				$(VENDOR_DIR)/includes/imgui/imgui/imgui_tables.cpp \
 				$(VENDOR_DIR)/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp \
-				$(VENDOR_DIR)/includes/jomini-parser/src/Jomini.cpp
+				$(VENDOR_DIR)/includes/jomini-parser/src/Jomini.cpp \
+				$(VENDOR_DIR)/includes/lodepng/lodepng.cpp
 PCH_HEADER   := $(SRC_DIR)/pch.hpp
 PCH          := $(PCH_HEADER:%.h=$(OBJ_DIR)/%.gch)
 OBJECTS      := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
