@@ -51,6 +51,7 @@ private:
     float m_TotalZoom;
 
     sf::Text m_HoverText;
+    sf::Text m_HoverTitleText;
     sf::RectangleShape m_HoverShape;
 
     std::map<Tabs, SharedPtr<Tab>> m_Tabs;

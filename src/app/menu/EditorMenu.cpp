@@ -30,10 +30,12 @@ m_ExitToMainMenu(false)
     m_TotalZoom = 1.f;
 
     m_HoverText.setCharacterSize(12);
-    m_HoverText.setString("#");
+    m_HoverText.setString("");
     m_HoverText.setFillColor(sf::Color::Black);
     m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
+    m_HoverTitleText = m_HoverText;
     // m_HoverText.setPosition({5, m_App->GetWindow().getSize().y - m_HoverText.getGlobalBounds().height - 10});
+    m_HoverShape.setSize({0, 0});
     m_HoverShape.setOutlineColor(sf::Color::Black);
     m_HoverShape.setOutlineThickness(1.0f);
     m_HoverShape.setFillColor(sf::Color::White);
@@ -85,18 +87,27 @@ void EditorMenu::UpdateHoveringText() {
     // regardless of the current map mode.
     if (!Configuration::compactTooltip) {
         std::string text = fmt::format("#{} - {}", province->GetId(), province->GetName());
+        std::string hoveredTitleText = fmt::format("");
 
         const SharedPtr<Title>& barony = m_App->GetMod()->GetProvinceLiegeTitle(province, TitleType::BARONY);
+        const SharedPtr<Title>& hoveredTitle = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
         SharedPtr<Title> title = barony;
 
         while(title != nullptr) {
-            text += fmt::format("\n{}", title->GetName());
+            bool isMainTitle = (title == hoveredTitle && MapModeIsTitle(m_MapMode));
+            hoveredTitleText += fmt::format("\n{}", (isMainTitle ? title->GetName() : ""));
+            text += fmt::format("\n{}", (!isMainTitle ? title->GetName() : ""));
             title = title->GetLiegeTitle();
         }
 
         m_HoverText.setString(text);
         m_HoverText.setPosition({(float) mousePosition.x + 12, (float) mousePosition.y - 8});
         m_HoverText.setFillColor(sf::Color::Black);
+        
+        m_HoverTitleText.setString(hoveredTitleText);
+        m_HoverTitleText.setStyle(sf::Text::Bold);
+        m_HoverTitleText.setPosition({(float) mousePosition.x + 12, (float) mousePosition.y - 8});
+        m_HoverTitleText.setFillColor(sf::Color::Black);
 
         m_HoverShape.setPosition({(float) mousePosition.x + 10, (float) mousePosition.y - 10});
         m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().width + 4, (float) m_HoverText.getGlobalBounds().height + 8});
@@ -110,6 +121,7 @@ void EditorMenu::UpdateHoveringText() {
     || m_MapMode == MapMode::CULTURE
     || m_MapMode == MapMode::RELIGION) {
         m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
+        m_HoverTitleText.setString("");
         m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
         m_HoverText.setFillColor(brightenColor(province->GetColor()));
         return;
@@ -119,6 +131,7 @@ void EditorMenu::UpdateHoveringText() {
         if(title == nullptr)
             goto Hide;
         m_HoverText.setString(fmt::format("{}", title->GetName()));
+        m_HoverTitleText.setString("");
         m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
         m_HoverText.setFillColor(brightenColor(title->GetColor()));
         return;
@@ -126,6 +139,8 @@ void EditorMenu::UpdateHoveringText() {
 
     Hide:
     m_HoverText.setString("");
+    m_HoverTitleText.setString("");
+    m_HoverShape.setSize({0, 0});
 }
 
 void EditorMenu::ToggleCamera(bool enabled) {
@@ -340,8 +355,10 @@ void EditorMenu::Render() {
 
     ToggleCamera(false);
 
-    if (!Configuration::compactTooltip)
+    if (!Configuration::compactTooltip) {
         window.draw(m_HoverShape);
+        window.draw(m_HoverTitleText);
+    }
     window.draw(m_HoverText);
 
     this->RenderMenuBar();
