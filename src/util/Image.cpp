@@ -115,8 +115,7 @@ void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>
             int dr = int(color.r) - int(palette[i].r);
             int dg = int(color.g) - int(palette[i].g);
             int db = int(color.b) - int(palette[i].b);
-            int da = int(color.a) - int(palette[i].a);
-            int distance = dr * dr + dg * dg + db * db + da * da;
+            int distance = dr * dr + dg * dg + db * db;
 
             if (distance < minDistance) {
                 minDistance = distance;
@@ -143,14 +142,17 @@ void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>
 
     // Prepare LodePNG state.
     lodepng::State state;
+    state.encoder.auto_convert = 0;
     state.info_raw.colortype = LCT_PALETTE;
     state.info_raw.bitdepth = 8;
     state.info_png.color.colortype = LCT_PALETTE;
     state.info_png.color.bitdepth = 8;
+    lodepng_palette_clear(&state.info_raw);
     lodepng_palette_clear(&state.info_png.color);
 
     // Set the palette.
     for (const auto& color : palette) {
+        lodepng_palette_add(&state.info_raw, color.r, color.g, color.b, color.a);
         lodepng_palette_add(&state.info_png.color, color.r, color.g, color.b, color.a);
     }
 
