@@ -290,7 +290,7 @@ void PropertiesTab::RenderProvinces() {
             if(ImGui::CollapsingHeader("climate")) {
                 m_DisplayClimate = true;
                 
-                if(ImGui::BeginChild((province->GetName() + "-climate").c_str(), ImVec2(0, 100), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                if(ImGui::BeginChild((province->GetName() + "-climate").c_str(), ImVec2(0, 175), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                     ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate").x - 10);
                     if (ImGui::BeginCombo("climate", ClimateTypeLabels.at(province->GetClimateType()))) {
