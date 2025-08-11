@@ -83,7 +83,7 @@ build:
 	@cp -ar assets/. $(BIN_DIR)/assets
 
 run:
-	@./$(BIN_DIR)/$(TARGET)
+	@( cd $(BIN_DIR) && ./$(TARGET) )
 
 clean:
 	-@rm -rvf $(OBJ_DIR)/* $(BIN_DIR)/*
