@@ -1,5 +1,8 @@
 #include "Image.hpp"
 
+#include <SFML/Graphics.hpp>
+#include "lodepng/lodepng.h"
+
 sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(std::unordered_map<sf::Uint32, sf::Uint32>&)> mapFunc) {
     // Used for benchmarking.
     sf::Clock clock;
@@ -92,4 +95,77 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     // fmt::println("initializing image: {}", String::DurationFormat(clock.restart()));
 
     return image;
+}
+
+void Image::IndexImage(std::filesystem::path filePath, const std::vector<sf::Color>& palette) {
+    // TODO: optimize this function to avoid looping over the palette for each pixels, calling image.getPixel()...
+
+    // Load the image to index the pixels to their respective color palette.
+    sf::Image image;
+    if (!image.loadFromFile(filePath)) {
+        LOG_ERROR("Failed to load image '{}'", filePath.c_str());
+        return;
+    }
+
+    const auto findClosestColorIndex = [&](const sf::Color& color) {
+        int bestIndex = 0;
+        int minDistance = INT_MAX;
+
+        for (size_t i = 0; i < palette.size(); i++) {
+            int dr = int(color.r) - int(palette[i].r);
+            int dg = int(color.g) - int(palette[i].g);
+            int db = int(color.b) - int(palette[i].b);
+            int da = int(color.a) - int(palette[i].a);
+            int distance = dr * dr + dg * dg + db * db + da * da;
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestIndex = static_cast<int>(i);
+            }
+        }
+        return bestIndex;
+    };
+
+    uint width = image.getSize().x;
+    uint height = image.getSize().y;
+
+    // Indexed image buffer (1 byte per pixel).
+    std::vector<unsigned char> indexedPixels(width * height);
+
+    // Map each pixel to closest palette index.
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            sf::Color pixelColor = image.getPixel(x, y);
+            int index = findClosestColorIndex(pixelColor);
+            indexedPixels[y * width + x] = static_cast<unsigned char>(index);
+        }
+    }
+
+    // Prepare LodePNG state.
+    lodepng::State state;
+    state.info_raw.colortype = LCT_PALETTE;
+    state.info_raw.bitdepth = 8;
+    state.info_png.color.colortype = LCT_PALETTE;
+    state.info_png.color.bitdepth = 8;
+    lodepng_palette_clear(&state.info_png.color);
+
+    // Set the palette.
+    for (const auto& color : palette) {
+        lodepng_palette_add(&state.info_png.color, color.r, color.g, color.b, color.a);
+    }
+
+    // Encode the image.
+    std::vector<unsigned char> data;
+    uint error = lodepng::encode(data, indexedPixels, width, height, state);
+    if (error) {
+        LOG_ERROR("Failed to encode image '{}': {}", filePath.c_str(), lodepng_error_text(error));
+        return;
+    }
+
+    // Save PNG
+    error = lodepng::save_file(data, filePath);
+    if (error) {
+        LOG_ERROR("Failed to save image '{}': {}", filePath.c_str(), lodepng_error_text(error));
+        return;
+    }
 }

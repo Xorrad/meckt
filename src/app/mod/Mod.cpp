@@ -577,7 +577,10 @@ void Mod::GenerateRivers() {
             mappedColors[province->GetColor().toInteger()] = (province->HasFlag(ProvinceFlags::SEA)) ? seaColor : landColor;
         }    
     });
-    m_RiversImage.saveToFile((std::filesystem::path(m_Dir) / "map_data" / "rivers.png").string());
+
+    std::filesystem::path filePath = std::filesystem::path(m_Dir) / "map_data" / "rivers.png";
+    m_RiversImage.saveToFile(filePath.string());
+    Image::IndexImage(filePath, Image::RIVERS_PALETTE);
 }
 
 void Mod::GenerateWorld() {
