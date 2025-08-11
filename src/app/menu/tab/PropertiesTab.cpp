@@ -68,6 +68,12 @@ void PropertiesTab::RenderJointProvinces() {
     std::string holding = firstProvince->GetHolding();
     std::string terrain = firstProvince->GetTerrain();
 
+    ClimateType climateType = firstProvince->GetClimateType();
+    std::string winterSeverityBias = firstProvince->GetWinterSeverityBias();
+    std::string mildWinterFactorOverride = firstProvince->GetMildWinterFactorOverride();
+    std::string normalWinterFactorOverride = firstProvince->GetNormalWinterFactorOverride();
+    std::string harshWinterFactorOverride = firstProvince->GetHarshWinterFactorOverride();
+
     int isCoastal = firstProvince->HasFlag(ProvinceFlags::COASTAL);
     int isLake = firstProvince->HasFlag(ProvinceFlags::LAKE);
     int isIsland = firstProvince->HasFlag(ProvinceFlags::ISLAND);
@@ -81,6 +87,11 @@ void PropertiesTab::RenderJointProvinces() {
         if (province->GetReligion() != religion) religion = "*****";
         if (province->GetHolding() != holding) holding = "*****";
         if (province->GetTerrain() != terrain) terrain = "*****";
+        if (province->GetClimateType() != climateType) climateType = ClimateType::COUNT;
+        if (province->GetWinterSeverityBias() != winterSeverityBias) winterSeverityBias = "*****";
+        if (province->GetMildWinterFactorOverride() != mildWinterFactorOverride) mildWinterFactorOverride = "*****";
+        if (province->GetNormalWinterFactorOverride() != normalWinterFactorOverride) normalWinterFactorOverride = "*****";
+        if (province->GetHarshWinterFactorOverride() != harshWinterFactorOverride) harshWinterFactorOverride = "*****";
         if (province->HasFlag(ProvinceFlags::COASTAL) != isCoastal) isCoastal = -1;
         if (province->HasFlag(ProvinceFlags::LAKE) != isLake) isLake = -1;
         if (province->HasFlag(ProvinceFlags::ISLAND) != isIsland) isIsland = -1;
@@ -177,6 +188,68 @@ void PropertiesTab::RenderJointProvinces() {
                     ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
+        }
+
+        // PROVINCE: climate (collapsing header + child window (for borders) + text inputs)
+        ImGui::SetNextItemOpen(m_DisplayClimate, ImGuiCond_Appearing);
+        if(ImGui::CollapsingHeader("climate")) {
+            m_DisplayClimate = true;
+            
+            if(ImGui::BeginChild("climate", ImVec2(0, 175), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+
+                ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate").x - 10);
+                if (ImGui::BeginCombo("climate", ClimateTypeLabels.at(climateType))) {
+                    for(int i = 0; i < (int) ClimateType::COUNT; i++) {
+                        ClimateType type = (ClimateType) i;
+                        const bool isSelected = (type == climateType);
+                        if (ImGui::Selectable(ClimateTypeLabels.at(type), isSelected)) {
+                            for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                                province->SetClimateType(type);
+                            }
+                        }
+                        if(isSelected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+                
+                // Use the same width for all items below so they are aligned.
+                int width = 0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("normal winter factor override").x;
+
+                ImGui::SetNextItemWidth(width);
+                if (ImGui::InputText("winter severity bias", &winterSeverityBias)) {
+                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                        province->SetWinterSeverityBias(winterSeverityBias);
+                    }
+                }
+
+                ImGui::SetNextItemWidth(width);
+                if (ImGui::InputText("mild winter factor override", &mildWinterFactorOverride)) {
+                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                        province->SetMildWinterFactorOverride(mildWinterFactorOverride);
+                    }
+                }
+
+                ImGui::SetNextItemWidth(width);
+                if (ImGui::InputText("normal winter factor override", &normalWinterFactorOverride))  {
+                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                        province->SetNormalWinterFactorOverride(normalWinterFactorOverride);
+                    }
+                }
+
+                ImGui::SetNextItemWidth(width);
+                if (ImGui::InputText("harsh winter factor override", &harshWinterFactorOverride)) {
+                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                        province->SetHarshWinterFactorOverride(harshWinterFactorOverride);
+                    }
+                }
+
+                ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "note: leave fields empty if you don't want any value.");
+            }
+            ImGui::EndChild();
+        }
+        else {
+            m_DisplayClimate = false;
         }
 
         ImGui::PopID();
@@ -286,7 +359,7 @@ void PropertiesTab::RenderProvinces() {
             }
 
             // PROVINCE: climate (collapsing header + child window (for borders) + text inputs)
-            ImGui::SetNextItemOpen(m_DisplayClimate);
+            ImGui::SetNextItemOpen(m_DisplayClimate, ImGuiCond_Appearing);
             if(ImGui::CollapsingHeader("climate")) {
                 m_DisplayClimate = true;
                 
