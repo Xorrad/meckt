@@ -622,7 +622,7 @@ void EditorMenu::RenderModals() {
         if(!initialized) {
             initialized = true;
 
-            name = "c_";
+            name = "";
             type = TitleType::COUNTY;
             color = sf::Color::Red;
             landless = false;
@@ -630,32 +630,23 @@ void EditorMenu::RenderModals() {
             if(hasSelectedTitle) {
                 const SharedPtr<Title>& selectedTitle = m_SelectionHandler.GetTitles()[0];
                 type = (TitleType) (std::min((int) selectedTitle->GetType() + 1, (int) TitleType::EMPIRE));
-                name = GetTitlePrefixByType(type) + "_";
             }
             else if(hasSelectedProvince) {
                 type = TitleType::BARONY;
-                name = GetTitlePrefixByType(type) + "_";
             }
         }
 
-        if(ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, FilterTitleName)) {
-            if(!IsValidTitleName(name, type)) {
-                std::string prefix = GetTitlePrefixByType(type);
-                if(name.starts_with("_")) name = prefix + "_" + name;
-                else name = prefix + name;
-            }
-        }
+        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, FilterTitleName);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "?");
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("The title type prefix should not be included as it will be added afterwards (e.g b_ or k_).");
 
         if (ImGui::BeginCombo("type", TitleTypeLabels[(int) type])) {
             for(int i = 0; i < (int) TitleType::COUNT; i++) {
                 const bool isSelected = ((TitleType) i == type);
                 if (ImGui::Selectable(TitleTypeLabels[i], isSelected)) {
                     type = (TitleType) i;
-
-                    // Update the prefix in the name input to match the new type.
-                    std::string prefix = GetTitlePrefixByType(type);
-                    name = name.substr(2, name.size()-2);
-                    name = prefix + "_" + name;
                 }
                 if(isSelected)
                     ImGui::SetItemDefaultFocus();
@@ -680,8 +671,11 @@ void EditorMenu::RenderModals() {
             // To reset the name and type for the next time creating a title.
             initialized = false;
 
+            // Determine the title type prefix.
+            std::string prefix = GetTitlePrefixByType(type);
+
             // Create a new title using the attributes.
-            SharedPtr<Title> title = MakeTitle(type, name, color, landless);
+            SharedPtr<Title> title = MakeTitle(type, prefix + "_" + name, color, landless);
 
             if(type != TitleType::BARONY) {
                 // If the title is at least a county, then add every selected titles of the
