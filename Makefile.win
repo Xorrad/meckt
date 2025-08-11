@@ -71,6 +71,7 @@ $(OBJ_DIR)/%.o: %.cpp $(PCH)
 # Executable target
 $(BIN_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)
+	@mkdir -p $(OBJ_DIR)/$(SRC_DIR)/build/
 	windres $(SRC_DIR)/build/version.rc -o $(OBJ_DIR)/$(SRC_DIR)/build/version.o
 	$(CXX) $(CXXFLAGS) $(OBJ_DIR)/$(SRC_DIR)/build/version.o -o $(BIN_DIR)/$(TARGET) $^ $(LDFLAGS)
 

@@ -7,7 +7,7 @@
 #ifdef DEB
 #define LOGS_FILE "/usr/local/share/meckt/logs/logs.txt"
 #define CRASH_FILE "/usr/local/share/meckt/logs/crash.txt"
-#elif
+#else
 #define LOGS_FILE "logs/logs.txt"
 #define CRASH_FILE "logs/crash.txt"
 #endif

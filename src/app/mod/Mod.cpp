@@ -580,7 +580,7 @@ void Mod::GenerateRivers() {
 
     std::filesystem::path filePath = std::filesystem::path(m_Dir) / "map_data" / "rivers.png";
     m_RiversImage.saveToFile(filePath.string());
-    Image::IndexImage(filePath, Image::RIVERS_PALETTE);
+    Image::IndexImage(filePath.string(), Image::RIVERS_PALETTE);
 }
 
 void Mod::GenerateWorld() {

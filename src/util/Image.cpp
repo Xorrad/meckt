@@ -1,4 +1,4 @@
-#include "Image.hpp"
+    #include "Image.hpp"
 
 #include <SFML/Graphics.hpp>
 #include "lodepng/lodepng.h"
@@ -97,13 +97,13 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     return image;
 }
 
-void Image::IndexImage(std::filesystem::path filePath, const std::vector<sf::Color>& palette) {
+void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>& palette) {
     // TODO: optimize this function to avoid looping over the palette for each pixels, calling image.getPixel()...
 
     // Load the image to index the pixels to their respective color palette.
     sf::Image image;
     if (!image.loadFromFile(filePath)) {
-        LOG_ERROR("Failed to load image '{}'", filePath.c_str());
+        LOG_ERROR("Failed to load image '{}'", filePath);
         return;
     }
 
@@ -158,14 +158,14 @@ void Image::IndexImage(std::filesystem::path filePath, const std::vector<sf::Col
     std::vector<unsigned char> data;
     uint error = lodepng::encode(data, indexedPixels, width, height, state);
     if (error) {
-        LOG_ERROR("Failed to encode image '{}': {}", filePath.c_str(), lodepng_error_text(error));
+        LOG_ERROR("Failed to encode image '{}': {}", filePath, lodepng_error_text(error));
         return;
     }
 
     // Save PNG
     error = lodepng::save_file(data, filePath);
     if (error) {
-        LOG_ERROR("Failed to save image '{}': {}", filePath.c_str(), lodepng_error_text(error));
+        LOG_ERROR("Failed to save image '{}': {}", filePath, lodepng_error_text(error));
         return;
     }
 }
