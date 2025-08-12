@@ -51,7 +51,11 @@ class EditorMenu;
 
 class Tab;
 class TitlesTab;
+class RegionsTab;
+class ProvincesTab;
 class PropertiesTab;
+class CulturalNamesTab;
+class LogTab;
 
 #include "util/Ptr.hpp"
 #include "util/Logger.hpp"

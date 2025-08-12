@@ -230,6 +230,10 @@ int Mod::GetMaxProvinceId() const {
     return m_ProvincesByIds.empty() ? -1 : m_ProvincesByIds.rbegin()->first;
 }
 
+std::map<std::string, SharedPtr<Region>>& Mod::GetRegions() {
+    return m_Regions;
+}
+
 std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
     return m_Titles;
 }

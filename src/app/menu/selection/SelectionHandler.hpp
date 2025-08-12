@@ -6,15 +6,19 @@ public:
 
     void Select(const SharedPtr<Province>& province);
     void Select(const SharedPtr<Title>& title);
+    void Select(const SharedPtr<Region>& region);
     void Deselect(const SharedPtr<Province>& province);
     void Deselect(const SharedPtr<Title>& title);
+    void Deselect(const SharedPtr<Region>& region);
     void ClearSelection();
 
     bool IsSelected(const SharedPtr<Province>& province);
     bool IsSelected(const SharedPtr<Title>& title);
+    bool IsSelected(const SharedPtr<Region>& region);
 
     std::vector<SharedPtr<Province>>& GetProvinces();
     std::vector<SharedPtr<Title>>& GetTitles();
+    std::vector<SharedPtr<Region>>& GetRegions();
     std::vector<sf::Glsl::Vec4>& GetColors();
     std::size_t GetCount() const;
 
@@ -27,6 +31,7 @@ public:
     
 private:
     void UpdateColors();
+    void UpdateRegionsColors();
     void UpdateShader();
 
 private:
@@ -34,6 +39,7 @@ private:
 
     std::vector<SharedPtr<Province>> m_Provinces;
     std::vector<SharedPtr<Title>> m_Titles;
+    std::vector<SharedPtr<Region>> m_Regions;
 
     std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>)>> m_ProvinceCallbacks;
     std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>, SharedPtr<Title>)>> m_TitleCallbacks;

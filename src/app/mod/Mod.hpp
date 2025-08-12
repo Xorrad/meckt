@@ -26,6 +26,8 @@ public:
     SharedPtr<Title> GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type);
     SharedPtr<Title> GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type);
     int GetMaxProvinceId() const;
+    
+    std::map<std::string, SharedPtr<Region>>& GetRegions();
 
     std::map<std::string, SharedPtr<Title>>& GetTitles();
     std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
