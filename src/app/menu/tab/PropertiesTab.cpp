@@ -916,6 +916,7 @@ void PropertiesTab::RenderRegions() {
                             if(button != sf::Mouse::Button::Left)
                                 return SelectionCallbackResult::INTERRUPT;
                             region->AddTitle(clickedTitle);
+                            m_Menu->GetSelectionHandler().Update();
                             if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
                             m_SelectingTitle = false;
@@ -965,6 +966,7 @@ void PropertiesTab::RenderRegions() {
                             if(button != sf::Mouse::Button::Left)
                                 return SelectionCallbackResult::INTERRUPT;
                             region->AddProvince(clickedProvince);
+                            m_Menu->GetSelectionHandler().Update();
                             if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
                             m_SelectingTitle = false;
