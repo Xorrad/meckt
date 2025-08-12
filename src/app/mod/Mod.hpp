@@ -69,6 +69,7 @@ public:
     void LoadProvincesHistory();
     void LoadTitles();
     void LoadTitlesHistory();
+    void LoadGeographicalRegions();
     void LoadCultures();
     void LoadReligions();
     void LoadLocalization();
@@ -110,6 +111,8 @@ private:
     std::map<uint32_t, SharedPtr<Province>> m_Provinces;
     std::map<int, SharedPtr<Province>> m_ProvincesByIds;
     
+    std::map<std::string, SharedPtr<Region>> m_Regions;
+
     std::map<std::string, SharedPtr<Title>> m_Titles;
     std::map<TitleType, std::vector<SharedPtr<Title>>> m_TitlesByType;
     std::map<int, SharedPtr<BaronyTitle>> m_BaroniesByProvinceIds;

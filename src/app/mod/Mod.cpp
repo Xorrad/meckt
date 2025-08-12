@@ -2,6 +2,7 @@
 #include "app/mod/Culture.hpp"
 #include "app/mod/Religion.hpp"
 #include "app/map/Province.hpp"
+#include "app/map/Region.hpp"
 #include "app/map/Title.hpp"
 #include "util/Yaml.hpp"
 
@@ -622,6 +623,7 @@ void Mod::Load(std::function<void()> completeCallback, std::function<void(Loadin
     LOAD_CATCH(LoadProvincesHistory, LoadingState::PROVINCES_HISTORY, "provinces history");
     LOAD_CATCH(LoadTitles, LoadingState::TITLES, "titles");
     LOAD_CATCH(LoadTitlesHistory, LoadingState::TITLES_HISTORY, "titles history");
+    LOAD_CATCH(LoadGeographicalRegions, LoadingState::GEOGRAPHICAL_REGIONS, "geographical regions");
     LOAD_CATCH(LoadCultures, LoadingState::CULTURES, "cultures");
     LOAD_CATCH(LoadReligions, LoadingState::RELIGIONS, "religions");
     LOAD_CATCH(LoadLocalization, LoadingState::LOCALIZATION, "localization");
@@ -1110,6 +1112,73 @@ void Mod::LoadTitlesHistory() {
             }
         }
     }
+}
+
+void Mod::LoadGeographicalRegions() {
+    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/map_data/geographical_regions/");
+
+    for(const auto& filePath : filesPath) {
+        if(!filePath.ends_with(".txt"))
+            continue;
+        SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
+
+        for(auto& [regionName, regionPair] : data->GetMap()) {
+            auto& [_, regionData] = regionPair;
+
+            ASSERT_IS_OBJECT("geographical region", regionData, regionName, filePath);
+
+            std::vector<std::string> kingdoms = regionData->Get("kingdoms")->AsArray<std::string>({});
+            std::vector<std::string> duchies = regionData->Get("duchies")->AsArray<std::string>({});
+            std::vector<std::string> counties = regionData->Get("counties")->AsArray<std::string>({});
+            std::vector<std::string> provinces = regionData->Get("provinces")->AsArray<std::string>({});
+            std::vector<std::string> regions = regionData->Get("regions")->AsArray<std::string>({});
+            bool generateModifiers = regionData->Get("generate_modifiers")->As<bool>(false);
+            
+            SharedPtr<Region> region = MakeShared<Region>(regionName);
+            region->SetGenerateModifiers(generateModifiers);
+
+            // Add kingdom, duchy and county titles.
+            const auto AddTitles = [&](auto titles) {
+                for (auto& title : titles) {
+                    if (!m_Titles.contains(title)) {
+                        LOG_ERROR("Unknown title '{}' in geographical region '{}'", title, regionName);
+                        continue;
+                    }
+                    region->AddTitle(m_Titles[title]);
+                }
+            };
+            AddTitles(kingdoms);
+            AddTitles(duchies);
+            AddTitles(counties);
+
+            // Add provinces.
+            for (std::string province : provinces) {
+                if (!Math::IsInt(province)) {
+                    LOG_ERROR("Invalid province id '{}' in geographical region '{}'", province, regionName);
+                    continue;
+                }
+                int provinceId = String::ParseInt(province);
+                if (!m_ProvincesByIds.contains(provinceId)) {
+                    LOG_ERROR("Unknown province '{}' in geographical region '{}'", provinceId, regionName);
+                    continue;
+                }
+                region->AddProvince(m_ProvincesByIds[provinceId]);
+            }
+            
+            // Add regions.
+            for (std::string r : regions) {
+                if (!m_Regions.contains(r)) {
+                    LOG_ERROR("Unknown region '{}' in geographical region '{}'", r, regionName);
+                    continue;
+                }
+                region->AddRegion(m_Regions[r]);
+            }
+
+            m_Regions[regionName] = region;
+        }
+    }
+
+    LOG_INFO("Loaded {} geographical regions from {} files", m_Regions.size(), filesPath.size());
 }
 
 void Mod::LoadCultures() {

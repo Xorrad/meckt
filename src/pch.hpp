@@ -33,6 +33,8 @@ class App;
 class Mod;
 class Culture;
 class Religion;
+class Province;
+class Region;
 class Title;
 class HighTitle;
 class BaronyTitle;
