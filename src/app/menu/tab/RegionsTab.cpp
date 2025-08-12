@@ -160,12 +160,12 @@ void RegionsTab::Render() {
     ///////////////////////////////////////////////////
     
     if (ImGui::BeginTable("Regions Tree", 6, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_Sortable)) {
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort, 30.0f);
-        ImGui::TableSetupColumn("Kingdoms", ImGuiTableColumnFlags_WidthFixed, 5.0f);
-        ImGui::TableSetupColumn("Duchies", ImGuiTableColumnFlags_WidthFixed, 5.0f);
-        ImGui::TableSetupColumn("Counties", ImGuiTableColumnFlags_WidthFixed, 5.0f);
-        ImGui::TableSetupColumn("Provinces", ImGuiTableColumnFlags_WidthFixed, 5.0f);
-        ImGui::TableSetupColumn("Regions", ImGuiTableColumnFlags_WidthFixed, 5.0f);
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_DefaultSort);
+        ImGui::TableSetupColumn("Kingdoms", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+        ImGui::TableSetupColumn("Duchies", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+        ImGui::TableSetupColumn("Counties", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+        ImGui::TableSetupColumn("Provinces", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+        ImGui::TableSetupColumn("Regions", ImGuiTableColumnFlags_WidthFixed, 20.0f);
         ImGui::TableHeadersRow();
 
         // Sort the regions list using ImGui.
