@@ -49,6 +49,10 @@ public:
     void RemoveTitle(SharedPtr<Title> title);
     void RenameTitle(SharedPtr<Title> title, std::string formerName);
 
+    void RenameRegion(SharedPtr<Region> region, std::string formerName);
+    void RemoveRegion(SharedPtr<Region> region);
+
+
     void HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color color, float hue, float saturation);
     void GenerateMissingProvinces();
     void GenerateMissingBaronies();

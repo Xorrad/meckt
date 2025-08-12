@@ -10,6 +10,7 @@ public:
     void RenderJointProvinces();
     void RenderProvinces();
     void RenderTitles();
+    void RenderRegions();
 
 private:
     sf::Clock m_Clock;
@@ -21,4 +22,7 @@ private:
     bool m_DisplayHistory;
     bool m_DisplayDejureTitles;
     bool m_DisplayClimate;
+    bool m_DisplayRegionsTitles;
+    bool m_DisplayRegionsProvinces;
+    bool m_DisplayRegionsRegions;
 };

@@ -334,6 +334,18 @@ void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
     // TODO: replace using regex every occurence of 'title:{former_name}' in every files.
 }
 
+void Mod::RenameRegion(SharedPtr<Region> region, std::string formerName) {
+    m_Regions.erase(formerName);
+    if (region != nullptr)
+        m_Regions[region->GetName()] = region;
+}
+
+void Mod::RemoveRegion(SharedPtr<Region> region) {
+    if (region == nullptr)
+        return;
+    m_Regions.erase(region->GetName());
+}
+
 void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float hue, float saturation) {
     // Generate a list of colors with uniformly spaced saturations around
     // the saturation of the original color while picking a random hue.

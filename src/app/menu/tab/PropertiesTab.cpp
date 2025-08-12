@@ -5,6 +5,7 @@
 #include "app/App.hpp"
 #include "app/mod/Mod.hpp"
 #include "app/map/Province.hpp"
+#include "app/map/Region.hpp"
 #include "app/map/Title.hpp"
 
 #include "imgui/imgui.hpp"
@@ -16,7 +17,10 @@ PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) :
     m_DisplayCulturalNames(false),
     m_DisplayHistory(false),
     m_DisplayDejureTitles(false),
-    m_DisplayClimate(false)
+    m_DisplayClimate(false),
+    m_DisplayRegionsTitles(true),
+    m_DisplayRegionsProvinces(true),
+    m_DisplayRegionsRegions(true)
 {
     m_SelectingTitleText.setCharacterSize(24);
     m_SelectingTitleText.setString("Click on a title.");
@@ -54,6 +58,9 @@ void PropertiesTab::Render() {
     }
     else if(m_Menu->GetSelectionHandler().GetTitles().size() > 0) {
         this->RenderTitles();
+    }
+    else if(m_Menu->GetSelectionHandler().GetRegions().size() > 0) {
+        this->RenderRegions();
     }
     
 }
@@ -829,6 +836,200 @@ void PropertiesTab::RenderTitles() {
                     mod->RemoveTitle(title);
 
                     m_Menu->RefreshMapMode(true);
+                }
+
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+                if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+
+            ImGui::PopID();
+            ImGui::EndChild();
+        }
+
+    }
+}
+
+void PropertiesTab::RenderRegions() {
+    std::vector<SharedPtr<Region>> selectedRegions = m_Menu->GetSelectionHandler().GetRegions();
+    for(auto& region : selectedRegions) {
+                
+        if(ImGui::CollapsingHeader(region->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::BeginChild(fmt::format("##region-{}", region->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+            ImGui::PushID(region->GetName().c_str());
+
+            // REGION: name/tag (field)
+            std::string formerName = region->m_Name;
+            if(ImGui::InputText("name", &region->m_Name)) {
+                m_Menu->GetApp()->GetMod()->RenameRegion(region, formerName);
+            }
+
+            // REGION: generate modifiers (checkbox)
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            ImGui::Checkbox("Generate Modifiers", &region->m_GenerateModifiers);
+            ImGui::PopStyleVar();
+
+            // REGION: titles (list)
+            ImGui::SetNextItemOpen(m_DisplayRegionsTitles);
+            if(ImGui::CollapsingHeader("titles")) {
+                m_DisplayRegionsTitles = true;
+
+                ImGui::BeginChild("titles", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+
+                const auto DisplayTitles = [&](auto& titles) {
+                    for(auto const& title : titles) {
+                        ImGui::PushID(title->GetName().c_str());
+                        ImGui::SetNextItemAllowOverlap();
+                        ImGui::Selectable(title->GetName().c_str());
+
+                        // Switch to the properties of the title if not dragging the mouse.
+                        if(ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
+                            m_Menu->SwitchMapMode(TitleTypeToMapMode(title->GetType()), true);
+                            m_Menu->GetSelectionHandler().Select(title);
+                        }
+
+                        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
+                        if(ImGui::SmallButton("x")) {
+                            region->RemoveTitle(title);
+                            m_Menu->GetSelectionHandler().Update();
+                        }
+
+                        ImGui::PopID();
+                    }
+                };
+
+                ImGui::SeparatorText("Kingdoms");
+                DisplayTitles(region->GetKingdoms());
+                ImGui::SeparatorText("Duchies");
+                DisplayTitles(region->GetDuchies());
+                ImGui::SeparatorText("Counties");
+                DisplayTitles(region->GetCounties());
+
+                // REGION: add new title (button with callback)
+                if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
+                    m_SelectingTitle = true;
+                    m_Menu->GetSelectionHandler().AddCallback(
+                        [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince, SharedPtr<Title> clickedTitle) {
+                            if(button != sf::Mouse::Button::Left)
+                                return SelectionCallbackResult::INTERRUPT;
+                            region->AddTitle(clickedTitle);
+                            if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                                return SelectionCallbackResult::INTERRUPT;
+                            m_SelectingTitle = false;
+                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                        }
+                    );
+                }
+                ImGui::EndChild();
+            }
+            else {
+                m_DisplayRegionsTitles = false;
+            }
+            
+            // REGION: provinces (list)
+            ImGui::SetNextItemOpen(m_DisplayRegionsProvinces);
+            if(ImGui::CollapsingHeader("provinces")) {
+                m_DisplayRegionsProvinces = true;
+
+                ImGui::BeginChild("provinces", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+
+                for(auto const& province : region->GetProvinces()) {
+                    ImGui::PushID(province->GetName().c_str());
+                    ImGui::SetNextItemAllowOverlap();
+                    ImGui::Selectable(province->GetName().c_str());
+
+                    // Switch to the properties of the province if not dragging the mouse.
+                    if(ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
+                        m_Menu->SwitchMapMode(MapMode::PROVINCES, true);
+                        m_Menu->GetSelectionHandler().Select(province);
+                    }
+
+                    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
+                    if(ImGui::SmallButton("x")) {
+                        region->RemoveProvince(province);
+                        m_Menu->GetSelectionHandler().Update();
+                    }
+
+                    ImGui::PopID();
+                }
+
+                // REGION: add new title (button with callback)
+                if(ImGui::SmallButton((m_SelectingTitle) ? "click on a province..." : "add") && !m_SelectingTitle) {
+                    m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
+                    m_SelectingTitle = true;
+                    m_Menu->GetSelectionHandler().AddCallback(
+                        [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince, SharedPtr<Title> clickedTitle) {
+                            if(button != sf::Mouse::Button::Left)
+                                return SelectionCallbackResult::INTERRUPT;
+                            region->AddProvince(clickedProvince);
+                            if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                                return SelectionCallbackResult::INTERRUPT;
+                            m_SelectingTitle = false;
+                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                        }
+                    );
+                }
+                ImGui::EndChild();
+            }
+            else {
+                m_DisplayRegionsProvinces = false;
+            }
+            
+            // REGION: regions (list)
+            ImGui::SetNextItemOpen(m_DisplayRegionsRegions);
+            if(ImGui::CollapsingHeader("regions")) {
+                m_DisplayRegionsRegions = true;
+
+                ImGui::BeginChild("regions", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+
+                for(auto const& subRegion : region->GetRegions()) {
+                    ImGui::PushID(subRegion->GetName().c_str());
+                    ImGui::SetNextItemAllowOverlap();
+                    ImGui::Selectable(subRegion->GetName().c_str());
+
+                    // Switch to the properties of the region if not dragging the mouse.
+                    if(ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
+                        m_Menu->GetSelectionHandler().Select(subRegion);
+                    }
+
+                    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
+                    if(ImGui::SmallButton("x")) {
+                        region->RemoveRegion(subRegion);
+                        m_Menu->GetSelectionHandler().Update();
+                    }
+
+                    ImGui::PopID();
+                }
+
+                // TODO: add new regions using a dropdown.
+
+                ImGui::EndChild();
+            }
+            else {
+                m_DisplayRegionsRegions = false;
+            }
+
+            // REGION: delete region (button)
+            if(ImGui::Button("delete"))
+                ImGui::OpenPopup("Delete this geographical region");
+
+            // REGION: delete region (modal)
+            ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            if(ImGui::BeginPopupModal("Delete this geographical region", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
+                ImGui::Separator();
+
+                if(ImGui::Button("Delete", ImVec2(120, 0))) {
+                    ImGui::CloseCurrentPopup();
+
+                    const SharedPtr<Mod>& mod = m_Menu->GetApp()->GetMod();
+                    mod->RemoveRegion(region);
+                    m_Menu->GetSelectionHandler().Deselect(region);
+                    m_Menu->GetSelectionHandler().Update();
                 }
 
                 ImGui::SetItemDefaultFocus();

@@ -31,7 +31,6 @@ public:
     
 private:
     void UpdateColors();
-    void UpdateRegionsColors();
     void UpdateShader();
 
 private:
