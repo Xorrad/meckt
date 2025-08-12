@@ -5,6 +5,7 @@
 #include "app/App.hpp"
 #include "app/mod/Mod.hpp"
 #include "app/map/Province.hpp"
+#include "app/map/Region.hpp"
 #include "app/map/Title.hpp"
 
 #include "imgui/imgui.hpp"
@@ -449,7 +450,9 @@ void EditorMenu::InitTabs() {
     m_Tabs[Tabs::TITLES] = MakeShared<TitlesTab>(this, true);
     m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(this, true);
     m_Tabs[Tabs::PROVINCES] = MakeShared<ProvincesTab>(this, true);
+    m_Tabs[Tabs::REGIONS] = MakeShared<RegionsTab>(this, true);
     m_Tabs[Tabs::LOG] = MakeShared<LogTab>(this, true);
+    m_Tabs[Tabs::CULTURAL_NAMES] = MakeShared<CulturalNamesTab>(this, true);
     m_Tabs[Tabs::CULTURAL_NAMES] = MakeShared<CulturalNamesTab>(this, true);
 }
 
@@ -488,6 +491,7 @@ void EditorMenu::SetupDockspace() {
         // Create docked windows
         ImGui::DockBuilderDockWindow("Titles", dockRight);
         ImGui::DockBuilderDockWindow("Provinces", dockRight);
+        ImGui::DockBuilderDockWindow("Geographical Regions", dockRight);
         ImGui::DockBuilderDockWindow("Cultural Names", dockRight);
         ImGui::DockBuilderDockWindow("Properties", dockRightDown);
         ImGui::DockBuilderDockWindow("Log", dockDown);
