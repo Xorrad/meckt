@@ -720,8 +720,9 @@ void PropertiesTab::RenderTitles() {
                         n++;
                     }
 
+                    ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "note: drag to change order.");
+
                     // HIGHTITLE: add new dejure title (button)
-                    ImGui::NewLine();
                     if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
                         TitleType dejureType = (TitleType)(((int) highTitle->GetType())-1);
                         m_SelectingTitle = true;
