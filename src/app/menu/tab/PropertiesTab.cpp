@@ -879,7 +879,7 @@ void PropertiesTab::RenderRegions() {
 
                 ImGui::BeginChild("titles", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
-                const auto DisplayTitles = [&](auto& titles) {
+                const auto DisplayTitles = [&](auto titles) {
                     for(auto const& title : titles) {
                         ImGui::PushID(title->GetName().c_str());
                         ImGui::SetNextItemAllowOverlap();
@@ -902,11 +902,11 @@ void PropertiesTab::RenderRegions() {
                 };
 
                 ImGui::SeparatorText("Kingdoms");
-                DisplayTitles(region->GetKingdoms());
+                DisplayTitles(std::vector<SharedPtr<KingdomTitle>>(region->GetKingdoms()));
                 ImGui::SeparatorText("Duchies");
-                DisplayTitles(region->GetDuchies());
+                DisplayTitles(std::vector<SharedPtr<DuchyTitle>>(region->GetDuchies()));
                 ImGui::SeparatorText("Counties");
-                DisplayTitles(region->GetCounties());
+                DisplayTitles(std::vector<SharedPtr<CountyTitle>>(region->GetCounties()));
 
                 // REGION: add new title (button with callback)
                 if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
@@ -937,7 +937,8 @@ void PropertiesTab::RenderRegions() {
 
                 ImGui::BeginChild("provinces", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
-                for(auto const& province : region->GetProvinces()) {
+                std::vector<SharedPtr<Province>> provinces = region->GetProvinces();
+                for(auto const& province : provinces) {
                     ImGui::PushID(province->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
                     ImGui::Selectable(province->GetName().c_str());
@@ -987,7 +988,8 @@ void PropertiesTab::RenderRegions() {
 
                 ImGui::BeginChild("regions", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
-                for(auto const& subRegion : region->GetRegions()) {
+                std::vector<SharedPtr<Region>> regions = region->GetRegions();
+                for(auto subRegion : regions) {
                     ImGui::PushID(subRegion->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
                     ImGui::Selectable(subRegion->GetName().c_str());
