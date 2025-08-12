@@ -581,8 +581,16 @@ void PropertiesTab::RenderTitles() {
                     for(auto const& [date, data] : title->GetHistory() | std::views::reverse) {
                         std::string stateKey = fmt::format("{}-{}", title->GetName(), date);
 
+                        ImGui::SetNextItemAllowOverlap();
                         if(ImGui::TreeNodeEx(fmt::format("{}", date).c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
                             ImGui::PushID(stateKey.c_str());
+                            
+                            // Insert the delete button on the smae line as the tree node.
+                            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
+                            if(ImGui::SmallButton("x")) {
+                                historyStates.erase(stateKey);
+                                title->RemoveHistory(date);
+                            }
 
                             if(historyStates.count(stateKey) == 0) {
                                 historyStates[stateKey] = TitleHistoryState{
@@ -610,8 +618,18 @@ void PropertiesTab::RenderTitles() {
                             ImGui::PopID();
                             ImGui::TreePop();
                         }
-                        else if(historyStates.count(stateKey) > 0 && historyStates[stateKey].parsingError.empty()) {
-                            historyStates.erase(stateKey);
+                        else {
+                            ImGui::PushID(stateKey.c_str());
+
+                            // Insert the delete button on the smae line as the tree node.
+                            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
+                            if(ImGui::SmallButton("x"))
+                                title->RemoveHistory(date);
+
+                            if(historyStates.count(stateKey) > 0 && historyStates[stateKey].parsingError.empty())
+                                historyStates.erase(stateKey);
+
+                            ImGui::PopID();
                         }
                     }
                 }
