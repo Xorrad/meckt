@@ -949,7 +949,7 @@ void PropertiesTab::RenderRegions() {
                 for(auto const& province : provinces) {
                     ImGui::PushID(province->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
-                    ImGui::Selectable(province->GetName().c_str());
+                    ImGui::Selectable(fmt::format("{}\t-\t{}", province->GetId(), province->GetName()).c_str());
 
                     // Switch to the properties of the province if not dragging the mouse.
                     if(ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
