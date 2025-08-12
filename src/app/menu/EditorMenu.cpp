@@ -414,8 +414,10 @@ void EditorMenu::InitSelectionCallbacks() {
             // Unwrap dejure titles when CTRL+LMB.
             if(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
                 if(!title->Is(TitleType::BARONY)) {
+                    if (isSelected)
+                        m_SelectionHandler.Deselect(title);
                     title->SetSelectionFocus(false);
-                    this->RefreshMapMode(true, false);
+                    this->RefreshMapMode(false, false);
                 }
                 return SelectionCallbackResult::CONTINUE;
             }
@@ -435,10 +437,10 @@ void EditorMenu::InitSelectionCallbacks() {
         }
 
         // Wrap a title when MMB and the title was unfocus (unwrapped).
-        if(button == sf::Mouse::Button::Right) {
+        else if(button == sf::Mouse::Button::Right) {
             if(title->GetLiegeTitle() != nullptr && !title->GetLiegeTitle()->HasSelectionFocus()) {
                 title->GetLiegeTitle()->SetSelectionFocus(true);
-                this->RefreshMapMode(true, false);
+                this->RefreshMapMode(false, false);
             }
         }
 

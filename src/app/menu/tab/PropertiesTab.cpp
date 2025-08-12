@@ -911,10 +911,18 @@ void PropertiesTab::RenderRegions() {
                 // REGION: add new title (button with callback)
                 if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
+
+                    if (!MapModeIsTitle(m_Menu->GetMapMode()))
+                        m_Menu->SwitchMapMode(MapMode::KINGDOM, false);
+
                     m_Menu->GetSelectionHandler().AddCallback(
                         [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince, SharedPtr<Title> clickedTitle) {
+                            // Allow user to wrap a title using RMB.
                             if(button != sf::Mouse::Button::Left)
-                                return SelectionCallbackResult::INTERRUPT;
+                                return SelectionCallbackResult::CONTINUE;
+                            // Allow user to unwrap a title using LCtrl+LMB.
+                            if(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+                                return SelectionCallbackResult::CONTINUE;
                             region->AddTitle(clickedTitle);
                             m_Menu->GetSelectionHandler().Update();
                             if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
@@ -963,7 +971,7 @@ void PropertiesTab::RenderRegions() {
                     m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
                     m_SelectingTitle = true;
                     m_Menu->GetSelectionHandler().AddCallback(
-                        [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince, SharedPtr<Title> clickedTitle) {
+                        [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince) {
                             if(button != sf::Mouse::Button::Left)
                                 return SelectionCallbackResult::INTERRUPT;
                             region->AddProvince(clickedProvince);
