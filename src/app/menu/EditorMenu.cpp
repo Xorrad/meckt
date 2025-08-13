@@ -945,6 +945,7 @@ void EditorMenu::RenderModals() {
         static bool titlesHistory = true;
         static bool titlesLocalization = true;
         static bool culturalNamesLocalization = true;
+        static bool geographicalRegions = true;
 
         ImGui::Checkbox("default map  ", &defaultMap);
         ImGui::SameLine();
@@ -988,10 +989,26 @@ void EditorMenu::RenderModals() {
         ImGui::Checkbox("cultural names localization  ", &culturalNamesLocalization);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), culturalNamesLocalizationPath.c_str());
+        
+        std::string geographicalRegionsLocalizationPath = "geographical_regions/geographical_region.txt";
+        ImGui::Checkbox("geographical regions  ", &geographicalRegions);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), geographicalRegionsLocalizationPath.c_str());
 
         if(ImGui::Button("Export", ImVec2(120, 0))) {
             SharedPtr<Mod> mod = m_App->GetMod();
-            mod->Export(defaultMap, provincesDefinition, provincesTerrain, provincesClimate, provincesHistory, titles, titlesHistory, titlesLocalization, culturalNamesLocalization);
+            mod->Export(
+                defaultMap,
+                provincesDefinition,
+                provincesTerrain,
+                provincesClimate,
+                provincesHistory,
+                titles,
+                titlesHistory,
+                titlesLocalization,
+                culturalNamesLocalization,
+                geographicalRegions
+            );
             ImGui::CloseCurrentPopup();
         }
 

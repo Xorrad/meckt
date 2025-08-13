@@ -1510,7 +1510,8 @@ void Mod::Export(
     bool titles,
     bool titlesHistory,
     bool titlesLocalization,
-    bool culturalNamesLocalization
+    bool culturalNamesLocalization,
+    bool geographicalRegions
 ) {
 
     if (defaultMap)
@@ -1528,6 +1529,9 @@ void Mod::Export(
         this->ExportTitles();
     if (titlesHistory)
         this->ExportTitlesHistory();
+
+    if (geographicalRegions)
+        this->ExportGeographicalRegions();
 
     // Remove all localization related to titles from the files
     // in order to centralize the loc and avoid duplicates.
@@ -1938,6 +1942,83 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
             fmt::println(file, "{}}}", indent);
         }
     }
+}
+
+void Mod::ExportGeographicalRegions() {
+    // Create the directories and files.
+    std::string dir = m_Dir + "/map_data/geographical_regions/";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    std::ofstream file(dir + "/geographical_region.txt", std::ios::out);
+    File::EncodeToUTF8BOM(file);
+
+    // Make a vector of the regions and then sort using HasRegion on both sides as the condition.
+    std::vector<SharedPtr<Region>> regions;
+    for (auto [_, region] : m_Regions)
+        regions.push_back(region);
+
+    std::sort(
+        regions.begin(),
+        regions.end(),
+        [](SharedPtr<Region>& a, SharedPtr<Region>& b) {
+            if (b->HasRegion(a))
+                return false;
+            if (a->HasRegion(b))
+                return true;
+            return a->GetName() < b->GetName();
+        }
+    );
+
+    // Initialize the object for the geographical regions that will be serialized into the file.
+    SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+    for (auto region : regions) {
+        SharedPtr<Jomini::Object> regionObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+        if (region->DoesGenerateModifiers())
+            regionObject->Put("generate_modifiers", region->DoesGenerateModifiers());
+
+        if (!region->GetKingdoms().empty()) {
+            std::vector<std::string> titles = std::vector<std::string>(region->GetKingdoms().size());
+            for (auto title : region->GetKingdoms())
+                titles.push_back(title->GetName());
+            regionObject->Put("kingdoms", titles);
+        }
+
+        if (!region->GetDuchies().empty()) {
+            std::vector<std::string> titles = std::vector<std::string>(region->GetDuchies().size());
+            for (auto title : region->GetDuchies())
+                titles.push_back(title->GetName());
+            regionObject->Put("duchies", titles);
+        }
+
+        if (!region->GetCounties().empty()) {
+            std::vector<std::string> titles = std::vector<std::string>(region->GetCounties().size());
+            for (auto title : region->GetCounties())
+                titles.push_back(title->GetName());
+            regionObject->Put("counties", titles);
+        }
+
+        if (!region->GetProvinces().empty()) {
+            std::vector<std::string> provinces = std::vector<std::string>(region->GetProvinces().size());
+            for (auto province : region->GetProvinces())
+                provinces.push_back(std::to_string(province->GetId()));
+            regionObject->Put("provinces", provinces);
+        }
+
+        if (!region->GetRegions().empty()) {
+            std::vector<std::string> subRegions = std::vector<std::string>(region->GetRegions().size());
+            for (auto subRegion : region->GetRegions())
+                subRegions.push_back(subRegion->GetName());
+            regionObject->Put("regions", subRegions);
+        }
+
+        object->Put(region->GetName(), regionObject);
+    }
+
+    fmt::println(file, "{}\n", object->Serialize());
+
+    file.close();
 }
 
 void Mod::ExportTitlesLocalization() {

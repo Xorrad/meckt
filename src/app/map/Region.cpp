@@ -55,7 +55,7 @@ bool Region::HasRegion(SharedPtr<Region> region) const {
     return std::find(m_Regions.begin(), m_Regions.end(), region) != m_Regions.end();
 }
 
-bool Region::doesGenerateModifiers() const {
+bool Region::DoesGenerateModifiers() const {
     return m_GenerateModifiers;
 }
 

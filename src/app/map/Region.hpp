@@ -14,7 +14,7 @@ public:
     bool HasTitle(SharedPtr<Title> title) const;
     bool HasProvince(SharedPtr<Province> province) const;
     bool HasRegion(SharedPtr<Region> region) const;
-    bool doesGenerateModifiers() const;
+    bool DoesGenerateModifiers() const;
 
     void SetName(std::string name);
     void AddTitle(SharedPtr<Title> title);

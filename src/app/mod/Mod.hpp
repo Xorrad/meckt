@@ -91,7 +91,8 @@ public:
         bool titles = true,
         bool titlesHistory = true,
         bool titlesLocalization = true,
-        bool culturalNamesLocalization = true
+        bool culturalNamesLocalization = true,
+        bool geographicalRegions = true
     );
     void ExportDefaultMapFile();
     void ExportProvincesDefinition();
@@ -101,6 +102,7 @@ public:
     void ExportTitles();
     void ExportTitlesHistory();
     void ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int depth);
+    void ExportGeographicalRegions();
 
     void ExportTitlesLocalization();
     void ExportCulturalNamesLocalization();
