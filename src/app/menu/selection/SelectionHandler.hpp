@@ -1,6 +1,7 @@
 #pragma once
 
 class SelectionHandler {
+friend PropertiesTab;
 public:
     SelectionHandler(EditorMenu* menu);
 

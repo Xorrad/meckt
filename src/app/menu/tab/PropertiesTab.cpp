@@ -42,6 +42,14 @@ void PropertiesTab::Update(sf::Time delta) {
 
         m_SelectingTitleText.setString(selectionText);
     }
+
+    // Cancel selecting a title or province by pressing escape.
+    if ((m_SelectingTitle || m_SelectingProvince) && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+        if (m_SelectingTitle) m_Menu->GetSelectionHandler().m_TitleCallbacks.pop_back();
+        if (m_SelectingProvince) m_Menu->GetSelectionHandler().m_ProvinceCallbacks.pop_back();
+        m_SelectingTitle = false;
+        m_SelectingProvince = false;
+    }
 }
 
 void PropertiesTab::Render() {
@@ -928,6 +936,11 @@ void PropertiesTab::RenderRegions() {
                 if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
 
+                    if (m_SelectingProvince) {
+                        m_Menu->GetSelectionHandler().m_ProvinceCallbacks.pop_back();
+                        m_SelectingProvince = false;
+                    }
+
                     if (!MapModeIsTitle(m_Menu->GetMapMode()))
                         m_Menu->SwitchMapMode(MapMode::KINGDOM, false);
 
@@ -984,8 +997,14 @@ void PropertiesTab::RenderRegions() {
 
                 // REGION: add new title (button with callback)
                 if(ImGui::SmallButton((m_SelectingProvince) ? "click on a province..." : "add") && !m_SelectingProvince) {
-                    m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
                     m_SelectingProvince = true;
+                    m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
+
+                    if (m_SelectingTitle) {
+                        m_Menu->GetSelectionHandler().m_TitleCallbacks.pop_back();
+                        m_SelectingTitle = false;
+                    }
+
                     m_Menu->GetSelectionHandler().AddCallback(
                         [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince) {
                             if(button != sf::Mouse::Button::Left)
