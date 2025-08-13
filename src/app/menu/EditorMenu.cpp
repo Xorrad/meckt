@@ -930,12 +930,6 @@ void EditorMenu::RenderModals() {
     // EXPORT : modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Export", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "WARNING!");
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The mod files will be completely overwritten.");
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Comments will be lost and the overall structure may be different (indentation, style, order).");
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone, so make sure to back-up your files.");
-        ImGui::Separator();
-
         static bool defaultMap = true;
         static bool provincesDefinition = true;
         static bool provincesTerrain = true;
@@ -946,6 +940,37 @@ void EditorMenu::RenderModals() {
         static bool titlesLocalization = true;
         static bool culturalNamesLocalization = true;
         static bool geographicalRegions = true;
+
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "WARNING!");
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The mod files will be completely overwritten.");
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Comments will be lost and the overall structure may be different (indentation, style, order).");
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone, so make sure to back-up your files.");
+        if(ImGui::Button("Select all")) {
+            defaultMap = true;
+            provincesDefinition = true;
+            provincesTerrain = true;
+            provincesClimate = true;
+            provincesHistory = true;
+            titles = true;
+            titlesHistory = true;
+            titlesLocalization = true;
+            culturalNamesLocalization = true;
+            geographicalRegions = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Unselect all")) {
+            defaultMap = false;
+            provincesDefinition = false;
+            provincesTerrain = false;
+            provincesClimate = false;
+            provincesHistory = false;
+            titles = false;
+            titlesHistory = false;
+            titlesLocalization = false;
+            culturalNamesLocalization = false;
+            geographicalRegions = false;
+        }
+        ImGui::Separator();
 
         ImGui::Checkbox("default map  ", &defaultMap);
         ImGui::SameLine();
