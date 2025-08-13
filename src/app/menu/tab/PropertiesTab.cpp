@@ -60,14 +60,16 @@ void PropertiesTab::Render() {
         // Draw a red outline around the view of the map.
         ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(m_Menu->GetDockspaceID());
         if (node != nullptr) {
+            int red = 255 - (abs(sin(2*3.1415*0.05*std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()/100.f)) * 150);
             ImGui::GetBackgroundDrawList()->AddRect(
                 node->Pos,
                 { node->Pos.x + node->Size.x, node->Pos.y + node->Size.y },
-                IM_COL32(255, 0, 0, 255),
+                IM_COL32(red, 0, 0, 255),
                 0.f,
                 ImDrawFlags_None,
                 3.f
             );
+            m_SelectingTitleText.setFillColor(sf::Color(red, 0, 0, 255));
         }
 
         m_SelectingTitleText.setPosition({node->Pos.x + 10, node->Pos.y + 10});
@@ -933,7 +935,9 @@ void PropertiesTab::RenderRegions() {
                 DisplayTitles(std::vector<SharedPtr<CountyTitle>>(region->GetCounties()));
 
                 // REGION: add new title (button with callback)
-                if(ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
+                ImGui::PushFont(ImGui::notoSansNormalFont);
+                if (m_SelectingTitle) ImGui::BeginDisabled();
+                if(ImGui::SmallButton("📌") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
 
                     if (m_SelectingProvince) {
@@ -961,6 +965,8 @@ void PropertiesTab::RenderRegions() {
                         }
                     );
                 }
+                if (m_SelectingTitle) ImGui::EndDisabled();
+                ImGui::PopFont();
                 ImGui::EndChild();
             }
             else {
@@ -996,7 +1002,9 @@ void PropertiesTab::RenderRegions() {
                 }
 
                 // REGION: add new title (button with callback)
-                if(ImGui::SmallButton((m_SelectingProvince) ? "click on a province..." : "add") && !m_SelectingProvince) {
+                ImGui::PushFont(ImGui::notoSansNormalFont);
+                if (m_SelectingProvince) ImGui::BeginDisabled();
+                if(ImGui::SmallButton("📌") && !m_SelectingProvince) {
                     m_SelectingProvince = true;
                     m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
 
@@ -1018,6 +1026,8 @@ void PropertiesTab::RenderRegions() {
                         }
                     );
                 }
+                if (m_SelectingProvince) ImGui::EndDisabled();
+                ImGui::PopFont();
                 ImGui::EndChild();
             }
             else {

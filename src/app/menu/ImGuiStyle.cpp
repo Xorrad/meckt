@@ -37,7 +37,7 @@ void ImGui::SetupFonts() {
     emojiConfig.PixelSnapH = true;
     emojiConfig.GlyphMinAdvanceX = 20.0f;
     const ImWchar emojiRanges[] = {
-        0x1F300, 0x1F5FF, // Misc Symbols and Pictographs
+        0x1F300, 0x1F5FF, // Miscellaneous Symbols and Pictographs
         0x1F600, 0x1F64F, // Emoticons
         0x1F680, 0x1F6FF, // Transport & Map Symbols
         0x1F900, 0x1F9FF, // Supplemental Symbols and Pictographs
