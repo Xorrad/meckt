@@ -12,6 +12,8 @@
 #include <random>
 #include <algorithm>
 #include <ranges>
+#include <queue>
+#include <unordered_set>
 
 #ifdef _WIN32
 typedef unsigned long ulong;

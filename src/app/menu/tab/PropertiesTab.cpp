@@ -1091,6 +1091,17 @@ void PropertiesTab::RenderRegions() {
                     ImGui::SetNextItemAllowOverlap();
                     ImGui::Selectable(subRegion->GetName().c_str());
 
+                    if (subRegion->HasRegion(region)) {
+                        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-50);
+                        ImGui::PushFont(ImGui::notoSansNormalFont);
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
+                        ImGui::Text("⚠️");
+                        if (ImGui::IsItemHovered())
+                            ImGui::SetTooltip("Geographical regions shouldn't have circular dependencies!");
+                        ImGui::PopStyleColor();
+                        ImGui::PopFont();
+                    }
+
                     // Switch to the properties of the region if not dragging the mouse.
                     if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
                         m_Menu->GetSelectionHandler().Select(subRegion);

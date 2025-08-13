@@ -201,7 +201,12 @@ void SelectionHandler::UpdateColors() {
         m_Count += titles.size();
     };
 
+    // Use a map to avoid infinite recursion because of circular dependencies.
+    std::unordered_set<SharedPtr<Region>> visitedRegions;
     const std::function<void(SharedPtr<Region>)> PushRegion = [&](SharedPtr<Region> region) {
+        if (visitedRegions.contains(region))
+            return;
+        visitedRegions.insert(region);
         PushTitles(region->GetKingdoms());
         PushTitles(region->GetDuchies());
         PushTitles(region->GetCounties());

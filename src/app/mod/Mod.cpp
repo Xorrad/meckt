@@ -1155,7 +1155,7 @@ void Mod::LoadGeographicalRegions() {
             std::vector<std::string> regions = regionData->Get("regions")->AsArray<std::string>({});
             bool generateModifiers = regionData->Get("generate_modifiers")->As<bool>(false);
             
-            SharedPtr<Region> region = MakeShared<Region>(regionName);
+            SharedPtr<Region> region = (m_Regions.contains(regionName) ? m_Regions[regionName] : MakeShared<Region>(regionName));
             region->SetGenerateModifiers(generateModifiers);
 
             // Add kingdom, duchy and county titles.
@@ -1189,8 +1189,8 @@ void Mod::LoadGeographicalRegions() {
             // Add regions.
             for (std::string r : regions) {
                 if (!m_Regions.contains(r)) {
-                    LOG_ERROR("Unknown region '{}' in geographical region '{}'", r, regionName);
-                    continue;
+                    LOG_WARNING("Unknown region '{}' in geographical region '{}'. Should be fixed automatically.", r, regionName);
+                    m_Regions[r] = MakeShared<Region>(r);
                 }
                 region->AddRegion(m_Regions[r]);
             }
@@ -1946,33 +1946,65 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
 
 void Mod::ExportGeographicalRegions() {
     // Create the directories and files.
-    std::string dir = m_Dir + "/map_data/geographical_regions/";
+    std::string dir = m_Dir + "/map_data/geographical_regions";
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
     std::ofstream file(dir + "/geographical_region.txt", std::ios::out);
     File::EncodeToUTF8BOM(file);
 
-    // Make a vector of the regions and then sort using HasRegion on both sides as the condition.
+    // Determine geographical regions order based on their dependencies.
+    // We use a topological sort to solve that problem.
     std::vector<SharedPtr<Region>> regions;
     for (auto [_, region] : m_Regions)
         regions.push_back(region);
 
-    std::sort(
-        regions.begin(),
-        regions.end(),
-        [](SharedPtr<Region>& a, SharedPtr<Region>& b) {
-            if (b->HasRegion(a))
-                return false;
-            if (a->HasRegion(b))
-                return true;
-            return a->GetName() < b->GetName();
+    std::unordered_map<SharedPtr<Region>, int> indegree;
+    std::unordered_map<SharedPtr<Region>, std::vector<SharedPtr<Region>>> graph;
+
+    // Build a graph of the regions.
+    for (auto& [_, a] : m_Regions) {
+        indegree[a] = 0;
+        for (auto& [_, b] : m_Regions) {
+            // If region A contains region B, then A is dependant on B, and B must come first.
+            if (a != b && a->HasRegion(b)) {
+                graph[b].push_back(a);
+                indegree[a]++;
+            }
         }
-    );
+    }
+
+    // Queue of regions with no dependencies.
+    std::queue<SharedPtr<Region>> queue;
+    for (auto& [node, deg] : indegree) {
+        if (deg == 0) queue.push(node);
+    }
+
+    std::vector<SharedPtr<Region>> sortedRegions;
+    std::unordered_set<SharedPtr<Region>> visited;
+    while (!queue.empty()) {
+        auto region = queue.front();
+        queue.pop();
+        visited.insert(region);
+        sortedRegions.push_back(region);
+        for (auto next : graph[region]) {
+            if (--indegree[next] == 0) {
+                queue.push(next);
+            }
+        }
+    }
+
+    // Check if there are cycles and add any remaining regions to the end of the list.
+    for (auto [_, region] : m_Regions) {
+        if (!visited.count(region)) {
+            LOG_ERROR("Couldn't resolve order for geographical region '{}' because of a cycle", region->GetName());
+            sortedRegions.push_back(region);
+        }
+    }
 
     // Initialize the object for the geographical regions that will be serialized into the file.
     SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
 
-    for (auto region : regions) {
+    for (auto region : sortedRegions) {
         SharedPtr<Jomini::Object> regionObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
 
         if (region->DoesGenerateModifiers())
