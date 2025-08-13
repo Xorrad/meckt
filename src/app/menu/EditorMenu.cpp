@@ -572,6 +572,10 @@ void EditorMenu::RenderMenuBarSelection() {
             m_ModalName = "Create a new title";
         }
         
+        if(ImGui::MenuItem("Create geographical region")) {
+            m_ModalName = "Create a new geographical region";
+        }
+        
         if(ImGui::MenuItem("Harmonize colors")) {
             m_ModalName = "Harmonize colors";
         }
@@ -731,6 +735,76 @@ void EditorMenu::RenderModals() {
         ImGui::EndPopup();
     }
     // CREATE TITLE: modal end
+    
+    // CREATE REGION: modal begin
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Create a new geographical region", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Create a new geographical region with the attributes below:");
+        ImGui::Separator();
+
+        static std::string name;
+        static bool generateModifiers;
+
+        bool isNameTaken = mod->GetRegions().count(name) > 0;
+
+        static bool initialized = false;
+        if(!initialized) {
+            initialized = true;
+            name = "";
+            generateModifiers = false;
+        }
+
+        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, FilterTitleName);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+        ImGui::Checkbox("Generate Modifiers", &generateModifiers);
+        ImGui::PopStyleVar();
+        
+        if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another region.");
+
+        if(isNameTaken) ImGui::BeginDisabled();
+        if(ImGui::Button("Create", ImVec2(120, 0)) && !isNameTaken) {
+            ImGui::CloseCurrentPopup();
+
+            // To reset the name and type for the next time creating a title.
+            initialized = false;
+
+            // Create a new region using the attributes.
+            SharedPtr<Region> region = MakeShared<Region>(name);
+            region->SetGenerateModifiers(generateModifiers);
+
+            // Add valid selected titles to the region.
+            for (auto& title : m_SelectionHandler.GetTitles()) {
+                if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::BARONY))
+                    continue;
+                region->AddTitle(title);
+            }
+            
+            // Add selected provinces to the region.
+            for (auto& province : m_SelectionHandler.GetProvinces()) {
+                region->AddProvince(province);
+            }
+            
+            // Add selected regions to the region.
+            for (auto& subRegion : m_SelectionHandler.GetRegions()) {
+                region->AddRegion(subRegion);
+            }
+
+            mod->AddRegion(region);
+            m_SelectionHandler.ClearSelection();
+            m_SelectionHandler.Select(region);
+        }
+        if(isNameTaken) ImGui::EndDisabled();
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            initialized = false;
+        }
+        ImGui::EndPopup();
+    }
+    // CREATE REGION: modal end
 
     // HARMONIZE COLOR: modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));

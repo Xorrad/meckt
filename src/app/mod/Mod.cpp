@@ -334,6 +334,11 @@ void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
     // TODO: replace using regex every occurence of 'title:{former_name}' in every files.
 }
 
+void Mod::AddRegion(SharedPtr<Region> region) {
+    // Add title to global regions hash map.
+    m_Regions[region->GetName()] = region;
+}
+
 void Mod::RenameRegion(SharedPtr<Region> region, std::string formerName) {
     m_Regions.erase(formerName);
     if (region != nullptr)
