@@ -3,6 +3,8 @@
 #include "Menu.hpp"
 #include "selection/SelectionHandler.hpp"
 
+typedef unsigned int ImGuiID;
+
 class EditorMenu : public Menu {
 friend SelectionHandler;
 public:
@@ -12,6 +14,7 @@ public:
     MapMode GetMapMode() const;
     SelectionHandler& GetSelectionHandler();
     sf::View& GetCamera();
+    ImGuiID GetDockspaceID() const;
 
     void UpdateHoveringText();
     void ToggleCamera(bool enabled);
@@ -59,4 +62,6 @@ private:
     std::string m_ModalName;
 
     bool m_ExitToMainMenu;
+
+    ImGuiID m_DockspaceID;
 };

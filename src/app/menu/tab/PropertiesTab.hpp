@@ -17,6 +17,7 @@ private:
 
     sf::Text m_SelectingTitleText;
     bool m_SelectingTitle;
+    bool m_SelectingProvince;
 
     bool m_DisplayCulturalNames;
     bool m_DisplayHistory;

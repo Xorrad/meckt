@@ -14,6 +14,7 @@
 PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
     m_SelectingTitle(false),
+    m_SelectingProvince(false),
     m_DisplayCulturalNames(false),
     m_DisplayHistory(false),
     m_DisplayDejureTitles(false),
@@ -25,21 +26,21 @@ PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) :
     m_SelectingTitleText.setCharacterSize(24);
     m_SelectingTitleText.setString("Click on a title.");
     m_SelectingTitleText.setFillColor(sf::Color::Red);
-    m_SelectingTitleText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
+    m_SelectingTitleText.setFont(Configuration::fonts.Get(Fonts::NOTO_SANS));
     m_SelectingTitleText.setPosition({10, 20});
+
     m_Clock.restart();
 }
 
 void PropertiesTab::Update(sf::Time delta) {
     if(m_Clock.getElapsedTime().asSeconds() > 0.5) {
-        if(m_Clock.getElapsedTime().asSeconds() > 1.5) {
-            m_SelectingTitleText.setString("Click on a title...");
-            m_Clock.restart();
-        }
-        else if(m_Clock.getElapsedTime().asSeconds() > 1.0)
-            m_SelectingTitleText.setString("Click on a title..");
-        else
-            m_SelectingTitleText.setString("Click on a title.");
+        std::string selectionText = fmt::format("Click on a {}", m_SelectingTitle ? "title" : "province");
+
+        if(m_Clock.getElapsedTime().asSeconds() > 1.5) { m_Clock.restart(); selectionText += "..."; }
+        else if(m_Clock.getElapsedTime().asSeconds() > 1.0) selectionText += "..";
+        else selectionText += ".";
+
+        m_SelectingTitleText.setString(selectionText);
     }
 }
 
@@ -47,8 +48,23 @@ void PropertiesTab::Render() {
     if(!m_Visible)
         return;
 
-    if(m_SelectingTitle)
+    if(m_SelectingTitle || m_SelectingProvince) {
+        // Draw a red outline around the view of the map.
+        ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(m_Menu->GetDockspaceID());
+        if (node != nullptr) {
+            ImGui::GetBackgroundDrawList()->AddRect(
+                node->Pos,
+                { node->Pos.x + node->Size.x, node->Pos.y + node->Size.y },
+                IM_COL32(255, 0, 0, 255),
+                0.f,
+                ImDrawFlags_None,
+                3.f
+            );
+        }
+
+        m_SelectingTitleText.setPosition({node->Pos.x + 10, node->Pos.y + 10});
         m_Menu->GetApp()->GetWindow().draw(m_SelectingTitleText);
+    }
 
     if(m_Menu->GetSelectionHandler().GetProvinces().size() > 0) {
         if(m_Menu->GetSelectionHandler().GetProvinces().size() > 1) {
@@ -967,9 +983,9 @@ void PropertiesTab::RenderRegions() {
                 }
 
                 // REGION: add new title (button with callback)
-                if(ImGui::SmallButton((m_SelectingTitle) ? "click on a province..." : "add") && !m_SelectingTitle) {
+                if(ImGui::SmallButton((m_SelectingProvince) ? "click on a province..." : "add") && !m_SelectingProvince) {
                     m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
-                    m_SelectingTitle = true;
+                    m_SelectingProvince = true;
                     m_Menu->GetSelectionHandler().AddCallback(
                         [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince) {
                             if(button != sf::Mouse::Button::Left)
@@ -978,7 +994,7 @@ void PropertiesTab::RenderRegions() {
                             m_Menu->GetSelectionHandler().Update();
                             if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
-                            m_SelectingTitle = false;
+                            m_SelectingProvince = false;
                             return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                         }
                     );

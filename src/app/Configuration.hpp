@@ -9,6 +9,7 @@ enum class Textures : int {
 
 enum class Fonts : int {
     FIGTREE,
+    NOTO_SANS,
     COUNT
 };
 

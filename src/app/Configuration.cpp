@@ -55,6 +55,7 @@ void Configuration::InitializeTextures() {
 
 void Configuration::InitializeFonts() {
     fonts.Load(Fonts::FIGTREE, Configuration::assetsPath + "/fonts/Figtree-Medium.ttf");
+    fonts.Load(Fonts::NOTO_SANS, Configuration::assetsPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf");
 }
 
 void Configuration::InitializeShaders() {
