@@ -543,7 +543,7 @@ float Mod::CalculateWinterSeverityBias(SharedPtr<Province> province, bool overri
     
     float winterSeverityBias = elevation * elevationFactor + hemisphere * hemisphereFactor;
     winterSeverityBias = std::max(0.f, std::min(1.f, winterSeverityBias));
-    winterSeverityBias = std::round(winterSeverityBias*100.f)/100.f;
+    winterSeverityBias = winterSeverityBias;
 
     return winterSeverityBias;
 }
@@ -563,7 +563,7 @@ void Mod::GenerateProvincesClimate(bool override, float elevationOffset, float e
         }
 
         if (province->GetWinterSeverityBias().empty() || override) {
-            province->SetWinterSeverityBias(std::to_string(winterSeverityBias));
+            province->SetWinterSeverityBias(fmt::format("{:.2f}", winterSeverityBias));
             hasChanged = true;
         }
 
