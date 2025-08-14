@@ -92,6 +92,8 @@ deb:
 	@mkdir -p $(DEB_DIR)/usr/local/share/meckt
 	@mkdir -p $(DEB_DIR)/usr/local/share/meckt/logs
 	@cp -rf assets $(DEB_DIR)/usr/local/share/meckt/assets
+	@mkdir -p $(DEB_DIR)/DEBIAN/
+	@cp -p $(SRC_DIR)/build/DEBIAN/control $(DEB_DIR)/DEBIAN/control
 	dpkg-deb --build $(DEB_DIR)
 
 run:
