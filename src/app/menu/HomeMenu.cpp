@@ -210,8 +210,13 @@ void HomeMenu::RenderUpdateModal() {
         }
         ImGui::Separator();
 
+        bool disableDownload = false;
+#ifndef DEB
+        disableDownload = true;
+#endif
+
         ImGui::SetItemDefaultFocus();
-        if (hasError) ImGui::BeginDisabled();
+        if (hasError || disableDownload) ImGui::BeginDisabled();
         if(ImGui::Button("Download", ImVec2(120, 0))) {
             m_App->GetUpdateDetails().error = Update::Update(m_App->GetUpdateDetails());
 
@@ -219,7 +224,7 @@ void HomeMenu::RenderUpdateModal() {
             if (m_App->GetUpdateDetails().error.empty())
                 m_App->GetWindow().close();
         }
-        if (hasError) ImGui::EndDisabled();
+        if (hasError || disableDownload) ImGui::EndDisabled();
 
         ImGui::SameLine();
         if(ImGui::Button("Open GitHub", ImVec2(120, 0))) {
