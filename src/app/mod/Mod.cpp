@@ -64,6 +64,32 @@ sf::Image Mod::GetTerrainImage() {
     return image;
 }
 
+sf::Image Mod::GetWinterSeverityImage() {
+    // - Map provinces colors to their winter severity bias.
+    // - Copy province image.
+    // - Replace province pixels by their mapped color.
+    sf::Color defaultColor = sf::Color(255, 0, 0);
+
+    sf::Image image = Image::MapPixels(m_ProvinceImage, [&](auto& mappedColors){
+        for(const auto& [provinceColorId, province] : m_Provinces) {
+            sf::Color color = defaultColor;
+
+            if (!province->GetWinterSeverityBias().empty()) {
+                try {
+                    double winterSeverity = 0.0;
+                    if (province->GetWinterSeverityBias().starts_with("@")) winterSeverity = std::min(1.0, String::ParseDouble(m_TerrainPropertiesVariables->Get(province->GetWinterSeverityBias())->As<std::string>("0.0")));
+                    else winterSeverity = std::min(1.0, String::ParseDouble(province->GetWinterSeverityBias()));
+                    color = sf::Color(winterSeverity * 255, winterSeverity * 255, winterSeverity * 255, 255);
+                }
+                catch(std::exception&){}
+            }
+
+            mappedColors[province->GetColor().toInteger()] = color.toInteger();
+        }    
+    });
+    return image;
+}
+
 sf::Image Mod::GetCultureImage() {
     // - Map provinces colors to their culture color (province -> county -> county capital -> province).
     // - Copy province image.

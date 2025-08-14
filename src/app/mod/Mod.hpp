@@ -16,6 +16,7 @@ public:
     sf::Image& GetProvinceImage();
     sf::Image& GetRiversImage();
     sf::Image GetTerrainImage();
+    sf::Image GetWinterSeverityImage();
     sf::Image GetCultureImage();
     sf::Image GetReligionImage();
     sf::Image GetTitleImage(TitleType type);

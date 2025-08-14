@@ -123,6 +123,7 @@ void EditorMenu::UpdateHoveringText() {
     // depending on the current map mode.
     if(m_MapMode == MapMode::PROVINCES
     || m_MapMode == MapMode::TERRAIN
+    || m_MapMode == MapMode::WINTER_SEVERITY
     || m_MapMode == MapMode::CULTURE
     || m_MapMode == MapMode::RELIGION) {
         m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
@@ -198,6 +199,9 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
             break;
         case MapMode::TERRAIN:
             m_MapTextures[mode].loadFromImage(mod->GetTerrainImage());
+            break;
+        case MapMode::WINTER_SEVERITY:
+            m_MapTextures[mode].loadFromImage(mod->GetWinterSeverityImage());
             break;
         case MapMode::CULTURE:
             m_MapTextures[mode].loadFromImage(mod->GetCultureImage());
@@ -318,6 +322,7 @@ void EditorMenu::Event(const sf::Event& event) {
 
             if(m_MapMode == MapMode::PROVINCES
             || m_MapMode == MapMode::TERRAIN
+            || m_MapMode == MapMode::WINTER_SEVERITY
             || m_MapMode == MapMode::CULTURE
             || m_MapMode == MapMode::RELIGION
             || MapModeIsTitle(m_MapMode)) {
@@ -351,6 +356,7 @@ void EditorMenu::Render() {
 
     if(m_MapMode == MapMode::PROVINCES
     || m_MapMode == MapMode::TERRAIN
+    || m_MapMode == MapMode::WINTER_SEVERITY
     || m_MapMode == MapMode::CULTURE
     || m_MapMode == MapMode::RELIGION
     || MapModeIsTitle(m_MapMode))
@@ -386,7 +392,7 @@ void EditorMenu::Render() {
 
 void EditorMenu::InitSelectionCallbacks() {
     m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, SharedPtr<Province> province) {
-        if((m_MapMode != MapMode::PROVINCES && m_MapMode != MapMode::TERRAIN && m_MapMode != MapMode::CULTURE && m_MapMode != MapMode::RELIGION)
+        if((m_MapMode != MapMode::PROVINCES && m_MapMode != MapMode::TERRAIN && m_MapMode != MapMode::WINTER_SEVERITY && m_MapMode != MapMode::CULTURE && m_MapMode != MapMode::RELIGION)
         || button != sf::Mouse::Button::Left)
             return SelectionCallbackResult::CONTINUE;
 
@@ -1051,7 +1057,6 @@ void EditorMenu::RenderModals() {
             );
 
             ImGui::Text("Coords: (%d, %d)", pixelPos.x, pixelPos.y);
-            ImGui::Text("Coords: (%d, %d)", regionPos.x, regionPos.y);
             ImGui::Text("Winter Severity Bias: %.2f", previewImage.getPixel(pixelPos.x, pixelPos.y).r/255.f);
             
             sprite.setTextureRect(sf::IntRect(regionPos, sf::Vector2i(regionSize, regionSize)));
@@ -1063,6 +1068,7 @@ void EditorMenu::RenderModals() {
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
             m_App->GetMod()->GenerateProvincesClimate(override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor, mildWinterThreshold, normalWinterThreshold, severeWinterThreshold);
+            this->UpdateTexture(MapMode::WINTER_SEVERITY);
         }
 
         ImGui::SetItemDefaultFocus();

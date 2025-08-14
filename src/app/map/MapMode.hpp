@@ -7,6 +7,7 @@ enum class MapMode {
     HEIGHTMAP,
     RIVERS,
     TERRAIN,
+    WINTER_SEVERITY,
     CULTURE,
     RELIGION,
     BARONY,
@@ -19,16 +20,16 @@ enum class MapMode {
 
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
-    "Terrain", "Culture", "Religion",
+    "Terrain", "Winter Severity", "Culture", "Religion",
     "Barony", "County", "Duchy", "Kingdom", "Empire" 
 };
 
 inline TitleType MapModeToTileType(MapMode mode) {
-    return (TitleType) ((int) mode - 6);
+    return (TitleType) ((int) mode - 7);
 }
 
 inline MapMode TitleTypeToMapMode(TitleType type) {
-    return (MapMode) ((int) type + 6);
+    return (MapMode) ((int) type + 7);
 }
 
 inline bool MapModeIsTitle(MapMode mode) {
