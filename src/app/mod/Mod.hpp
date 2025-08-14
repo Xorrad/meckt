@@ -58,6 +58,9 @@ public:
     void GenerateMissingBaronies();
     void GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles);
 
+    float CalculateWinterSeverityBias(SharedPtr<Province> province, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const;
+    void GenerateProvincesClimate(bool override, float elevationStrength, float elevationOffset, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold);
+
     void ClearProvinces(); // Remove all current provinces.
     void ClearTitles(); // Remove all current titles.
     void DetermineProvincesFlags(); // Determine province flags (land, sea...) for each province depending on elevation.

@@ -22,7 +22,9 @@ Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesIm
     m_DefaultCoastalSeaTerrain("sea"),
     m_TitlesLocalizationFilePath(dir + "/localization/english/00_titles_l_english.yml"),
     m_CulturalNamesLocalizationFilePath(dir + "/localization/english/00_cultural_titles_l_english.yml")
-{}
+{
+
+}
 
 std::string Mod::GetDir() const {
     return m_Dir;
@@ -511,6 +513,64 @@ void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool a
 
     LOG_INFO("Generated name localization for {} titles.", countNames);
     LOG_INFO("Generated adjective localization for {} titles.", countAdjectives);
+}
+
+float Mod::CalculateWinterSeverityBias(SharedPtr<Province> province, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const {
+    sf::Vector2i pos = province->GetImagePosition();
+
+    // If no overrides and the climate is already initialized, then we use that value for the preview.
+    if (!override && (province->GetClimateType() != ClimateType::NONE || !province->GetWinterSeverityBias().empty())) {
+        if (!province->GetWinterSeverityBias().empty() && String::IsDigit(province->GetWinterSeverityBias()[0]))
+            return (float) stod(province->GetWinterSeverityBias());
+        if (province->GetClimateType() != ClimateType::NONE)
+            return (province->GetClimateType() == ClimateType::MILD_WINTER ? 0.f :
+                (province->GetClimateType() == ClimateType::MILD_WINTER ? 0.5f : 1.f)
+            );
+        return 0.f;
+    }
+
+    // Otherwise, if the province is safe to edit, then determine the winter severity
+    // using the elevation and hemisphere.
+    sf::Color color = (pos.x < 0 || pos.x >= m_HeightmapImage.getSize().x || pos.y < 0 || pos.y >= m_HeightmapImage.getSize().y)
+        ? sf::Color::Black
+        : m_HeightmapImage.getPixel(pos.x, pos.y);
+    float elevation = std::min(1.f, color.r/255.f) * elevationStrength + elevationOffset;
+
+    float hemisphere = std::min(
+        1.f, 
+        (hemisphereStrength * abs(pos.y - (m_HeightmapImage.getSize().y / 2.f) + hemisphereOffset) - hemisphereSize) / m_HeightmapImage.getSize().y
+    );
+    
+    float winterSeverityBias = elevation * elevationFactor + hemisphere * hemisphereFactor;
+    winterSeverityBias = std::max(0.f, std::min(1.f, winterSeverityBias));
+    winterSeverityBias = std::round(winterSeverityBias*100.f)/100.f;
+
+    return winterSeverityBias;
+}
+
+void Mod::GenerateProvincesClimate(bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold) {
+    uint countProvinces = 0;
+    for(const auto& [provinceColorId, province] : m_Provinces) {
+        float winterSeverityBias = this->CalculateWinterSeverityBias(province, override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
+        bool hasChanged = false;
+
+        if (province->GetClimateType() == ClimateType::NONE || override) {
+            if (winterSeverityBias >= severeWinterThreshold) province->SetClimateType(ClimateType::SEVERE_WINTER);
+            else if (winterSeverityBias >= normalWinterThreshold) province->SetClimateType(ClimateType::NORMAL_WINTER);
+            else if (winterSeverityBias >= mildWinterThreshold) province->SetClimateType(ClimateType::MILD_WINTER);
+            else province->SetClimateType(ClimateType::NONE);
+            hasChanged = true;
+        }
+
+        if (province->GetWinterSeverityBias().empty() || override) {
+            province->SetWinterSeverityBias(std::to_string(winterSeverityBias));
+            hasChanged = true;
+        }
+
+        countProvinces += hasChanged;
+    }
+
+    LOG_INFO("Generated climate for {} provinces.", countProvinces);
 }
 
 void Mod::ClearProvinces() {

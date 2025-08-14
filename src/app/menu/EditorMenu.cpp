@@ -598,6 +598,10 @@ void EditorMenu::RenderMenuBarTools() {
         if(ImGui::MenuItem("Generate titles localization")) {
             m_ModalName = "Generate titles localization";
         }
+        
+        if(ImGui::MenuItem("Generate provinces climate")) {
+            m_ModalName = "Generate provinces climate";
+        }
 
         ImGui::EndMenu();
     }
@@ -615,6 +619,7 @@ void EditorMenu::RenderModals() {
     const SharedPtr<Mod> mod = m_App->GetMod();
 
     // CREATE TITLE: modal begin
+    ImVec2 size = ImGui::GetMainViewport()->Size;
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Create a new title", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -927,6 +932,148 @@ void EditorMenu::RenderModals() {
     }
     // GENERATE TITLES LOCALIZATION: modal end
     
+    // GENERATE PROVINCES CLIMATE: modal begin
+    ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(0.9f * size.x, 0.9f * size.y), ImGuiCond_Once);
+    if(ImGui::BeginPopupModal("Generate provinces climate", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
+        ImGui::Separator();
+
+        static bool override = true;
+        static float elevationOffset = 0.0f;
+        static float elevationStrength = 4.f;
+        static float elevationFactor = 0.75f;
+        static int hemisphereOffset = 0;
+        static int hemisphereSize = 5000;
+        static float hemisphereStrength = 5.f;
+        static float hemisphereFactor = 0.5f;
+        static float mildWinterThreshold = 0.0f;
+        static float normalWinterThreshold = 0.4f;
+        static float severeWinterThreshold = 0.7f;
+        static sf::Image previewImage;
+        static sf::Texture previewTexture;
+        static sf::Sprite sprite;
+
+        const sf::Image& heightmapImage = m_App->GetMod()->GetHeightmapImage();
+        const sf::Image& provinceImage = m_App->GetMod()->GetProvinceImage();
+
+        static const auto UpdatePreview = [&](){
+            previewImage = Image::MapPixels(provinceImage, [&](auto& mappedColors){
+                for(const auto& [provinceColorId, province] : m_App->GetMod()->GetProvinces()) {
+                    float winterSeverityBias = m_App->GetMod()->CalculateWinterSeverityBias(province, override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
+                    sf::Color color = sf::Color(winterSeverityBias * 255.f, winterSeverityBias * 255.f, winterSeverityBias * 255.f);
+                    mappedColors[province->GetColor().toInteger()] = color.toInteger();
+                }
+            });
+            previewTexture.loadFromImage(previewImage);
+            sprite.setTexture(previewTexture);
+        };
+
+        // Initialize values when opening the window for the first time.
+        if (previewTexture.getSize().x == 0) {
+            hemisphereSize = heightmapImage.getSize().y / 10;
+            UpdatePreview();
+        }
+
+        if (ImGui::Checkbox("override   ", &override)) {
+            UpdatePreview();
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "replace any existing value");
+
+        {
+            ImGui::BeginGroup();
+            if (ImGui::SliderFloat("elevation offset", &elevationOffset, 0.f, 2.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+            if (ImGui::SliderFloat("elevation strength", &elevationStrength, 0.f, 10.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+
+            if (ImGui::SliderFloat("elevation factor", &elevationFactor, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+            ImGui::EndGroup();
+        }
+        ImGui::SameLine();
+        {    
+            ImGui::BeginGroup();
+            if (ImGui::SliderInt("hemisphere offset ", &hemisphereOffset, (int) -heightmapImage.getSize().y/2.f, (int) heightmapImage.getSize().y/2.f, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+            
+            if (ImGui::SliderInt("hemisphere size", &hemisphereSize, 0, heightmapImage.getSize().y, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+
+            if (ImGui::SliderFloat("hemisphere strength", &hemisphereStrength, 0.f, 10.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+            
+            if (ImGui::SliderFloat("hemisphere factor", &hemisphereFactor, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+            ImGui::EndGroup();
+        }
+        ImGui::SameLine();
+        {
+            ImGui::BeginGroup();
+            if (ImGui::SliderFloat("mild winter threshold", &mildWinterThreshold, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+
+            if (ImGui::SliderFloat("normal winter threshold", &normalWinterThreshold, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+
+            if (ImGui::SliderFloat("severe winter threshold", &severeWinterThreshold, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+                UpdatePreview();
+            }
+            ImGui::EndGroup();
+        }
+
+        ImVec2 imagePos = ImGui::GetCursorScreenPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        float scale = windowSize.y * 0.75f / std::max(1U, previewTexture.getSize().y);
+        ImGui::Image(previewTexture, sf::Vector2f(previewTexture.getSize().x * scale, previewTexture.getSize().y * scale));
+        if (ImGui::BeginItemTooltip()) {
+            ImGuiIO& io = ImGui::GetIO();
+            
+            float regionSize = 32.0f;
+            float zoom = 4.0f;
+            sf::Vector2i pixelPos = sf::Vector2i(
+                std::min(previewTexture.getSize().x-1.f, std::max(0.f, (io.MousePos.x - imagePos.x)/scale)),
+                std::min(previewTexture.getSize().y-1.f, std::max(0.f, (io.MousePos.y - imagePos.y)/scale))
+            );
+            sf::Vector2i regionPos = sf::Vector2i(
+                std::min(previewTexture.getSize().x - regionSize, std::max(0.f, (io.MousePos.x - imagePos.x)/scale - regionSize * 0.5f)),
+                std::min(previewTexture.getSize().y - regionSize, std::max(0.f, (io.MousePos.y - imagePos.y)/scale - regionSize * 0.5f))
+            );
+
+            ImGui::Text("Coords: (%d, %d)", pixelPos.x, pixelPos.y);
+            ImGui::Text("Coords: (%d, %d)", regionPos.x, regionPos.y);
+            ImGui::Text("Winter Severity Bias: %.2f", previewImage.getPixel(pixelPos.x, pixelPos.y).r/255.f);
+            
+            sprite.setTextureRect(sf::IntRect(regionPos, sf::Vector2i(regionSize, regionSize)));
+            sprite.setScale(sf::Vector2f(zoom, zoom));
+            ImGui::Image(sprite);
+            ImGui::EndTooltip();
+        }
+
+        if(ImGui::Button("Generate", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            m_App->GetMod()->GenerateProvincesClimate(override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor, mildWinterThreshold, normalWinterThreshold, severeWinterThreshold);
+        }
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    // GENERATE PROVINCES CLIMATE: modal end
+    
     // EXPORT : modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Export", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -1044,7 +1191,7 @@ void EditorMenu::RenderModals() {
         }
         ImGui::EndPopup();
     }
-    // GENERATE PROVINCES: modal end
+    // EXPORT: modal end
     
     // CLOSE : modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
