@@ -24,43 +24,28 @@ std::string File::ReadString(std::ifstream& file) {
     return ss.str();
 }
 
-std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath) {
+std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath, const std::string& delimiter) {
     std::ifstream file(filePath);
     std::vector<std::vector<std::string>> lines;
 
-    if(!file)
+    if (!file.is_open()) {
+        LOG_ERROR("Could not open and read csv file {}", filePath);
         return lines;
-
-    std::string line;
-
-    // Read lines one by one, and then character by character
-    // and push new values for cells when encountering ';'. 
-    while (std::getline(file, line)) {
-        std::vector<std::string> rows;
-        std::string buffer = "";
-
-        for (int i = 0; i < line.size(); i++) {
-            // Set buffer as new column value.
-            if (line[i] == ';' || line[i] == '#') {
-                if (!buffer.empty()) {
-                    rows.push_back(buffer);
-                    buffer = "";
-                }
-                // To handle comments, just set the value for the cell before
-                // skipping to next line.
-                if (line[i] == '#')
-                    break;
-                continue;
-            }
-            buffer += line[i];
-        }
-
-        if (!rows.empty())
-            lines.push_back(std::move(rows));
     }
 
-    file.close();
-    
+    std::string line;
+    while (std::getline(file, line)) {
+        // Remove comments.
+        if (size_t comment_pos = line.find('#'); comment_pos != std::string::npos)
+            line.erase(comment_pos);
+
+        // Skip empty/whitespace-only lines.
+        if (line.find_first_not_of(" \t") == std::string::npos)
+            continue;
+
+        lines.push_back(String::Split(line, ";"));
+    }
+
     return lines;
 }
 

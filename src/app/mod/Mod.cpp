@@ -840,6 +840,10 @@ void Mod::LoadDefaultMapFile() {
     
     const std::vector<double>& lakes = result->Get("lakes")->AsArray<double>(std::vector<double>{});
     for(double provinceId : lakes) {
+        if (!m_ProvincesByIds.contains(provinceId)) {
+            LOG_ERROR("Unknown province {} defined as a lake in default.map", provinceId);
+            continue;
+        }
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAKE, true);
     }
     
@@ -848,22 +852,38 @@ void Mod::LoadDefaultMapFile() {
 
     const std::vector<double>& seaZones = result->Get("sea_zones")->AsArray<double>(std::vector<double>{});
     for(double provinceId : seaZones) {
+        if (!m_ProvincesByIds.contains(provinceId)) {
+            LOG_ERROR("Unknown province {} defined as a sea zone in default.map", provinceId);
+            continue;
+        }
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
     }
 
     const std::vector<double>& rivers = result->Get("river_provinces")->AsArray<double>(std::vector<double>{});
     for(double provinceId : rivers) {
+        if (!m_ProvincesByIds.contains(provinceId)) {
+            LOG_ERROR("Unknown province {} defined as a river in default.map", provinceId);
+            continue;
+        }
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::RIVER, true);
     }
     
     const std::vector<double>& impassableSeas = result->Get("impassable_seas")->AsArray<double>(std::vector<double>{});
     for(double provinceId : impassableSeas) {
+        if (!m_ProvincesByIds.contains(provinceId)) {
+            LOG_ERROR("Unknown province {} defined as an impassable sea in default.map", provinceId);
+            continue;
+        }
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
     }
     
     const std::vector<double>& impassableMountains = result->Get("impassable_mountains")->AsArray<double>(std::vector<double>{});
     for(double provinceId : impassableMountains) {
+        if (!m_ProvincesByIds.contains(provinceId)) {
+            LOG_ERROR("Unknown province {} defined as an impassable mountain in default.map", provinceId);
+            continue;
+        }
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
     }
@@ -964,24 +984,29 @@ void Mod::LoadProvincesDefinition() {
     int lastId = 0;
 
     for(const auto& line : lines) {
-        int id = std::stoi(line[0]);
-        int r = std::stoi(line[1]);
-        int g = std::stoi(line[2]);
-        int b = std::stoi(line[3]);
-        std::string name = line[4];
+        try {
+            int id = std::stoi(line[0]);
+            int r = std::stoi(line[1]);
+            int g = std::stoi(line[2]);
+            int b = std::stoi(line[3]);
+            std::string name = line[4];
 
-        SharedPtr<Province> province = MakeShared<Province>(id, sf::Color(r, g, b), name);
+            SharedPtr<Province> province = MakeShared<Province>(id, sf::Color(r, g, b), name);
 
-        if(m_ProvincesByIds.count(id) > 0)
-            LOG_ERROR("Several provinces with same id: {}", id);
-        if(m_Provinces.count(province->GetColorId()) > 0)
-            LOG_ERROR("Several provinces with same color: {},{}", id, m_Provinces.at(province->GetColorId())->GetId());
-        if(id != lastId+1)
-            LOG_ERROR("Ids in definitions.csv are not sequential: {} to {}", lastId, id);
+            if(m_ProvincesByIds.count(id) > 0)
+                LOG_ERROR("Several provinces with same id: {}", id);
+            if(m_Provinces.count(province->GetColorId()) > 0)
+                LOG_ERROR("Several provinces with same color: {},{}", id, m_Provinces.at(province->GetColorId())->GetId());
+            if(id != lastId+1)
+                LOG_ERROR("Ids in definitions.csv are not sequential: {} to {}", lastId, id);
 
-        m_Provinces[province->GetColorId()] = province;
-        m_ProvincesByIds[province->GetId()] = province;
-        lastId = id;
+            m_Provinces[province->GetColorId()] = province;
+            m_ProvincesByIds[province->GetId()] = province;
+            lastId = id;
+        }
+        catch (std::exception& e) {
+            throw std::runtime_error(fmt::format("Failed to parse definitions.csv at \"{}\"\n{}", String::Join(line, ";"), e.what()));
+        }
     }
 }
 

@@ -36,6 +36,28 @@ std::vector<std::string> String::Split(std::string str, const std::string& delim
     return result;
 }
 
+std::string String::Join(std::vector<std::string> list, const std::string& delimiter) {
+    if (list.empty())
+        return "";
+
+    // Determine the string size to allocate.
+    size_t size = 0;
+    for (const auto& str : list)
+        size += str.size();
+    size += delimiter.size() * (list.size() - 1);
+
+    std::string result;
+    result.reserve(size);
+
+    result += list[0];
+    for (size_t i = 1; i < list.size(); i++) {
+        result += delimiter;
+        result += list[i];
+    }
+    
+    return result;
+}
+
 int UTF8CharLength(char ch) {
     if((ch & 0x80) == 0)
         return 1;
