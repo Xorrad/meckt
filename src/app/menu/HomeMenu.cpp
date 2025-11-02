@@ -211,7 +211,7 @@ void HomeMenu::RenderUpdateModal() {
         ImGui::Separator();
 
         bool disableDownload = false;
-#ifndef DEB
+#ifdef DEB
         disableDownload = true;
 #endif
 
