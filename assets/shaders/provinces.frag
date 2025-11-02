@@ -5,6 +5,7 @@ uniform sampler2D countyTexture;
 uniform sampler2D duchyTexture;
 uniform sampler2D kingdomTexture;
 uniform sampler2D empireTexture;
+uniform sampler2D hegemonyTexture;
 uniform vec2 textureSize;
 
 uniform float time;
@@ -17,6 +18,7 @@ const int COUNTY   = 2;
 const int DUCHY    = 3;
 const int KINGDOM  = 4;
 const int EMPIRE   = 5;
+const int HEGEMONY = 6;
 
 const int MAPMODE_PROVINCES = 0;
 const int MAPMODE_HEIGHTMAP = 1;
@@ -30,6 +32,7 @@ const int MAPMODE_COUNTY = 8;
 const int MAPMODE_DUCHY = 9;
 const int MAPMODE_KINGDOM = 10;
 const int MAPMODE_EMPIRE = 11;
+const int MAPMODE_HEGEMONY = 12;
 
 // The last (4th) element of the array is used to distinguish the type defined above.
 uniform vec4 selectedEntities[1000];
@@ -74,12 +77,14 @@ vec4 GetEntityColor(int type) {
     if(type == DUCHY) return texture2D(duchyTexture, gl_TexCoord[0].xy);
     if(type == KINGDOM) return texture2D(kingdomTexture, gl_TexCoord[0].xy);
     if(type == EMPIRE) return texture2D(empireTexture, gl_TexCoord[0].xy);
+    if(type == HEGEMONY) return texture2D(hegemonyTexture, gl_TexCoord[0].xy);
     return vec4(0.0, 0.0, 0.0, 1.0);
 }
 
 int GetBorderTier() {
     // Check if it is the border of a province first to avoid unless calculation for highter tier.
     if(!IsBorder(provincesTexture)) return -1;
+    if(mapMode >= MAPMODE_HEGEMONY && IsBorder(hegemonyTexture)) return 6;
     if(mapMode >= MAPMODE_EMPIRE && IsBorder(empireTexture)) return 5;
     if(mapMode >= MAPMODE_KINGDOM && IsBorder(kingdomTexture)) return 4;
     if(mapMode >= MAPMODE_DUCHY && IsBorder(duchyTexture)) return 3;
@@ -97,7 +102,7 @@ void main() {
     vec4 color = gl_Color * pixelColor;
     float alpha = color.a;
 
-    for(int i = EMPIRE; i >= PROVINCE; i--) {
+    for(int i = HEGEMONY; i >= PROVINCE; i--) {
         bool isSelected = IsSelected(i, GetEntityColor(i));
         if(isSelected) {
             float v = abs(sin(2.0*time)+3.0)/6.0;

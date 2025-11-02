@@ -845,7 +845,7 @@ void PropertiesTab::RenderTitles() {
                     ImGui::CloseCurrentPopup();
 
                     // Remove the title from his liege's dejure titles.
-                    if (!title->Is(TitleType::EMPIRE) && title->GetLiegeTitle()) {
+                    if (!title->Is(TitleType::HEGEMONY) && title->GetLiegeTitle() != nullptr) {
                         const SharedPtr<HighTitle>& liege = title->GetLiegeTitle();
                         liege->RemoveDejureTitle(title);
                     }
@@ -945,7 +945,7 @@ void PropertiesTab::RenderRegions() {
                         ImGui::SetKeyboardFocusHere(-1);
 
                     for (auto& [name, title] : mod->GetTitles()) {
-                        if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::BARONY))
+                        if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::HEGEMONY) || title->Is(TitleType::BARONY))
                             continue;
                         if (!filter.PassFilter(name.c_str()))
                             continue;

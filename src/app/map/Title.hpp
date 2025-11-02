@@ -163,6 +163,15 @@ public:
     virtual TitleType GetType() const;
 };
 
+class HegemonyTitle : public HighTitle {
+friend PropertiesTab;
+public:
+    HegemonyTitle();
+    HegemonyTitle(std::string name, sf::Color color, bool landless = false);
+
+    virtual TitleType GetType() const;
+};
+
 template <typename ...Args>
 inline SharedPtr<Title> MakeTitle(TitleType type, Args&& ...args) {
     switch(type) {
@@ -171,6 +180,7 @@ inline SharedPtr<Title> MakeTitle(TitleType type, Args&& ...args) {
         case TitleType::DUCHY: return MakeShared<DuchyTitle>(std::forward<Args>(args)...);
         case TitleType::KINGDOM: return MakeShared<KingdomTitle>(std::forward<Args>(args)...);
         case TitleType::EMPIRE: return MakeShared<EmpireTitle>(std::forward<Args>(args)...);
+        case TitleType::HEGEMONY: return MakeShared<HegemonyTitle>(std::forward<Args>(args)...);
         default: break;
     }
     throw std::runtime_error("error: failed to create SharedPtr<Title> with unknown title type.");

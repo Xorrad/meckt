@@ -213,7 +213,8 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::COUNTY:
         case MapMode::DUCHY:
         case MapMode::KINGDOM:
-        case MapMode::EMPIRE: {
+        case MapMode::EMPIRE:
+        case MapMode::HEGEMONY: {
             TitleType type = MapModeToTileType(mode);
             m_MapTextures[mode].loadFromImage(mod->GetTitleImage(type));
             Configuration::shaders.Get(Shaders::PROVINCES).setUniform(
@@ -654,7 +655,7 @@ void EditorMenu::RenderModals() {
 
             if(hasSelectedTitle) {
                 const SharedPtr<Title>& selectedTitle = m_SelectionHandler.GetTitles()[0];
-                type = (TitleType) (std::min((int) selectedTitle->GetType() + 1, (int) TitleType::EMPIRE));
+                type = (TitleType) (std::min((int) selectedTitle->GetType() + 1, (int) TitleType::HEGEMONY));
             }
             else if(hasSelectedProvince) {
                 type = TitleType::BARONY;
@@ -786,7 +787,7 @@ void EditorMenu::RenderModals() {
 
             // Add valid selected titles to the region.
             for (auto& title : m_SelectionHandler.GetTitles()) {
-                if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::BARONY))
+                if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::HEGEMONY) || title->Is(TitleType::BARONY))
                     continue;
                 region->AddTitle(title);
             }

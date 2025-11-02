@@ -6,11 +6,12 @@ enum class TitleType {
     DUCHY,
     KINGDOM,
     EMPIRE,
+    HEGEMONY,
     COUNT,
 };
 
-const std::vector<const char*> TitleTypeLabels = { "Barony", "County", "Duchy", "Kingdom", "Empire" };
-const std::vector<const char*> TitleTypePrefixes = { "b", "c", "d", "k", "e" };
+const std::vector<const char*> TitleTypeLabels = { "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony" };
+const std::vector<const char*> TitleTypePrefixes = { "b", "c", "d", "k", "e", "h" };
 
 inline TitleType GetTitleTypeByName(const std::string& name) {
     for(int i = 0; i < (int) TitleType::COUNT; i++) {

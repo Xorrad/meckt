@@ -236,6 +236,12 @@ SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province,
             RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
             RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
             return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+        case TitleType::HEGEMONY:
+            RETURN_IF_NULL(barony->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
+            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
+            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
         default: return nullptr;
     }
 }
@@ -1509,7 +1515,7 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
     for(auto& [key, pair] : data->GetMap()) {
         auto& [op, value] = pair;
 
-        // Need to check if the key is a title (starts with e_, k_, d_, c_ or b_)
+        // Need to check if the key is a title (starts with h_, e_, k_, d_, c_ or b_)
         // because it could be attributes such as color, capital, can_create...
 
         try {
@@ -1947,11 +1953,14 @@ void Mod::ExportTitlesHistory() {
     std::map<std::string, std::ofstream> files;
 
     // 1. Use original history file if the title has one.
-    // 2. Use empire_titles.txt for empire tier titles.
-    // 3. Use kingdom tier liege for other titles (i.e k_the_wall).
-    // 4. Use "landless_titles.txt" for landless titles.
-    // 5. Use "special_titles.txt" for everything else.
+    // 2. Use hegemony_titles.txt for hegemony tier titles.
+    // 3. Use empire_titles.txt for empire tier titles.
+    // 4. Use kingdom tier liege for other titles (i.e k_the_wall).
+    // 5. Use "landless_titles.txt" for landless titles.
+    // 6. Use "special_titles.txt" for everything else.
     const std::function<std::string(SharedPtr<Title>)> GetTitleFileName = [&](SharedPtr<Title> liege) {
+        if(liege->Is(TitleType::HEGEMONY))
+            return std::string("hegemony_titles");
         if(liege->Is(TitleType::EMPIRE))
             return std::string("empire_titles");
         if(liege->Is(TitleType::KINGDOM))

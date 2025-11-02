@@ -36,7 +36,7 @@ std::vector<SharedPtr<Region>>& Region::GetRegions() {
 }
 
 bool Region::HasTitle(SharedPtr<Title> title) const {
-    if (title->Is(TitleType::EMPIRE))
+    if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::HEGEMONY))
         return false;
     if (title->Is(TitleType::KINGDOM))
         return std::find(m_Kingdoms.begin(), m_Kingdoms.end(), CastSharedPtr<KingdomTitle>(title)) != m_Kingdoms.end();
