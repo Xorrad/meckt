@@ -191,8 +191,10 @@ sf::Image Mod::GetTitleImage(TitleType type) {
         for(const auto& [provinceColorId, province] : m_Provinces) {
             const SharedPtr<Title>& liege = this->GetProvinceFocusedTitle(province, type);
 
-            if(liege == nullptr)
+            if(liege == nullptr) {
+                mappedColors[province->GetColor().toInteger()] = 0x505050ff;
                 continue;
+            }
 
             mappedColors[province->GetColor().toInteger()] = liege->GetColor().toInteger();
         }    
@@ -247,15 +249,19 @@ SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province,
 }
 
 SharedPtr<Title> Mod::GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type) {
-    if(m_BaroniesByProvinceIds.count(province->GetId()) == 0)
+    auto it = m_BaroniesByProvinceIds.find(province->GetId());
+    if(it == m_BaroniesByProvinceIds.end())
         return nullptr;
 
-    SharedPtr<Title> barony = m_BaroniesByProvinceIds[province->GetId()];
-    SharedPtr<Title> title = barony;
+    SharedPtr<Title> title = it->second;
 
     while(title->GetLiegeTitle() != nullptr && (int) title->GetType() < (int) type && title->GetLiegeTitle()->HasSelectionFocus()) {
         title = title->GetLiegeTitle();
     }
+
+    // Return nullptr if the title hasn't any liege title of the provided type.
+    if ((int) title->GetType() < (int) type && title->GetLiegeTitle() == nullptr)
+        return nullptr;
 
     return title;
 }
