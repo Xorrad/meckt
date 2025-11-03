@@ -861,7 +861,8 @@ void PropertiesTab::RenderTitles() {
                     const SharedPtr<Mod>& mod = m_Menu->GetApp()->GetMod();
                     mod->RemoveTitle(title);
 
-                    m_Menu->RefreshMapMode(true);
+                    m_Menu->UpdateTextures();
+                    m_Menu->RefreshMapMode(true, false);
                 }
 
                 ImGui::SetItemDefaultFocus();
