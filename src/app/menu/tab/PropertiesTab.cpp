@@ -765,7 +765,9 @@ void PropertiesTab::RenderTitles() {
                             // Update the map to remove the dejure title from the title color.
                             // TODO: it would be better not having to redraw the entire map
                             // but only the relevant colors.
-                            m_Menu->RefreshMapMode();
+                            MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
+                            m_Menu->UpdateTexture(liegeMapMode, false);
+                            m_Menu->SwitchMapMode(liegeMapMode, false);
                         }
                         ImGui::PopID();
                         n++;
@@ -785,7 +787,9 @@ void PropertiesTab::RenderTitles() {
                                 if (!clickedTitle->Is(dejureType))
                                     return SelectionCallbackResult::INTERRUPT;
                                 highTitle->AddDejureTitle(clickedTitle);
-                                m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
+                                MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
+                                m_Menu->UpdateTexture(liegeMapMode, false);
+                                m_Menu->SwitchMapMode(liegeMapMode, false);
                                 m_SelectingTitle = false;
                                 return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                             }
