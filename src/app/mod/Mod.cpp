@@ -1170,6 +1170,15 @@ void Mod::LoadProvincesHistory() {
         
         for(auto& [key, pair] : data->GetMap()) {
             auto& [op, value] = pair;
+
+            if (key.starts_with("@")) {
+                if (!m_ProvincesHistoryVariables.contains(filePath))
+                    m_ProvincesHistoryVariables[filePath] = MakeShared<Jomini::Object>();
+                if (!m_ProvincesHistoryVariables[filePath]->Contains(key))
+                    m_ProvincesHistoryVariables[filePath]->Put(key, value);
+                continue;
+            }
+
             int provinceId = 0;
             try {
                 provinceId = String::ParseInt(key);
@@ -1223,6 +1232,14 @@ void Mod::LoadTitlesHistory() {
         // 1. Loop over titles key in the file.
         for(auto& [key, pair] : data->GetMap()) {
             auto& [op, value] = pair;
+
+            if (key.starts_with("@")) {
+                if (!m_TitlesHistoryVariables.contains(filePath))
+                    m_TitlesHistoryVariables[filePath] = MakeShared<Jomini::Object>();
+                if (!m_TitlesHistoryVariables[filePath]->Contains(key))
+                    m_TitlesHistoryVariables[filePath]->Put(key, value);
+                continue;
+            }
 
             if(m_Titles.count(key) == 0) {
                 LOG_WARNING("Undefined title {} found in {}", key, filePath);
@@ -1523,6 +1540,14 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
 
         // Need to check if the key is a title (starts with h_, e_, k_, d_, c_ or b_)
         // because it could be attributes such as color, capital, can_create...
+
+        if (key.starts_with("@")) {
+            if (!m_TitlesVariables.contains(filePath))
+                m_TitlesVariables[filePath] = MakeShared<Jomini::Object>();
+            if (!m_TitlesVariables[filePath]->Contains(key))
+                m_TitlesVariables[filePath]->Put(key, value);
+            continue;
+        }
 
         try {
             // This function throws an exception if key does not
@@ -1879,6 +1904,14 @@ void Mod::ExportProvincesHistory() {
         std::ofstream file = std::ofstream(filePath, std::ios::out);
         File::EncodeToUTF8BOM(file);
 
+        // Export original script variables.
+        {
+            auto it = m_ProvincesHistoryVariables.find(filePath);
+            if (it != m_ProvincesHistoryVariables.end() && !it->second->GetMap().empty()) {
+                fmt::println(file, "{}\n", it->second->Serialize(0, true));
+            }
+        }
+
         for(const auto& duchyTitle : kingdomHighTitle->GetDejureTitles()) {
             SharedPtr<HighTitle> duchyHighTitle = CastSharedPtr<HighTitle>(duchyTitle);
 
@@ -1940,8 +1973,17 @@ void Mod::ExportTitles() {
         if(files.count(filePath) == 0) {
             files[filePath] = std::ofstream(filePath, std::ios::out);
             File::EncodeToUTF8BOM(files[filePath]);
+
+            // Export original script variables.
+            {
+                auto it = m_TitlesVariables.find(filePath);
+                if (it != m_TitlesVariables.end() && !it->second->GetMap().empty()) {
+                    fmt::println(files[filePath], "{}\n", it->second->Serialize(0, true));
+                }
+            }
         }
         std::ofstream& file = files[filePath];
+
         fmt::println(file, "{} = {{", title->GetName());
         this->ExportTitle(title, file, 1);
         fmt::println(file, "}}\n");
@@ -1987,6 +2029,14 @@ void Mod::ExportTitlesHistory() {
         if(files.count(filePath) == 0) {
             files[filePath] = std::ofstream(filePath, std::ios::out);
             File::EncodeToUTF8BOM(files[filePath]);
+
+            // Export original script variables.
+            {
+                auto it = m_TitlesHistoryVariables.find(filePath);
+                if (it != m_TitlesHistoryVariables.end() && !it->second->GetMap().empty()) {
+                    fmt::println(files[filePath], "{}\n", it->second->Serialize(0, true));
+                }
+            }
         }
         std::ofstream& file = files[filePath];
         

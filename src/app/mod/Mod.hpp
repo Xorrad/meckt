@@ -129,6 +129,11 @@ private:
     std::map<TitleType, std::vector<SharedPtr<Title>>> m_TitlesByType;
     std::map<int, SharedPtr<BaronyTitle>> m_BaroniesByProvinceIds;
 
+    // Map variables in common/landed_titles & history/titles & history/provinces with their respective filename.
+    std::map<std::string, SharedPtr<Jomini::Object>> m_TitlesVariables;
+    std::map<std::string, SharedPtr<Jomini::Object>> m_TitlesHistoryVariables;
+    std::map<std::string, SharedPtr<Jomini::Object>> m_ProvincesHistoryVariables;
+
     std::map<std::string, SharedPtr<Culture>> m_Cultures;
     std::map<std::string, SharedPtr<Religion>> m_Religions;
 
