@@ -1188,6 +1188,20 @@ void Mod::LoadProvincesHistory() {
                 continue;
             }
 
+            // Merge all objects into a single one when there are duplicate definitions for the same province.
+            if (value->Is(Jomini::Type::ARRAY)) {
+                SharedPtr<Jomini::Object> mergedValue = MakeShared<Jomini::Object>();
+                for (auto& data : value->GetArray()) {
+                    if (data->Is(Jomini::Type::OBJECT)) {
+                        for (auto& [key, pair] : data->GetMapUnsafe()) {
+                            if (!mergedValue->Contains(key))
+                                mergedValue->Put(key, pair.second, pair.first);
+                        }
+                    }
+                }
+
+                value = mergedValue;
+            }
             ASSERT_IS_OBJECT("province", value, key, filePath);
 
             const auto GetStringOrFirstElement = [&](std::string key) {
@@ -1246,6 +1260,20 @@ void Mod::LoadTitlesHistory() {
                 continue;
             }
 
+            // Merge all objects into a single one when there are duplicate definitions for the same title.
+            if (value->Is(Jomini::Type::ARRAY)) {
+                SharedPtr<Jomini::Object> mergedValue = MakeShared<Jomini::Object>();
+                for (auto& data : value->GetArray()) {
+                    if (data->Is(Jomini::Type::OBJECT)) {
+                        for (auto& [key, pair] : data->GetMapUnsafe()) {
+                            if (!mergedValue->Contains(key))
+                                mergedValue->Put(key, pair.second, pair.first);
+                        }
+                    }
+                }
+
+                value = mergedValue;
+            }
             ASSERT_IS_OBJECT("title", value, key, filePath);
 
             m_Titles[key]->SetOriginalHistoryFilePath(filePath);
@@ -1280,6 +1308,7 @@ void Mod::LoadTitlesHistory() {
                     m_Titles[key]->AddHistory(date, mergedHistory);
                     continue;
                 }
+                
                 m_Titles[key]->AddHistory(date, history);
             }
         }
