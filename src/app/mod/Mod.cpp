@@ -1256,17 +1256,28 @@ void Mod::LoadTitlesHistory() {
                 auto& [op2, history] = pair2;
                 Jomini::Date date;
                 try {
-                    Jomini::Date date = Jomini::Date(strDate);
+                    date = Jomini::Date(strDate);
                 }
                 catch (std::exception& e) {
                     LOG_ERROR("Invalid date syntax '{}' for title '{}' in {}", strDate, key, filePath);
                     continue;
                 }
+
+                // Merge all objects into a single one when there are duplicate definitions for the same date.
                 if (history->Is(Jomini::Type::ARRAY)) {
-                    LOG_ERROR("Invalid date syntax '{}' for title '{}' history in {}. Probably duplicate date definition.", strDate, key, filePath);
-                    Jomini::ObjectArray array = history->GetArray();
-                    if (!array.empty() && array.front()->Is(Jomini::Type::OBJECT))
-                        m_Titles[key]->AddHistory(date, array.front());
+                    // LOG_ERROR("Invalid date syntax '{}' for title '{}' history in {}. Probably duplicate date definition.", strDate, key, filePath);
+
+                    SharedPtr<Jomini::Object> mergedHistory = MakeShared<Jomini::Object>();
+                    for (auto& data : history->GetArray()) {
+                        if (data->Is(Jomini::Type::OBJECT)) {
+                            for (auto& [key, pair] : data->GetMapUnsafe()) {
+                                if (!mergedHistory->Contains(key))
+                                    mergedHistory->Put(key, pair.second, pair.first);
+                            }
+                        }
+                    }
+
+                    m_Titles[key]->AddHistory(date, mergedHistory);
                     continue;
                 }
                 m_Titles[key]->AddHistory(date, history);
