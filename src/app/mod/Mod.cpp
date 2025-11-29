@@ -1896,6 +1896,8 @@ void Mod::ExportProvincesHistory() {
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
 
+    LOG_INFO("test0");
+
     for(const auto& kingdomTitle : m_TitlesByType[TitleType::KINGDOM]) {
         SharedPtr<HighTitle> kingdomHighTitle = CastSharedPtr<HighTitle>(kingdomTitle);
 
@@ -1922,8 +1924,12 @@ void Mod::ExportProvincesHistory() {
                 fmt::println(file, "### {}", countyTitle->GetName());
 
                 for(const auto& baronyTitle : countyHighTitle->GetDejureTitles()) {
+
                     SharedPtr<BaronyTitle> baronyBaronyTitle = CastSharedPtr<BaronyTitle>(baronyTitle);
-                    SharedPtr<Province> province = m_ProvincesByIds[baronyBaronyTitle->GetProvinceId()];
+                    auto it = m_ProvincesByIds.find(baronyBaronyTitle->GetProvinceId());
+                    if (it == m_ProvincesByIds.end())
+                        continue;
+                    SharedPtr<Province> province = it->second;
         
                     if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
                         continue;
