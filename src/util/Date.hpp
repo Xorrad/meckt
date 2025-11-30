@@ -2,6 +2,10 @@
 
 #include <fmt/format.h>
 
+namespace Date {
+    Jomini::Date ParseDate(std::string_view sv);
+}
+
 template <>
 class fmt::formatter<Jomini::Date> {
 public:

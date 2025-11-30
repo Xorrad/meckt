@@ -1284,7 +1284,7 @@ void Mod::LoadTitlesHistory() {
                 auto& [op2, history] = pair2;
                 Jomini::Date date;
                 try {
-                    date = Jomini::Date(strDate);
+                    date = Date::ParseDate(strDate);
                 }
                 catch (std::exception& e) {
                     LOG_ERROR("Invalid date syntax '{}' for title '{}' in {}", strDate, key, filePath);
