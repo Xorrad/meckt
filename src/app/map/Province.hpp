@@ -66,39 +66,51 @@ public:
     Province(int id, sf::Color color, std::string name);
 
     int GetId() const;
+    
     sf::Color GetColor() const;
     uint32_t GetColorId() const;
+    void SetColor(sf::Color color);
+
     std::string GetName() const;
+    void SetName(std::string name);
+
     ProvinceFlags GetFlags() const;
     bool HasFlag(ProvinceFlags flag) const;
+    void SetFlags(ProvinceFlags flags);
+    void SetFlag(ProvinceFlags flag, bool enabled);
+    
     std::string GetHolding() const;
+    void SetHolding(std::string holding);
+
     std::string GetTerrain() const;
+    void SetTerrain(std::string terrain);
+    
     std::string GetCulture() const;
+    void SetCulture(std::string culture);
+
     std::string GetReligion() const;
+    void SetReligion(std::string religion);
+
     ClimateType GetClimateType() const;
     std::string GetWinterSeverityBias() const;
     std::string GetMildWinterFactorOverride() const;
     std::string GetNormalWinterFactorOverride() const;
     std::string GetHarshWinterFactorOverride() const;
-
-    void SetName(std::string name);
-    void SetColor(sf::Color color);
-    void SetFlags(ProvinceFlags flags);
-    void SetFlag(ProvinceFlags flag, bool enabled);
-    void SetHolding(std::string holding);
-    void SetTerrain(std::string terrain);
-    void SetCulture(std::string culture);
-    void SetReligion(std::string religion);
     void SetClimateType(ClimateType type);
     void SetWinterSeverityBias(std::string bias);
     void SetMildWinterFactorOverride(std::string factor);
     void SetNormalWinterFactorOverride(std::string factor);
     void SetHarshWinterFactorOverride(std::string factor);
-    
-    std::string GetOriginalFilePath() const;
-    SharedPtr<Jomini::Object> GetOriginalData() const;
-    void SetOriginalFilePath(const std::string& filePath);
-    void SetOriginalData(SharedPtr<Jomini::Object> data);
+
+    std::string GetOriginalHistoryFilePath() const;
+    void SetOriginalHistoryFilePath(const std::string& filePath);
+
+    SharedPtr<Jomini::Object> GetExtraHistoryData() const;
+    void SetExtraHistoryData(SharedPtr<Jomini::Object> data);
+
+    std::map<Jomini::Date, SharedPtr<Jomini::Object>>& GetHistory();
+    void AddHistory(Jomini::Date date, SharedPtr<Jomini::Object> data);
+    void RemoveHistory(Jomini::Date date);
     
     sf::Vector2i GetImagePosition() const;
     uint GetImagePixelsCount() const;
@@ -114,12 +126,12 @@ private:
 
     std::string m_Holding;
     std::string m_Terrain;
-    
     std::string m_Culture;
     std::string m_Religion;
 
-    std::string m_OriginalFilePath;
-    SharedPtr<Jomini::Object> m_OriginalData;
+    std::string m_OriginalHistoryFilePath;
+    SharedPtr<Jomini::Object> m_ExtraHistoryData;
+    std::map<Jomini::Date, SharedPtr<Jomini::Object>> m_History;
 
     sf::Vector2i m_ImagePosition;
     uint m_ImagePixelsCount;
@@ -130,7 +142,5 @@ private:
     std::string m_NormalWinterFactorOverride;
     std::string m_HarshWinterFactorOverride;
 
-    // Sea-zone for port
-    // Terrain
-    // History (modifiers with date, buildings, owners...)
+    // TODO: Sea-zone for port
 };

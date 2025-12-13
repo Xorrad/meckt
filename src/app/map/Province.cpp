@@ -66,7 +66,8 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_Terrain(""),
     m_Culture(""),
     m_Religion(""),
-    m_OriginalData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
+    m_ExtraHistoryData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
+    m_History({}),
     m_ImagePosition(sf::Vector2i(0, 0)),
     m_ImagePixelsCount(0),
     m_ClimateType(ClimateType::NONE),
@@ -88,8 +89,16 @@ uint32_t Province::GetColorId() const {
     return m_Color.toInteger();
 }
 
+void Province::SetColor(sf::Color color) {
+    m_Color = color;
+}
+
 std::string Province::GetName() const {
     return m_Name;
+}
+
+void Province::SetName(std::string name) {
+    m_Name = name;
 }
 
 ProvinceFlags Province::GetFlags() const {
@@ -100,20 +109,45 @@ bool Province::HasFlag(ProvinceFlags flag) const {
     return (bool) (m_Flags & flag);
 }
 
+void Province::SetFlags(ProvinceFlags flags) {
+    m_Flags = flags;
+}
+
+void Province::SetFlag(ProvinceFlags flag, bool enabled) {
+    if(enabled) m_Flags |= flag;
+    else m_Flags &= (~flag);
+}
+
 std::string Province::GetHolding() const {
     return m_Holding;
+}
+
+void Province::SetHolding(std::string holding) {
+    m_Holding = holding;
 }
 
 std::string Province::GetTerrain() const {
     return m_Terrain;
 }
 
+void Province::SetTerrain(std::string terrain) {
+    m_Terrain = terrain;
+}
+
 std::string Province::GetCulture() const {
     return m_Culture;
 }
 
+void Province::SetCulture(std::string culture) {
+    m_Culture = culture;
+}
+
 std::string Province::GetReligion() const {
     return m_Religion;
+}
+
+void Province::SetReligion(std::string religion) {
+    m_Religion = religion;
 }
 
 ClimateType Province::GetClimateType() const {
@@ -136,39 +170,6 @@ std::string Province::GetHarshWinterFactorOverride() const {
     return m_HarshWinterFactorOverride;
 }
 
-void Province::SetName(std::string name) {
-    m_Name = name;
-}
-
-void Province::SetColor(sf::Color color) {
-    m_Color = color;
-}
-
-void Province::SetFlags(ProvinceFlags flags) {
-    m_Flags = flags;
-}
-
-void Province::SetFlag(ProvinceFlags flag, bool enabled) {
-    if(enabled) m_Flags |= flag;
-    else m_Flags &= (~flag);
-}
-
-void Province::SetHolding(std::string holding) {
-    m_Holding = holding;
-}
-
-void Province::SetTerrain(std::string terrain) {
-    m_Terrain = terrain;
-}
-
-void Province::SetCulture(std::string culture) {
-    m_Culture = culture;
-}
-
-void Province::SetReligion(std::string religion) {
-    m_Religion = religion;
-}
-
 void Province::SetClimateType(ClimateType type) {
     m_ClimateType = type;
 }
@@ -189,20 +190,32 @@ void Province::SetHarshWinterFactorOverride(std::string factor) {
     m_HarshWinterFactorOverride = factor;
 }
 
-std::string Province::GetOriginalFilePath() const {
-    return m_OriginalFilePath;
+std::string Province::GetOriginalHistoryFilePath() const {
+    return m_OriginalHistoryFilePath;
 }
 
-SharedPtr<Jomini::Object> Province::GetOriginalData() const {
-    return m_OriginalData;
+void Province::SetOriginalHistoryFilePath(const std::string& filePath) {
+    m_OriginalHistoryFilePath = filePath;
 }
 
-void Province::SetOriginalFilePath(const std::string& filePath) {
-    m_OriginalFilePath = filePath;
+SharedPtr<Jomini::Object> Province::GetExtraHistoryData() const {
+    return m_ExtraHistoryData;
 }
 
-void Province::SetOriginalData(SharedPtr<Jomini::Object> data) {
-    m_OriginalData = data;
+void Province::SetExtraHistoryData(SharedPtr<Jomini::Object> data) {
+    m_ExtraHistoryData = data;
+}
+
+std::map<Jomini::Date, SharedPtr<Jomini::Object>>& Province::GetHistory() {
+    return m_History;
+}
+
+void Province::AddHistory(Jomini::Date date, SharedPtr<Jomini::Object> data) {
+    m_History[date] = data;
+}
+
+void Province::RemoveHistory(Jomini::Date date) {
+    m_History.erase(date);
 }
 
 sf::Vector2i Province::GetImagePosition() const {

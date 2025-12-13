@@ -1229,8 +1229,39 @@ void Mod::LoadProvincesHistory() {
             value->Remove("religion");
             value->Remove("holding");
 
-            m_ProvincesByIds[provinceId]->SetOriginalFilePath(filePath);
-            m_ProvincesByIds[provinceId]->SetOriginalData(value);
+            m_ProvincesByIds[provinceId]->SetOriginalHistoryFilePath(filePath);
+            m_ProvincesByIds[provinceId]->SetExtraHistoryData(value);
+
+            // 2. Loop over dates in the province history.
+            for(const auto& [strDate, pair2] : value->GetMap()) {
+                auto& [op2, history] = pair2;
+                Jomini::Date date;
+                try {
+                    date = Date::ParseDate(strDate);
+                }
+                catch (std::exception& e) {
+                    LOG_ERROR("Invalid date syntax '{}' for province '{}' in {}", strDate, key, filePath);
+                    continue;
+                }
+
+                // Merge all objects into a single one when there are duplicate definitions for the same date.
+                if (history->Is(Jomini::Type::ARRAY)) {
+                    SharedPtr<Jomini::Object> mergedHistory = MakeShared<Jomini::Object>();
+                    for (auto& data : history->GetArray()) {
+                        if (data->Is(Jomini::Type::OBJECT)) {
+                            for (auto& [key, pair] : data->GetMapUnsafe()) {
+                                if (!mergedHistory->Contains(key))
+                                    mergedHistory->Put(key, pair.second, pair.first);
+                            }
+                        }
+                    }
+
+                    m_ProvincesByIds[provinceId]->AddHistory(date, mergedHistory);
+                    continue;
+                }
+                
+                m_ProvincesByIds[provinceId]->AddHistory(date, history);
+            }
         }
     }
 }
@@ -1974,10 +2005,11 @@ void Mod::ExportProvincesHistory() {
                     if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
                         continue;
                     
-                    SharedPtr<Jomini::Object> data = province->GetOriginalData();
+                    SharedPtr<Jomini::Object> data = province->GetExtraHistoryData();
                     if(!province->GetCulture().empty()) data->Put("culture", province->GetCulture());
                     if(!province->GetReligion().empty()) data->Put("religion", province->GetReligion());
                     data->Put("holding", province->GetHolding().empty() ? "none" : province->GetHolding());
+                    for(auto const& [date, data] : province->GetHistory()) data->Put((std::string) date, data);
 
                     SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
                     object->Put(std::to_string(province->GetId()), data);
