@@ -444,7 +444,8 @@ void PropertiesTab::RenderProvinces() {
                     // and if the edits have been saved successfully (no parsing error).
                     static std::unordered_map<std::string, TitleHistoryState> historyStates;
 
-                    for (auto const& [date, data] : province->GetHistory() | std::views::reverse) {
+                    std::map<Jomini::Date, SharedPtr<Jomini::Object>> history = province->GetHistory();
+                    for (auto const& [date, data] : history | std::views::reverse) {
                         std::string stateKey = fmt::format("{}-{}", province->GetName(), date);
 
                         ImGui::SetNextItemAllowOverlap();
@@ -714,7 +715,8 @@ void PropertiesTab::RenderTitles() {
                     // and if the edits have been saved successfully (no parsing error).
                     static std::unordered_map<std::string, TitleHistoryState> historyStates;
 
-                    for (auto const& [date, data] : title->GetHistory() | std::views::reverse) {
+                    std::map<Jomini::Date, SharedPtr<Jomini::Object>> history = title->GetHistory();
+                    for (auto const& [date, data] : history | std::views::reverse) {
                         std::string stateKey = fmt::format("{}-{}", title->GetName(), date);
 
                         ImGui::SetNextItemAllowOverlap();
