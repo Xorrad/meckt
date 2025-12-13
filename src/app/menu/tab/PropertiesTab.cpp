@@ -293,6 +293,17 @@ void PropertiesTab::RenderJointProvinces() {
     ImGui::Separator();
 }
 
+// Because the user inputs are strings for the history data,
+// we can't directly use a pointer to a variable in the
+// Title class.
+// Therefore, TitleHistoryState is used as a temporary buffer
+// for the input, which will be parsed and added to the history
+// Parser::Node in the Title class.
+struct TitleHistoryState {
+    std::string rawData;
+    std::string parsingError;
+};
+
 void PropertiesTab::RenderProvinces() {
     for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
                 
@@ -391,6 +402,109 @@ void PropertiesTab::RenderProvinces() {
                 ImGui::EndCombo();
             }
 
+            // PROVINCE: history (collapsing header + child window (for borders) + collapsing header for each dates)
+            ImGui::SetNextItemOpen(m_DisplayHistory);
+            if (ImGui::CollapsingHeader("history")) {
+                m_DisplayHistory = true;
+
+                if (ImGui::BeginChild((province->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+
+                    static std::string date = "";
+                    static bool isDateValid = true;
+
+                    const auto& AddNewDate = [&]() {
+                        try {
+                            Jomini::Date newDate = Jomini::Date(date);
+                            if (!province->GetHistory().contains(newDate))
+                                province->AddHistory(newDate, MakeShared<Jomini::Object>(Jomini::ObjectMap{}));
+                            isDateValid = true;
+                        }
+                        catch(std::exception& e) {
+                            isDateValid = false;
+                        }
+                    };
+
+                    if (ImGui::InputText("##date", &date, ImGuiInputTextFlags_EnterReturnsTrue)) {
+                        AddNewDate();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton("add")) {
+                        AddNewDate();
+                    }
+                    if (!isDateValid)
+                        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Invalid date format");
+            
+
+                    // TODO: improve this to avoid "memory leaks" when switching titles or even tabs.
+
+                    // Each date has its own data/history and each title can have
+                    // several dates. To avoid overwritting user inputs, the buffer are saved
+                    // in a map using the key: title_name-date.
+                    // Keys are erased from the map when the date TreeNode has been closed
+                    // and if the edits have been saved successfully (no parsing error).
+                    static std::unordered_map<std::string, TitleHistoryState> historyStates;
+
+                    for (auto const& [date, data] : province->GetHistory() | std::views::reverse) {
+                        std::string stateKey = fmt::format("{}-{}", province->GetName(), date);
+
+                        ImGui::SetNextItemAllowOverlap();
+                        if (ImGui::TreeNodeEx(fmt::format("{}", date).c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+                            ImGui::PushID(stateKey.c_str());
+                            
+                            // Insert the delete button on the smae line as the tree node.
+                            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
+                            if (ImGui::SmallButton("x")) {
+                                historyStates.erase(stateKey);
+                                province->RemoveHistory(date);
+                            }
+
+                            if (historyStates.count(stateKey) == 0) {
+                                historyStates[stateKey] = TitleHistoryState{
+                                    fmt::format("{}", data->Serialize()),
+                                    "",
+                                };
+                            }
+
+                            ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 10);
+                            if (ImGui::InputTextMultiline("data", &historyStates[stateKey].rawData, ImVec2(0,0), ImGuiInputTextFlags_AllowTabInput)) {
+                                try {
+                                    SharedPtr<Jomini::Object> newData = Jomini::ParseString(historyStates[stateKey].rawData);
+                                    historyStates[stateKey].parsingError = "";
+                                    province->AddHistory(date, newData);
+                                }
+                                catch(const std::exception& e) {
+                                    historyStates[stateKey].parsingError = e.what();
+                                }
+                            }
+
+                            if (!historyStates[stateKey].parsingError.empty()) {
+                                ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), fmt::format("Failed to parse data: {}", historyStates[stateKey].parsingError).c_str());
+                            }
+
+                            ImGui::PopID();
+                            ImGui::TreePop();
+                        }
+                        else {
+                            ImGui::PushID(stateKey.c_str());
+
+                            // Insert the delete button on the smae line as the tree node.
+                            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
+                            if (ImGui::SmallButton("x"))
+                                province->RemoveHistory(date);
+
+                            if (historyStates.count(stateKey) > 0 && historyStates[stateKey].parsingError.empty())
+                                historyStates.erase(stateKey);
+
+                            ImGui::PopID();
+                        }
+                    }
+                }
+                ImGui::EndChild();
+            }
+            else {
+                m_DisplayHistory = false;
+            }
+
             // PROVINCE: climate (collapsing header + child window (for borders) + text inputs)
             ImGui::SetNextItemOpen(m_DisplayClimate, ImGuiCond_Appearing);
             if (ImGui::CollapsingHeader("climate")) {
@@ -466,17 +580,6 @@ void PropertiesTab::RenderProvinces() {
         }
     }
 }
-
-// Because the user inputs are strings for the history data,
-// we can't directly use a pointer to a variable in the
-// Title class.
-// Therefore, TitleHistoryState is used as a temporary buffer
-// for the input, which will be parsed and added to the history
-// Parser::Node in the Title class.
-struct TitleHistoryState {
-    std::string rawData;
-    std::string parsingError;
-};
 
 void PropertiesTab::RenderTitles() {
     for (auto& title : m_Menu->GetSelectionHandler().GetTitles()) {
