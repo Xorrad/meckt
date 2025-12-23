@@ -35,6 +35,7 @@ public:
     void RenderMenuBar();
     void RenderMenuBarSelection();
     void RenderMenuBarTools();
+    void RenderMenuBarTimeline();
     void RenderModals();
 
 private:

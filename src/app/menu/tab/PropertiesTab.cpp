@@ -954,8 +954,8 @@ void PropertiesTab::RenderTitles() {
                     ImGui::CloseCurrentPopup();
 
                     // Remove the title from his liege's dejure titles.
-                    if (!title->Is(TitleType::HEGEMONY) && title->GetLiegeTitle() != nullptr) {
-                        const SharedPtr<HighTitle>& liege = title->GetLiegeTitle();
+                    if (!title->Is(TitleType::HEGEMONY) && title->GetDejureLiegeTitle() != nullptr) {
+                        const SharedPtr<HighTitle>& liege = title->GetDejureLiegeTitle();
                         liege->RemoveDejureTitle(title);
                     }
 

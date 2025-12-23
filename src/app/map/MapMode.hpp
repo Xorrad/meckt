@@ -16,14 +16,15 @@ enum class MapMode {
     KINGDOM         = 10,
     EMPIRE          = 11,
     HEGEMONY        = 12,
-    COUNT           = 13,
+    TITLES          = 13,
+    COUNT           = 14,
 };
 static int MapModeTitleStartIndex = static_cast<int>(MapMode::BARONY);
 
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
     "Terrain", "Winter Severity", "Culture", "Religion",
-    "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony"
+    "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony", "Titles"
 };
 
 inline TitleType MapModeToTileType(MapMode mode) {

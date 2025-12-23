@@ -14,7 +14,8 @@ public:
     virtual TitleType GetType() const = 0;
     std::string GetName() const;
     sf::Color GetColor() const;
-    SharedPtr<HighTitle>& GetLiegeTitle();
+    SharedPtr<HighTitle>& GetDejureLiegeTitle();
+    SharedPtr<HighTitle> GetLiegeTitle(Mod* mod, Jomini::Date date);
     bool IsLandless() const;
 
     bool Is(TitleType type) const;

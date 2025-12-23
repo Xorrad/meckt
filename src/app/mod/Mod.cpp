@@ -21,9 +21,18 @@ Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesIm
     m_DefaultSeaTerrain("sea"),
     m_DefaultCoastalSeaTerrain("sea"),
     m_TitlesLocalizationFilePath(dir + "/localization/english/00_titles_l_english.yml"),
-    m_CulturalNamesLocalizationFilePath(dir + "/localization/english/00_cultural_titles_l_english.yml")
+    m_CulturalNamesLocalizationFilePath(dir + "/localization/english/00_cultural_titles_l_english.yml"),
+    m_TimelineDate(0, 1, 1)
 {
 
+}
+
+Jomini::Date Mod::GetTimelineDate() const {
+    return m_TimelineDate;
+}
+
+void Mod::SetTimelineDate(Jomini::Date date) {
+    m_TimelineDate = date;
 }
 
 std::string Mod::GetDir() const {
@@ -105,7 +114,7 @@ sf::Image Mod::GetCultureImage() {
             sf::Uint8 alpha = cultureName.empty() ? 255 : 0;
 
             if(cultureName.empty()) {
-                const SharedPtr<CountyTitle>& liege = CastSharedPtr<CountyTitle>(this->GetProvinceLiegeTitle(province, TitleType::COUNTY));
+                const SharedPtr<CountyTitle>& liege = CastSharedPtr<CountyTitle>(this->GetProvinceDejureLiegeTitle(province, TitleType::COUNTY));
 
                 if(liege == nullptr) {
                     goto End;
@@ -153,7 +162,7 @@ sf::Image Mod::GetReligionImage() {
             sf::Uint8 alpha = religionName.empty() ? 255 : 0;
 
             if(religionName.empty()) {
-                const SharedPtr<CountyTitle>& liege = CastSharedPtr<CountyTitle>(this->GetProvinceLiegeTitle(province, TitleType::COUNTY));
+                const SharedPtr<CountyTitle>& liege = CastSharedPtr<CountyTitle>(this->GetProvinceDejureLiegeTitle(province, TitleType::COUNTY));
 
                 if(liege == nullptr) {
                     goto End;
@@ -186,10 +195,26 @@ sf::Image Mod::GetReligionImage() {
     return image;
 }
 
-sf::Image Mod::GetTitleImage(TitleType type) {
+sf::Image Mod::GetDejureTitleImage(TitleType type) {
     sf::Image image = Image::MapPixels(m_ProvinceImage, [&](auto& mappedColors){
         for(const auto& [provinceColorId, province] : m_Provinces) {
-            const SharedPtr<Title>& liege = this->GetProvinceFocusedTitle(province, type);
+            const SharedPtr<Title>& liege = this->GetProvinceFocusedDejureTitle(province, type);
+
+            if(liege == nullptr) {
+                mappedColors[province->GetColor().toInteger()] = 0x505050ff;
+                continue;
+            }
+
+            mappedColors[province->GetColor().toInteger()] = liege->GetColor().toInteger();
+        }    
+    });
+    return image;
+}
+
+sf::Image Mod::GetTitleImage() {
+    sf::Image image = Image::MapPixels(m_ProvinceImage, [&](auto& mappedColors){
+        for(const auto& [provinceColorId, province] : m_Provinces) {
+            const SharedPtr<Title>& liege = this->GetProvinceFocusedTitle(province);
 
             if(liege == nullptr) {
                 mappedColors[province->GetColor().toInteger()] = 0x505050ff;
@@ -214,7 +239,7 @@ std::map<int, SharedPtr<Province>>& Mod::GetProvincesByIds() {
     return m_ProvincesByIds;
 }
 
-SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type) {
+SharedPtr<Title> Mod::GetProvinceDejureLiegeTitle(const SharedPtr<Province>& province, TitleType type) {
     if(m_BaroniesByProvinceIds.count(province->GetId()) == 0)
         return nullptr;
 
@@ -225,43 +250,59 @@ SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province,
     // Determine which liege title to choose depending on type.
     switch(type) {
         case TitleType::BARONY:  return barony;
-        case TitleType::COUNTY:  return barony->GetLiegeTitle();
+        case TitleType::COUNTY:  return barony->GetDejureLiegeTitle();
         case TitleType::DUCHY:
-            RETURN_IF_NULL(barony->GetLiegeTitle());
-            return barony->GetLiegeTitle()->GetLiegeTitle();
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle());
+            return barony->GetDejureLiegeTitle()->GetDejureLiegeTitle();
         case TitleType::KINGDOM:
-            RETURN_IF_NULL(barony->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
-            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle());
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle()->GetDejureLiegeTitle());
+            return barony->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle();
         case TitleType::EMPIRE:
-            RETURN_IF_NULL(barony->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
-            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle());
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle()->GetDejureLiegeTitle());
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle());
+            return barony->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle();
         case TitleType::HEGEMONY:
-            RETURN_IF_NULL(barony->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
-            RETURN_IF_NULL(barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle());
-            return barony->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle()->GetLiegeTitle();
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle());
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle()->GetDejureLiegeTitle());
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle());
+            RETURN_IF_NULL(barony->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle());
+            return barony->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle()->GetDejureLiegeTitle();
         default: return nullptr;
     }
 }
 
-SharedPtr<Title> Mod::GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type) {
+SharedPtr<Title> Mod::GetProvinceFocusedDejureTitle(const SharedPtr<Province>& province, TitleType type) {
     auto it = m_BaroniesByProvinceIds.find(province->GetId());
     if(it == m_BaroniesByProvinceIds.end())
         return nullptr;
 
     SharedPtr<Title> title = it->second;
 
-    while(title->GetLiegeTitle() != nullptr && (int) title->GetType() < (int) type && title->GetLiegeTitle()->HasSelectionFocus()) {
-        title = title->GetLiegeTitle();
+    while(title->GetDejureLiegeTitle() != nullptr && (int) title->GetType() < (int) type && title->GetDejureLiegeTitle()->HasSelectionFocus()) {
+        title = title->GetDejureLiegeTitle();
     }
 
     // Return nullptr if the title hasn't any liege title of the provided type.
-    if ((int) title->GetType() < (int) type && title->GetLiegeTitle() == nullptr)
+    if ((int) title->GetType() < (int) type && title->GetDejureLiegeTitle() == nullptr)
         return nullptr;
+
+    return title;
+}
+
+SharedPtr<Title> Mod::GetProvinceFocusedTitle(const SharedPtr<Province>& province) {
+    auto it = m_BaroniesByProvinceIds.find(province->GetId());
+    if(it == m_BaroniesByProvinceIds.end())
+        return nullptr;
+
+    SharedPtr<Title> title = it->second;
+    SharedPtr<Title> liege = title->GetLiegeTitle(this, m_TimelineDate);
+
+    while(liege != nullptr && liege->HasSelectionFocus()) {
+        title = liege;
+        liege = title->GetLiegeTitle(this, m_TimelineDate);
+    }
 
     return title;
 }
@@ -2027,7 +2068,7 @@ void Mod::ExportProvincesHistory() {
     for(const auto& [id, province] : m_ProvincesByIds) {
         if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
             continue;
-        SharedPtr<Title> kingdomTitle = this->GetProvinceLiegeTitle(province, TitleType::KINGDOM);
+        SharedPtr<Title> kingdomTitle = this->GetProvinceDejureLiegeTitle(province, TitleType::KINGDOM);
         if(kingdomTitle == nullptr) {
             LOG_ERROR("Province cannot be saved because missing dejure kingdom tier liege: {}", id);
             continue;
@@ -2043,7 +2084,7 @@ void Mod::ExportTitles() {
     std::map<std::string, std::ofstream> files;
 
     for(const auto& [name, title] : m_Titles) {
-        if(title->GetLiegeTitle() != nullptr)
+        if(title->GetDejureLiegeTitle() != nullptr)
             continue;
         std::string filePath = title->GetOriginalFilePath();
         if(filePath.empty())
@@ -2093,9 +2134,9 @@ void Mod::ExportTitlesHistory() {
             return liege->GetName();
         if(liege->IsLandless()) 
             return std::string("landless_titles");
-        if(liege->GetLiegeTitle() == nullptr)
+        if(liege->GetDejureLiegeTitle() == nullptr)
             return std::string("special_titles");
-        return GetTitleFileName(liege->GetLiegeTitle());
+        return GetTitleFileName(liege->GetDejureLiegeTitle());
     };
 
     for(const auto& [name, title] : m_Titles) {

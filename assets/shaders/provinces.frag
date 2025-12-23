@@ -33,6 +33,7 @@ const int MAPMODE_DUCHY = 9;
 const int MAPMODE_KINGDOM = 10;
 const int MAPMODE_EMPIRE = 11;
 const int MAPMODE_HEGEMONY = 12;
+const int MAPMODE_TITLES = 13;
 
 // The last (4th) element of the array is used to distinguish the type defined above.
 uniform vec4 selectedEntities[1000];

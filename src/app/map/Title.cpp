@@ -22,8 +22,41 @@ sf::Color Title::GetColor() const {
     return m_Color;
 }
 
-SharedPtr<HighTitle>& Title::GetLiegeTitle() {
+SharedPtr<HighTitle>& Title::GetDejureLiegeTitle() {
     return m_LiegeTitle;
+}
+
+SharedPtr<HighTitle> Title::GetLiegeTitle(Mod* mod, Jomini::Date date) {
+    SharedPtr<HighTitle> liege = nullptr;
+
+    // Baronies can never be independent, therefore their liege will always be their dejure county title.
+    if (this->GetType() == TitleType::BARONY)
+        return m_LiegeTitle;
+
+    // TODO: optimize with a dichotomy to avoid O(n).
+    for (auto [d, o] : m_History) {
+        if (d > date)
+            break;
+        
+        if (!o->Contains("liege"))
+            continue;
+        
+        std::string liegeName = o->Get("liege")->As<std::string>();
+        if (liegeName == "0") {
+            liege = nullptr;
+            continue;
+        }
+        // Strip potential quotes from the liege name if the string was quoted.
+        liegeName.erase(std::remove(liegeName.begin(), liegeName.end(), '"'), liegeName.end());
+        auto it = mod->GetTitles().find(liegeName);
+        if (it == mod->GetTitles().end())
+            continue;
+        if (!IsInstance<HighTitle>(it->second))
+            continue;
+        liege = CastSharedPtr<HighTitle>(it->second);
+    }
+
+    return liege;
 }
 
 bool Title::IsLandless() const {
@@ -39,7 +72,7 @@ bool Title::IsVassal(SharedPtr<HighTitle> title) const {
     while(liege != nullptr) {
         if(liege == title)
             return true;
-        liege = liege->GetLiegeTitle();
+        liege = liege->GetDejureLiegeTitle();
     }
     return false;
 }
@@ -214,7 +247,7 @@ void HighTitle::AddDejureTitle(SharedPtr<Title> title) {
     if(!this->IsDejureTitle(title))
         m_DejureTitles.push_back(title);
 
-    SharedPtr<HighTitle> previousLiege = title->GetLiegeTitle();
+    SharedPtr<HighTitle> previousLiege = title->GetDejureLiegeTitle();
     if(previousLiege != nullptr) {
         previousLiege->RemoveDejureTitle(title);
     }

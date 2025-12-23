@@ -11,6 +11,9 @@ public:
     Mod(const std::string& dir);
     Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel);
 
+    Jomini::Date GetTimelineDate() const;
+    void SetTimelineDate(Jomini::Date date);
+
     std::string GetDir() const;
     sf::Image& GetHeightmapImage();
     sf::Image& GetProvinceImage();
@@ -19,13 +22,15 @@ public:
     sf::Image GetWinterSeverityImage();
     sf::Image GetCultureImage();
     sf::Image GetReligionImage();
-    sf::Image GetTitleImage(TitleType type);
+    sf::Image GetDejureTitleImage(TitleType type);
+    sf::Image GetTitleImage();
     bool HasMap() const;
 
     std::map<uint32_t, SharedPtr<Province>>& GetProvinces();
     std::map<int, SharedPtr<Province>>& GetProvincesByIds();
-    SharedPtr<Title> GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type);
-    SharedPtr<Title> GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type);
+    SharedPtr<Title> GetProvinceDejureLiegeTitle(const SharedPtr<Province>& province, TitleType type);
+    SharedPtr<Title> GetProvinceFocusedDejureTitle(const SharedPtr<Province>& province, TitleType type);
+    SharedPtr<Title> GetProvinceFocusedTitle(const SharedPtr<Province>& province);
     int GetMaxProvinceId() const;
     
     std::map<std::string, SharedPtr<Region>>& GetRegions();
@@ -149,4 +154,6 @@ private:
     std::string m_CulturalNamesLocalizationFilePath;
 
     std::map<std::string, std::map<std::string, std::string>> m_LocCulturalNames;
+
+    Jomini::Date m_TimelineDate;
 };

@@ -94,15 +94,17 @@ void EditorMenu::UpdateHoveringText() {
         std::string text = fmt::format("#{} - {}", province->GetId(), province->GetName());
         std::string hoveredTitleText = fmt::format("");
 
-        const SharedPtr<Title>& barony = m_App->GetMod()->GetProvinceLiegeTitle(province, TitleType::BARONY);
-        const SharedPtr<Title>& hoveredTitle = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+        const SharedPtr<Title>& barony = m_App->GetMod()->GetProvinceDejureLiegeTitle(province, TitleType::BARONY);
+        const SharedPtr<Title>& hoveredTitle = (m_MapMode == MapMode::TITLES) ?
+            m_App->GetMod()->GetProvinceFocusedTitle(province)
+            : m_App->GetMod()->GetProvinceFocusedDejureTitle(province, MapModeToTileType(m_MapMode));
         SharedPtr<Title> title = barony;
 
         while(title != nullptr) {
             bool isMainTitle = (title == hoveredTitle && MapModeIsTitle(m_MapMode));
             hoveredTitleText += fmt::format("\n{}", (isMainTitle ? title->GetName() : ""));
             text += fmt::format("\n{}", (!isMainTitle ? title->GetName() : ""));
-            title = title->GetLiegeTitle();
+            title = (m_MapMode == MapMode::TITLES) ? title->GetLiegeTitle(m_App->GetMod().get(), m_App->GetMod()->GetTimelineDate()) : title->GetDejureLiegeTitle();
         }
 
         m_HoverText.setString(text);
@@ -133,7 +135,7 @@ void EditorMenu::UpdateHoveringText() {
         return;
     }
     else if(MapModeIsTitle(m_MapMode)) {
-        const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+        const SharedPtr<Title>& title = m_App->GetMod()->GetProvinceFocusedDejureTitle(province, MapModeToTileType(m_MapMode));
         if(title == nullptr)
             goto Hide;
         m_HoverText.setString(fmt::format("{}", title->GetName()));
@@ -216,7 +218,7 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::EMPIRE:
         case MapMode::HEGEMONY: {
             TitleType type = MapModeToTileType(mode);
-            m_MapTextures[mode].loadFromImage(mod->GetTitleImage(type));
+            m_MapTextures[mode].loadFromImage(mod->GetDejureTitleImage(type));
             Configuration::shaders.Get(Shaders::PROVINCES).setUniform(
                 String::ToLowercase(TitleTypeLabels[(int) type]) + "Texture",
                 m_MapTextures[mode]
@@ -230,6 +232,16 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
             }
             break;
         }
+        case MapMode::TITLES:
+            m_MapTextures[mode].loadFromImage(mod->GetTitleImage());
+
+            // Reset the selection focus for every titles.
+            if(resetFocus) {
+                for(const auto& [_, title] : mod->GetTitles()) {
+                    title->SetSelectionFocus(true);
+                }
+            }
+            break;
         default:
             break;
     }   
@@ -326,11 +338,14 @@ void EditorMenu::Event(const sf::Event& event) {
             || m_MapMode == MapMode::WINTER_SEVERITY
             || m_MapMode == MapMode::CULTURE
             || m_MapMode == MapMode::RELIGION
+            || m_MapMode == MapMode::TITLES
             || MapModeIsTitle(m_MapMode)) {
                 SharedPtr<Province> province = this->GetHoveredProvince();
                 if(province != nullptr) {
                     if(MapModeIsTitle(m_MapMode)) {
-                        SharedPtr<Title> title = m_App->GetMod()->GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+                        SharedPtr<Title> title = (m_MapMode == MapMode::TITLES) ?
+                            m_App->GetMod()->GetProvinceFocusedTitle(province)
+                            : m_App->GetMod()->GetProvinceFocusedDejureTitle(province, MapModeToTileType(m_MapMode));
                         if(title == nullptr)
                             return;
                         m_SelectionHandler.OnClick(event.mouseButton.button, province, title);
@@ -360,6 +375,7 @@ void EditorMenu::Render() {
     || m_MapMode == MapMode::WINTER_SEVERITY
     || m_MapMode == MapMode::CULTURE
     || m_MapMode == MapMode::RELIGION
+    || m_MapMode == MapMode::TITLES
     || MapModeIsTitle(m_MapMode))
         window.draw(m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
     else 
@@ -449,8 +465,8 @@ void EditorMenu::InitSelectionCallbacks() {
 
         // Wrap a title when MMB and the title was unfocus (unwrapped).
         else if(button == sf::Mouse::Button::Right) {
-            if(title->GetLiegeTitle() != nullptr && !title->GetLiegeTitle()->HasSelectionFocus()) {
-                title->GetLiegeTitle()->SetSelectionFocus(true);
+            if(title->GetDejureLiegeTitle() != nullptr && !title->GetDejureLiegeTitle()->HasSelectionFocus()) {
+                title->GetDejureLiegeTitle()->SetSelectionFocus(true);
                 this->RefreshMapMode(false, false);
             }
         }
@@ -563,6 +579,7 @@ void EditorMenu::RenderMenuBar() {
 
         this->RenderMenuBarSelection();
         this->RenderMenuBarTools();
+        this->RenderMenuBarTimeline();
 
         ImGui::EndMainMenuBar();
     }
@@ -611,6 +628,59 @@ void EditorMenu::RenderMenuBarTools() {
         }
 
         ImGui::EndMenu();
+    }
+}
+
+void EditorMenu::RenderMenuBarTimeline() {
+    SharedPtr<Mod> mod = m_App->GetMod();
+    Jomini::Date date = mod->GetTimelineDate();
+
+    const auto RefreshTitlesMapMode = [&]{
+        this->UpdateTexture(MapMode::TITLES, true);
+        this->SwitchMapMode(MapMode::TITLES, false);
+    };
+
+    static std::string newDateStr = fmt::format("{}", mod->GetTimelineDate());
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 250);
+    ImGui::SetNextItemWidth(150);
+    if (ImGui::InputText("##timeline", &newDateStr, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        try {
+            mod->SetTimelineDate(Jomini::Date(newDateStr));
+            RefreshTitlesMapMode();
+        }
+        catch(std::exception& e) {
+            newDateStr = fmt::format("{}", mod->GetTimelineDate());
+        }
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("-")) {
+        Jomini::Date newDate =  Jomini::Date(date.year, date.month, date.day);
+        // if (date.month == 1) {
+        //     newDate.year--;
+        //     newDate.month = 12;
+        // }
+        // else newDate.month--;
+        newDate.year--;
+        mod->SetTimelineDate(newDate);
+        newDateStr = fmt::format("{}", mod->GetTimelineDate());
+        RefreshTitlesMapMode();
+    }
+
+    ImGui::SameLine();
+    
+    if (ImGui::Button("+")) {
+        Jomini::Date newDate =  Jomini::Date(date.year, date.month, date.day);
+        // if (date.month == 12) {
+        //     newDate.year++;
+        //     newDate.month = 1;
+        // }
+        // else newDate.month++;
+        newDate.year++;
+        mod->SetTimelineDate(newDate);
+        newDateStr = fmt::format("{}", mod->GetTimelineDate());
+        RefreshTitlesMapMode();
     }
 }
 

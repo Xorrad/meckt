@@ -45,7 +45,7 @@ void TitlesTab::Render() {
         };
 
         for(const auto& [name, title] : mod->GetTitles()) {
-            if(title->GetLiegeTitle() == nullptr)
+            if(title->GetDejureLiegeTitle() == nullptr)
                 FilterTitles(title, false);
         }
     }
@@ -139,7 +139,7 @@ void TitlesTab::Render() {
         };
 
         for(const auto& [name, title] : mod->GetTitles()) {
-            if(title->GetLiegeTitle() == nullptr)
+            if(title->GetDejureLiegeTitle() == nullptr)
                 DisplayTitle(title);
         }
 
