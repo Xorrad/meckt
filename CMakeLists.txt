@@ -220,6 +220,11 @@ add_executable(meckt
     ${PROJECT_SOURCES}
 )
 
+if(WIN32)
+    target_sources(meckt PRIVATE src/build/version.rc)
+	source_group(TREE ${CMAKE_SOURCE_DIR} FILES src/build/version.rc)
+endif()
+
 source_group(
     TREE ${CMAKE_SOURCE_DIR}
     FILES ${PROJECT_SOURCES}
