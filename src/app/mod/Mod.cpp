@@ -122,6 +122,11 @@ sf::Image Mod::GetCultureImage() {
                 }
             }
 
+            if (cultureName.empty()) {
+                color = sf::Color::Black;
+                goto End;
+            }
+
             if(cultureName.empty() || m_Cultures.count(cultureName) == 0) {
                 color = sf::Color(cultureName[0], cultureName[1], cultureName[2]);
             } 
@@ -168,6 +173,11 @@ sf::Image Mod::GetReligionImage() {
                         break;
                     }
                 }
+            }
+
+            if (religionName.empty()) {
+                color = sf::Color::Black;
+                goto End;
             }
 
             if(m_Religions.count(religionName) == 0 || m_Religions.count(religionName) == 0) {
