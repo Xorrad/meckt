@@ -1,7 +1,7 @@
     #include "Image.hpp"
 
 #include <SFML/Graphics.hpp>
-#include "lodepng/lodepng.h"
+#include <lodepng.h>
 
 sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(std::unordered_map<sf::Uint32, sf::Uint32>&)> mapFunc) {
     // Used for benchmarking.
@@ -24,7 +24,7 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     // Use vectors to avoid using SFML getters and setters for pixels.
     const sf::Uint8* originalPixels = originalImage.getPixelsPtr();
     std::vector<sf::Uint8> newPixels = std::vector<sf::Uint8>();
-    newPixels.reserve(totalPixels * 4);
+    newPixels.resize(totalPixels * 4);
 
     // fmt::println("image=[{}, {}]\tbytes={}", width, height, newPixels.capacity());
     // fmt::println("initializing pixels array: {}", String::DurationFormat(clock.restart()));
