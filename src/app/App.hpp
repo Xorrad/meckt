@@ -1,8 +1,8 @@
 #pragma once
 
-#ifdef __linux__
-#include "util/SignalHandler.hpp"
-#endif
+// #ifdef __linux__
+// #include "util/SignalHandler.hpp"
+// #endif
 
 #include "menu/Menu.hpp"
 #include "mod/Mod.hpp"
@@ -29,9 +29,9 @@ private:
     sf::RenderWindow m_Window;
     sf::Clock m_DeltaClock;
     
-    #ifdef __linux__
-    SignalHandler m_SignalHandler;
-    #endif
+    // #ifdef __linux__
+    // SignalHandler m_SignalHandler;
+    // #endif
 
     SharedPtr<Menu> m_ActiveMenu;
     SharedPtr<Mod> m_ActiveMod;

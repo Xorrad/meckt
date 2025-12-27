@@ -1,0 +1,53 @@
+﻿name: Build Artifacts
+
+on:
+  push:
+    branches: [ "master", "cmake" ]
+  pull_request:
+    branches: [ "master", "cmake" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: true
+
+    - name: Install Linux Dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential zip pkg-config libgtk-3-dev libcurl4-openssl-dev libopenal-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libfreetype-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev
+      
+    - name: Configure CMake
+      run: |
+        cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build Executable
+      run: cmake --build ${{ github.workspace }}/build --target meckt --config Release --parallel
+        
+    - name: Upload ZIP Artifact (Windows)
+      uses: actions/upload-artifact@v4
+      if: runner.os == 'Windows'
+      with:
+        name: win-meckt-release
+        path: ${{ github.workspace }}/bin/Release
+        if-no-files-found: error
+
+    - name: Upload ZIP Artifact (Linux)
+      uses: actions/upload-artifact@v4
+      if: runner.os == 'Linux'
+      with:
+        name: linux-meckt-release
+        path: ${{ github.workspace }}/bin/Release
+        if-no-files-found: error

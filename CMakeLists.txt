@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(meckt LANGUAGES CXX)
+project(meckt LANGUAGES C CXX)
 
 ###############################################
 #  Global C++ configuration                   #
@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Put executables in <build>/bin
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/Release)
 foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG_UPPER)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER}
@@ -199,7 +199,6 @@ source_group(
 )
 
 target_include_directories(jomini-parser PUBLIC vendor/includes/jomini-parser/src)
-target_include_directories(jomini-parser PUBLIC vendor/includes/jomini-parser/vendor)
 target_compile_features(jomini-parser PUBLIC cxx_std_20)
 
 target_link_libraries(jomini-parser PUBLIC
@@ -249,6 +248,11 @@ target_compile_definitions(meckt PUBLIC
 )
 
 ###############################################
+#  curl                          #
+###############################################
+
+
+###############################################
 #  Link dependencies                          #
 ###############################################
 target_link_libraries(meckt PRIVATE
@@ -266,6 +270,9 @@ if (WIN32)
         gdi32
         winhttp
     )
+elseif (UNIX)
+    find_package(CURL REQUIRED)
+    target_link_libraries(meckt PRIVATE CURL::libcurl)
 endif()
 
 ###############################################
