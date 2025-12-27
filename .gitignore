@@ -1,11 +1,8 @@
 /.vscode/
+/.vs/
 /build/
-/obj/
+/bin/
 /logs/
 /tmp/
 /tests/
-/vendor/sfml/
-*.txt
 *.zip
-imgui.ini
-settings.json
