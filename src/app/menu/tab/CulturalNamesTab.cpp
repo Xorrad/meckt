@@ -2,7 +2,7 @@
 #include "app/menu/EditorMenu.hpp"
 #include "app/mod/Mod.hpp"
 
-#include "imgui/imgui.hpp"
+#include <imgui/imgui.hpp>
 
 CulturalNamesTab::CulturalNamesTab(EditorMenu* menu, bool visible) : Tab("Cultural Names", Tabs::CULTURAL_NAMES, menu, visible) {}
 

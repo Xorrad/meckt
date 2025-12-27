@@ -4,7 +4,7 @@
 #include "app/map/Province.hpp"
 #include "app/map/Title.hpp"
 
-#include "imgui/imgui.hpp"
+#include <imgui/imgui.hpp>
 
 TitlesTab::TitlesTab(EditorMenu* menu, bool visible) : Tab("Titles", Tabs::TITLES, menu, visible) {}
 

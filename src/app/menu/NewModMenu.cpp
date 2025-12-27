@@ -8,8 +8,8 @@
 #include "EditorMenu.hpp"
 
 #include "ImGuiStyle.hpp"
-#include "imgui/imgui.hpp"
-#include "nfd/nfd.h"
+#include <imgui/imgui.hpp>
+#include <nfd.h>
 #include <filesystem>
 
 NewModMenu::NewModMenu(App* app) :
@@ -355,7 +355,7 @@ void NewModMenu::CreateMod() {
         // Replace the vanilla water level with what the user specified.
         std::ofstream outFile((modPath / "common" / "defines" / "01_defines.txt").string(), std::ios::out);
         outFile << "NJominiMap = {\n";
-        outFile << fmt::format("\tWATERLEVEL = {:2.f}\n", m_WaterLevel);
+        outFile << "\tWATERLEVEL = " << std::fixed << std::setprecision(2) << m_WaterLevel << "\n";
         outFile << "}";
         outFile.close();
     }

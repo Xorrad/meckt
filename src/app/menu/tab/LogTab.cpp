@@ -1,7 +1,7 @@
 #include "LogTab.hpp"
 #include "app/menu/EditorMenu.hpp"
 
-#include "imgui/imgui.hpp"
+#include <imgui/imgui.hpp>
 
 LogTab::LogTab(EditorMenu* menu, bool visible) : Tab("Log", Tabs::LOG, menu, visible) {}
 

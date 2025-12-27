@@ -5,7 +5,7 @@
 #include "app/map/Province.hpp"
 #include "app/map/Title.hpp"
 
-#include "imgui/imgui.hpp"
+#include <imgui/imgui.hpp>
 
 ProvincesTab::ProvincesTab(EditorMenu* menu, bool visible) : Tab("Provinces", Tabs::PROVINCES, menu, visible) {}
 

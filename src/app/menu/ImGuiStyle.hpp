@@ -1,6 +1,7 @@
 #pragma once
 
 #define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
 #include <imgui/imgui.hpp>
 
 namespace ImGui {

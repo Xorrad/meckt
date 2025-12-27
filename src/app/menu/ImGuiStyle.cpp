@@ -160,7 +160,7 @@ bool ImGui::InputTextLocked(const char* label, std::string* str) {
 
     ItemSize(total_bb, style.FramePadding.y);
 
-    const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.InFlags);
+    const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.ItemFlags);
     const bool pressed = hovered && io.MouseClicked[0];
 
     // Render frame
