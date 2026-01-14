@@ -18,7 +18,7 @@ enum class MapMode {
     HEGEMONY        = 12,
     COUNT           = 13,
 };
-static int MapModeTitleStartIndex = static_cast<int>(MapMode::BARONY);
+const int MapModeTitleStartIndex = static_cast<int>(MapMode::BARONY);
 
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
@@ -27,13 +27,13 @@ const std::vector<const char*> MapModeLabels = {
 };
 
 inline TitleType MapModeToTileType(MapMode mode) {
-    return (TitleType) ((int) mode - MapModeTitleStartIndex);
+    return static_cast<TitleType>(static_cast<int>(mode) - MapModeTitleStartIndex);
 }
 
 inline MapMode TitleTypeToMapMode(TitleType type) {
-    return (MapMode) ((int) type + MapModeTitleStartIndex);
+    return static_cast<MapMode>(static_cast<int>(type) + MapModeTitleStartIndex);
 }
 
 inline bool MapModeIsTitle(MapMode mode) {
-    return ((int) mode) >= (int) MapMode::BARONY && ((int) mode) <= (int) MapMode::HEGEMONY;
+    return static_cast<int>(mode) >= static_cast<int>(MapMode::BARONY) && static_cast<int>(mode) <= static_cast<int>(MapMode::HEGEMONY);
 }

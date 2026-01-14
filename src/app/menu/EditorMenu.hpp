@@ -44,7 +44,7 @@ private:
     sf::View m_Camera;
     sf::Clock m_Clock;
 
-    std::map<MapMode, sf::Texture> m_MapTextures;
+    std::map<MapMode, UniquePtr<sf::Texture>> m_MapTextures;
     sf::Sprite m_MapSprite;
 
     bool m_Dragging;
@@ -57,7 +57,7 @@ private:
     sf::Text m_HoverTitleText;
     sf::RectangleShape m_HoverShape;
 
-    std::map<Tabs, SharedPtr<Tab>> m_Tabs;
+    std::map<Tabs, UniquePtr<Tab>> m_Tabs;
     bool m_DisplayBorders;
     std::string m_ModalName;
 

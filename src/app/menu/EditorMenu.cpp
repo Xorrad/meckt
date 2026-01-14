@@ -171,7 +171,7 @@ void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
     m_MapMode = mode;
     if(clearSelection)
         m_SelectionHandler.ClearSelection();
-    m_MapSprite.setTexture(m_MapTextures[m_MapMode]);
+    m_MapSprite.setTexture(*m_MapTextures.at(m_MapMode));
 }
 
 void EditorMenu::RefreshMapMode(bool clearSelection, bool resetFocus) {
@@ -185,30 +185,31 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
     // Update the pixels of the specified image (from scratch) and then
     // update the corresponding texture in the shader.
     Mod& mod = m_App.GetMod();
+    m_MapTextures.emplace(mode, MakeUnique<sf::Texture>());
     switch(mode) {
         case MapMode::PROVINCES:
-            // TODO: update pixel colors in mod.m_ProvinceImage
-            m_MapTextures[mode].loadFromImage(mod.GetProvinceImage());
-            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", m_MapTextures[mode]);
-            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("textureSize", sf::Vector2f(m_MapTextures[mode].getSize()));
+            // TODO: update pixel colors in mod.
+            m_MapTextures[mode]->loadFromImage(mod.GetProvinceImage());
+            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", *m_MapTextures[mode]);
+            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("textureSize", sf::Vector2f(m_MapTextures[mode]->getSize()));
             break;
         case MapMode::HEIGHTMAP:
-            m_MapTextures[mode].loadFromImage(mod.GetHeightmapImage());
+            m_MapTextures[mode]->loadFromImage(mod.GetHeightmapImage());
             break;
         case MapMode::RIVERS:
-            m_MapTextures[mode].loadFromImage(mod.GetRiversImage());
+            m_MapTextures[mode]->loadFromImage(mod.GetRiversImage());
             break;
         case MapMode::TERRAIN:
-            m_MapTextures[mode].loadFromImage(mod.GetTerrainImage());
+            m_MapTextures[mode]->loadFromImage(mod.GetTerrainImage());
             break;
         case MapMode::WINTER_SEVERITY:
-            m_MapTextures[mode].loadFromImage(mod.GetWinterSeverityImage());
+            m_MapTextures[mode]->loadFromImage(mod.GetWinterSeverityImage());
             break;
         case MapMode::CULTURE:
-            m_MapTextures[mode].loadFromImage(mod.GetCultureImage());
+            m_MapTextures[mode]->loadFromImage(mod.GetCultureImage());
             break;
         case MapMode::RELIGION:
-            m_MapTextures[mode].loadFromImage(mod.GetReligionImage());
+            m_MapTextures[mode]->loadFromImage(mod.GetReligionImage());
             break;
         case MapMode::BARONY:
         case MapMode::COUNTY:
@@ -217,10 +218,10 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::EMPIRE:
         case MapMode::HEGEMONY: {
             TitleType type = MapModeToTileType(mode);
-            m_MapTextures[mode].loadFromImage(mod.GetTitleImage(type));
+            m_MapTextures[mode]->loadFromImage(mod.GetTitleImage(type));
             Configuration::shaders.Get(Shaders::PROVINCES).setUniform(
                 String::ToLowercase(TitleTypeLabels[(int) type]) + "Texture",
-                m_MapTextures[mode]
+                *m_MapTextures[mode]
             );
 
             // Reset the selection focus for every titles of that tier or below.
@@ -240,17 +241,10 @@ void EditorMenu::UpdateTextures() {
     // Update the textures for all map modes. This includes:
     // - Redraw titles/provinces image pixels (with colors from Province/Title objects).
     // - Update titles and provinces textures in the shader.
-    std::vector<UniquePtr<sf::Thread>> threads;
 
-    for(int mode = 0; mode < static_cast<int>(MapMode::COUNT); mode++) {
-        threads.push_back(MakeUnique<sf::Thread>([&, mode](){
-            this->UpdateTexture(static_cast<MapMode>(mode));
-        }));
-        threads[threads.size()-1]->launch();
+    for (int mode = 0; mode < static_cast<int>(MapMode::COUNT); mode++) {
+        this->UpdateTexture(static_cast<MapMode>(mode));
     }
-
-    for(auto& thread : threads)
-        thread->wait();
 }
 
 void EditorMenu::Update(sf::Time delta) {
