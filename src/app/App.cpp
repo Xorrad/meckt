@@ -154,5 +154,5 @@ void App::Run() {
 
     // TODO: Move that else where, i.e make a App::Exit or Stop function
     // that is called whenever the app closes.
-    Configuration::Save();
+    Configuration::Deinitialize();
 }

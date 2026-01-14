@@ -32,6 +32,10 @@ public:
         return *m_Resources.at(id);
     }
 
+    void Clear() {
+		m_Resources.clear();
+    }
+
     // R& Get(const I& id) {
     //     return *m_Resources.at(id);
     // }
@@ -74,6 +78,10 @@ public:
         return *m_Resources.at(id);
     }
 
+    void Clear() {
+        m_Resources.clear();
+    }
+
 private:
     std::string m_Name;
     std::unordered_map<I, std::unique_ptr<sf::Music>> m_Resources;
@@ -102,6 +110,10 @@ public:
 
     sf::Shader& Get(const I& id) const {
         return *m_Resources.at(id);
+    }
+
+    void Clear() {
+        m_Resources.clear();
     }
 
 private:

@@ -22,6 +22,13 @@ void Configuration::Initialize() {
     InitializeShaders();
 }
 
+void Configuration::Deinitialize() {
+    Save();
+    textures.Clear();
+    fonts.Clear();
+    shaders.Clear();
+}
+
 void Configuration::Load() {
     // Check if there is a legacy settings file saved as yaml, if so, rename it to json.
     if (std::filesystem::exists("settings.yml"))

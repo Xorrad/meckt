@@ -48,6 +48,7 @@ public:
     inline static ResourceManager<sf::Shader, Shaders> shaders = ResourceManager<sf::Shader, Shaders>();
 
     static void Initialize();
+    static void Deinitialize();
     static void Load();
     static void Save();
 
