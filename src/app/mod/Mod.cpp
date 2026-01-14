@@ -1271,8 +1271,7 @@ void Mod::LoadProvincesHistory() {
             value->Remove("religion");
             value->Remove("holding");
 
-            m_ProvincesByIds[provinceId]->SetOriginalHistoryFilePath(filePath);
-            m_ProvincesByIds[provinceId]->SetExtraHistoryData(value);
+            SharedPtr<Jomini::Object> extraHistoryData = MakeShared<Jomini::Object>();
 
             // 2. Loop over dates in the province history.
             for(const auto& [strDate, pair2] : value->GetMap()) {
@@ -1282,7 +1281,12 @@ void Mod::LoadProvincesHistory() {
                     date = Date::ParseDate(strDate);
                 }
                 catch (std::exception& e) {
-                    LOG_ERROR("Invalid date syntax '{}' for province '{}' in {}", strDate, key, filePath);
+                    if (strDate.find(".") != std::string::npos) {
+                        LOG_ERROR("Invalid date syntax '{}' for province '{}' in {}", strDate, key, filePath);
+                    }
+                    else {
+						extraHistoryData->Put(strDate, history, op2);
+                    }
                     continue;
                 }
 
@@ -1304,6 +1308,9 @@ void Mod::LoadProvincesHistory() {
                 
                 m_ProvincesByIds[provinceId]->AddHistory(date, history);
             }
+
+            m_ProvincesByIds[provinceId]->SetOriginalHistoryFilePath(filePath);
+            m_ProvincesByIds[provinceId]->SetExtraHistoryData(extraHistoryData);
         }
     }
 }
