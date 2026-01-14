@@ -242,9 +242,9 @@ void EditorMenu::UpdateTextures() {
     // - Update titles and provinces textures in the shader.
     std::vector<UniquePtr<sf::Thread>> threads;
 
-    for(MapMode mode = MapMode::PROVINCES; mode < MapMode::COUNT; mode = (MapMode)((int) mode + 1)) {
+    for(int mode = 0; mode < static_cast<int>(MapMode::COUNT); mode++) {
         threads.push_back(MakeUnique<sf::Thread>([&, mode](){
-            this->UpdateTexture(mode);
+            this->UpdateTexture(static_cast<MapMode>(mode));
         }));
         threads[threads.size()-1]->launch();
     }
@@ -461,13 +461,13 @@ void EditorMenu::InitSelectionCallbacks() {
 }
 
 void EditorMenu::InitTabs() {
-    m_Tabs[Tabs::TITLES] = MakeShared<TitlesTab>(*this, true);
-    m_Tabs[Tabs::PROPERTIES] = MakeShared<PropertiesTab>(*this, true);
-    m_Tabs[Tabs::PROVINCES] = MakeShared<ProvincesTab>(*this, true);
-    m_Tabs[Tabs::REGIONS] = MakeShared<RegionsTab>(*this, true);
-    m_Tabs[Tabs::LOG] = MakeShared<LogTab>(*this, true);
-    m_Tabs[Tabs::CULTURAL_NAMES] = MakeShared<CulturalNamesTab>(*this, true);
-    m_Tabs[Tabs::CULTURAL_NAMES] = MakeShared<CulturalNamesTab>(*this, true);
+    m_Tabs[Tabs::TITLES] = MakeUnique<TitlesTab>(*this, true);
+    m_Tabs[Tabs::PROPERTIES] = MakeUnique<PropertiesTab>(*this, true);
+    m_Tabs[Tabs::PROVINCES] = MakeUnique<ProvincesTab>(*this, true);
+    m_Tabs[Tabs::REGIONS] = MakeUnique<RegionsTab>(*this, true);
+    m_Tabs[Tabs::LOG] = MakeUnique<LogTab>(*this, true);
+    m_Tabs[Tabs::CULTURAL_NAMES] = MakeUnique<CulturalNamesTab>(*this, true);
+    m_Tabs[Tabs::CULTURAL_NAMES] = MakeUnique<CulturalNamesTab>(*this, true);
 }
 
 void EditorMenu::SetupDockspace() {
