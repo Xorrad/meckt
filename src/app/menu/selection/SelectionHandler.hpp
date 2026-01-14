@@ -3,31 +3,31 @@
 class SelectionHandler {
 friend PropertiesTab;
 public:
-    SelectionHandler(EditorMenu* menu);
+    SelectionHandler(EditorMenu& menu);
 
-    void Select(const SharedPtr<Province>& province);
-    void Select(const SharedPtr<Title>& title);
-    void Select(const SharedPtr<Region>& region);
-    void Deselect(const SharedPtr<Province>& province);
-    void Deselect(const SharedPtr<Title>& title);
-    void Deselect(const SharedPtr<Region>& region);
+    void Select(Province* province);
+    void Select(Title* title);
+    void Select(Region* region);
+    void Deselect(Province* province);
+    void Deselect(Title* title);
+    void Deselect(Region* region);
     void ClearSelection();
 
-    bool IsSelected(const SharedPtr<Province>& province);
-    bool IsSelected(const SharedPtr<Title>& title);
-    bool IsSelected(const SharedPtr<Region>& region);
+    bool IsSelected(const Province* province) const;
+    bool IsSelected(const Title* title) const;
+    bool IsSelected(const Region* region) const;
 
-    std::vector<SharedPtr<Province>>& GetProvinces();
-    std::vector<SharedPtr<Title>>& GetTitles();
-    std::vector<SharedPtr<Region>>& GetRegions();
+    std::span<Province*> GetProvinces();
+    std::span<Title*> GetTitles();
+    std::span<Region*> GetRegions();
     std::vector<sf::Glsl::Vec4>& GetColors();
     std::size_t GetCount() const;
 
-    void AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>)> callback);
-    void AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>, SharedPtr<Title>)> callback);
+    void AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, Province*)> callback);
+    void AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, Province*, Title*)> callback);
 
-    void OnClick(sf::Mouse::Button button, SharedPtr<Province> province);
-    void OnClick(sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> title);
+    void OnClick(sf::Mouse::Button button, Province* province);
+    void OnClick(sf::Mouse::Button button, Province* province, Title* title);
     void Update();
     
 private:
@@ -35,14 +35,14 @@ private:
     void UpdateShader();
 
 private:
-    EditorMenu* m_Menu;
+    EditorMenu& m_Menu;
 
-    std::vector<SharedPtr<Province>> m_Provinces;
-    std::vector<SharedPtr<Title>> m_Titles;
-    std::vector<SharedPtr<Region>> m_Regions;
+    std::vector<Province*> m_Provinces;
+    std::vector<Title*> m_Titles;
+    std::vector<Region*> m_Regions;
 
-    std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>)>> m_ProvinceCallbacks;
-    std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>, SharedPtr<Title>)>> m_TitleCallbacks;
+    std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, Province*)>> m_ProvinceCallbacks;
+    std::vector<std::function<SelectionCallbackResult(sf::Mouse::Button, Province*, Title*)>> m_TitleCallbacks;
 
     // This vector is passed to the fragment shader to change
     // color of pixels in selected provinces.

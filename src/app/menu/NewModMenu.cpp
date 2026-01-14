@@ -12,8 +12,9 @@
 #include <nfd.h>
 #include <filesystem>
 
-NewModMenu::NewModMenu(App* app) :
+NewModMenu::NewModMenu(App& app) :
     Menu(app, "New Mod"),
+    m_Mod(nullptr),
     m_ModName("My Mod"),
     m_ModPath((std::filesystem::current_path() / "my_mod").string()),
     m_TemplateType(TemplateType::DEFAULT),
@@ -21,7 +22,8 @@ NewModMenu::NewModMenu(App* app) :
     m_HeightmapImagePath(""),
     m_WaterLevel(3.8f),
     m_IsCreating(false),
-    m_CreationState(CreationState::CLONING)
+    m_CreationState(CreationState::CLONING),
+    m_CreationThread(nullptr)
 {
 #ifdef DEBUG
 m_ModPath = (std::filesystem::current_path() / "tests/mods/my_mod").string();
@@ -43,7 +45,7 @@ void NewModMenu::Render() {
     float spacing = 2.5f;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10));
-    ImGui::SetNextWindowSize(ImVec2(m_App->GetWindow().getSize().x - 20, m_App->GetWindow().getSize().y - 20), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(m_App.GetWindow().getSize().x - 20, m_App.GetWindow().getSize().y - 20), ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(margin, 0.0f));
     ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
     ImGui::PopStyleVar();
@@ -200,7 +202,7 @@ void NewModMenu::Render() {
         ImGui::Dummy(ImVec2(0.0f, 2*spacing));
         if (!canCreate) ImGui::BeginDisabled();
         if (ImGui::TextButton("🔨 Create")) {
-            m_CreationThread = MakeShared<sf::Thread>([&]() {
+            m_CreationThread = MakeUnique<sf::Thread>([&]() {
                 this->CreateMod();
             });
             m_CreationThread->launch();
@@ -209,7 +211,7 @@ void NewModMenu::Render() {
 
         ImGui::Dummy(ImVec2(0.0f, 2*spacing));
         if (ImGui::TextButton("❌ Back")) {
-            m_App->OpenMenu(MakeShared<HomeMenu>(m_App));
+            m_App.OpenMenu(MakeUnique<HomeMenu>(m_App));
         }
 
         ImGui::PopFont();
@@ -233,8 +235,7 @@ void NewModMenu::Render() {
 
     // Open the created mod once the generation process is finished.
     if (m_CreationState == CreationState::FINISHED) {
-        SharedPtr<Mod> mod = MakeShared<Mod>(m_ModPath);
-        m_App->OpenMod(mod);
+        m_App.OpenMod(MakeUnique<Mod>(m_ModPath));
     }
 }
 
@@ -380,7 +381,7 @@ void NewModMenu::CreateMod() {
         }
     }
 
-    m_Mod = MakeShared<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage(), m_WaterLevel);
+    m_Mod = MakeUnique<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage(), m_WaterLevel);
     m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){}, false);
     
     // Generate the world provinces using the heightmap to determine the landmass.
@@ -426,26 +427,33 @@ void NewModMenu::CreateMod() {
     m_CreationState = CreationState::FINISHED;
 }
 
-void NewModMenu::SetupAtlantisTitles() {   
-    // Keep only those five titles to avoid breaking the template.
-    SharedPtr<Title> empire = m_Mod->GetTitles().at("e_atlantis");
-    SharedPtr<Title> kingdom = m_Mod->GetTitles().at("k_atlantis");
-    SharedPtr<DuchyTitle> duchy = CastSharedPtr<DuchyTitle>(m_Mod->GetTitles().at("d_atlantis"));
-    SharedPtr<CountyTitle> county = CastSharedPtr<CountyTitle>(m_Mod->GetTitles().at("c_atlantis"));
-    SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(m_Mod->GetTitles().at("b_atlantis"));
+void NewModMenu::SetupAtlantisTitles() {
+    std::function<UniquePtr<Title>(std::string)> ExtractTitleOwnership = [&](const std::string& titleName) {
+        auto it = m_Mod->GetTitles().find(titleName);
+        UniquePtr<Title> title = std::move(it->second);
+        m_Mod->GetTitles().erase(it);
+        return title;
+    };
 
-    duchy->ClearDejureTitles();
-    county->ClearDejureTitles();
-    duchy->AddDejureTitle(county);
-    county->AddDejureTitle(barony);
-    barony->SetProvinceId(1);
+    // Keep only those five titles to avoid breaking the template
+    UniquePtr<Title> empire = ExtractTitleOwnership("e_atlantis");
+    UniquePtr<Title> kingdom = ExtractTitleOwnership("k_atlantis");
+    UniquePtr<Title> duchy = ExtractTitleOwnership("d_atlantis");
+    UniquePtr<Title> county = ExtractTitleOwnership("c_atlantis");
+    UniquePtr<Title> barony = ExtractTitleOwnership("b_atlantis");
+
+    static_cast<DuchyTitle*>(duchy.get())->ClearDejureTitles();
+    static_cast<DuchyTitle*>(duchy.get())->AddDejureTitle(county.get());
+    static_cast<CountyTitle*>(county.get())->ClearDejureTitles();
+    static_cast<CountyTitle*>(county.get())->AddDejureTitle(barony.get());
+    static_cast<BaronyTitle*>(barony.get())->SetProvinceId(1);
 
     // Delete any other titles.
     m_Mod->ClearTitles();
-    m_Mod->AddTitle(empire);
-    m_Mod->AddTitle(kingdom);
-    m_Mod->AddTitle(duchy);
-    m_Mod->AddTitle(county);
+    m_Mod->AddTitle(std::move(empire));
+    m_Mod->AddTitle(std::move(kingdom));
+    m_Mod->AddTitle(std::move(duchy));
+    m_Mod->AddTitle(std::move(county));
 
     // Save changes.
     m_Mod->ExportTitles();

@@ -14,15 +14,15 @@ public:
     virtual TitleType GetType() const = 0;
     std::string GetName() const;
     sf::Color GetColor() const;
-    SharedPtr<HighTitle>& GetLiegeTitle();
+    HighTitle* GetLiegeTitle();
     bool IsLandless() const;
 
     bool Is(TitleType type) const;
-    bool IsVassal(SharedPtr<HighTitle> title) const;
+    bool IsVassal(HighTitle* title) const;
 
     void SetName(std::string name);
     void SetColor(sf::Color color);
-    void SetLiegeTitle(SharedPtr<HighTitle> title);
+    void SetLiegeTitle(HighTitle* title);
     void SetLandless(bool landless);
     
     std::string GetOriginalFilePath() const;
@@ -61,12 +61,12 @@ public:
     virtual bool HasSelectionFocus() const;
     virtual void SetSelectionFocus(bool focus);
 
-    virtual sf::Vector2i GetImagePosition(SharedPtr<Mod> mod) const = 0;
+    virtual sf::Vector2i GetImagePosition(Mod& mod) const = 0;
 
 protected:
     std::string m_Name;
     sf::Color m_Color;
-    SharedPtr<HighTitle> m_LiegeTitle;
+    HighTitle* m_LiegeTitle;
     bool m_Landless;
 
     std::string m_OriginalFilePath;
@@ -83,7 +83,7 @@ protected:
     bool m_SelectionFocus;
 };
 
-class HighTitle : public Title, public std::enable_shared_from_this<HighTitle> {
+class HighTitle : public Title {
 friend PropertiesTab;
 public:
     HighTitle();
@@ -91,21 +91,22 @@ public:
     virtual ~HighTitle() = default;
 
     virtual TitleType GetType() const = 0;
-    std::vector<SharedPtr<Title>>& GetDejureTitles();
-    SharedPtr<CountyTitle>& GetCapitalTitle();
-    bool IsDejureTitle(const SharedPtr<Title>& title);
+    std::vector<Title*> GetDejureTitles();
+    const std::vector<Title*>& GetDejureTitles() const;
+    CountyTitle* GetCapitalTitle();
+    bool IsDejureTitle(const Title* title) const;
 
-    void AddDejureTitle(SharedPtr<Title> title);
-    void RemoveDejureTitle(SharedPtr<Title> title);
-    void SetCapitalTitle(SharedPtr<CountyTitle> title);
+    void AddDejureTitle(Title* title);
+    void RemoveDejureTitle(Title* title);
+    void SetCapitalTitle(CountyTitle* title);
     void ClearDejureTitles();
 
     virtual void SetSelectionFocus(bool focus) override;
 
-    virtual sf::Vector2i GetImagePosition(SharedPtr<Mod> mod) const;
+    virtual sf::Vector2i GetImagePosition(Mod& mod) const;
 protected:
-    std::vector<SharedPtr<Title>> m_DejureTitles;
-    SharedPtr<CountyTitle> m_CapitalTitle;
+    std::vector<Title*> m_DejureTitles;
+    CountyTitle* m_CapitalTitle;
 };
 
 class BaronyTitle : public Title {
@@ -121,7 +122,7 @@ public:
 
     virtual bool HasSelectionFocus() const override;
 
-    virtual sf::Vector2i GetImagePosition(SharedPtr<Mod> mod) const;
+    virtual sf::Vector2i GetImagePosition(Mod& mod) const;
 
 private:
     int m_ProvinceId;
@@ -173,15 +174,15 @@ public:
 };
 
 template <typename ...Args>
-inline SharedPtr<Title> MakeTitle(TitleType type, Args&& ...args) {
+inline UniquePtr<Title> MakeTitle(TitleType type, Args&& ...args) {
     switch(type) {
-        case TitleType::BARONY: return MakeShared<BaronyTitle>(std::forward<Args>(args)...);
-        case TitleType::COUNTY: return MakeShared<CountyTitle>(std::forward<Args>(args)...);
-        case TitleType::DUCHY: return MakeShared<DuchyTitle>(std::forward<Args>(args)...);
-        case TitleType::KINGDOM: return MakeShared<KingdomTitle>(std::forward<Args>(args)...);
-        case TitleType::EMPIRE: return MakeShared<EmpireTitle>(std::forward<Args>(args)...);
-        case TitleType::HEGEMONY: return MakeShared<HegemonyTitle>(std::forward<Args>(args)...);
+        case TitleType::BARONY: return MakeUnique<BaronyTitle>(std::forward<Args>(args)...);
+        case TitleType::COUNTY: return MakeUnique<CountyTitle>(std::forward<Args>(args)...);
+        case TitleType::DUCHY: return MakeUnique<DuchyTitle>(std::forward<Args>(args)...);
+        case TitleType::KINGDOM: return MakeUnique<KingdomTitle>(std::forward<Args>(args)...);
+        case TitleType::EMPIRE: return MakeUnique<EmpireTitle>(std::forward<Args>(args)...);
+        case TitleType::HEGEMONY: return MakeUnique<HegemonyTitle>(std::forward<Args>(args)...);
         default: break;
     }
-    throw std::runtime_error("error: failed to create SharedPtr<Title> with unknown title type.");
+    throw std::runtime_error("error: failed to create MakeUnique<Title> with unknown title type.");
 }

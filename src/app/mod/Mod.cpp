@@ -26,6 +26,8 @@ Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesIm
 
 }
 
+Mod::~Mod() = default;
+
 std::string Mod::GetDir() const {
     return m_Dir;
 }
@@ -105,15 +107,15 @@ sf::Image Mod::GetCultureImage() {
             sf::Uint8 alpha = cultureName.empty() ? 255 : 0;
 
             if(cultureName.empty()) {
-                const SharedPtr<CountyTitle>& liege = CastSharedPtr<CountyTitle>(this->GetProvinceLiegeTitle(province, TitleType::COUNTY));
+                CountyTitle* liege = static_cast<CountyTitle*>(this->GetProvinceLiegeTitle(province.get(), TitleType::COUNTY));
 
                 if(liege == nullptr) {
                     goto End;
                 }
 
                 for(const auto& dejureTitle : liege->GetDejureTitles()) {
-                    const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(dejureTitle);
-                    const SharedPtr<Province>& baronyProvince = m_ProvincesByIds[barony->GetProvinceId()];
+                    BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
+                    Province* baronyProvince = m_ProvincesByIds.at(barony->GetProvinceId());
 
                     if(baronyProvince != nullptr && !baronyProvince->GetCulture().empty()) {
                         cultureName = baronyProvince->GetCulture();
@@ -127,12 +129,14 @@ sf::Image Mod::GetCultureImage() {
                 goto End;
             }
 
-            if(cultureName.empty() || m_Cultures.count(cultureName) == 0) {
-                color = sf::Color(cultureName[0], cultureName[1], cultureName[2]);
-            } 
-            else {
-                SharedPtr<Culture> culture = m_Cultures[cultureName];
-                color = culture->GetColor();
+            {
+                auto it = m_Cultures.find(cultureName);
+                if (it == m_Cultures.end()) {
+                    color = sf::Color(cultureName[0], cultureName[1], cultureName[2]);
+                }
+                else {
+                    color = it->second->GetColor();
+                }
             }
 
             End:
@@ -158,15 +162,15 @@ sf::Image Mod::GetReligionImage() {
             sf::Uint8 alpha = religionName.empty() ? 255 : 0;
 
             if(religionName.empty()) {
-                const SharedPtr<CountyTitle>& liege = CastSharedPtr<CountyTitle>(this->GetProvinceLiegeTitle(province, TitleType::COUNTY));
+                CountyTitle* liege = static_cast<CountyTitle*>(this->GetProvinceLiegeTitle(province.get(), TitleType::COUNTY));
 
                 if(liege == nullptr) {
                     goto End;
                 }
 
                 for(const auto& dejureTitle : liege->GetDejureTitles()) {
-                    const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(dejureTitle);
-                    const SharedPtr<Province>& baronyProvince = m_ProvincesByIds[barony->GetProvinceId()];
+                    BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
+                    Province* baronyProvince = m_ProvincesByIds.at(barony->GetProvinceId());
 
                     if(baronyProvince != nullptr && !baronyProvince->GetReligion().empty()) {
                         religionName = baronyProvince->GetReligion();
@@ -179,13 +183,15 @@ sf::Image Mod::GetReligionImage() {
                 color = sf::Color::Black;
                 goto End;
             }
-
-            if(m_Religions.count(religionName) == 0 || m_Religions.count(religionName) == 0) {
-                color = sf::Color(religionName[0], religionName[1], religionName[2]);
-            } 
-            else {
-                SharedPtr<Religion> religion = m_Religions[religionName];
-                color = religion->GetColor();
+            
+            {
+			    auto it = m_Religions.find(religionName);
+                if(it == m_Religions.end()) {
+                    color = sf::Color(religionName[0], religionName[1], religionName[2]);
+                } 
+                else {
+                    color = it->second->GetColor();
+                }
             }
 
             End:
@@ -199,7 +205,7 @@ sf::Image Mod::GetReligionImage() {
 sf::Image Mod::GetTitleImage(TitleType type) {
     sf::Image image = Image::MapPixels(m_ProvinceImage, [&](auto& mappedColors){
         for(const auto& [provinceColorId, province] : m_Provinces) {
-            const SharedPtr<Title>& liege = this->GetProvinceFocusedTitle(province, type);
+            Title* liege = this->GetProvinceFocusedTitle(province.get(), type);
 
             if(liege == nullptr) {
                 mappedColors[province->GetColor().toInteger()] = 0x505050ff;
@@ -216,19 +222,20 @@ bool Mod::HasMap() const {
     return std::filesystem::exists(m_Dir + "/map_data/provinces.png");
 }
 
-std::map<uint32_t, SharedPtr<Province>>& Mod::GetProvinces() {
+std::map<uint32_t, UniquePtr<Province>>& Mod::GetProvinces() {
     return m_Provinces;
 }
 
-std::map<int, SharedPtr<Province>>& Mod::GetProvincesByIds() {
+std::map<int, Province*>& Mod::GetProvincesByIds() {
     return m_ProvincesByIds;
 }
 
-SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type) {
-    if(m_BaroniesByProvinceIds.count(province->GetId()) == 0)
+Title* Mod::GetProvinceLiegeTitle(Province* province, TitleType type) {
+	auto it = m_BaroniesByProvinceIds.find(province->GetId());
+    if(it == m_BaroniesByProvinceIds.end())
         return nullptr;
 
-    const SharedPtr<Title>& barony = m_BaroniesByProvinceIds[province->GetId()];
+    BaronyTitle* barony = it->second;
 
     #define RETURN_IF_NULL(v) if(v == nullptr) return nullptr;
 
@@ -258,12 +265,11 @@ SharedPtr<Title> Mod::GetProvinceLiegeTitle(const SharedPtr<Province>& province,
     }
 }
 
-SharedPtr<Title> Mod::GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type) {
+Title* Mod::GetProvinceFocusedTitle(Province* province, TitleType type) {
     auto it = m_BaroniesByProvinceIds.find(province->GetId());
-    if(it == m_BaroniesByProvinceIds.end())
+    if (it == m_BaroniesByProvinceIds.end())
         return nullptr;
-
-    SharedPtr<Title> title = it->second;
+    Title* title = static_cast<Title*>(it->second);
 
     while(title->GetLiegeTitle() != nullptr && (int) title->GetType() < (int) type && title->GetLiegeTitle()->HasSelectionFocus()) {
         title = title->GetLiegeTitle();
@@ -280,19 +286,19 @@ int Mod::GetMaxProvinceId() const {
     return m_ProvincesByIds.empty() ? -1 : m_ProvincesByIds.rbegin()->first;
 }
 
-std::map<std::string, SharedPtr<Region>>& Mod::GetRegions() {
+std::map<std::string, UniquePtr<Region>>& Mod::GetRegions() {
     return m_Regions;
 }
 
-std::map<std::string, SharedPtr<Title>>& Mod::GetTitles() {
+std::map<std::string, UniquePtr<Title>>& Mod::GetTitles() {
     return m_Titles;
 }
 
-std::map<TitleType, std::vector<SharedPtr<Title>>>& Mod::GetTitlesByType() {
+std::map<TitleType, std::vector<Title*>>& Mod::GetTitlesByType() {
     return m_TitlesByType;
 }
 
-std::map<int, SharedPtr<BaronyTitle>>& Mod::GetBaroniesByProvinceIds() {
+std::map<int, BaronyTitle*>& Mod::GetBaroniesByProvinceIds() {
     return m_BaroniesByProvinceIds;
 }
 
@@ -334,44 +340,69 @@ void Mod::SetLocCulturalName(const std::string& lang, const std::string& key, st
     m_LocCulturalNames[lang][key] = name;
 }
 
-void Mod::AddTitle(SharedPtr<Title> title) {
-    // Add title to global titles map.
-    m_Titles[title->GetName()] = title;
+void Mod::AddCulture(UniquePtr<Culture> culture) {
+    m_Cultures[culture->GetName()] = std::move(culture);
+}
+
+void Mod::AddReligion(UniquePtr<Religion> religion) {
+    m_Religions[religion->GetName()] = std::move(religion);
+}
+
+void Mod::AddProvince(UniquePtr<Province> province) {
+    m_ProvincesByIds[province->GetId()] = province.get();
+    m_Provinces[province->GetColorId()] = std::move(province);
+}
+
+void Mod::AddTitle(UniquePtr<Title> title) {
+	std::string_view titleName = title->GetName();
 
     // Remove any titles with the same name from the lists before adding it.
     m_TitlesByType[title->GetType()].erase(
-        std::remove_if(m_TitlesByType[title->GetType()].begin(), m_TitlesByType[title->GetType()].end(), [title](SharedPtr<Title> t) {
-            return t->GetName() == title->GetName();
-    }), m_TitlesByType[title->GetType()].end());
-    m_TitlesByType[title->GetType()].push_back(title);
+        std::remove_if(m_TitlesByType[title->GetType()].begin(), m_TitlesByType[title->GetType()].end(), [titleName](Title* t) {
+            return t->GetName() == titleName;
+        }),
+        m_TitlesByType[title->GetType()].end()
+    );
+    m_TitlesByType[title->GetType()].push_back(title.get());
 
     // Add barony title to province-barony map.
     if(title->Is(TitleType::BARONY)) {
-        const SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+        BaronyTitle* baronyTitle = dynamic_cast<BaronyTitle*>(title.get());
         m_BaroniesByProvinceIds[baronyTitle->GetProvinceId()] = baronyTitle;
     }
+
+    // Add title to global titles map
+    m_Titles[title->GetName()] = std::move(title);
 }
 
-void Mod::RemoveTitle(SharedPtr<Title> title) {
-    // Remove title from global titles map.
-    m_Titles.erase(title->GetName());
+void Mod::RemoveTitle(Title* title) {
+    if (title == nullptr)
+        return;
 
     // Remove any titles with the same name from the lists.
     m_TitlesByType[title->GetType()].erase(
-        std::remove_if(m_TitlesByType[title->GetType()].begin(), m_TitlesByType[title->GetType()].end(), [title](SharedPtr<Title> t) {
+        std::remove_if(m_TitlesByType[title->GetType()].begin(), m_TitlesByType[title->GetType()].end(), [title](Title* t) {
             return t->GetName() == title->GetName();
-    }), m_TitlesByType[title->GetType()].end());
+        }),
+        m_TitlesByType[title->GetType()].end()
+    );
 
     // Add barony title to province-barony map.
     if(title->Is(TitleType::BARONY)) {
-        const SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+        BaronyTitle* baronyTitle = dynamic_cast<BaronyTitle*>(title);
         m_BaroniesByProvinceIds.erase(baronyTitle->GetProvinceId());
     }
     // TODO: search for files where the title was used in every files and log a warning.
+
+    // Remove title from global titles map.
+    m_Titles.erase(title->GetName());
 }
 
-void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
-    for(auto [n, t] : m_Titles) {
+void Mod::RenameTitle(Title* title, std::string formerName) {
+    if (title == nullptr)
+		return;
+
+    for(auto& [n, t] : m_Titles) {
         for(auto [date, history] : t->GetHistory()) {
             if(history->Contains("liege") && history->Get("liege")->As<std::string>("") == formerName) {
                 history->Put("liege", title->GetName());
@@ -384,24 +415,26 @@ void Mod::RenameTitle(SharedPtr<Title> title, std::string formerName) {
     // TODO: replace using regex every occurence of 'title:{former_name}' in every files.
 }
 
-void Mod::AddRegion(SharedPtr<Region> region) {
+void Mod::AddRegion(UniquePtr<Region> region) {
     // Add title to global regions hash map.
-    m_Regions[region->GetName()] = region;
+    m_Regions[region->GetName()] = std::move(region);
 }
 
-void Mod::RenameRegion(SharedPtr<Region> region, std::string formerName) {
+void Mod::RenameRegion(Region* region, std::string formerName) {
+    if (region == nullptr)
+        return;
+	UniquePtr<Region> temp = std::move(m_Regions[formerName]);
+    m_Regions[region->GetName()] = std::move(temp);
     m_Regions.erase(formerName);
-    if (region != nullptr)
-        m_Regions[region->GetName()] = region;
 }
 
-void Mod::RemoveRegion(SharedPtr<Region> region) {
+void Mod::RemoveRegion(Region* region) {
     if (region == nullptr)
         return;
     m_Regions.erase(region->GetName());
 }
 
-void Mod::HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color rgb, float hue, float saturation) {
+void Mod::HarmonizeTitlesColors(std::span<Title*> titles, sf::Color rgb, float hue, float saturation) {
     // Generate a list of colors with uniformly spaced saturations around
     // the saturation of the original color while picking a random hue.
     sf::HSVColor defaultColor = rgb;
@@ -471,9 +504,9 @@ void Mod::GenerateMissingProvinces() {
                 while(m_ProvincesByIds.count(nextId) != 0)
                     nextId++;
 
-                SharedPtr<Province> province = MakeShared<Province>(nextId, sf::Color(provinceColor), fmt::format("province_{}", nextId));
-                m_Provinces[province->GetColorId()] = province;
-                m_ProvincesByIds[province->GetId()] = province;
+                this->AddProvince(
+                    MakeUnique<Province>(nextId, sf::Color(provinceColor), fmt::format("province_{}", nextId))
+                );
                 count++;
                 nextId++;
             }
@@ -502,12 +535,12 @@ void Mod::GenerateMissingBaronies() {
         }
 
         // Create a new barony title for that land province.
-        SharedPtr<Title> title = MakeTitle(TitleType::BARONY, baronyName, province->GetColor(), false);
-        SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+        UniquePtr<Title> title = MakeTitle(TitleType::BARONY, baronyName, province->GetColor(), false);
+        BaronyTitle* baronyTitle = dynamic_cast<BaronyTitle*>(title.get());
         baronyTitle->SetProvinceId(province->GetId());
 
         // Add the barony title.
-        this->AddTitle(title);
+        this->AddTitle(std::move(title));
         count++;
     }
     LOG_INFO("Generated {} new barony titles for passable land provinces without any barony.", count);
@@ -548,7 +581,7 @@ void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool a
     uint countNames = 0;
     uint countAdjectives = 0;
 
-    for (auto [key, title] : m_Titles) {
+    for (auto& [key, title] : m_Titles) {
         if (names && !title->HasLocName(lang)) {
             title->SetLocName(lang, FormatLocName(key));
             countNames++;
@@ -563,7 +596,7 @@ void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool a
     LOG_INFO("Generated adjective localization for {} titles.", countAdjectives);
 }
 
-float Mod::CalculateWinterSeverityBias(SharedPtr<Province> province, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const {
+float Mod::CalculateWinterSeverityBias(Province* province, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const {
     sf::Vector2i pos = province->GetImagePosition();
 
     // If no overrides and the climate is already initialized, then we use that value for the preview.
@@ -599,7 +632,7 @@ float Mod::CalculateWinterSeverityBias(SharedPtr<Province> province, bool overri
 void Mod::GenerateProvincesClimate(bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold) {
     uint countProvinces = 0;
     for(const auto& [provinceColorId, province] : m_Provinces) {
-        float winterSeverityBias = this->CalculateWinterSeverityBias(province, override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
+        float winterSeverityBias = this->CalculateWinterSeverityBias(province.get(), override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
         bool hasChanged = false;
 
         if (province->GetClimateType() == ClimateType::NONE || override) {
@@ -1012,18 +1045,17 @@ void Mod::LoadProvincesDefinition() {
             int g = std::stoi(line[2]);
             int b = std::stoi(line[3]);
             std::string name = line[4];
-
-            SharedPtr<Province> province = MakeShared<Province>(id, sf::Color(r, g, b), name);
+            sf::Uint32 colorId = static_cast<sf::Uint32>((r << 24) | (g << 16) | (b << 8));
 
             if(m_ProvincesByIds.count(id) > 0)
                 LOG_ERROR("Several provinces with same id: {}", id);
-            if(m_Provinces.count(province->GetColorId()) > 0)
-                LOG_ERROR("Several provinces with same color: {},{}", id, m_Provinces.at(province->GetColorId())->GetId());
+            if(m_Provinces.count(colorId) > 0)
+                LOG_ERROR("Several provinces with same color: {},{}", id, m_Provinces.at(colorId)->GetId());
             if(id != lastId+1)
                 LOG_ERROR("Ids in definitions.csv are not sequential: {} to {}", lastId, id);
 
-            m_Provinces[province->GetColorId()] = province;
-            m_ProvincesByIds[province->GetId()] = province;
+            UniquePtr<Province> province = MakeUnique<Province>(id, sf::Color(r, g, b), name);
+            this->AddProvince(std::move(province));
             lastId = id;
         }
         catch (std::exception& e) {
@@ -1376,7 +1408,11 @@ void Mod::LoadGeographicalRegions() {
             std::vector<std::string> regions = regionData->Get("regions")->AsArray<std::string>({});
             bool generateModifiers = regionData->Get("generate_modifiers")->As<bool>(false);
             
-            SharedPtr<Region> region = (m_Regions.contains(regionName) ? m_Regions[regionName] : MakeShared<Region>(regionName));
+            if (!m_Regions.contains(regionName)) {
+                this->AddRegion(MakeUnique<Region>(regionName));
+            }
+
+            Region* region = m_Regions[regionName].get();
             region->SetGenerateModifiers(generateModifiers);
 
             // Add kingdom, duchy and county titles.
@@ -1386,7 +1422,7 @@ void Mod::LoadGeographicalRegions() {
                         LOG_ERROR("Unknown title '{}' in geographical region '{}'", title, regionName);
                         continue;
                     }
-                    region->AddTitle(m_Titles[title]);
+                    region->AddTitle(m_Titles[title].get());
                 }
             };
             AddTitles(kingdoms);
@@ -1411,12 +1447,10 @@ void Mod::LoadGeographicalRegions() {
             for (std::string r : regions) {
                 if (!m_Regions.contains(r)) {
                     LOG_WARNING("Unknown region '{}' in geographical region '{}'. Should be fixed automatically.", r, regionName);
-                    m_Regions[r] = MakeShared<Region>(r);
+                    this->AddRegion(MakeUnique<Region>(r));
                 }
-                region->AddRegion(m_Regions[r]);
+                region->AddRegion(m_Regions[r].get());
             }
-
-            m_Regions[regionName] = region;
         }
     }
 
@@ -1438,8 +1472,7 @@ void Mod::LoadCultures() {
                 ASSERT_IS_OBJECT("culture", value, key, filePath);
 
                 sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::White);
-                SharedPtr<Culture> culture = MakeShared<Culture>(key, color);
-                m_Cultures[culture->GetName()] = culture;
+                this->AddCulture(MakeUnique<Culture>(key, color));
             }
         }
         catch(const std::runtime_error& e) {
@@ -1476,7 +1509,7 @@ void Mod::LoadReligions() {
 
                     sf::Color color = faithValue->Get("color")->As<sf::Color>(sf::Color::White);
                     SharedPtr<Religion> religion = MakeShared<Religion>(faithKey, color);
-                    m_Religions[religion->GetName()] = religion;
+                    this->AddReligion(MakeUnique<Religion>(faithKey, color));
                 }
             }
         }
@@ -1597,14 +1630,16 @@ void Mod::LoadTitles() {
     std::set<std::string> filesPath = File::ListFiles(m_Dir + "/common/landed_titles/");
 
     for(int i = 0; i < (int) TitleType::COUNT; i++)
-        m_TitlesByType[(TitleType) i] = std::vector<SharedPtr<Title>>();
+        m_TitlesByType[(TitleType) i] = std::vector<Title*>();
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
             continue;
         // fmt::println("loading titles from {}", filePath);
         SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
-        std::vector<SharedPtr<Title>> titles = ParseTitles(filePath, data);
+
+        [[maybe_unused]]
+        std::vector<Title*> titles = ParseTitles(filePath, data);
     }
 
     LOG_INFO("Loaded {} titles from {} files", m_Titles.size(), filesPath.size());
@@ -1613,8 +1648,8 @@ void Mod::LoadTitles() {
         LOG_INFO("Loaded {} {} titles", m_TitlesByType[(TitleType) i].size(), TitleTypeLabels[i]);
 }
 
-std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data) {
-    std::vector<SharedPtr<Title>> titles;
+std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data) {
+    std::vector<Title*> titles;
 
     for(auto& [key, pair] : data->GetMap()) {
         auto& [op, value] = pair;
@@ -1638,15 +1673,15 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
             sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::Black);
             bool landless = value->Get("landless")->As<bool>(false);
 
-            // Need to use a custom function to create a SharedPtr<Title>
+            // Need to use a custom function to create a UniquePtr<Title>
             // to get the right derived class such as BaronyTitle, CountyTitle...
-            SharedPtr<Title> title = MakeTitle(type, key, color, landless);
+            UniquePtr<Title> title = MakeTitle(type, key, color, landless);
 
             if(!value->Contains("color"))
                 LOG_WARNING("Title missing color in definition: {}", key);
 
             if(type == TitleType::BARONY) {
-                SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+                BaronyTitle* baronyTitle = static_cast<BaronyTitle*>(title.get());
                 baronyTitle->SetProvinceId(value->Get("province")->As<int>(0));
                 
                 if(!value->Contains("province"))
@@ -1662,8 +1697,8 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
                 value->Remove("province");
             }
             else {
-                SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
-                std::vector<SharedPtr<Title>> dejureTitles = ParseTitles(filePath, value);
+                HighTitle* highTitle = static_cast<HighTitle*>(title.get());
+                std::vector<Title*> dejureTitles = ParseTitles(filePath, value);
 
                 if(landless && !dejureTitles.empty())
                     LOG_WARNING("Landless title has dejure vassals in definition: {}", key);
@@ -1681,13 +1716,22 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
                 if(type != TitleType::COUNTY) {
                     if(value->Contains("capital")) {
                         std::string capitalName = value->Get("capital")->As<std::string>();
-                        if(m_Titles.count(capitalName) > 0 && IsInstance<CountyTitle>(m_Titles[capitalName])) {
-                            highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(m_Titles[capitalName]));
+
+						auto it = m_Titles.find(capitalName);
+                        if (it == m_Titles.end()) {
+                            LOG_ERROR("Undefined capital title '{}' for '{}'", capitalName, key);
                         }
+						else if (CountyTitle* capital = dynamic_cast<CountyTitle*>(it->second.get())) {
+                            highTitle->SetCapitalTitle(capital);
+                        }
+                        else {
+                            LOG_ERROR("Capital title '{}' is not a county for '{}'", capitalName, key);
+						}
+
                         value->Remove("capital");
                     }
                     else {
-                        LOG_ERROR("Title missing county capital in definition: {}", key);
+                        LOG_ERROR("Title missing county capital in definition: '{}'", key);
                     }
                 }
 
@@ -1718,9 +1762,9 @@ std::vector<SharedPtr<Title>> Mod::ParseTitles(const std::string& filePath, Shar
             title->SetOriginalFilePath(filePath);
             title->SetOriginalData(value);
 
-            m_Titles[key] = title;
-            m_TitlesByType[type].push_back(title);
-            titles.push_back(title);
+            m_TitlesByType[type].push_back(title.get());
+            titles.push_back(title.get());
+            m_Titles[key] = std::move(title);
         }
         catch(const std::runtime_error& e) {
             // fmt::println("error: {}", e.what());
@@ -1977,10 +2021,8 @@ void Mod::ExportProvincesHistory() {
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
 
-    LOG_INFO("test0");
-
     for(const auto& kingdomTitle : m_TitlesByType[TitleType::KINGDOM]) {
-        SharedPtr<HighTitle> kingdomHighTitle = CastSharedPtr<HighTitle>(kingdomTitle);
+        HighTitle* kingdomHighTitle = dynamic_cast<HighTitle*>(kingdomTitle);
 
         // Provinces history are grouped by kingdoms.
         std::string filePath = fmt::format("{}/00_{}_prov.txt", dir, kingdomTitle->GetName());
@@ -1995,22 +2037,22 @@ void Mod::ExportProvincesHistory() {
             }
         }
 
-        for(const auto& duchyTitle : kingdomHighTitle->GetDejureTitles()) {
-            SharedPtr<HighTitle> duchyHighTitle = CastSharedPtr<HighTitle>(duchyTitle);
+        for(Title* duchyTitle : kingdomHighTitle->GetDejureTitles()) {
+            HighTitle* duchyHighTitle = dynamic_cast<HighTitle*>(duchyTitle);
 
             fmt::println(file, "##### {} ############################\n", duchyTitle->GetName());
 
-            for(const auto& countyTitle : duchyHighTitle->GetDejureTitles()) {
-                SharedPtr<HighTitle> countyHighTitle = CastSharedPtr<HighTitle>(countyTitle);
+            for(Title* countyTitle : duchyHighTitle->GetDejureTitles()) {
+                HighTitle* countyHighTitle = dynamic_cast<HighTitle*>(countyTitle);
                 fmt::println(file, "### {}", countyTitle->GetName());
 
-                for(const auto& baronyTitle : countyHighTitle->GetDejureTitles()) {
+                for(Title* baronyTitle : countyHighTitle->GetDejureTitles()) {
 
-                    SharedPtr<BaronyTitle> baronyBaronyTitle = CastSharedPtr<BaronyTitle>(baronyTitle);
+                    BaronyTitle* baronyBaronyTitle = dynamic_cast<BaronyTitle*>(baronyTitle);
                     auto it = m_ProvincesByIds.find(baronyBaronyTitle->GetProvinceId());
                     if (it == m_ProvincesByIds.end())
                         continue;
-                    SharedPtr<Province> province = it->second;
+                    Province* province = it->second;
         
                     if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
                         continue;
@@ -2019,7 +2061,7 @@ void Mod::ExportProvincesHistory() {
                     if(!province->GetCulture().empty()) data->Put("culture", province->GetCulture());
                     if(!province->GetReligion().empty()) data->Put("religion", province->GetReligion());
                     data->Put("holding", province->GetHolding().empty() ? "none" : province->GetHolding());
-                    for(auto const& [date, data] : province->GetHistory()) data->Put((std::string) date, data);
+                    for(const auto& [date, data] : province->GetHistory()) data->Put((std::string) date, data);
 
                     SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
                     object->Put(std::to_string(province->GetId()), data);
@@ -2037,7 +2079,7 @@ void Mod::ExportProvincesHistory() {
     for(const auto& [id, province] : m_ProvincesByIds) {
         if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
             continue;
-        SharedPtr<Title> kingdomTitle = this->GetProvinceLiegeTitle(province, TitleType::KINGDOM);
+        Title* kingdomTitle = this->GetProvinceLiegeTitle(province, TitleType::KINGDOM);
         if(kingdomTitle == nullptr) {
             LOG_ERROR("Province cannot be saved because missing dejure kingdom tier liege: {}", id);
             continue;
@@ -2073,7 +2115,7 @@ void Mod::ExportTitles() {
         std::ofstream& file = files[filePath];
 
         fmt::println(file, "{} = {{", title->GetName());
-        this->ExportTitle(title, file, 1);
+        this->ExportTitle(title.get(), file, 1);
         fmt::println(file, "}}\n");
     }
 
@@ -2094,7 +2136,7 @@ void Mod::ExportTitlesHistory() {
     // 4. Use kingdom tier liege for other titles (i.e k_the_wall).
     // 5. Use "landless_titles.txt" for landless titles.
     // 6. Use "special_titles.txt" for everything else.
-    const std::function<std::string(SharedPtr<Title>)> GetTitleFileName = [&](SharedPtr<Title> liege) {
+    const std::function<std::string(Title*)> GetTitleFileName = [&](Title* liege) {
         if(liege->Is(TitleType::HEGEMONY))
             return std::string("hegemony_titles");
         if(liege->Is(TitleType::EMPIRE))
@@ -2113,7 +2155,7 @@ void Mod::ExportTitlesHistory() {
             continue;
         std::string filePath = title->GetOriginalHistoryFilePath();
         if(filePath.empty())
-            filePath = dir + "/" + GetTitleFileName(title) + ".txt";
+            filePath = dir + "/" + GetTitleFileName(title.get()) + ".txt";
         if(files.count(filePath) == 0) {
             files[filePath] = std::ofstream(filePath, std::ios::out);
             File::EncodeToUTF8BOM(files[filePath]);
@@ -2146,7 +2188,7 @@ void Mod::ExportTitlesHistory() {
         file.close();
 }
 
-void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int depth) {
+void Mod::ExportTitle(Title* title, std::ofstream& file, int depth) {
     std::string indent = std::string(depth, '\t');
     SharedPtr<Jomini::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Jomini::Object>(Jomini::ObjectMap{}) : title->GetOriginalData();
 
@@ -2165,7 +2207,7 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
     EXPORT_PROPERTIES("color", fmt::format("{{ {} {} {} }}", title->GetColor().r, title->GetColor().g, title->GetColor().b));
         
     if(title->Is(TitleType::BARONY)) {
-        SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+        BaronyTitle* baronyTitle = static_cast<BaronyTitle*>(title);
         EXPORT_PROPERTIES("province", baronyTitle->GetProvinceId());
         // TODO: warning if there is no province with this id.
 
@@ -2175,14 +2217,14 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
             fmt::println(file, "{}", data->Serialize(depth, true));
     }
     else {
-        SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
+        HighTitle* highTitle = static_cast<HighTitle*>(title);
 
         // Raise an error if the main barony of a county does
         // not have any holding type.
         if(title->Is(TitleType::COUNTY) && !highTitle->GetDejureTitles().empty()) {
-            SharedPtr<BaronyTitle> vassalTitle = CastSharedPtr<BaronyTitle>(highTitle->GetDejureTitles().front());
+            BaronyTitle* vassalTitle = dynamic_cast<BaronyTitle*>(highTitle->GetDejureTitles().front());
             if(m_ProvincesByIds.count(vassalTitle->GetProvinceId()) > 0) {
-                SharedPtr<Province> province = m_ProvincesByIds[vassalTitle->GetProvinceId()];
+                Province* province = m_ProvincesByIds[vassalTitle->GetProvinceId()];
                 if(province->GetHolding() == "none") {
                     LOG_ERROR("Capital barony {} of county {} does not have any holding", vassalTitle->GetName(), title->GetName());
                 }
@@ -2200,7 +2242,7 @@ void Mod::ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int de
         if(!data->GetMap().empty())
             fmt::println(file, "\n{}", data->Serialize(depth, true));
 
-        for(const auto& dejureTitle : highTitle->GetDejureTitles()) {
+        for(Title* dejureTitle : highTitle->GetDejureTitles()) {
             fmt::println(file, "\n{}{} = {{", indent, dejureTitle->GetName());
             this->ExportTitle(dejureTitle, file, depth+1);
             fmt::println(file, "{}}}", indent);
@@ -2218,33 +2260,33 @@ void Mod::ExportGeographicalRegions() {
 
     // Determine geographical regions order based on their dependencies.
     // We use a topological sort to solve that problem.
-    std::vector<SharedPtr<Region>> regions;
-    for (auto [_, region] : m_Regions)
-        regions.push_back(region);
+    std::vector<Region*> regions;
+    for (const auto& [_, region] : m_Regions)
+        regions.push_back(region.get());
 
-    std::unordered_map<SharedPtr<Region>, int> indegree;
-    std::unordered_map<SharedPtr<Region>, std::vector<SharedPtr<Region>>> graph;
+    std::unordered_map<Region*, int> indegree;
+    std::unordered_map<Region*, std::vector<Region*>> graph;
 
     // Build a graph of the regions.
-    for (auto& [_, a] : m_Regions) {
-        indegree[a] = 0;
-        for (auto& [_, b] : m_Regions) {
+    for (const auto& [_, a] : m_Regions) {
+        indegree[a.get()] = 0;
+        for (const auto& [_, b] : m_Regions) {
             // If region A contains region B, then A is dependant on B, and B must come first.
-            if (a != b && a->HasRegion(b)) {
-                graph[b].push_back(a);
-                indegree[a]++;
+            if (a != b && a->HasRegion(b.get())) {
+                graph[b.get()].push_back(a.get());
+                indegree[a.get()]++;
             }
         }
     }
 
     // Queue of regions with no dependencies.
-    std::queue<SharedPtr<Region>> queue;
-    for (auto& [node, deg] : indegree) {
+    std::queue<Region*> queue;
+    for (const auto& [node, deg] : indegree) {
         if (deg == 0) queue.push(node);
     }
 
-    std::vector<SharedPtr<Region>> sortedRegions;
-    std::unordered_set<SharedPtr<Region>> visited;
+    std::vector<Region*> sortedRegions;
+    std::unordered_set<Region*> visited;
     while (!queue.empty()) {
         auto region = queue.front();
         queue.pop();
@@ -2258,10 +2300,10 @@ void Mod::ExportGeographicalRegions() {
     }
 
     // Check if there are cycles and add any remaining regions to the end of the list.
-    for (auto [_, region] : m_Regions) {
-        if (!visited.count(region)) {
+    for (const auto& [_, region] : m_Regions) {
+        if (!visited.count(region.get())) {
             LOG_ERROR("Couldn't resolve order for geographical region '{}' because of a cycle", region->GetName());
-            sortedRegions.push_back(region);
+            sortedRegions.push_back(region.get());
         }
     }
 

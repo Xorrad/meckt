@@ -2,10 +2,10 @@
 
 class Menu {
 public:
-    Menu(App* app, const std::string& name);
+    Menu(App& app, const std::string& name);
     virtual ~Menu() = default;
 
-    App* GetApp() const;
+    App& GetApp() const;
     std::string GetName() const;
 
     virtual void Update(sf::Time delta);
@@ -13,6 +13,6 @@ public:
     virtual void Render();
 
 protected:
-    App* m_App;
+    App& m_App;
     std::string m_Name;
 };

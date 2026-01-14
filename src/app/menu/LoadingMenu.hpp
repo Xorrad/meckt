@@ -5,7 +5,7 @@
 
 class LoadingMenu : public Menu {
 public:
-    LoadingMenu(App* app, std::function<void()> completeCallback, std::function<void(const std::string&)> errorCallback);
+    LoadingMenu(App& app, std::function<void()> completeCallback, std::function<void(const std::string&)> errorCallback);
     ~LoadingMenu() = default;
 
     virtual void Update(sf::Time delta);

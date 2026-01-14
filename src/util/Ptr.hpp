@@ -1,6 +1,9 @@
 #pragma once
 
 template <typename T>
+using Ref = std::reference_wrapper<T>;
+
+template <typename T>
 using SharedPtr = std::shared_ptr<T>;
 
 template <typename T>
@@ -23,5 +26,15 @@ inline bool IsInstance(const SharedPtr<Base>& ptr) {
 
 template <typename Derived, typename Base>
 inline SharedPtr<Derived> CastSharedPtr(const SharedPtr<Base>& ptr) {
+    return std::dynamic_pointer_cast<Derived>(ptr);
+}
+
+template <typename Derived, typename Base>
+inline Ref<Derived> CastRef(const Base& ptr) {
 	return std::dynamic_pointer_cast<Derived>(ptr);
+}
+
+template <typename Derived, typename Base>
+Derived& CastRef(Base& ref) {
+    return dynamic_cast<Derived&>(ref);
 }

@@ -10,6 +10,7 @@ class Mod {
 public:
     Mod(const std::string& dir);
     Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel);
+    ~Mod();
 
     std::string GetDir() const;
     sf::Image& GetHeightmapImage();
@@ -22,17 +23,17 @@ public:
     sf::Image GetTitleImage(TitleType type);
     bool HasMap() const;
 
-    std::map<uint32_t, SharedPtr<Province>>& GetProvinces();
-    std::map<int, SharedPtr<Province>>& GetProvincesByIds();
-    SharedPtr<Title> GetProvinceLiegeTitle(const SharedPtr<Province>& province, TitleType type);
-    SharedPtr<Title> GetProvinceFocusedTitle(const SharedPtr<Province>& province, TitleType type);
+    std::map<uint32_t, UniquePtr<Province>>& GetProvinces();
+    std::map<int, Province*>& GetProvincesByIds();
+    Title* GetProvinceLiegeTitle(Province* province, TitleType type);
+    Title* GetProvinceFocusedTitle(Province* province, TitleType type);
     int GetMaxProvinceId() const;
     
-    std::map<std::string, SharedPtr<Region>>& GetRegions();
+    std::map<std::string, UniquePtr<Region>>& GetRegions();
 
-    std::map<std::string, SharedPtr<Title>>& GetTitles();
-    std::map<TitleType, std::vector<SharedPtr<Title>>>& GetTitlesByType();
-    std::map<int, SharedPtr<BaronyTitle>>& GetBaroniesByProvinceIds();
+    std::map<std::string, UniquePtr<Title>>& GetTitles();
+    std::map<TitleType, std::vector<Title*>>& GetTitlesByType();
+    std::map<int, BaronyTitle*>& GetBaroniesByProvinceIds();
 
     const OrderedMap<std::string, HoldingType>& GetHoldingTypes() const;
     const OrderedMap<std::string, TerrainType>& GetTerrainTypes() const;
@@ -46,20 +47,24 @@ public:
     std::string GetLocCulturalName(const std::string& lang, const std::string& key) const;
     void SetLocCulturalName(const std::string& lang, const std::string& key, std::string name);
 
-    void AddTitle(SharedPtr<Title> title);
-    void RemoveTitle(SharedPtr<Title> title);
-    void RenameTitle(SharedPtr<Title> title, std::string formerName);
-    
-    void AddRegion(SharedPtr<Region> region);
-    void RenameRegion(SharedPtr<Region> region, std::string formerName);
-    void RemoveRegion(SharedPtr<Region> region);
+    void AddCulture(UniquePtr<Culture> culture);
+    void AddReligion(UniquePtr<Religion> religion);
+    void AddProvince(UniquePtr<Province> province);
 
-    void HarmonizeTitlesColors(const std::vector<SharedPtr<Title>>& titles, sf::Color color, float hue, float saturation);
+    void AddTitle(UniquePtr<Title> title);
+    void RemoveTitle(Title* title);
+    void RenameTitle(Title* title, std::string formerName);
+    
+    void AddRegion(UniquePtr<Region> region);
+    void RenameRegion(Region* region, std::string formerName);
+    void RemoveRegion(Region* region);
+
+    void HarmonizeTitlesColors(std::span<Title*> titles, sf::Color color, float hue, float saturation);
     void GenerateMissingProvinces();
     void GenerateMissingBaronies();
     void GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles);
 
-    float CalculateWinterSeverityBias(SharedPtr<Province> province, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const;
+    float CalculateWinterSeverityBias(Province* province, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const;
     void GenerateProvincesClimate(bool override, float elevationStrength, float elevationOffset, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold);
 
     void ClearProvinces(); // Remove all current provinces.
@@ -84,7 +89,7 @@ public:
     void LoadReligions();
     void LoadLocalization();
 
-    std::vector<SharedPtr<Title>> ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data);
+    std::vector<Title*> ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data);
 
     void Export(
         bool defaultMap = true,
@@ -105,7 +110,7 @@ public:
     void ExportProvincesHistory();
     void ExportTitles();
     void ExportTitlesHistory();
-    void ExportTitle(const SharedPtr<Title>& title, std::ofstream& file, int depth);
+    void ExportTitle(Title* title, std::ofstream& file, int depth);
     void ExportGeographicalRegions();
 
     void ExportTitlesLocalization();
@@ -120,22 +125,22 @@ private:
 
     float m_WaterLevel;
 
-    std::map<uint32_t, SharedPtr<Province>> m_Provinces;
-    std::map<int, SharedPtr<Province>> m_ProvincesByIds;
+    std::map<uint32_t, UniquePtr<Province>> m_Provinces;
+    std::map<int, Province*> m_ProvincesByIds;
     
-    std::map<std::string, SharedPtr<Region>> m_Regions;
+    std::map<std::string, UniquePtr<Region>> m_Regions;
 
-    std::map<std::string, SharedPtr<Title>> m_Titles;
-    std::map<TitleType, std::vector<SharedPtr<Title>>> m_TitlesByType;
-    std::map<int, SharedPtr<BaronyTitle>> m_BaroniesByProvinceIds;
+    std::map<std::string, UniquePtr<Title>> m_Titles;
+    std::map<TitleType, std::vector<Title*>> m_TitlesByType;
+    std::map<int, BaronyTitle*> m_BaroniesByProvinceIds;
 
     // Map variables in common/landed_titles & history/titles & history/provinces with their respective filename.
     std::map<std::string, SharedPtr<Jomini::Object>> m_TitlesVariables;
     std::map<std::string, SharedPtr<Jomini::Object>> m_TitlesHistoryVariables;
     std::map<std::string, SharedPtr<Jomini::Object>> m_ProvincesHistoryVariables;
 
-    std::map<std::string, SharedPtr<Culture>> m_Cultures;
-    std::map<std::string, SharedPtr<Religion>> m_Religions;
+    std::map<std::string, UniquePtr<Culture>> m_Cultures;
+    std::map<std::string, UniquePtr<Religion>> m_Religions;
 
     OrderedMap<std::string, HoldingType> m_HoldingTypes;
     OrderedMap<std::string, TerrainType> m_TerrainTypes;

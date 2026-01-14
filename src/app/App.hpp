@@ -15,12 +15,12 @@ public:
     App& operator=(const App&) = delete;
 
     sf::RenderWindow& GetWindow();
-    SharedPtr<Mod> GetMod();
+    Mod& GetMod();
     Update::Details& GetUpdateDetails();
 
     void DebugSettings();
-    void OpenMod(SharedPtr<Mod> mod);
-    void OpenMenu(SharedPtr<Menu> menu);
+    void OpenMod(UniquePtr<Mod> mod);
+    void OpenMenu(UniquePtr<Menu> menu);
 
     void Init();
     void Run();
@@ -33,8 +33,8 @@ private:
     // SignalHandler m_SignalHandler;
     // #endif
 
-    SharedPtr<Menu> m_ActiveMenu;
-    SharedPtr<Mod> m_ActiveMod;
+    UniquePtr<Menu> m_ActiveMenu;
+    UniquePtr<Mod> m_ActiveMod;
 
     Update::Details m_UpdateDetails;
 };

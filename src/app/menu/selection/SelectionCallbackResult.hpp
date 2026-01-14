@@ -1,6 +1,6 @@
 #pragma once
 
-enum class SelectionCallbackResult {
+enum class SelectionCallbackResult : uint8_t {
     CONTINUE        = 0,
     INTERRUPT       = 1 << 0,
     UPDATE_MAP      = 1 << 1,
@@ -8,16 +8,19 @@ enum class SelectionCallbackResult {
 };
 
 inline SelectionCallbackResult operator|(SelectionCallbackResult a, SelectionCallbackResult b) {
-    return static_cast<SelectionCallbackResult>(static_cast<int>(a) | static_cast<int>(b));
+    using T = std::underlying_type_t<SelectionCallbackResult>;
+    return static_cast<SelectionCallbackResult>(static_cast<T>(a) | static_cast<T>(b));
 }
 
 
 inline SelectionCallbackResult operator&(SelectionCallbackResult a, SelectionCallbackResult b) {
-    return static_cast<SelectionCallbackResult>(static_cast<int>(a) & static_cast<int>(b));
+    using T = std::underlying_type_t<SelectionCallbackResult>;
+    return static_cast<SelectionCallbackResult>(static_cast<T>(a) & static_cast<T>(b));
 }
 
 inline SelectionCallbackResult operator~(SelectionCallbackResult a) {
-    return static_cast<SelectionCallbackResult>(static_cast<int>(~a));
+    using T = std::underlying_type_t<SelectionCallbackResult>;
+    return static_cast<SelectionCallbackResult>(static_cast<T>(~a));
 }
 
 inline SelectionCallbackResult& operator|=(SelectionCallbackResult& a, SelectionCallbackResult b) {
@@ -26,4 +29,8 @@ inline SelectionCallbackResult& operator|=(SelectionCallbackResult& a, Selection
 
 inline SelectionCallbackResult& operator&=(SelectionCallbackResult& a, SelectionCallbackResult b) {
     return a = a & b;
+}
+
+inline bool SelectionCallbackHasFlag(SelectionCallbackResult value, SelectionCallbackResult flag) {
+    return (value & flag) != SelectionCallbackResult::CONTINUE;
 }

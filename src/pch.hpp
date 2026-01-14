@@ -1,19 +1,21 @@
 #include <iostream>
-#include <unordered_map>
+#include <vector>
 #include <list>
-#include <memory>
+#include <set>
+#include <queue>
+#include <deque>
+#include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <math.h>
-#include <vector>
 #include <variant>
-#include <deque>
-#include <set>
-#include <functional>
 #include <random>
-#include <algorithm>
-#include <ranges>
-#include <queue>
-#include <unordered_set>
+#include <memory> // std::shared_ptr, std::make_shared
+#include <algorithm> // std::sort, std::find, std::remove, std::min_element, std::max_element
+#include <ranges> // std::views, std::ranges, std::reverse
+#include <functional> // lambda functions, std::function, std::reference_wrapper
+#include <span> // std::span
+#include <type_traits> // std::underlying_type_t
 
 #ifdef _WIN32
 typedef unsigned long ulong;

@@ -7,34 +7,34 @@
 
 #include <imgui/imgui.hpp>
 
-ProvincesTab::ProvincesTab(EditorMenu* menu, bool visible) : Tab("Provinces", Tabs::PROVINCES, menu, visible) {}
+ProvincesTab::ProvincesTab(EditorMenu& menu, bool visible) : Tab("Provinces", Tabs::PROVINCES, menu, visible) {}
 
 void ProvincesTab::Render() {
     if(!m_Visible)
         return;
 
-    const SharedPtr<Mod> mod = this->GetMod();
+    Mod& mod = this->GetMod();
 
     // Generate a map of whether a province is filtered by name or not.
     static std::string filter = "";
-    static std::vector<SharedPtr<Province>> filteredProvinces;
+    static std::vector<Province*> filteredProvinces;
     static ImGuiTableColumnSortSpecs lastSortingSpecs;
     // Keep track of how many provinces there were last time the list was updated.
     static size_t lastProvincesCount = 0;
     bool updated = false;
-    if(ImGui::InputText("filter", &filter) || mod->GetProvinces().size() != lastProvincesCount) {
+    if(ImGui::InputText("filter", &filter) || mod.GetProvinces().size() != lastProvincesCount) {
         filteredProvinces.clear();
-        lastProvincesCount = mod->GetProvinces().size();
+        lastProvincesCount = mod.GetProvinces().size();
         updated = true;
 
-        for(const auto& [colorId, province] : mod->GetProvinces()) {
+        for(const auto& [colorId, province] : mod.GetProvinces()) {
             if (province->GetName().find(filter) != std::string::npos || std::to_string(province->GetId()).find(filter) != std::string::npos)
-                filteredProvinces.push_back(province);
+                filteredProvinces.push_back(province.get());
         }
     }
 
     const auto SortProvinces = [&](int column, ImGuiSortDirection dir) {
-        auto comparator = [&](const SharedPtr<Province>& a, const SharedPtr<Province>& b) {
+        auto comparator = [&](Province* a, Province* b) {
             switch (column) {
                 case 0: // Id
                     return dir == ImGuiSortDirection_Ascending ? a->GetId() < b->GetId() : a->GetId() > b->GetId();
@@ -68,9 +68,9 @@ void ProvincesTab::Render() {
             SortProvinces(lastSortingSpecs.ColumnIndex, lastSortingSpecs.SortDirection);
         }
 
-        for(const SharedPtr<Province>& province : filteredProvinces) {
-            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(province);
-            bool severalSelected = m_Menu->GetSelectionHandler().GetProvinces().size() > 1;
+        for(Province* province : filteredProvinces) {
+            bool isSelected = m_Menu.GetSelectionHandler().IsSelected(province);
+            bool severalSelected = m_Menu.GetSelectionHandler().GetProvinces().size() > 1;
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -85,20 +85,20 @@ void ProvincesTab::Render() {
             if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                 // Clear selection without LSHIFT.
                 if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().ClearSelection();
+                    m_Menu.GetSelectionHandler().ClearSelection();
                 }
 
                 // Unselect if selected and LSHIFT, select otherwise.
                 if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().Deselect(province);
+                    m_Menu.GetSelectionHandler().Deselect(province);
                 }
                 else if(!isSelected || severalSelected) {
-                    m_Menu->GetSelectionHandler().Select(province);
+                    m_Menu.GetSelectionHandler().Select(province);
                 }
             }
             if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                 sf::Vector2i titlePos = province->GetImagePosition();
-                m_Menu->GetCamera().setCenter(titlePos.x, titlePos.y);
+                m_Menu.GetCamera().setCenter(titlePos.x, titlePos.y);
             }
 
             ImGui::Text(province->GetName().c_str());

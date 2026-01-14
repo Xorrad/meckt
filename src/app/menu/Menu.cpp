@@ -2,10 +2,10 @@
 #include "app/App.hpp"
 // #include "util/Ptr.hpp"
 
-Menu::Menu(App* app, const std::string& name)
+Menu::Menu(App& app, const std::string& name)
 : m_App(app), m_Name(name) {}
 
-App* Menu::GetApp() const {
+App& Menu::GetApp() const {
     return m_App;
 }
 

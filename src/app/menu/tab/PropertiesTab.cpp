@@ -11,7 +11,7 @@
 #include "imgui/imgui.hpp"
 #include "app/menu/ImGuiStyle.hpp"
 
-PropertiesTab::PropertiesTab(EditorMenu* menu, bool visible) :
+PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
     m_SelectingTitle(false),
     m_SelectingProvince(false),
@@ -45,8 +45,8 @@ void PropertiesTab::Update(sf::Time delta) {
 
     // Cancel selecting a title or province by pressing escape.
     if ((m_SelectingTitle || m_SelectingProvince) && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
-        if (m_SelectingTitle) m_Menu->GetSelectionHandler().m_TitleCallbacks.pop_back();
-        if (m_SelectingProvince) m_Menu->GetSelectionHandler().m_ProvinceCallbacks.pop_back();
+        if (m_SelectingTitle) m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
+        if (m_SelectingProvince) m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
         m_SelectingTitle = false;
         m_SelectingProvince = false;
     }
@@ -58,7 +58,7 @@ void PropertiesTab::Render() {
 
     if (m_SelectingTitle || m_SelectingProvince) {
         // Draw a red outline around the view of the map.
-        ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(m_Menu->GetDockspaceID());
+        ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(m_Menu.GetDockspaceID());
         if (node != nullptr) {
             int red = 255 - (abs(sin(2*3.1415*0.05*std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()/100.f)) * 150);
             ImGui::GetBackgroundDrawList()->AddRect(
@@ -73,19 +73,19 @@ void PropertiesTab::Render() {
         }
 
         m_SelectingTitleText.setPosition({node->Pos.x + 10, node->Pos.y + 10});
-        m_Menu->GetApp()->GetWindow().draw(m_SelectingTitleText);
+        m_Menu.GetApp().GetWindow().draw(m_SelectingTitleText);
     }
 
-    if (m_Menu->GetSelectionHandler().GetProvinces().size() > 0) {
-        if (m_Menu->GetSelectionHandler().GetProvinces().size() > 1) {
+    if (m_Menu.GetSelectionHandler().GetProvinces().size() > 0) {
+        if (m_Menu.GetSelectionHandler().GetProvinces().size() > 1) {
             this->RenderJointProvinces();
         }
         this->RenderProvinces();
     }
-    else if (m_Menu->GetSelectionHandler().GetTitles().size() > 0) {
+    else if (m_Menu.GetSelectionHandler().GetTitles().size() > 0) {
         this->RenderTitles();
     }
-    else if (m_Menu->GetSelectionHandler().GetRegions().size() > 0) {
+    else if (m_Menu.GetSelectionHandler().GetRegions().size() > 0) {
         this->RenderRegions();
     }
     
@@ -94,7 +94,7 @@ void PropertiesTab::Render() {
 void PropertiesTab::RenderJointProvinces() {
     // Determine values based on selected provinces and
     // whether several provinces have different values for a property.
-    const SharedPtr<Province>& firstProvince = m_Menu->GetSelectionHandler().GetProvinces().front();
+    Province* firstProvince = m_Menu.GetSelectionHandler().GetProvinces().front();
 
     std::string culture = firstProvince->GetCulture();
     std::string religion = firstProvince->GetReligion();
@@ -115,7 +115,7 @@ void PropertiesTab::RenderJointProvinces() {
     int isRiver = firstProvince->HasFlag(ProvinceFlags::RIVER);
     int isImpassable = firstProvince->HasFlag(ProvinceFlags::IMPASSABLE);
 
-    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
         if (province->GetCulture() != culture) culture = "*****";
         if (province->GetReligion() != religion) religion = "*****";
         if (province->GetHolding() != holding) holding = "*****";
@@ -143,10 +143,10 @@ void PropertiesTab::RenderJointProvinces() {
 
         // PROVINCE: terrain (combobox)
         if (ImGui::BeginCombo("terrain type", terrain.c_str())) {
-            for (const auto& [newTerrain, _] : m_Menu->GetApp()->GetMod()->GetTerrainTypes()) {
+            for (const auto& [newTerrain, _] : m_Menu.GetApp().GetMod().GetTerrainTypes()) {
                 const bool isSelected = (terrain == newTerrain);
                 if (ImGui::Selectable(newTerrain.c_str(), isSelected)) {
-                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetTerrain(newTerrain);
                     }
                 }
@@ -160,7 +160,7 @@ void PropertiesTab::RenderJointProvinces() {
         
         // PROVINCE: flags (checkbox)
         #define UPDATE_FLAG(flag, var) \
-            for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) { \
+            for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) { \
                 province->SetFlag(ProvinceFlags::flag, var); \
             }
 
@@ -196,24 +196,24 @@ void PropertiesTab::RenderJointProvinces() {
 
         // PROVINCE: culture (field)
         if (ImGui::InputText("culture", &culture)) {
-            for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+            for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                 province->SetCulture(culture);
             }
         }
 
         // PROVINCE: religion (field)
         if (ImGui::InputText("religion", &religion)) {
-            for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+            for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                 province->SetReligion(culture);
             }
         }
 
         // PROVINCE: holding type (combobox)
         if (ImGui::BeginCombo("holding", holding.c_str())) {
-            for (const auto& [newHolding, _] : m_Menu->GetApp()->GetMod()->GetHoldingTypes()) {
+            for (const auto& [newHolding, _] : m_Menu.GetApp().GetMod().GetHoldingTypes()) {
                 const bool isSelected = (holding == newHolding);
                 if (ImGui::Selectable(newHolding.c_str(), isSelected)) {
-                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetHolding(newHolding);
                     }
                 }
@@ -236,7 +236,7 @@ void PropertiesTab::RenderJointProvinces() {
                         ClimateType type = (ClimateType) i;
                         const bool isSelected = (type == climateType);
                         if (ImGui::Selectable(ClimateTypeLabels.at(type), isSelected)) {
-                            for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                            for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                                 province->SetClimateType(type);
                             }
                         }
@@ -251,28 +251,28 @@ void PropertiesTab::RenderJointProvinces() {
 
                 ImGui::SetNextItemWidth(width);
                 if (ImGui::InputText("winter severity bias", &winterSeverityBias)) {
-                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetWinterSeverityBias(winterSeverityBias);
                     }
                 }
 
                 ImGui::SetNextItemWidth(width);
                 if (ImGui::InputText("mild winter factor override", &mildWinterFactorOverride)) {
-                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetMildWinterFactorOverride(mildWinterFactorOverride);
                     }
                 }
 
                 ImGui::SetNextItemWidth(width);
                 if (ImGui::InputText("normal winter factor override", &normalWinterFactorOverride))  {
-                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetNormalWinterFactorOverride(normalWinterFactorOverride);
                     }
                 }
 
                 ImGui::SetNextItemWidth(width);
                 if (ImGui::InputText("harsh winter factor override", &harshWinterFactorOverride)) {
-                    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetHarshWinterFactorOverride(harshWinterFactorOverride);
                     }
                 }
@@ -305,7 +305,7 @@ struct TitleHistoryState {
 };
 
 void PropertiesTab::RenderProvinces() {
-    for (auto& province : m_Menu->GetSelectionHandler().GetProvinces()) {
+    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                 
         if (ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::BeginChild(fmt::format("##province-{}", province->GetId()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
@@ -332,7 +332,7 @@ void PropertiesTab::RenderProvinces() {
 
             // PROVINCE: terrain (combobox)
             if (ImGui::BeginCombo("terrain type", province->GetTerrain().c_str())) {
-                for (const auto& [terrain, _] : m_Menu->GetApp()->GetMod()->GetTerrainTypes()) {
+                for (const auto& [terrain, _] : m_Menu.GetApp().GetMod().GetTerrainTypes()) {
                     const bool isSelected = (province->GetTerrain() == terrain);
                     if (ImGui::Selectable(terrain.c_str(), isSelected))
                         province->SetTerrain(terrain);
@@ -392,7 +392,7 @@ void PropertiesTab::RenderProvinces() {
 
             // PROVINCE: holding type (combobox)
             if (ImGui::BeginCombo("holding", province->GetHolding().c_str())) {
-                for (const auto& [holding, _] : m_Menu->GetApp()->GetMod()->GetHoldingTypes()) {
+                for (const auto& [holding, _] : m_Menu.GetApp().GetMod().GetHoldingTypes()) {
                     const bool isSelected = (province->GetHolding() == holding);
                     if (ImGui::Selectable(holding.c_str(), isSelected))
                         province->SetHolding(holding);
@@ -550,11 +550,11 @@ void PropertiesTab::RenderProvinces() {
             }
 
             // PROVINCE: switch to barony (button)
-            if (m_Menu->GetApp()->GetMod()->GetBaroniesByProvinceIds().count(province->GetId()) > 0) {
+            if (m_Menu.GetApp().GetMod().GetBaroniesByProvinceIds().count(province->GetId()) > 0) {
                 if (ImGui::Button("switch to barony")) {
-                    const SharedPtr<Title>& title = m_Menu->GetApp()->GetMod()->GetBaroniesByProvinceIds()[province->GetId()];
-                    m_Menu->SwitchMapMode(MapMode::BARONY, true);
-                    m_Menu->GetSelectionHandler().Select(title);
+                    Title* title = m_Menu.GetApp().GetMod().GetBaroniesByProvinceIds()[province->GetId()];
+                    m_Menu.SwitchMapMode(MapMode::BARONY, true);
+                    m_Menu.GetSelectionHandler().Select(title);
                 }
             }
             // PROVINCE: create barony (button)
@@ -563,16 +563,16 @@ void PropertiesTab::RenderProvinces() {
                     // Make sure to use a title name that isn't already taken.
                     std::string baronyName = "b_" + String::ToLowercase(province->GetName());
                     int i = 1;
-                    while(m_Menu->GetApp()->GetMod()->GetTitles().count(baronyName) > 0) {
+                    while(m_Menu.GetApp().GetMod().GetTitles().count(baronyName) > 0) {
                         baronyName = "b_" + String::ToLowercase(province->GetName()) + std::to_string(i);
                         i++;
                     }
 
-                    SharedPtr<Title> title = MakeTitle(TitleType::BARONY, baronyName, province->GetColor(), false);
-                    SharedPtr<BaronyTitle> baronyTitle = CastSharedPtr<BaronyTitle>(title);
+                    UniquePtr<Title> title = MakeTitle(TitleType::BARONY, baronyName, province->GetColor(), false);
+                    BaronyTitle* baronyTitle = dynamic_cast<BaronyTitle*>(title.get());
                     baronyTitle->SetProvinceId(province->GetId());
 
-                    m_Menu->GetApp()->GetMod()->AddTitle(title);
+                    m_Menu.GetApp().GetMod().AddTitle(std::move(title));
                 }
             }
 
@@ -583,7 +583,7 @@ void PropertiesTab::RenderProvinces() {
 }
 
 void PropertiesTab::RenderTitles() {
-    for (auto& title : m_Menu->GetSelectionHandler().GetTitles()) {
+    for (auto& title : m_Menu.GetSelectionHandler().GetTitles()) {
                 
         if (ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::BeginChild(fmt::format("##title-{}", title->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
@@ -593,7 +593,7 @@ void PropertiesTab::RenderTitles() {
             std::string formerName = title->m_Name;
             if (ImGui::InputText("name", &title->m_Name)) {
                 // Rename the title globally, including titles history.
-                m_Menu->GetApp()->GetMod()->RenameTitle(title, formerName);
+                m_Menu.GetApp().GetMod().RenameTitle(title, formerName);
             }
             
             // TITLE: localization name (field)
@@ -615,8 +615,8 @@ void PropertiesTab::RenderTitles() {
             sf::Color color = title->GetColor();
             if (ImGui::ColorEdit3("color", &color)) {
                 title->SetColor(color);
-                m_Menu->RefreshMapMode(false);
-                m_Menu->GetSelectionHandler().Update();
+                m_Menu.RefreshMapMode(false);
+                m_Menu.GetSelectionHandler().Update();
             }
 
             // TITLE: landless (checkbox)
@@ -780,9 +780,9 @@ void PropertiesTab::RenderTitles() {
             if (title->Is(TitleType::BARONY)) {
 
                 // BARONY: province id (field)
-                const SharedPtr<BaronyTitle>& barony = CastSharedPtr<BaronyTitle>(title);
+                BaronyTitle* barony = static_cast<BaronyTitle*>(title);
                 if (ImGui::InputInt("province id", &barony->m_ProvinceId)) {
-                    if (m_Menu->GetApp()->GetMod()->GetProvincesByIds().count(barony->m_ProvinceId) == 0) {
+                    if (m_Menu.GetApp().GetMod().GetProvincesByIds().count(barony->m_ProvinceId) == 0) {
                         LOG_ERROR("Barony with undefined province id: {},{}", barony->GetName(), barony->GetProvinceId());
                     }
                 }
@@ -791,17 +791,17 @@ void PropertiesTab::RenderTitles() {
                 ImGui::NewLine();
                 if (ImGui::Button((m_SelectingTitle) ? "click on a province..." : "change province") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
-                    MapMode previousMapMode = m_Menu->GetMapMode();
-                    m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
-                    m_Menu->GetSelectionHandler().AddCallback(
-                        [this, barony, previousMapMode](sf::Mouse::Button button, SharedPtr<Province> province) {
+                    MapMode previousMapMode = m_Menu.GetMapMode();
+                    m_Menu.SwitchMapMode(MapMode::PROVINCES, false);
+                    m_Menu.GetSelectionHandler().AddCallback(
+                        [this, barony, previousMapMode](sf::Mouse::Button button, Province* province) {
                             if (button != sf::Mouse::Button::Left)
                                 return SelectionCallbackResult::INTERRUPT;
                             
                             barony->SetProvinceId(province->GetId());
-                            m_Menu->GetApp()->GetMod()->GetBaroniesByProvinceIds()[barony->GetProvinceId()] = barony;
+                            m_Menu.GetApp().GetMod().GetBaroniesByProvinceIds()[barony->GetProvinceId()] = barony;
 
-                            m_Menu->SwitchMapMode(previousMapMode, false);
+                            m_Menu.SwitchMapMode(previousMapMode, false);
                             m_SelectingTitle = false;
                             return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                         }
@@ -810,15 +810,15 @@ void PropertiesTab::RenderTitles() {
 
                 // BARONY: Switch to province (button)
                 if (ImGui::Button("switch to province")) {
-                    if (m_Menu->GetApp()->GetMod()->GetProvincesByIds().count(barony->GetProvinceId()) > 0) {
-                        const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
-                        m_Menu->SwitchMapMode(MapMode::PROVINCES, true);
-                        m_Menu->GetSelectionHandler().Select(province);
+                    if (m_Menu.GetApp().GetMod().GetProvincesByIds().count(barony->GetProvinceId()) > 0) {
+                        Province* province = m_Menu.GetApp().GetMod().GetProvincesByIds()[barony->GetProvinceId()];
+                        m_Menu.SwitchMapMode(MapMode::PROVINCES, true);
+                        m_Menu.GetSelectionHandler().Select(province);
                     }
                 }
             }
             else {
-                const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+                HighTitle* highTitle = static_cast<HighTitle*>(title);
 
                 // HIGHTITLE: dejure titles (list)
                 ImGui::SetNextItemOpen(m_DisplayDejureTitles);
@@ -836,7 +836,7 @@ void PropertiesTab::RenderTitles() {
 
                     // Make a copy to be able to use highTitle->RemoveDejureTitle
                     // without causing a crash while iterating.
-                    std::vector<SharedPtr<Title>> dejureTitles = highTitle->GetDejureTitles();
+                    std::vector<Title*> dejureTitles = highTitle->GetDejureTitles();
                     int n = 0;
                     for (auto const& dejure : dejureTitles) {
                         ImGui::PushID(dejure->GetName().c_str());
@@ -845,8 +845,8 @@ void PropertiesTab::RenderTitles() {
 
                         // Switch to the properties of the dejure title if not dragging the mouse.
                         if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
-                            m_Menu->SwitchMapMode(TitleTypeToMapMode(dejure->GetType()), true);
-                            m_Menu->GetSelectionHandler().Select(dejure);
+                            m_Menu.SwitchMapMode(TitleTypeToMapMode(dejure->GetType()), true);
+                            m_Menu.GetSelectionHandler().Select(dejure);
                         }
 
                         // Reorder the dejure titles by dragging the mouse.
@@ -871,8 +871,8 @@ void PropertiesTab::RenderTitles() {
                             // TODO: it would be better not having to redraw the entire map
                             // but only the relevant colors.
                             MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                            m_Menu->UpdateTexture(liegeMapMode, false);
-                            m_Menu->SwitchMapMode(liegeMapMode, false);
+                            m_Menu.UpdateTexture(liegeMapMode, false);
+                            m_Menu.SwitchMapMode(liegeMapMode, false);
                         }
                         ImGui::PopID();
                         n++;
@@ -884,17 +884,17 @@ void PropertiesTab::RenderTitles() {
                     if (ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
                         TitleType dejureType = (TitleType)(((int) highTitle->GetType())-1);
                         m_SelectingTitle = true;
-                        m_Menu->SwitchMapMode(TitleTypeToMapMode(dejureType), false);
-                        m_Menu->GetSelectionHandler().AddCallback(
-                            [this, highTitle, dejureType](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> clickedTitle) {
+                        m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
+                        m_Menu.GetSelectionHandler().AddCallback(
+                            [this, highTitle, dejureType](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
                                 if (button != sf::Mouse::Button::Left)
                                     return SelectionCallbackResult::INTERRUPT;
                                 if (!clickedTitle->Is(dejureType))
                                     return SelectionCallbackResult::INTERRUPT;
                                 highTitle->AddDejureTitle(clickedTitle);
                                 MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                                m_Menu->UpdateTexture(liegeMapMode, false);
-                                m_Menu->SwitchMapMode(liegeMapMode, false);
+                                m_Menu.UpdateTexture(liegeMapMode, false);
+                                m_Menu.SwitchMapMode(liegeMapMode, false);
                                 m_SelectingTitle = false;
                                 return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                             }
@@ -907,15 +907,14 @@ void PropertiesTab::RenderTitles() {
                 }
 
                 if (!title->Is(TitleType::COUNTY)) {
-                    const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
                     
                     // HIGHTITLE: change capital county (button)
                     ImGui::NewLine();
                     if (ImGui::Button((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
                         m_SelectingTitle = true;
-                        m_Menu->SwitchMapMode(MapMode::COUNTY, false);
-                        m_Menu->GetSelectionHandler().AddCallback(
-                            [this, highTitle](sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> clickedTitle) {
+                        m_Menu.SwitchMapMode(MapMode::COUNTY, false);
+                        m_Menu.GetSelectionHandler().AddCallback(
+                            [this, highTitle](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
                                 if (button != sf::Mouse::Button::Right)
                                     goto DeleteCallback;
                                 if (button != sf::Mouse::Button::Left)
@@ -926,10 +925,10 @@ void PropertiesTab::RenderTitles() {
                                 // Check if clicked title is a direct or undirect vassal of the title.
                                 if (!clickedTitle->IsVassal(highTitle))
                                     return SelectionCallbackResult::INTERRUPT;
-                                highTitle->SetCapitalTitle(CastSharedPtr<CountyTitle>(clickedTitle));
+                                highTitle->SetCapitalTitle(static_cast<CountyTitle*>(clickedTitle));
                                 
                                 DeleteCallback:
-                                m_Menu->SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
+                                m_Menu.SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
                                 m_SelectingTitle = false;
                                 return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                             }
@@ -955,23 +954,22 @@ void PropertiesTab::RenderTitles() {
 
                     // Remove the title from his liege's dejure titles.
                     if (!title->Is(TitleType::HEGEMONY) && title->GetLiegeTitle() != nullptr) {
-                        const SharedPtr<HighTitle>& liege = title->GetLiegeTitle();
+                        HighTitle* liege = title->GetLiegeTitle();
                         liege->RemoveDejureTitle(title);
                     }
 
                     // Remove the title as the liege of all his dejure titles.
                     if (!title->Is(TitleType::BARONY)) {
-                        const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
+                        HighTitle* highTitle = static_cast<HighTitle*>(title);
                         for (auto& dejure : highTitle->GetDejureTitles()) {
                             dejure->SetLiegeTitle(nullptr);
                         }
                     }
 
-                    const SharedPtr<Mod>& mod = m_Menu->GetApp()->GetMod();
-                    mod->RemoveTitle(title);
+                    m_Menu.GetApp().GetMod().RemoveTitle(title);
 
-                    m_Menu->UpdateTextures();
-                    m_Menu->RefreshMapMode(true, false);
+                    m_Menu.UpdateTextures();
+                    m_Menu.RefreshMapMode(true, false);
                 }
 
                 ImGui::SetItemDefaultFocus();
@@ -985,15 +983,14 @@ void PropertiesTab::RenderTitles() {
             ImGui::PopID();
             ImGui::EndChild();
         }
-
     }
 }
 
 void PropertiesTab::RenderRegions() {
-    const SharedPtr<Mod>& mod = m_Menu->GetApp()->GetMod();
+    Mod& mod = m_Menu.GetApp().GetMod();
 
-    std::vector<SharedPtr<Region>> selectedRegions = m_Menu->GetSelectionHandler().GetRegions();
-    for (auto& region : selectedRegions) {
+    std::vector<Region*> regions = std::vector<Region*>(m_Menu.GetSelectionHandler().GetRegions().begin(), m_Menu.GetSelectionHandler().GetRegions().end());
+    for (Region* region : regions) {
                 
         if (ImGui::CollapsingHeader(region->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::BeginChild(fmt::format("##region-{}", region->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
@@ -1002,7 +999,7 @@ void PropertiesTab::RenderRegions() {
             // REGION: name/tag (field)
             std::string formerName = region->m_Name;
             if (ImGui::InputText("name", &region->m_Name)) {
-                m_Menu->GetApp()->GetMod()->RenameRegion(region, formerName);
+                m_Menu.GetApp().GetMod().RenameRegion(region, formerName);
             }
 
             // REGION: generate modifiers (checkbox)
@@ -1018,21 +1015,21 @@ void PropertiesTab::RenderRegions() {
                 ImGui::BeginChild("titles", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
                 const auto DisplayTitles = [&](auto titles) {
-                    for (auto const& title : titles) {
+                    for (const auto& title : titles) {
                         ImGui::PushID(title->GetName().c_str());
                         ImGui::SetNextItemAllowOverlap();
                         ImGui::Selectable(title->GetName().c_str());
 
                         // Switch to the properties of the title if not dragging the mouse.
                         if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
-                            m_Menu->SwitchMapMode(TitleTypeToMapMode(title->GetType()), true);
-                            m_Menu->GetSelectionHandler().Select(title);
+                            m_Menu.SwitchMapMode(TitleTypeToMapMode(title->GetType()), true);
+                            m_Menu.GetSelectionHandler().Select(title);
                         }
 
                         ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
                         if (ImGui::SmallButton("x")) {
                             region->RemoveTitle(title);
-                            m_Menu->GetSelectionHandler().Update();
+                            m_Menu.GetSelectionHandler().Update();
                         }
 
                         ImGui::PopID();
@@ -1040,11 +1037,11 @@ void PropertiesTab::RenderRegions() {
                 };
 
                 ImGui::SeparatorText("Kingdoms");
-                DisplayTitles(std::vector<SharedPtr<KingdomTitle>>(region->GetKingdoms()));
+                DisplayTitles(std::vector<KingdomTitle*>(region->GetKingdoms().begin(), region->GetKingdoms().end()));
                 ImGui::SeparatorText("Duchies");
-                DisplayTitles(std::vector<SharedPtr<DuchyTitle>>(region->GetDuchies()));
+                DisplayTitles(std::vector<DuchyTitle*>(region->GetDuchies().begin(), region->GetDuchies().end()));
                 ImGui::SeparatorText("Counties");
-                DisplayTitles(std::vector<SharedPtr<CountyTitle>>(region->GetCounties()));
+                DisplayTitles(std::vector<CountyTitle*>(region->GetCounties().begin(), region->GetCounties().end()));
 
                 // REGION: add new title (combobox)
                 if (ImGui::BeginCombo("##titles-combo", "Pick a title to add")) {
@@ -1054,14 +1051,14 @@ void PropertiesTab::RenderRegions() {
                     if (ImGui::IsWindowAppearing())
                         ImGui::SetKeyboardFocusHere(-1);
 
-                    for (auto& [name, title] : mod->GetTitles()) {
+                    for (const auto& [name, title] : mod.GetTitles()) {
                         if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::HEGEMONY) || title->Is(TitleType::BARONY))
                             continue;
                         if (!filter.PassFilter(name.c_str()))
                             continue;
                         if (ImGui::Selectable(name.c_str())) {
-                            region->AddTitle(title);
-                            m_Menu->GetSelectionHandler().Update();
+                            region->AddTitle(title.get());
+                            m_Menu.GetSelectionHandler().Update();
                         }
                     }
                     ImGui::EndCombo();
@@ -1075,15 +1072,15 @@ void PropertiesTab::RenderRegions() {
                     m_SelectingTitle = true;
 
                     if (m_SelectingProvince) {
-                        m_Menu->GetSelectionHandler().m_ProvinceCallbacks.pop_back();
+                        m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
                         m_SelectingProvince = false;
                     }
 
-                    if (!MapModeIsTitle(m_Menu->GetMapMode()))
-                        m_Menu->SwitchMapMode(MapMode::KINGDOM, false);
+                    if (!MapModeIsTitle(m_Menu.GetMapMode()))
+                        m_Menu.SwitchMapMode(MapMode::KINGDOM, false);
 
-                    m_Menu->GetSelectionHandler().AddCallback(
-                        [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince, SharedPtr<Title> clickedTitle) {
+                    m_Menu.GetSelectionHandler().AddCallback(
+                        [this, region](sf::Mouse::Button button, Province* clickedProvince, Title* clickedTitle) {
                             // Allow user to wrap a title using RMB.
                             if (button != sf::Mouse::Button::Left)
                                 return SelectionCallbackResult::CONTINUE;
@@ -1091,7 +1088,7 @@ void PropertiesTab::RenderRegions() {
                             if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
                                 return SelectionCallbackResult::CONTINUE;
                             region->AddTitle(clickedTitle);
-                            m_Menu->GetSelectionHandler().Update();
+                            m_Menu.GetSelectionHandler().Update();
                             if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
                             m_SelectingTitle = false;
@@ -1114,22 +1111,22 @@ void PropertiesTab::RenderRegions() {
 
                 ImGui::BeginChild("provinces", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
-                std::vector<SharedPtr<Province>> provinces = region->GetProvinces();
-                for (auto const& province : provinces) {
+                std::vector<Province*> provinces = std::vector<Province*>(region->GetProvinces().begin(), region->GetProvinces().end());
+                for (Province* province : provinces) {
                     ImGui::PushID(province->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
                     ImGui::Selectable(fmt::format("{}\t-\t{}", province->GetId(), province->GetName()).c_str());
 
                     // Switch to the properties of the province if not dragging the mouse.
                     if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
-                        m_Menu->SwitchMapMode(MapMode::PROVINCES, true);
-                        m_Menu->GetSelectionHandler().Select(province);
+                        m_Menu.SwitchMapMode(MapMode::PROVINCES, true);
+                        m_Menu.GetSelectionHandler().Select(province);
                     }
 
                     ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
                     if (ImGui::SmallButton("x")) {
                         region->RemoveProvince(province);
-                        m_Menu->GetSelectionHandler().Update();
+                        m_Menu.GetSelectionHandler().Update();
                     }
 
                     ImGui::PopID();
@@ -1143,12 +1140,12 @@ void PropertiesTab::RenderRegions() {
                     if (ImGui::IsWindowAppearing())
                         ImGui::SetKeyboardFocusHere(-1);
 
-                    for (auto& [id, province] : mod->GetProvincesByIds()) {
+                    for (const auto& [id, province] : mod.GetProvincesByIds()) {
                         if (!filter.PassFilter(std::to_string(id).c_str()) && !filter.PassFilter(province->GetName().c_str()))
                             continue;
                         if (ImGui::Selectable(fmt::format("{}\t-\t{}", id, province->GetName()).c_str())) {
                             region->AddProvince(province);
-                            m_Menu->GetSelectionHandler().Update();
+                            m_Menu.GetSelectionHandler().Update();
                         }
                     }
                     ImGui::EndCombo();
@@ -1160,19 +1157,19 @@ void PropertiesTab::RenderRegions() {
                 if (m_SelectingProvince) ImGui::BeginDisabled();
                 if (ImGui::SmallButton("📌") && !m_SelectingProvince) {
                     m_SelectingProvince = true;
-                    m_Menu->SwitchMapMode(MapMode::PROVINCES, false);
+                    m_Menu.SwitchMapMode(MapMode::PROVINCES, false);
 
                     if (m_SelectingTitle) {
-                        m_Menu->GetSelectionHandler().m_TitleCallbacks.pop_back();
+                        m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
                         m_SelectingTitle = false;
                     }
 
-                    m_Menu->GetSelectionHandler().AddCallback(
-                        [this, region](sf::Mouse::Button button, SharedPtr<Province> clickedProvince) {
+                    m_Menu.GetSelectionHandler().AddCallback(
+                        [this, region](sf::Mouse::Button button, Province* clickedProvince) {
                             if (button != sf::Mouse::Button::Left)
                                 return SelectionCallbackResult::INTERRUPT;
                             region->AddProvince(clickedProvince);
-                            m_Menu->GetSelectionHandler().Update();
+                            m_Menu.GetSelectionHandler().Update();
                             if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
                             m_SelectingProvince = false;
@@ -1195,8 +1192,8 @@ void PropertiesTab::RenderRegions() {
 
                 ImGui::BeginChild("regions", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
-                std::vector<SharedPtr<Region>> regions = region->GetRegions();
-                for (auto subRegion : regions) {
+                std::vector<Region*> regions = std::vector<Region*>(region->GetRegions().begin(), region->GetRegions().end());
+                for (Region* subRegion : regions) {
                     ImGui::PushID(subRegion->GetName().c_str());
                     ImGui::SetNextItemAllowOverlap();
                     ImGui::Selectable(subRegion->GetName().c_str());
@@ -1214,13 +1211,13 @@ void PropertiesTab::RenderRegions() {
 
                     // Switch to the properties of the region if not dragging the mouse.
                     if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
-                        m_Menu->GetSelectionHandler().Select(subRegion);
+                        m_Menu.GetSelectionHandler().Select(subRegion);
                     }
 
                     ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-20);
                     if (ImGui::SmallButton("x")) {
                         region->RemoveRegion(subRegion);
-                        m_Menu->GetSelectionHandler().Update();
+                        m_Menu.GetSelectionHandler().Update();
                     }
 
                     ImGui::PopID();
@@ -1234,12 +1231,12 @@ void PropertiesTab::RenderRegions() {
                     if (ImGui::IsWindowAppearing())
                         ImGui::SetKeyboardFocusHere(-1);
 
-                    for (auto& [name, subRegion] : mod->GetRegions()) {
+                    for (const auto& [name, subRegion] : mod.GetRegions()) {
                         if (!filter.PassFilter(name.c_str()))
                             continue;
                         if (ImGui::Selectable(name.c_str())) {
-                            region->AddRegion(subRegion);
-                            m_Menu->GetSelectionHandler().Update();
+                            region->AddRegion(subRegion.get());
+                            m_Menu.GetSelectionHandler().Update();
                         }
                     }
                     ImGui::EndCombo();
@@ -1265,9 +1262,9 @@ void PropertiesTab::RenderRegions() {
                 if (ImGui::Button("Delete", ImVec2(120, 0))) {
                     ImGui::CloseCurrentPopup();
 
-                    mod->RemoveRegion(region);
-                    m_Menu->GetSelectionHandler().Deselect(region);
-                    m_Menu->GetSelectionHandler().Update();
+                    mod.RemoveRegion(region);
+                    m_Menu.GetSelectionHandler().Deselect(region);
+                    m_Menu.GetSelectionHandler().Update();
                 }
 
                 ImGui::SetItemDefaultFocus();

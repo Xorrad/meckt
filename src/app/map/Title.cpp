@@ -7,6 +7,7 @@ Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 Title::Title(std::string name, sf::Color color, bool landless) :
     m_Name(name),
     m_Color(color),
+    m_LiegeTitle(nullptr),
     m_Landless(landless),
     m_OriginalData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
     m_SelectionFocus(true)
@@ -22,7 +23,7 @@ sf::Color Title::GetColor() const {
     return m_Color;
 }
 
-SharedPtr<HighTitle>& Title::GetLiegeTitle() {
+HighTitle* Title::GetLiegeTitle() {
     return m_LiegeTitle;
 }
 
@@ -34,8 +35,8 @@ bool Title::Is(TitleType type) const {
     return this->GetType() == type;
 }
 
-bool Title::IsVassal(SharedPtr<HighTitle> title) const {
-    SharedPtr<HighTitle> liege = this->m_LiegeTitle;
+bool Title::IsVassal(HighTitle* title) const {
+    HighTitle* liege = m_LiegeTitle;
     while(liege != nullptr) {
         if(liege == title)
             return true;
@@ -52,7 +53,7 @@ void Title::SetColor(sf::Color color) {
     m_Color = color;
 }
 
-void Title::SetLiegeTitle(SharedPtr<HighTitle> title) {
+void Title::SetLiegeTitle(HighTitle* title) {
     m_LiegeTitle = title;
 }
 
@@ -191,49 +192,51 @@ void Title::SetSelectionFocus(bool focus) {
     m_SelectionFocus = focus;
 }
 
-HighTitle::HighTitle() : Title("", sf::Color(0, 0, 0)) {}
+HighTitle::HighTitle() : Title("", sf::Color(0, 0, 0)), m_CapitalTitle(nullptr) {}
 
-HighTitle::HighTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless) {}
+HighTitle::HighTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless), m_CapitalTitle(nullptr) {}
 
-std::vector<SharedPtr<Title>>& HighTitle::GetDejureTitles() {
+std::vector<Title*> HighTitle::GetDejureTitles() {
     return m_DejureTitles;
 }
 
-SharedPtr<CountyTitle>& HighTitle::GetCapitalTitle() {
+const std::vector<Title*>& HighTitle::GetDejureTitles() const {
+    return m_DejureTitles;
+}
+
+CountyTitle* HighTitle::GetCapitalTitle() {
     return m_CapitalTitle;
 }
 
-bool HighTitle::IsDejureTitle(const SharedPtr<Title>& title) {
+bool HighTitle::IsDejureTitle(const Title* title) const {
     return std::find(m_DejureTitles.begin(), m_DejureTitles.end(), title) != m_DejureTitles.end();
 }
 
-void HighTitle::AddDejureTitle(SharedPtr<Title> title) {
-    if(title == nullptr)
-        return;
-
+void HighTitle::AddDejureTitle(Title* title) {
     if(!this->IsDejureTitle(title))
         m_DejureTitles.push_back(title);
 
-    SharedPtr<HighTitle> previousLiege = title->GetLiegeTitle();
+    HighTitle* previousLiege = title->GetLiegeTitle();
     if(previousLiege != nullptr) {
         previousLiege->RemoveDejureTitle(title);
     }
-    title->SetLiegeTitle(shared_from_this());
+    title->SetLiegeTitle(this);
 }
 
-void HighTitle::RemoveDejureTitle(SharedPtr<Title> title) {
-    if(title == nullptr)
-        return;
-    m_DejureTitles.erase(std::remove(m_DejureTitles.begin(), m_DejureTitles.end(), title), m_DejureTitles.end());
+void HighTitle::RemoveDejureTitle(Title* title) {
+    m_DejureTitles.erase(
+        std::remove(m_DejureTitles.begin(), m_DejureTitles.end(), title),
+        m_DejureTitles.end()
+    );
     title->SetLiegeTitle(nullptr);
 }
 
-void HighTitle::SetCapitalTitle(SharedPtr<CountyTitle> title) {
+void HighTitle::SetCapitalTitle(CountyTitle* title) {
     m_CapitalTitle = title;
 }
 
 void HighTitle::ClearDejureTitles() {
-    for (auto& dejure : m_DejureTitles)
+    for (Title* dejure : m_DejureTitles)
         dejure->SetLiegeTitle(nullptr);
     m_DejureTitles.clear();
 }
@@ -241,19 +244,19 @@ void HighTitle::ClearDejureTitles() {
 void HighTitle::SetSelectionFocus(bool focus) {
     m_SelectionFocus = focus;
     if(focus) {
-        for(const auto& dejureTitle : m_DejureTitles)
+        for(Title* dejureTitle : m_DejureTitles)
             dejureTitle->SetSelectionFocus(true);
     }
 }
 
-sf::Vector2i HighTitle::GetImagePosition(SharedPtr<Mod> mod) const {
+sf::Vector2i HighTitle::GetImagePosition(Mod& mod) const {
     if(m_DejureTitles.empty())
         return sf::Vector2i(0, 0);
     return m_DejureTitles.front()->GetImagePosition(mod);
 }
 
-BaronyTitle::BaronyTitle() : Title() {}
-BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless) {}
+BaronyTitle::BaronyTitle() : Title(), m_ProvinceId(0) {}
+BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless), m_ProvinceId(0) {}
 BaronyTitle::BaronyTitle(std::string name, sf::Color color, bool landless, int provinceId) : Title(name, color, landless), m_ProvinceId(provinceId) {}
 
 TitleType BaronyTitle::GetType() const {
@@ -272,8 +275,11 @@ bool BaronyTitle::HasSelectionFocus() const {
     return true;
 }
 
-sf::Vector2i BaronyTitle::GetImagePosition(SharedPtr<Mod> mod) const {
-    return mod->GetProvincesByIds()[m_ProvinceId]->GetImagePosition();
+sf::Vector2i BaronyTitle::GetImagePosition(Mod& mod) const {
+	auto it = mod.GetProvincesByIds().find(m_ProvinceId);
+    if (it == mod.GetProvincesByIds().end())
+        return sf::Vector2i(0, 0);
+    return it->second->GetImagePosition();
 }
 
 CountyTitle::CountyTitle() : HighTitle() {}

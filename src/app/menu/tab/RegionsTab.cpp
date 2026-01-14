@@ -8,34 +8,34 @@
 
 #include "imgui/imgui.hpp"
 
-RegionsTab::RegionsTab(EditorMenu* menu, bool visible) : Tab("Geographical Regions", Tabs::REGIONS, menu, visible) {}
+RegionsTab::RegionsTab(EditorMenu& menu, bool visible) : Tab("Geographical Regions", Tabs::REGIONS, menu, visible) {}
 
 void RegionsTab::Render() {
     if (!m_Visible)
         return;
 
-    const SharedPtr<Mod> mod = this->GetMod();
+    Mod& mod = this->GetMod();
 
     // Generate a map of whether a region is filtered by name or not.
     static std::string filter = "";
-    static std::vector<SharedPtr<Region>> filteredRegions;
+    static std::vector<Region*> filteredRegions;
     static ImGuiTableColumnSortSpecs lastSortingSpecs;
     // Keep track of how many regions there were last time the list was updated.
     static size_t lastRegionsCount = 0;
     bool updated = false;
-    if (ImGui::InputText("filter", &filter) || mod->GetRegions().size() != lastRegionsCount) {
+    if (ImGui::InputText("filter", &filter) || mod.GetRegions().size() != lastRegionsCount) {
         filteredRegions.clear();
-        lastRegionsCount = mod->GetRegions().size();
+        lastRegionsCount = mod.GetRegions().size();
         updated = true;
 
-        for(const auto& [regionName, region] : mod->GetRegions()) {
+        for(const auto& [regionName, region] : mod.GetRegions()) {
             if (regionName.find(filter) != std::string::npos)
-                filteredRegions.push_back(region);
+                filteredRegions.push_back(region.get());
         }
     }
 
     const auto SortRegions = [&](int column, ImGuiSortDirection dir) {
-        auto comparator = [&](const SharedPtr<Region>& a, const SharedPtr<Region>& b) {
+        auto comparator = [&](Region* a, Region* b) {
             switch (column) {
                 case 0: // Name
                     return dir == ImGuiSortDirection_Ascending ? a->GetName() < b->GetName() : a->GetName() > b->GetName();
@@ -63,24 +63,24 @@ void RegionsTab::Render() {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
-            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(CastSharedPtr<Title>(title));
-            bool severalTitlesSelected = m_Menu->GetSelectionHandler().GetTitles().size() > 1;
+            bool isSelected = m_Menu.GetSelectionHandler().IsSelected(static_cast<Title*>(title));
+            bool severalTitlesSelected = m_Menu.GetSelectionHandler().GetTitles().size() > 1;
             
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
-            if (m_Menu->GetSelectionHandler().IsSelected(CastSharedPtr<Title>(title)))
+            if (m_Menu.GetSelectionHandler().IsSelected(static_cast<Title*>(title)))
                 flags |= ImGuiTreeNodeFlags_Selected;
             
             ImGui::TreeNodeEx(title->GetName().c_str(), flags);
             
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                 if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().ClearSelection();
+                    m_Menu.GetSelectionHandler().ClearSelection();
                 }
                 if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().Deselect(CastSharedPtr<Title>(title));
+                    m_Menu.GetSelectionHandler().Deselect(static_cast<Title*>(title));
                 }
                 else if (!isSelected || severalTitlesSelected) {
-                    m_Menu->GetSelectionHandler().Select(CastSharedPtr<Title>(title));
+                    m_Menu.GetSelectionHandler().Select(static_cast<Title*>(title));
                 }
             }
 
@@ -97,24 +97,24 @@ void RegionsTab::Render() {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
-            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(province);
-            bool severalProvincesSelected = m_Menu->GetSelectionHandler().GetTitles().size() > 1;
+            bool isSelected = m_Menu.GetSelectionHandler().IsSelected(province);
+            bool severalProvincesSelected = m_Menu.GetSelectionHandler().GetTitles().size() > 1;
 
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
-            if (m_Menu->GetSelectionHandler().IsSelected(province))
+            if (m_Menu.GetSelectionHandler().IsSelected(province))
                 flags |= ImGuiTreeNodeFlags_Selected;
             
             ImGui::TreeNodeEx(province->GetName().c_str(), flags);
 
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                 if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().ClearSelection();
+                    m_Menu.GetSelectionHandler().ClearSelection();
                 }
                 if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().Deselect(province);
+                    m_Menu.GetSelectionHandler().Deselect(province);
                 }
                 else if (!isSelected || severalProvincesSelected) {
-                    m_Menu->GetSelectionHandler().Select(province);
+                    m_Menu.GetSelectionHandler().Select(province);
                 }
             }
 
@@ -130,24 +130,24 @@ void RegionsTab::Render() {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
-            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(region);
-            bool severalRegionsSelected = m_Menu->GetSelectionHandler().GetTitles().size() > 1;
+            bool isSelected = m_Menu.GetSelectionHandler().IsSelected(region);
+            bool severalRegionsSelected = m_Menu.GetSelectionHandler().GetTitles().size() > 1;
 
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
-            if (m_Menu->GetSelectionHandler().IsSelected(region))
+            if (m_Menu.GetSelectionHandler().IsSelected(region))
                 flags |= ImGuiTreeNodeFlags_Selected;
 
             ImGui::TreeNodeEx(region->GetName().c_str(), flags);
 
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                 if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().ClearSelection();
+                    m_Menu.GetSelectionHandler().ClearSelection();
                 }
                 if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().Deselect(region);
+                    m_Menu.GetSelectionHandler().Deselect(region);
                 }
                 else if (!isSelected || severalRegionsSelected) {
-                    m_Menu->GetSelectionHandler().Select(region);
+                    m_Menu.GetSelectionHandler().Select(region);
                 }
             }
 
@@ -180,15 +180,15 @@ void RegionsTab::Render() {
             SortRegions(lastSortingSpecs.ColumnIndex, lastSortingSpecs.SortDirection);
         }
 
-        for(const SharedPtr<Region>& region : filteredRegions) {
-            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(region);
-            bool severalSelected = m_Menu->GetSelectionHandler().GetRegions().size() > 1;
+        for(Region* region : filteredRegions) {
+            bool isSelected = m_Menu.GetSelectionHandler().IsSelected(region);
+            bool severalSelected = m_Menu.GetSelectionHandler().GetRegions().size() > 1;
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAllColumns;
-            if (m_Menu->GetSelectionHandler().IsSelected(region))
+            if (m_Menu.GetSelectionHandler().IsSelected(region))
                 flags |= ImGuiTreeNodeFlags_Selected;
             
             bool isOpen = ImGui::TreeNodeEx(region->GetName().c_str(), flags);
@@ -197,15 +197,15 @@ void RegionsTab::Render() {
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                 // Clear selection without LSHIFT.
                 if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().ClearSelection();
+                    m_Menu.GetSelectionHandler().ClearSelection();
                 }
 
                 // Unselect if selected and LSHIFT, select otherwise.
                 if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                    m_Menu->GetSelectionHandler().Deselect(region);
+                    m_Menu.GetSelectionHandler().Deselect(region);
                 }
                 else if (!isSelected || severalSelected) {
-                    m_Menu->GetSelectionHandler().Select(region);
+                    m_Menu.GetSelectionHandler().Select(region);
                 }
             }
 

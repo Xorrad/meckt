@@ -11,15 +11,17 @@
 #include <winuser.h>
 #endif
 
-App::App()
-: m_ActiveMenu(MakeShared<HomeMenu>(this)) {}
+App::App() :
+    m_ActiveMenu(MakeUnique<HomeMenu>(*this)),
+    m_ActiveMod(nullptr)
+{}
 
 sf::RenderWindow& App::GetWindow() {
     return m_Window;
 }
 
-SharedPtr<Mod> App::GetMod() {
-    return m_ActiveMod;
+Mod& App::GetMod() {
+    return *m_ActiveMod;
 }
 
 Update::Details& App::GetUpdateDetails() {
@@ -30,26 +32,29 @@ void App::DebugSettings() {
     // this->OpenMod(MakeShared<Mod>("tests/mods/test_hae/"));
 }
 
-void App::OpenMenu(SharedPtr<Menu> menu) {
-    m_ActiveMenu = menu;
+void App::OpenMenu(UniquePtr<Menu> menu) {
+    m_ActiveMenu = std::move(menu);
 }
 
-void App::OpenMod(SharedPtr<Mod> mod) {
+void App::OpenMod(UniquePtr<Mod> mod) {
+    if (mod == nullptr)
+        return;
+
     // Remove the mod from the recent mods list
     // and add it back at the top of the list.
     Configuration::recentMods.erase(std::remove(Configuration::recentMods.begin(), Configuration::recentMods.end(), mod->GetDir()), Configuration::recentMods.end());
     Configuration::recentMods.push_front(mod->GetDir());
 
-    m_ActiveMod = mod;
+    m_ActiveMod = std::move(mod);
     Logger::Get()->Clear();
 
-    SharedPtr<LoadingMenu> menu = MakeShared<LoadingMenu>(
-        this,
-        [&](){ this->OpenMenu(MakeShared<EditorMenu>(this)); },
-        [&](const std::string& error){ this->OpenMenu(MakeShared<HomeMenu>(this, error)); }
+    UniquePtr<LoadingMenu> menu = MakeUnique<LoadingMenu>(
+        *this,
+        [&](){ this->OpenMenu(MakeUnique<EditorMenu>(*this)); },
+        [&](const std::string& error){ this->OpenMenu(MakeUnique<HomeMenu>(*this, error)); }
     );
-    m_ActiveMenu = menu;
     menu->Start();
+    m_ActiveMenu = std::move(menu);
 }
 
 void App::Init() {

@@ -2,7 +2,7 @@
 
 class PropertiesTab : public Tab {
 public:
-    PropertiesTab(EditorMenu* menu, bool visible = true);
+    PropertiesTab(EditorMenu& menu, bool visible = true);
 
     virtual void Update(sf::Time delta) override;
     virtual void Render() override;

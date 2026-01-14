@@ -6,13 +6,13 @@
 
 #include <imgui/imgui.hpp>
 
-TitlesTab::TitlesTab(EditorMenu* menu, bool visible) : Tab("Titles", Tabs::TITLES, menu, visible) {}
+TitlesTab::TitlesTab(EditorMenu& menu, bool visible) : Tab("Titles", Tabs::TITLES, menu, visible) {}
 
 void TitlesTab::Render() {
     if(!m_Visible)
         return;
 
-    const SharedPtr<Mod> mod = this->GetMod();
+    Mod& mod = this->GetMod();
 
     // Generate a map of whether a title is filtered by name or not.
     static std::string filter = "";
@@ -30,23 +30,23 @@ void TitlesTab::Render() {
         //  e_empire (shown)
         //      > k_kingdom
         //      > k_kingdom2 (shown)
-        std::function<bool(const SharedPtr<Title>&, bool)> FilterTitles = [&](const SharedPtr<Title>& title, bool liegeFiltered) {
+        std::function<bool(Title*, bool)> FilterTitles = [&](Title* title, bool liegeFiltered) {
             bool filtered = (title->GetName().find(filter) != std::string::npos) || liegeFiltered;
             bool finalFiltered = filtered;
             if(!title->Is(TitleType::BARONY)) {
                 // FilterTitles need to be first in the operation, otherwise
                 // it will not be called if finalFiltered is already true.
-                const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
-                for(const auto& dejureTitle : highTitle->GetDejureTitles())
+                HighTitle* highTitle = static_cast<HighTitle*>(title);
+                for(Title* dejureTitle : highTitle->GetDejureTitles())
                     finalFiltered = FilterTitles(dejureTitle, filtered) || finalFiltered;
             }
             if(!filtered) filteredTitles[title->GetName()] = finalFiltered;
             return finalFiltered;
         };
 
-        for(const auto& [name, title] : mod->GetTitles()) {
+        for(const auto& [name, title] : mod.GetTitles()) {
             if(title->GetLiegeTitle() == nullptr)
-                FilterTitles(title, false);
+                FilterTitles(title.get(), false);
         }
     }
     
@@ -57,19 +57,19 @@ void TitlesTab::Render() {
         ImGui::TableSetupScrollFreeze(3, 1);
         ImGui::TableHeadersRow();
 
-        std::function<void(const SharedPtr<Title>&)> DisplayTitle = [&](const SharedPtr<Title>& title) {
+        std::function<void(Title*)> DisplayTitle = [&](Title* title) {
             if(filteredTitles.contains(title->GetName()) && !filteredTitles[title->GetName()])
                 return;
 
-            bool isSelected = m_Menu->GetSelectionHandler().IsSelected(title);
-            bool severalSelected = m_Menu->GetSelectionHandler().GetTitles().size() > 1;
+            bool isSelected = m_Menu.GetSelectionHandler().IsSelected(title);
+            bool severalSelected = m_Menu.GetSelectionHandler().GetTitles().size() > 1;
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
             if(title->Is(TitleType::BARONY)) {
                 ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
-                if(m_Menu->GetSelectionHandler().IsSelected(title))
+                if(m_Menu.GetSelectionHandler().IsSelected(title))
                     flags |= ImGuiTreeNodeFlags_Selected;
                 
                 ImGui::TreeNodeEx(title->GetName().c_str(), flags);
@@ -77,20 +77,20 @@ void TitlesTab::Render() {
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                     // Clear selection without LSHIFT.
                     if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        m_Menu->GetSelectionHandler().ClearSelection();
+                        m_Menu.GetSelectionHandler().ClearSelection();
                     }
 
                     // Unselect if selected and LSHIFT, select otherwise.
                     if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        m_Menu->GetSelectionHandler().Deselect(title);
+                        m_Menu.GetSelectionHandler().Deselect(title);
                     }
                     else if(!isSelected || severalSelected) {
-                        m_Menu->GetSelectionHandler().Select(title);
+                        m_Menu.GetSelectionHandler().Select(title);
                     }
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(mod);
-                    m_Menu->GetCamera().setCenter(titlePos.x, titlePos.y);
+                    m_Menu.GetCamera().setCenter(titlePos.x, titlePos.y);
                 }
 
                 ImGui::TableNextColumn();
@@ -99,10 +99,10 @@ void TitlesTab::Render() {
                 ImGui::Text("(%d, %d, %d)", title->GetColor().r, title->GetColor().g, title->GetColor().b);
             }
             else {
-                SharedPtr<HighTitle> highTitle = CastSharedPtr<HighTitle>(title);
+                HighTitle* highTitle = static_cast<HighTitle*>(title);
 
                 ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAllColumns;
-                if(m_Menu->GetSelectionHandler().IsSelected(title))
+                if(m_Menu.GetSelectionHandler().IsSelected(title))
                     flags |= ImGuiTreeNodeFlags_Selected;
 
                 bool open = ImGui::TreeNodeEx(title->GetName().c_str(), flags);
@@ -110,20 +110,20 @@ void TitlesTab::Render() {
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                     // Clear selection without LSHIFT.
                     if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        m_Menu->GetSelectionHandler().ClearSelection();
+                        m_Menu.GetSelectionHandler().ClearSelection();
                     }
 
                     // Unselect if selected and LSHIFT, select otherwise.
                     if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-                        m_Menu->GetSelectionHandler().Deselect(title);
+                        m_Menu.GetSelectionHandler().Deselect(title);
                     }
                     else if(!isSelected || severalSelected) {
-                        m_Menu->GetSelectionHandler().Select(title);
+                        m_Menu.GetSelectionHandler().Select(title);
                     }
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(mod);
-                    m_Menu->GetCamera().setCenter(titlePos.x, titlePos.y);
+                    m_Menu.GetCamera().setCenter(titlePos.x, titlePos.y);
                 }
 
                 ImGui::TableNextColumn();
@@ -138,9 +138,9 @@ void TitlesTab::Render() {
             }
         };
 
-        for(const auto& [name, title] : mod->GetTitles()) {
+        for(const auto& [name, title] : mod.GetTitles()) {
             if(title->GetLiegeTitle() == nullptr)
-                DisplayTitle(title);
+                DisplayTitle(title.get());
         }
 
         ImGui::EndTable();

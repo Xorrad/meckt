@@ -11,7 +11,7 @@ enum class Tabs {
 
 class Tab {
 public:
-    Tab(std::string name, Tabs type, EditorMenu* menu, bool visible = true);
+    Tab(std::string name, Tabs type, EditorMenu& menu, bool visible = true);
 
     std::string GetName() const;
     Tabs GetType() const;
@@ -25,13 +25,13 @@ public:
     virtual void Render();
 
 protected:
-    App* GetApp();
-    SharedPtr<Mod> GetMod();
+    App& GetApp();
+    Mod& GetMod();
 
 protected:
     std::string m_Name;
     Tabs m_Type;
-    EditorMenu* m_Menu;
+    EditorMenu& m_Menu;
     bool m_Visible;
 };
 

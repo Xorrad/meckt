@@ -9,10 +9,10 @@
 
 bool HomeMenu::s_PromptUpdate = true;
 
-HomeMenu::HomeMenu(App* app)
+HomeMenu::HomeMenu(App& app)
 : Menu(app, "Home"), m_LoadingError("") {}
 
-HomeMenu::HomeMenu(App* app, std::string loadingError)
+HomeMenu::HomeMenu(App& app, std::string loadingError)
 : Menu(app, "Home"), m_LoadingError(loadingError) {}
 
 void HomeMenu::Update(sf::Time delta) {
@@ -30,7 +30,7 @@ void HomeMenu::Render() {
     float spacing = 2.5f;
 
     ImGui::SetNextWindowPos(ImVec2(10, 10));
-    ImGui::SetNextWindowSize(ImVec2(m_App->GetWindow().getSize().x - 20, m_App->GetWindow().getSize().y - 20), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(m_App.GetWindow().getSize().x - 20, m_App.GetWindow().getSize().y - 20), ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(margin, 0.0f));
     ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
     ImGui::PopStyleVar();
@@ -64,7 +64,7 @@ void HomeMenu::Render() {
 
     ImGui::Dummy(ImVec2(0.0f, spacing));
     if (ImGui::TextButton("📝  New Mod...")) {
-        m_App->OpenMenu(MakeShared<NewModMenu>(m_App));
+        m_App.OpenMenu(MakeUnique<NewModMenu>(m_App));
     }
     if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         ImGui::SetTooltip("Create a mod from scratch.");
@@ -136,7 +136,7 @@ void HomeMenu::Render() {
     }
     ImGui::Dummy(ImVec2(0.0f, spacing));
     if (ImGui::TextButton("❌ Exit")) {
-        m_App->GetWindow().close();
+        m_App.GetWindow().close();
     }
     ImGui::PopFont();
     
@@ -144,7 +144,7 @@ void HomeMenu::Render() {
     ImGui::End();
 
     // Determine which modal should be displayed.
-    if (s_PromptUpdate && m_App->GetUpdateDetails().shouldUpdate) {
+    if (s_PromptUpdate && m_App.GetUpdateDetails().shouldUpdate) {
         ImGui::OpenPopup("Update");
         this->RenderUpdateModal();
     }
@@ -155,10 +155,10 @@ void HomeMenu::Render() {
 
     // Open the mod at the end to avoid crashes because of ImGui.
     if (!openedModDir.empty()) {
-        SharedPtr<Mod> mod = MakeShared<Mod>(openedModDir);
+        UniquePtr<Mod> mod = MakeUnique<Mod>(openedModDir);
         if(mod->HasMap()) {
             try {
-                m_App->OpenMod(mod);
+                m_App.OpenMod(std::move(mod));
                 LOG_INFO("Opened mod at {}", openedModDir);
             }
             catch (std::exception& e) {
@@ -201,12 +201,12 @@ void HomeMenu::RenderUpdateModal() {
     ImGui::SetNextWindowSize(ImVec2(400.f, 0.f));
     if(ImGui::BeginPopupModal("Update", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("A newer version is available!");
-        ImGui::Text(fmt::format("Current: v{} -> Latest: v{}", Configuration::buildVersion, m_App->GetUpdateDetails().lastBuildVersion).c_str());
+        ImGui::Text(fmt::format("Current: v{} -> Latest: v{}", Configuration::buildVersion, m_App.GetUpdateDetails().lastBuildVersion).c_str());
 
-        bool hasError = !m_App->GetUpdateDetails().error.empty();
+        bool hasError = !m_App.GetUpdateDetails().error.empty();
         if (hasError) {
             ImGui::PushTextWrapPos();
-            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_App->GetUpdateDetails().error.c_str());
+            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_App.GetUpdateDetails().error.c_str());
             ImGui::PopTextWrapPos();
         }
         ImGui::Separator();
@@ -219,11 +219,11 @@ void HomeMenu::RenderUpdateModal() {
         ImGui::SetItemDefaultFocus();
         if (hasError || disableDownload) ImGui::BeginDisabled();
         if(ImGui::Button("Download", ImVec2(120, 0))) {
-            m_App->GetUpdateDetails().error = Update::Update(m_App->GetUpdateDetails());
+            m_App.GetUpdateDetails().error = Update::Update(m_App.GetUpdateDetails());
 
             // Only restart if the download has been successful.
-            if (m_App->GetUpdateDetails().error.empty())
-                m_App->GetWindow().close();
+            if (m_App.GetUpdateDetails().error.empty())
+                m_App.GetWindow().close();
         }
         if (hasError || disableDownload) ImGui::EndDisabled();
 
@@ -231,9 +231,9 @@ void HomeMenu::RenderUpdateModal() {
         if(ImGui::Button("Open GitHub", ImVec2(120, 0))) {
             std::string command;
 #ifdef _WIN32
-            command = "start " + m_App->GetUpdateDetails().lastBuildURL;
+            command = "start " + m_App.GetUpdateDetails().lastBuildURL;
 #else
-            command = "xdg-open " + m_App->GetUpdateDetails().lastBuildURL + "&>/dev/null";
+            command = "xdg-open " + m_App.GetUpdateDetails().lastBuildURL + "&>/dev/null";
 #endif
             if(std::system(command.c_str())) {}
         }

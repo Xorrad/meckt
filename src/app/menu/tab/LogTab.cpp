@@ -3,7 +3,7 @@
 
 #include <imgui/imgui.hpp>
 
-LogTab::LogTab(EditorMenu* menu, bool visible) : Tab("Log", Tabs::LOG, menu, visible) {}
+LogTab::LogTab(EditorMenu& menu, bool visible) : Tab("Log", Tabs::LOG, menu, visible) {}
 
 void LogTab::Render() {
     UniquePtr<Logger::Logger>& logger = Logger::Get();

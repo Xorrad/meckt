@@ -3,7 +3,7 @@
 #include "app/mod/Mod.hpp"
 #include "app/menu/EditorMenu.hpp"
 
-Tab::Tab(std::string name, Tabs type, EditorMenu* menu, bool visible)
+Tab::Tab(std::string name, Tabs type, EditorMenu& menu, bool visible)
 : m_Name(name), m_Type(type), m_Menu(menu), m_Visible(visible) {}
 
 std::string Tab::GetName() const {
@@ -32,10 +32,10 @@ void Tab::Event(const sf::Event& event) {}
 
 void Tab::Render() {}
 
-App* Tab::GetApp() {
-    return m_Menu->GetApp();
+App& Tab::GetApp() {
+    return m_Menu.GetApp();
 }
 
-SharedPtr<Mod> Tab::GetMod() {
-    return m_Menu->GetApp()->GetMod();
+Mod& Tab::GetMod() {
+    return m_Menu.GetApp().GetMod();
 }

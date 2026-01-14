@@ -8,9 +8,9 @@ typedef unsigned int ImGuiID;
 class EditorMenu : public Menu {
 friend SelectionHandler;
 public:
-    EditorMenu(App* app);
+    EditorMenu(App& app);
 
-    SharedPtr<Province> GetHoveredProvince();
+    Province* GetHoveredProvince();
     MapMode GetMapMode() const;
     SelectionHandler& GetSelectionHandler();
     sf::View& GetCamera();

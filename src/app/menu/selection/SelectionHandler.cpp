@@ -7,7 +7,7 @@
 #include "app/map/Region.hpp"
 #include "app/map/Title.hpp"
 
-SelectionHandler::SelectionHandler(EditorMenu* menu) :
+SelectionHandler::SelectionHandler(EditorMenu& menu) :
     m_Menu(menu),
     m_Provinces({}),
     m_Titles({}),
@@ -18,45 +18,48 @@ SelectionHandler::SelectionHandler(EditorMenu* menu) :
     m_Count(0)
 {}
 
-void SelectionHandler::Select(const SharedPtr<Province>& province) {
-    if(province == nullptr || this->IsSelected(province))
+void SelectionHandler::Select(Province* province) {
+    if(this->IsSelected(province))
         return;
     m_Provinces.push_back(province);
     this->Update();
 }
 
-void SelectionHandler::Select(const SharedPtr<Title>& title) {
-    if(title == nullptr || this->IsSelected(title))
+void SelectionHandler::Select(Title* title) {
+    if(this->IsSelected(title))
         return;
     m_Titles.push_back(title);
     this->Update();
 }
 
-void SelectionHandler::Select(const SharedPtr<Region>& region) {
-    if(region == nullptr || this->IsSelected(region))
+void SelectionHandler::Select(Region* region) {
+    if(this->IsSelected(region))
         return;
     m_Regions.push_back(region);
     this->Update();
 }
 
-void SelectionHandler::Deselect(const SharedPtr<Province>& province) {
-    if(province == nullptr)
-        return;
-    m_Provinces.erase(std::remove(m_Provinces.begin(), m_Provinces.end(), province));
+void SelectionHandler::Deselect(Province* province) {
+    m_Provinces.erase(
+        std::remove(m_Provinces.begin(), m_Provinces.end(), province),
+		m_Provinces.end()
+    );
     this->Update();
 }
 
-void SelectionHandler::Deselect(const SharedPtr<Title>& title) {
-    if(title == nullptr)
-        return;
-    m_Titles.erase(std::remove(m_Titles.begin(), m_Titles.end(), title));
+void SelectionHandler::Deselect(Title* title) {
+    m_Titles.erase(
+        std::remove(m_Titles.begin(), m_Titles.end(), title),
+        m_Titles.end()
+    );
     this->Update();
 }
 
-void SelectionHandler::Deselect(const SharedPtr<Region>& region) {
-    if(region == nullptr)
-        return;
-    m_Regions.erase(std::remove(m_Regions.begin(), m_Regions.end(), region));
+void SelectionHandler::Deselect(Region* region) {
+    m_Regions.erase(
+        std::remove(m_Regions.begin(), m_Regions.end(), region),
+        m_Regions.end()
+    );
     this->Update();
 }
 
@@ -69,27 +72,27 @@ void SelectionHandler::ClearSelection() {
     this->Update();
 }
 
-bool SelectionHandler::IsSelected(const SharedPtr<Province>& province) {
+bool SelectionHandler::IsSelected(const Province* province) const {
     return std::find(m_Provinces.begin(), m_Provinces.end(), province) != m_Provinces.end();
 }
 
-bool SelectionHandler::IsSelected(const SharedPtr<Title>& title) {
+bool SelectionHandler::IsSelected(const Title* title) const {
     return std::find(m_Titles.begin(), m_Titles.end(), title) != m_Titles.end();
 }
 
-bool SelectionHandler::IsSelected(const SharedPtr<Region>& region) {
+bool SelectionHandler::IsSelected(const Region* region) const {
     return std::find(m_Regions.begin(), m_Regions.end(), region) != m_Regions.end();
 }
 
-std::vector<SharedPtr<Province>>& SelectionHandler::GetProvinces() {
+std::span<Province*> SelectionHandler::GetProvinces() {
     return m_Provinces;
 }
 
-std::vector<SharedPtr<Title>>& SelectionHandler::GetTitles() {
-    return m_Titles;
+std::span<Title*> SelectionHandler::GetTitles() {
+	return m_Titles;
 }
 
-std::vector<SharedPtr<Region>>& SelectionHandler::GetRegions() {
+std::span<Region*> SelectionHandler::GetRegions() {
     return m_Regions;
 }
 
@@ -101,52 +104,60 @@ std::size_t SelectionHandler::GetCount() const {
     return m_Count;
 }
 
-void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>)> callback) {
+void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, Province*)> callback) {
     m_ProvinceCallbacks.push_back(callback);
 }
 
-void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, SharedPtr<Province>, SharedPtr<Title>)> callback) {
+void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, Province*, Title*)> callback) {
     m_TitleCallbacks.push_back(callback);
 }
 
-void SelectionHandler::OnClick(sf::Mouse::Button button, SharedPtr<Province> province) {
-    if(province == nullptr)
-        return;
-
+void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province) {
     bool updateMap = false;
 
-    for(auto it = m_ProvinceCallbacks.end(); it-- != m_ProvinceCallbacks.begin();) {
+    for (auto it = m_ProvinceCallbacks.end(); it != m_ProvinceCallbacks.begin(); ) {
+        --it;
+
         SelectionCallbackResult res = (*it)(button, province);
-        if((int)(res & SelectionCallbackResult::DELETE_CALLBACK))
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
             it = m_ProvinceCallbacks.erase(it);
-        if((int)(res & SelectionCallbackResult::UPDATE_MAP))
+            continue;
+        }
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::UPDATE_MAP))
             updateMap = true;
-        if((int)(res & SelectionCallbackResult::INTERRUPT))
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT))
             break;
     }
 
-    if(updateMap)
-        m_Menu->RefreshMapMode(false);
+    if (updateMap)
+        m_Menu.RefreshMapMode(false);
 }
 
-void SelectionHandler::OnClick(sf::Mouse::Button button, SharedPtr<Province> province, SharedPtr<Title> title) {
-    if(title == nullptr)
-        return;
-
+void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province, Title* title) {
     bool updateMap = false;
 
-   for(auto it = m_TitleCallbacks.end(); it-- != m_TitleCallbacks.begin();) {
+    for (auto it = m_TitleCallbacks.end(); it != m_TitleCallbacks.begin(); ) {
+        --it;
+
         SelectionCallbackResult res = (*it)(button, province, title);
-        if((int)(res & SelectionCallbackResult::DELETE_CALLBACK))
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
             it = m_TitleCallbacks.erase(it);
-        if((int)(res & SelectionCallbackResult::UPDATE_MAP))
+            continue;
+        }
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::UPDATE_MAP))
             updateMap = true;
-        if((int)(res & SelectionCallbackResult::INTERRUPT))
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT))
             break;
     }
 
-    if(updateMap)
-        m_Menu->RefreshMapMode(false);
+    if (updateMap)
+        m_Menu.RefreshMapMode(false);
 }
 
 void SelectionHandler::Update() {
@@ -161,21 +172,21 @@ void SelectionHandler::UpdateColors() {
     // The shader need the colors of provinces.
     // Ttherefore, we have to loop recursively through
     // each titles until we reach a barony tier and get the color.
-    // std::function<void(const SharedPtr<Title>&)> PushTitleProvincesColor = [&](const SharedPtr<Title>& title) {
+    // std::function<void(Title*)> PushTitleProvincesColor = [*](Title* title) {
     //     if(title->Is(TitleType::BARONY)) {
-    //         const SharedPtr<BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
-    //         const SharedPtr<Province>& province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
+    //         BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
+    //         Province* province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
     //         sf::Color c = province->GetColor();
     //         m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
     //         m_Count++;
     //     }
     //     else {
-    //         const SharedPtr<HighTitle>& highTitle = CastSharedPtr<HighTitle>(title);
-    //         for(const auto& dejureTitle : highTitle->GetDejureTitles())
+    //         HighTitle* highTitle = CastSharedPtr<HighTitle>(title);
+    //         for(const auto* dejureTitle : highTitle->GetDejureTitles())
     //             PushTitleProvincesColor(dejureTitle);
     //     }
     // };
-    // for(const auto& title : m_Titles)
+    // for(const auto* title : m_Titles)
     //     PushTitleProvincesColor(title);
 
     // The method above was too slow. So instead of highlighting the color of every selected province
@@ -186,7 +197,7 @@ void SelectionHandler::UpdateColors() {
 
     // Define functions to push colors of selected objects (province, title, region).
     const auto PushProvinces = [&](const auto& provinces) {
-        for (const auto& province : provinces) {
+        for (const Province* province : provinces) {
             sf::Color c = province->GetColor();
             m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, 0.f));
         }
@@ -194,16 +205,16 @@ void SelectionHandler::UpdateColors() {
     };
     
     const auto PushTitles = [&](const auto& titles) {
-        for (const auto& title : titles) {
+        for (const Title* title : titles) {
             sf::Color c = title->GetColor();
-            m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, ((int) title->GetType()) + 1.f));
+            m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, (static_cast<int>(title->GetType())) + 1.f));
         }
         m_Count += titles.size();
     };
 
     // Use a map to avoid infinite recursion because of circular dependencies.
-    std::unordered_set<SharedPtr<Region>> visitedRegions;
-    const std::function<void(SharedPtr<Region>)> PushRegion = [&](SharedPtr<Region> region) {
+    std::unordered_set<Region*> visitedRegions;
+    const std::function<void(Region*)> PushRegion = [&](Region* region) {
         if (visitedRegions.contains(region))
             return;
         visitedRegions.insert(region);
@@ -211,14 +222,14 @@ void SelectionHandler::UpdateColors() {
         PushTitles(region->GetDuchies());
         PushTitles(region->GetCounties());
         PushProvinces(region->GetProvinces());
-        for (auto& subRegion : region->GetRegions())
+        for (Region* subRegion : region->GetRegions())
             PushRegion(subRegion);
     };
 
     // Push the colors for selected provinces, titles and recursively regions.
     PushProvinces(m_Provinces);
     PushTitles(m_Titles);
-    for (const auto& region : m_Regions) PushRegion(region);
+    for (Region* region : m_Regions) PushRegion(region);
 }
 
 void SelectionHandler::UpdateShader() {
