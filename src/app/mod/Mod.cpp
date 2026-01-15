@@ -1649,6 +1649,8 @@ void Mod::LoadTitles() {
         std::vector<Title*> titles = ParseTitles(filePath, data);
     }
 
+    this->LoadTitlesCapitals();
+
     LOG_INFO("Loaded {} titles from {} files", m_Titles.size(), filesPath.size());
     
     for(int i = 0; i < (int) TitleType::COUNT; i++)
@@ -1725,17 +1727,12 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
                         std::string capitalName = value->Get("capital")->As<std::string>();
 
 						auto it = m_Titles.find(capitalName);
-                        if (it == m_Titles.end()) {
-                            LOG_ERROR("Undefined capital title '{}' for '{}'", capitalName, key);
+                        if (it != m_Titles.end()) {
+                            if (CountyTitle* capital = dynamic_cast<CountyTitle*>(it->second.get())) {
+                                highTitle->SetCapitalTitle(capital);
+                                value->Remove("capital");
+                            }
                         }
-						else if (CountyTitle* capital = dynamic_cast<CountyTitle*>(it->second.get())) {
-                            highTitle->SetCapitalTitle(capital);
-                        }
-                        else {
-                            LOG_ERROR("Capital title '{}' is not a county for '{}'", capitalName, key);
-						}
-
-                        value->Remove("capital");
                     }
                     else {
                         LOG_ERROR("Title missing county capital in definition: '{}'", key);
@@ -1779,6 +1776,37 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
     }
 
     return titles;
+}
+
+void Mod::LoadTitlesCapitals() {
+	// Because titles can have capitals that have not been loaded yet (defined in another
+    // file for example), so we have to do a second pass after loading all titles to link
+    // the remaining capitals.
+
+    for (auto& [titleName, title] : m_Titles) {
+        if (title->Is(TitleType::BARONY) || title->Is(TitleType::COUNTY))
+            continue;
+        HighTitle* highTitle = static_cast<HighTitle*>(title.get());
+        if (highTitle == nullptr)
+            continue;
+        SharedPtr<Jomini::Object> value = highTitle->GetOriginalData();
+        if (!value->Contains("capital"))
+            continue;
+        std::string capitalName = value->Get("capital")->As<std::string>();
+        auto it = m_Titles.find(capitalName);
+        if (it == m_Titles.end()) {
+            LOG_ERROR("Undefined capital title '{}' for '{}'", capitalName, titleName);
+            continue;
+        }
+        else if (CountyTitle* capital = dynamic_cast<CountyTitle*>(it->second.get())) {
+            highTitle->SetCapitalTitle(capital);
+			value->Remove("capital");
+        }
+        else {
+            LOG_ERROR("Capital title '{}' for '{}' is not a county", capitalName, titleName);
+            continue;
+        }
+    }
 }
 
 void Mod::Export(

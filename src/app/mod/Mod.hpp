@@ -83,6 +83,7 @@ public:
     void LoadProvincesClimate();
     void LoadProvincesHistory();
     void LoadTitles();
+    void LoadTitlesCapitals();
     void LoadTitlesHistory();
     void LoadGeographicalRegions();
     void LoadCultures();
