@@ -12,11 +12,11 @@ meckt is a tool whose goal is making total conversion mod easier and less cumber
 
 ## Overview
 
-![overview](images/overview.png)  
+![overview](images/overview-1.7.png)  
 
-![wrapping](images/wrapping.png)  
+![views](images/views-1.7.png)  
 
-![views](images/views.png)
+![tools](images/tools-1.7.png)  
 
 ## Controls
 
@@ -24,7 +24,7 @@ meckt is a tool whose goal is making total conversion mod easier and less cumber
 - **Unselect One Title:** `Ctrl + Left Mouse Button (LMB)`.
 
 - **Unwrap Title:** `Ctrl + Left Mouse Button (LMB)` on the liege title.
-- **Wrap Titles Back:** `Right Mouse Button (RMB)` on one of the vassals.
+- **Wrap Titles Back:** `Right Mouse Button (RMB)` on one of the vassal titles.
 
 ## Compiling
 
@@ -35,19 +35,17 @@ meckt is a tool whose goal is making total conversion mod easier and less cumber
 git clone --recursive https://github.com/Xorrad/meckt.git
 ```
 
-2. Install SFML using the package manager:
+2. Install dependencies:
 ```bash
-sudo apt-get install libsfml-dev
+sudo apt-get update
+sudo apt-get install -y build-essential zip pkg-config libgtk-3-dev libcurl4-openssl-dev libopenal-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libfreetype-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev
 ```
 
-3. In `vendor/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp` replace line 10 with:
-```cpp
-#include "../../imgui.h"
-```
-
-4. Compile and run *meckt* using:
+4. Setup and Compile using CMake:
 ```bash
-make
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --target meckt --config Release
 ```
 
 
@@ -58,25 +56,13 @@ make
 git clone --recursive https://github.com/Xorrad/meckt.git
 ```
 
-2. Download [SFML 2.5.1](https://www.sfml-dev.org/download/sfml/2.5.1/).  
-Extract the downloaded package into the `vendor/sfml/` directory so that the folder structure looks like:
-```
-vendor/sfml/include
-vendor/sfml/lib
-...
-```
+2. Install [CMake](https://cmake.org/download/).
 
-3. Install Make and a compatible C++ compiler for Windows.  
-A good starting point is to use the [w64devkit](https://github.com/skeeto/w64devkit), which includes both.
-
-4. In `vendor/includes/imgui/imgui/misc/cpp/imgui_stdlib.cpp` replace line 10 with:
-```cpp
-#include "../../imgui.h"
-```
-
-5. Compile and run *meckt* using:
+3. Setup and Compile using CMake:
 ```bash
-make
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --target meckt --config Release
 ```
 
 ## Contributing
@@ -88,9 +74,11 @@ Contributions to the project are highly appreciated! There are several ways to g
 - **Simple and Fast Multimedia Library** (https://www.sfml-dev.org/)
 - **Dear ImGui** (https://github.com/ocornut/imgui/)
 - **ImGui-SFML** (https://github.com/SFML/imgui-sfml)
-- **Backward-cpp** (https://github.com/bombela/backward-cpp)
 - **{fmt}** (https://fmt.dev/)
 - **Native File Dialog** (https://github.com/mlabbe/nativefiledialog)
+- **lodepng** (http://lodev.org/lodepng/)
+- **nlohmann-json** (https://github.com/nlohmann/json)
+- **jomini-parser** (https://github.com/Xorrad/jomini-parser)
 
 ## License
 
