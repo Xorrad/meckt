@@ -48,7 +48,9 @@ set_target_properties(
         FOLDER "vendor/sfml"
 )
 
-set_target_properties(freetype PROPERTIES FOLDER "vendor")
+if (WIN32)
+    set_target_properties(freetype PROPERTIES FOLDER "vendor")
+endif()
 
 ###############################################
 #  ImGui (core library)                       #
