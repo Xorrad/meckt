@@ -76,12 +76,12 @@ void TitlesTab::Render() {
 
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                     // Clear selection without LSHIFT.
-                    if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                    if(!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                         m_Menu.GetSelectionHandler().ClearSelection();
                     }
 
                     // Unselect if selected and LSHIFT, select otherwise.
-                    if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                    if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                         m_Menu.GetSelectionHandler().Deselect(title);
                     }
                     else if(!isSelected || severalSelected) {
@@ -90,7 +90,7 @@ void TitlesTab::Render() {
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(mod);
-                    m_Menu.GetCamera().setCenter(titlePos.x, titlePos.y);
+                    m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
                 }
 
                 ImGui::TableNextColumn();
@@ -109,12 +109,12 @@ void TitlesTab::Render() {
                 
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                     // Clear selection without LSHIFT.
-                    if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                    if(!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                         m_Menu.GetSelectionHandler().ClearSelection();
                     }
 
                     // Unselect if selected and LSHIFT, select otherwise.
-                    if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                    if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                         m_Menu.GetSelectionHandler().Deselect(title);
                     }
                     else if(!isSelected || severalSelected) {
@@ -123,7 +123,7 @@ void TitlesTab::Render() {
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(mod);
-                    m_Menu.GetCamera().setCenter(titlePos.x, titlePos.y);
+                    m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
                 }
 
                 ImGui::TableNextColumn();

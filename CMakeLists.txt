@@ -33,7 +33,7 @@ set(BUILD_SHARED_LIBS OFF)
 FetchContent_Declare(
     SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG 2.6.x
+    GIT_TAG 3.0.2
     GIT_SHALLOW ON
     EXCLUDE_FROM_ALL
     SYSTEM
@@ -47,6 +47,8 @@ set_target_properties(
     PROPERTIES
         FOLDER "vendor/sfml"
 )
+
+set_target_properties(freetype PROPERTIES FOLDER "vendor")
 
 ###############################################
 #  ImGui (core library)                       #
@@ -81,7 +83,7 @@ set_target_properties(imgui PROPERTIES FOLDER "vendor")
 FetchContent_Declare(
     imgui-sfml
     GIT_REPOSITORY https://github.com/SFML/imgui-sfml.git
-    GIT_TAG v2.6.1
+    GIT_TAG v3.0
     GIT_SHALLOW ON
     # Overwrite the CMakeLists.txt with an empty one.
     PATCH_COMMAND "${CMAKE_COMMAND}" -E echo "" > CMakeLists.txt
@@ -99,9 +101,9 @@ target_include_directories(imgui-sfml PUBLIC
 
 target_link_libraries(imgui-sfml PUBLIC
     imgui
-    sfml-graphics
-    sfml-window
-    sfml-system
+    SFML::Graphics
+    SFML::Window
+    SFML::System
 )
 
 target_compile_features(imgui-sfml PUBLIC cxx_std_20)
@@ -202,9 +204,9 @@ target_include_directories(jomini-parser PUBLIC vendor/includes/jomini-parser/sr
 target_compile_features(jomini-parser PUBLIC cxx_std_20)
 
 target_link_libraries(jomini-parser PUBLIC
-    sfml-graphics
-    sfml-window
-    sfml-system
+    SFML::Graphics
+    SFML::Window
+    SFML::System
 )
 
 ###############################################

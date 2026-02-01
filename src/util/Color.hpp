@@ -49,7 +49,7 @@ namespace sf {
 			return (*this);
 		}
 
-		Uint32 toInteger() const {
+		uint32_t toInteger() const {
 			return toRgb().toInteger();
 		}
 
@@ -103,9 +103,9 @@ namespace sf {
 			G += M;
 			B += M;
 			return Color(
-				static_cast<sf::Uint8>(std::round(R * 255)),
-				static_cast<sf::Uint8>(std::round(G * 255)),
-				static_cast<sf::Uint8>(std::round(B * 255))
+				static_cast<uint8_t>(std::round(R * 255)),
+				static_cast<uint8_t>(std::round(G * 255)),
+				static_cast<uint8_t>(std::round(B * 255))
 			);	
 		}
 	};

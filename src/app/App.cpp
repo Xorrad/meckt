@@ -66,10 +66,10 @@ void App::Init() {
     m_DeltaClock.restart();
 
     // Initialize SFML.
-    m_Window.create(sf::VideoMode(Configuration::windowResolution.x, Configuration::windowResolution.y), fmt::format("meckt - v{}", Configuration::buildVersion));
+    m_Window.create(sf::VideoMode({ Configuration::windowResolution.x, Configuration::windowResolution.y }), fmt::format("meckt - v{}", Configuration::buildVersion));
     m_Window.setVerticalSyncEnabled(true);
 #if _WIN32
-    ShowWindow(m_Window.getSystemHandle(), SW_MAXIMIZE);
+    ShowWindow(m_Window.getNativeHandle(), SW_MAXIMIZE);
 #endif
 
     // Initialize ImGui.
@@ -100,37 +100,36 @@ void App::Run() {
 
         // Handle SFML events.
         ImGuiIO& io = ImGui::GetIO();
-        sf::Event event;
-        while(m_Window.pollEvent(event)) {
-            ImGui::SFML::ProcessEvent(m_Window, event);
+        while (const std::optional<sf::Event> event = m_Window.pollEvent()) {
+            ImGui::SFML::ProcessEvent(m_Window, *event);
 
-            if(event.type == sf::Event::Closed) {
+            if (event->is<sf::Event::Closed>()) {
                 m_Window.close();
                 break;
             }
 
-            if(event.type == sf::Event::Resized) {
-                sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
+            else if(const auto* resize = event->getIf<sf::Event::Resized>()) {
+                sf::FloatRect visibleArea(sf::Vector2f(0, 0), sf::Vector2f(resize->size.x, resize->size.y));
                 m_Window.setView(sf::View(visibleArea));
                 Configuration::windowResolution = m_Window.getSize();
             }
 
-            if((event.type == sf::Event::MouseButtonPressed
-                || event.type == sf::Event::MouseButtonReleased
-                || event.type == sf::Event::MouseEntered
-                || event.type == sf::Event::MouseLeft
-                || event.type == sf::Event::MouseMoved
-                || event.type == sf::Event::MouseWheelMoved
-                || event.type == sf::Event::MouseWheelScrolled)
+            else if((event->is<sf::Event::MouseButtonPressed>()
+                || event->is<sf::Event::MouseButtonReleased>()
+                || event->is<sf::Event::MouseEntered>()
+                || event->is<sf::Event::MouseLeft>()
+                || event->is<sf::Event::MouseMoved>()
+                || event->is<sf::Event::MouseWheelScrolled>())
                 && io.WantCaptureMouse)
                 continue;
                 
-            if((event.type == sf::Event::KeyPressed
-                || event.type == sf::Event::KeyReleased)
+            else if((event->is<sf::Event::KeyPressed>()
+                || event->is<sf::Event::KeyReleased>())
                 && io.WantCaptureKeyboard)
                 continue;
 
-            m_ActiveMenu->Event(event);
+            if (event.has_value())
+                m_ActiveMenu->Event(*event);
         }
 
         // Update between frames.

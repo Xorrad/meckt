@@ -4,7 +4,7 @@
 
 void Configuration::Initialize() {
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
-    windowResolution = {desktopMode.width, desktopMode.height};
+    windowResolution = { desktopMode.size.x, desktopMode.size.y };
 
 #ifdef DEBUG
     buildVersion = buildVersion + " (debug)";

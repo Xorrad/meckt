@@ -32,6 +32,12 @@ this->UpdateProvincesImage((std::filesystem::current_path() / "tests/mods/test_h
 #endif
 }
 
+NewModMenu::~NewModMenu() {
+    if (m_CreationThread && m_CreationThread->joinable()) {
+        m_CreationThread->join();
+	}
+}
+
 void NewModMenu::Update(sf::Time delta) {
 
 }
@@ -202,10 +208,9 @@ void NewModMenu::Render() {
         ImGui::Dummy(ImVec2(0.0f, 2*spacing));
         if (!canCreate) ImGui::BeginDisabled();
         if (ImGui::TextButton("🔨 Create")) {
-            m_CreationThread = MakeUnique<sf::Thread>([&]() {
+            m_CreationThread = MakeUnique<std::thread>([&]() {
                 this->CreateMod();
             });
-            m_CreationThread->launch();
         }
         if (!canCreate) ImGui::EndDisabled();
 
@@ -272,11 +277,7 @@ void NewModMenu::UpdateLandmassTextures() {
         shader.setUniform("texture", sf::Shader::CurrentTexture);
         shader.setUniform("waterLevel", m_WaterLevel);
 
-        sf::RenderTexture renderTexture;
-        if (!renderTexture.create(m_HeightmapTexture.getSize().x, m_HeightmapTexture.getSize().y))
-            return;
-        renderTexture.clear();
-
+        sf::RenderTexture renderTexture({ m_HeightmapTexture.getSize().x, m_HeightmapTexture.getSize().y });
         sf::Sprite sprite(m_HeightmapTexture);
         renderTexture.draw(sprite, &shader);
         renderTexture.display();
@@ -291,11 +292,7 @@ void NewModMenu::UpdateLandmassTextures() {
         shader.setUniform("heightmapTexture", m_HeightmapTexture);
         shader.setUniform("waterLevel", m_WaterLevel);
 
-        sf::RenderTexture renderTexture;
-        if (!renderTexture.create(m_ProvincesTexture.getSize().x, m_ProvincesTexture.getSize().y))
-            return;
-        renderTexture.clear();
-
+        sf::RenderTexture renderTexture(m_ProvincesTexture.getSize());
         sf::Sprite sprite(m_ProvincesTexture);
         renderTexture.draw(sprite, &shader);
         renderTexture.display();

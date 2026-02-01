@@ -15,6 +15,8 @@ EditorMenu::EditorMenu(App& app)
 : Menu(app, "Editor"),
 m_MapMode(MapMode::PROVINCES),
 m_SelectionHandler(SelectionHandler(*this)),
+m_HoverText(Configuration::fonts.Get(Fonts::FIGTREE)),
+m_HoverTitleText(Configuration::fonts.Get(Fonts::FIGTREE)),
 m_DisplayBorders(true),
 m_ExitToMainMenu(false)
 {
@@ -46,17 +48,20 @@ m_ExitToMainMenu(false)
 }
 
 Province* EditorMenu::GetHoveredProvince() {
+    if (!m_MapSprite.has_value())
+        return nullptr;
+
     ToggleCamera(true);
     sf::Vector2f mousePosition = m_App.GetWindow().mapPixelToCoords(sf::Mouse::getPosition(m_App.GetWindow()));
     ToggleCamera(false);
 
-    if(!m_MapSprite.getGlobalBounds().contains(mousePosition))
+    if(!m_MapSprite->getGlobalBounds().contains(mousePosition))
         return nullptr;
 
     Mod& mod = m_App.GetMod();
-    sf::Vector2f mapMousePosition = mousePosition - m_MapSprite.getPosition();
+    sf::Vector2u mapMousePosition = sf::Vector2u(mousePosition - m_MapSprite->getPosition());
 
-    sf::Color color = mod.GetProvinceImage().getPixel(mapMousePosition.x, mapMousePosition.y);
+    sf::Color color = mod.GetProvinceImage().getPixel(mapMousePosition);
     uint32_t colorId = color.toInteger();
 
 	auto it = mod.GetProvinces().find(colorId);
@@ -116,7 +121,7 @@ void EditorMenu::UpdateHoveringText() {
         m_HoverTitleText.setFillColor(sf::Color::Black);
 
         m_HoverShape.setPosition({(float) mousePosition.x + 10, (float) mousePosition.y - 10});
-        m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().width + 4, (float) m_HoverText.getGlobalBounds().height + 8});
+        m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().size.x + 4, (float) m_HoverText.getGlobalBounds().size.y + 8});
         return;
     }
 
@@ -129,7 +134,7 @@ void EditorMenu::UpdateHoveringText() {
     || m_MapMode == MapMode::RELIGION) {
         m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
         m_HoverTitleText.setString("");
-        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10});
         m_HoverText.setFillColor(brightenColor(province->GetColor()));
         return;
     }
@@ -139,7 +144,7 @@ void EditorMenu::UpdateHoveringText() {
             goto Hide;
         m_HoverText.setString(fmt::format("{}", title->GetName()));
         m_HoverTitleText.setString("");
-        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().height - 10});
+        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10});
         m_HoverText.setFillColor(brightenColor(title->GetColor()));
         return;
     }
@@ -171,7 +176,11 @@ void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
     m_MapMode = mode;
     if(clearSelection)
         m_SelectionHandler.ClearSelection();
-    m_MapSprite.setTexture(*m_MapTextures.at(m_MapMode));
+
+    if (m_MapSprite.has_value())
+        m_MapSprite->setTexture(*m_MapTextures.at(m_MapMode));
+    else
+		m_MapSprite = sf::Sprite(*m_MapTextures.at(m_MapMode));
 }
 
 void EditorMenu::RefreshMapMode(bool clearSelection, bool resetFocus) {
@@ -280,12 +289,12 @@ void EditorMenu::Event(const sf::Event& event) {
         tab->Event(event);
     }
 
-    if(event.type == sf::Event::MouseMoved) {
+    if(event.is<sf::Event::MouseMoved>()) {
         this->UpdateHoveringText();
     }
-    else if(event.type == sf::Event::MouseWheelMoved) {
+    else if(const auto* mouseWheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
         ToggleCamera(true);
-        float delta = (-event.mouseWheel.delta)/50.f;
+        float delta = (-mouseWheel->delta)/50.f;
 
         // Reset zoom if scrolling in reverse.
         if((m_Zoom - 1.f) * (-delta) > 0.f) m_Zoom = 1.f;
@@ -296,17 +305,17 @@ void EditorMenu::Event(const sf::Event& event) {
         m_Camera.zoom(factor);
         ToggleCamera(false);
     }
-    else if(event.type == sf::Event::MouseButtonPressed) {
-        if(event.mouseButton.button == sf::Mouse::Button::Left) {
+    else if(const auto* mouseButton = event.getIf<sf::Event::MouseButtonPressed>()) {
+        if(mouseButton->button == sf::Mouse::Button::Left) {
             m_Dragging = true;
             m_LastMousePosition = sf::Mouse::getPosition(window);
             m_LastClickMousePosition = sf::Mouse::getPosition(window);
         }
     }
-    else if(event.type == sf::Event::MouseButtonReleased) {
-        
+    else if (const auto* mouseButton = event.getIf<sf::Event::MouseButtonReleased>()) {
+
         int d = 0;
-        if(event.mouseButton.button == sf::Mouse::Button::Left) {
+        if(mouseButton->button == sf::Mouse::Button::Left) {
             m_Dragging = false;
             sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
             int dx = (mousePosition.x - m_LastClickMousePosition.x);
@@ -328,9 +337,9 @@ void EditorMenu::Event(const sf::Event& event) {
                         Title* title = m_App.GetMod().GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
                         if(title == nullptr)
                             return;
-                        m_SelectionHandler.OnClick(event.mouseButton.button, province, title);
+                        m_SelectionHandler.OnClick(mouseButton->button, province, title);
                     }
-                    m_SelectionHandler.OnClick(event.mouseButton.button, province);
+                    m_SelectionHandler.OnClick(mouseButton->button, province);
                 }
             }
 
@@ -356,9 +365,9 @@ void EditorMenu::Render() {
     || m_MapMode == MapMode::CULTURE
     || m_MapMode == MapMode::RELIGION
     || MapModeIsTitle(m_MapMode))
-        window.draw(m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
+        window.draw(*m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
     else 
-        window.draw(m_MapSprite);
+        window.draw(*m_MapSprite);
 
     ToggleCamera(false);
 
@@ -396,12 +405,12 @@ void EditorMenu::InitSelectionCallbacks() {
         bool severalSelected = m_SelectionHandler.GetProvinces().size() > 1;
 
         // Clear selection without LSHIFT.
-        if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+        if(!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
             m_SelectionHandler.ClearSelection();
         }
 
         // Unselect if selected and LSHIFT, select otherwise.
-        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+        if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
             m_SelectionHandler.Deselect(province);
         }
         else if(!isSelected || severalSelected) {
@@ -418,7 +427,7 @@ void EditorMenu::InitSelectionCallbacks() {
         if(button == sf::Mouse::Button::Left) {
 
             // Unwrap dejure titles when CTRL+LMB.
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
                 if(!title->Is(TitleType::BARONY)) {
                     if (isSelected)
                         m_SelectionHandler.Deselect(title);
@@ -429,12 +438,12 @@ void EditorMenu::InitSelectionCallbacks() {
             }
 
             // Clear selection without LSHIFT.
-            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+            if(!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                 m_SelectionHandler.ClearSelection();
             }
 
             // Unselect if selected and LSHIFT, select otherwise.
-            if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+            if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                 m_SelectionHandler.Deselect(title);
             }
             else if(!isSelected || severalSelected) {
@@ -955,7 +964,7 @@ void EditorMenu::RenderModals() {
         static float severeWinterThreshold = 0.7f;
         static sf::Image previewImage;
         static sf::Texture previewTexture;
-        static sf::Sprite sprite;
+        static std::optional<sf::Sprite> sprite;
 
         const sf::Image& heightmapImage = m_App.GetMod().GetHeightmapImage();
         const sf::Image& provinceImage = m_App.GetMod().GetProvinceImage();
@@ -969,7 +978,10 @@ void EditorMenu::RenderModals() {
                 }
             });
             previewTexture.loadFromImage(previewImage);
-            sprite.setTexture(previewTexture);
+            if (sprite.has_value())
+                sprite->setTexture(previewTexture);
+            else
+				sprite = sf::Sprite(previewTexture);
         };
 
         // Initialize values when opening the window for the first time.
@@ -1054,11 +1066,11 @@ void EditorMenu::RenderModals() {
             );
 
             ImGui::Text("Coords: (%d, %d)", pixelPos.x, pixelPos.y);
-            ImGui::Text("Winter Severity Bias: %.2f", previewImage.getPixel(pixelPos.x, pixelPos.y).r/255.f);
-            
-            sprite.setTextureRect(sf::IntRect(regionPos, sf::Vector2i(regionSize, regionSize)));
-            sprite.setScale(sf::Vector2f(zoom, zoom));
-            ImGui::Image(sprite);
+            ImGui::Text("Winter Severity Bias: %.2f", previewImage.getPixel(sf::Vector2u(pixelPos.x, pixelPos.y)).r / 255.f);
+
+            sprite->setTextureRect(sf::IntRect(regionPos, sf::Vector2i(regionSize, regionSize)));
+            sprite->setScale(sf::Vector2f(zoom, zoom));
+            ImGui::Image(*sprite);
             ImGui::EndTooltip();
         }
 

@@ -6,7 +6,7 @@
 class LoadingMenu : public Menu {
 public:
     LoadingMenu(App& app, std::function<void()> completeCallback, std::function<void(const std::string&)> errorCallback);
-    ~LoadingMenu() = default;
+    ~LoadingMenu();
 
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);
@@ -18,7 +18,7 @@ public:
 private:
     LoadingState m_State;
     std::string m_LoadingError;
-    SharedPtr<sf::Thread> m_Thread;
+    UniquePtr<std::thread> m_Thread;
 
     std::function<void()> m_CompleteCallback;
     std::function<void(const std::string&)> m_ErrorCallback;

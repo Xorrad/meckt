@@ -3,12 +3,11 @@
 #include <SFML/Graphics.hpp>
 #include <lodepng.h>
 
-sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(std::unordered_map<sf::Uint32, sf::Uint32>&)> mapFunc) {
+sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(std::unordered_map<uint32_t, uint32_t>&)> mapFunc) {
     // Used for benchmarking.
     sf::Clock clock;
 
-    sf::Image image;
-    std::unordered_map<sf::Uint32, sf::Uint32> mappedColors;
+    std::unordered_map<uint32_t, uint32_t> mappedColors;
 
     // Call the mapping function to associate which colors
     // are to be replaced by which.
@@ -22,41 +21,41 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     uint totalPixels = width * height;
 
     // Use vectors to avoid using SFML getters and setters for pixels.
-    const sf::Uint8* originalPixels = originalImage.getPixelsPtr();
-    std::vector<sf::Uint8> newPixels = std::vector<sf::Uint8>();
+    const uint8_t* originalPixels = originalImage.getPixelsPtr();
+    std::vector<uint8_t> newPixels = std::vector<uint8_t>();
     newPixels.resize(totalPixels * 4);
 
     // fmt::println("image=[{}, {}]\tbytes={}", width, height, newPixels.capacity());
     // fmt::println("initializing pixels array: {}", String::DurationFormat(clock.restart()));
 
     const int threadsCount = 6;
-    std::vector<UniquePtr<sf::Thread>> threads;
+    std::vector<UniquePtr<std::thread>> threads;
 
     // Split the image vertically between all the threads.
     // Need to be careful not to split a color from all its composites
     // in the process (so by block of 4).
     const uint threadRange = totalPixels / threadsCount;
 
-    for(uint i = 0; i < threadsCount; i++) {
+    for (uint i = 0; i < threadsCount; i++) {
 
-        threads.push_back(MakeUnique<sf::Thread>([&, i](){
-            uint startIndex = i * threadRange*4;
-            uint endIndex = (i == threadsCount-1) ? totalPixels*4 : (i+1) * threadRange*4;
+        threads.push_back(MakeUnique<std::thread>([&, i]() {
+            uint startIndex = i * threadRange * 4;
+            uint endIndex = (i == threadsCount - 1) ? totalPixels * 4 : (i + 1) * threadRange * 4;
             uint index = startIndex;
 
-            sf::Uint32 color = 0x000000FF;
-            sf::Uint32 previousColor = 0x00000000;
+            uint32_t color = 0x000000FF;
+            uint32_t previousColor = 0x00000000;
 
             // Cast to edit directly the bytes of the color and pixels.
             // - colorPtr is used to read the color from the original image.
             // - targetPtr is used to access the color composites (RGBA)
             //   of the pixels from the array we are painting (in the new image).
             // - replacePtr is the target color to paint on the new texture.
-            char* colorPtr = static_cast<char*>((void*) &color);
-            char* targetPtr = static_cast<char*>((void*) &newPixels[startIndex]);
+            char* colorPtr = static_cast<char*>((void*)&color);
+            char* targetPtr = static_cast<char*>((void*)&newPixels[startIndex]);
             char* replacePtr = NULL;
 
-            while(index < endIndex) {
+            while (index < endIndex) {
                 // Copy the four bytes corresponding to RGBA from the original image pixels
                 // to the array for the new image.
                 // The bytes need to be flipped, otherwise color would be ABGR and
@@ -68,11 +67,11 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
 
                 // Search for the corresponding target color in the mapped values only
                 // if it isn't the same color has the previous one.
-                if(previousColor != color) {
+                if (previousColor != color) {
                     const auto& it = mappedColors.find(color);
-                    replacePtr = (it == mappedColors.end()) ? colorPtr : static_cast<char*>((void*) &it->second);
+                    replacePtr = (it == mappedColors.end()) ? colorPtr : static_cast<char*>((void*)&it->second);
                 }
-                
+
                 // Replace the bits of the pixel in the new image
                 // where each byte correspond to a color composite (RGBA).
                 *targetPtr++ = replacePtr[3]; // R
@@ -81,20 +80,19 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
                 *targetPtr++ = replacePtr[0]; // A
 
                 previousColor = color;
-            }    
-        
-        }));
-        threads[threads.size()-1]->launch();
+            }
+
+            }));
     }
 
-    for(auto& thread : threads)
-        thread->wait();
+    for (auto& thread : threads) {
+		if (thread->joinable())
+            thread->join();
+    }
     // fmt::println("filling pixels: {}", String::DurationFormat(clock.restart()));
-
-    image.create(width, height, newPixels.data());
     // fmt::println("initializing image: {}", String::DurationFormat(clock.restart()));
 
-    return image;
+    return sf::Image({ width, height }, newPixels.data());
 }
 
 void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>& palette) {
@@ -134,7 +132,7 @@ void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>
     // Map each pixel to closest palette index.
     for (uint y = 0; y < height; y++) {
         for (uint x = 0; x < width; x++) {
-            sf::Color pixelColor = image.getPixel(x, y);
+            sf::Color pixelColor = image.getPixel(sf::Vector2u(x, y));
             int index = findClosestColorIndex(pixelColor);
             indexedPixels[y * width + x] = static_cast<unsigned char>(index);
         }

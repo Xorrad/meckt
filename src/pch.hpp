@@ -16,6 +16,7 @@
 #include <functional> // lambda functions, std::function, std::reference_wrapper
 #include <span> // std::span
 #include <type_traits> // std::underlying_type_t
+#include <thread> // std::thread
 
 #ifdef _WIN32
 typedef unsigned long ulong;

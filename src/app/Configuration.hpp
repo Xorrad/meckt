@@ -44,7 +44,7 @@ public:
     
     // Resources
     inline static ResourceManager<sf::Texture, Textures> textures = ResourceManager<sf::Texture, Textures>("texture");
-    inline static ResourceManager<sf::Font, Fonts> fonts = ResourceManager<sf::Font, Fonts>("font");
+    inline static ResourceManager<sf::Font, Fonts> fonts = ResourceManager<sf::Font, Fonts>();
     inline static ResourceManager<sf::Shader, Shaders> shaders = ResourceManager<sf::Shader, Shaders>();
 
     static void Initialize();

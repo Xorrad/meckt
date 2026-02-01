@@ -84,12 +84,12 @@ void ProvincesTab::Render() {
 
             if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                 // Clear selection without LSHIFT.
-                if(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if(!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().ClearSelection();
                 }
 
                 // Unselect if selected and LSHIFT, select otherwise.
-                if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().Deselect(province);
                 }
                 else if(!isSelected || severalSelected) {
@@ -98,7 +98,7 @@ void ProvincesTab::Render() {
             }
             if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                 sf::Vector2i titlePos = province->GetImagePosition();
-                m_Menu.GetCamera().setCenter(titlePos.x, titlePos.y);
+                m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
             }
 
             ImGui::Text(province->GetName().c_str());

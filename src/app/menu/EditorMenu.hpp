@@ -45,7 +45,7 @@ private:
     sf::Clock m_Clock;
 
     std::map<MapMode, UniquePtr<sf::Texture>> m_MapTextures;
-    sf::Sprite m_MapSprite;
+    std::optional<sf::Sprite> m_MapSprite;
 
     bool m_Dragging;
     sf::Vector2i m_LastMousePosition;

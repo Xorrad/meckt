@@ -73,10 +73,10 @@ void RegionsTab::Render() {
             ImGui::TreeNodeEx(title->GetName().c_str(), flags);
             
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().ClearSelection();
                 }
-                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().Deselect(static_cast<Title*>(title));
                 }
                 else if (!isSelected || severalTitlesSelected) {
@@ -107,10 +107,10 @@ void RegionsTab::Render() {
             ImGui::TreeNodeEx(province->GetName().c_str(), flags);
 
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().ClearSelection();
                 }
-                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().Deselect(province);
                 }
                 else if (!isSelected || severalProvincesSelected) {
@@ -140,10 +140,10 @@ void RegionsTab::Render() {
             ImGui::TreeNodeEx(region->GetName().c_str(), flags);
 
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().ClearSelection();
                 }
-                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().Deselect(region);
                 }
                 else if (!isSelected || severalRegionsSelected) {
@@ -196,12 +196,12 @@ void RegionsTab::Render() {
 
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                 // Clear selection without LSHIFT.
-                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().ClearSelection();
                 }
 
                 // Unselect if selected and LSHIFT, select otherwise.
-                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                if (isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
                     m_Menu.GetSelectionHandler().Deselect(region);
                 }
                 else if (!isSelected || severalSelected) {

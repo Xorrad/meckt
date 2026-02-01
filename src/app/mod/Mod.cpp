@@ -104,7 +104,7 @@ sf::Image Mod::GetCultureImage() {
         for(const auto& [provinceColorId, province] : m_Provinces) {
             std::string cultureName = province->GetCulture();
             sf::Color color = defaultColor;
-            sf::Uint8 alpha = cultureName.empty() ? 255 : 0;
+            uint8_t alpha = cultureName.empty() ? 255 : 0;
 
             if(cultureName.empty()) {
                 CountyTitle* liege = static_cast<CountyTitle*>(this->GetProvinceLiegeTitle(province.get(), TitleType::COUNTY));
@@ -159,7 +159,7 @@ sf::Image Mod::GetReligionImage() {
         for(const auto& [provinceColorId, province] : m_Provinces) {
             std::string religionName = province->GetReligion();
             sf::Color color = defaultColor;
-            sf::Uint8 alpha = religionName.empty() ? 255 : 0;
+            uint8_t alpha = religionName.empty() ? 255 : 0;
 
             if(religionName.empty()) {
                 CountyTitle* liege = static_cast<CountyTitle*>(this->GetProvinceLiegeTitle(province.get(), TitleType::COUNTY));
@@ -479,11 +479,11 @@ void Mod::GenerateMissingProvinces() {
     uint width = m_ProvinceImage.getSize().x;
     uint height = m_ProvinceImage.getSize().y;
     uint pixels = width * height * 4;
-    const sf::Uint8* provincesPixels = m_ProvinceImage.getPixelsPtr();
+    const uint8_t* provincesPixels = m_ProvinceImage.getPixelsPtr();
 
     uint index = 0;
-    sf::Uint32 provinceColor = 0x000000FF;
-    sf::Uint32 previousProvinceColor = 0x00000000;
+    uint32_t provinceColor = 0x000000FF;
+    uint32_t previousProvinceColor = 0x00000000;
 
     // Cast to edit directly the bytes of the color and pixels.
     // - colorPtr is used to read the color from the provinces map image.
@@ -614,7 +614,7 @@ float Mod::CalculateWinterSeverityBias(Province* province, bool override, float 
     // using the elevation and hemisphere.
     sf::Color color = (pos.x < 0 || pos.x >= m_HeightmapImage.getSize().x || pos.y < 0 || pos.y >= m_HeightmapImage.getSize().y)
         ? sf::Color::Black
-        : m_HeightmapImage.getPixel(pos.x, pos.y);
+        : m_HeightmapImage.getPixel(sf::Vector2u(pos.x, pos.y));
     float elevation = std::min(1.f, color.r/255.f) * elevationStrength + elevationOffset;
 
     float hemisphere = std::min(
@@ -672,16 +672,16 @@ void Mod::DetermineProvincesFlags() {
 
     // First uint is the total number of pixels.
     // Second uint is the number of pixels below water level.
-    std::unordered_map<sf::Uint32, std::pair<uint, uint>> count;
+    std::unordered_map<uint32_t, std::pair<uint, uint>> count;
     count.reserve(m_Provinces.size());
 
     uint pixels = m_ProvinceImage.getSize().x * m_ProvinceImage.getSize().y * 4;
-    const sf::Uint8* provincesPixels = m_ProvinceImage.getPixelsPtr();
-    const sf::Uint8* heightmapPixels = m_HeightmapImage.getPixelsPtr();
+    const uint8_t* provincesPixels = m_ProvinceImage.getPixelsPtr();
+    const uint8_t* heightmapPixels = m_HeightmapImage.getPixelsPtr();
 
     uint index = 0;
-    sf::Uint32 provinceColor = 0x000000FF;
-    sf::Uint32 previousProvinceColor = 0x00000000;
+    uint32_t provinceColor = 0x000000FF;
+    uint32_t previousProvinceColor = 0x00000000;
 
     // Keep track of the last province iterator to avoid searching
     // for it on successive colors of the same province.
@@ -732,8 +732,8 @@ void Mod::GenerateRivers() {
     // - Map provinces colors to pink if sea, white otherwise.
     // - Copy province image.
     // - Replace province pixels by their mapped color.
-    sf::Uint32 seaColor = sf::Color(255, 0, 128).toInteger();
-    sf::Uint32 landColor = sf::Color(255, 255, 255).toInteger();
+    uint32_t seaColor = sf::Color(255, 0, 128).toInteger();
+    uint32_t landColor = sf::Color(255, 255, 255).toInteger();
 
     m_RiversImage = Image::MapPixels(m_ProvinceImage, [&](auto& mappedColors){
         for(const auto& [provinceColorId, province] : m_Provinces) {
@@ -766,11 +766,11 @@ void Mod::Load(std::function<void()> completeCallback, std::function<void(Loadin
     }
     if(loadImages && !m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
         LOG_ERROR("Failed to load heightmap image at {}", m_Dir + "/map_data/heightmap.png");
-        m_HeightmapImage.create(m_ProvinceImage.getSize().x, m_ProvinceImage.getSize().y, sf::Color::Black);
+        m_HeightmapImage.resize(m_ProvinceImage.getSize(), sf::Color::Black);
     }
     if(loadImages && !m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
         LOG_ERROR("Failed to load rivers image at {}", m_Dir + "/map_data/rivers.png");
-        m_RiversImage.create(m_ProvinceImage.getSize().x, m_ProvinceImage.getSize().y, sf::Color::White);
+        m_RiversImage.resize(m_ProvinceImage.getSize(), sf::Color::White);
     }
     
     #define LOAD_CATCH(arg, type, name) try { changeCallback(type); arg(); } catch (std::exception& e) { std::string msg = fmt::format("Failed to load {}\n{}", name, e.what()); LOG_ERROR("{}", msg); errorCallback(msg); return; }
@@ -959,18 +959,18 @@ void Mod::LoadProvinceImage() {
 
     // Split the image vertically between all the threads.
     const int threadsCount = 4;
-    std::vector<UniquePtr<sf::Thread>> threads;
+    std::vector<UniquePtr<std::thread>> threads;
     const uint threadRange = totalPixels / threadsCount;
 
     for(uint i = 0; i < threadsCount; i++) {
 
-        threads.push_back(MakeUnique<sf::Thread>([&, i](){
+        threads.push_back(MakeUnique<std::thread>([&, i](){
             uint startIndex = i * threadRange*4;
             uint endIndex = (i == threadsCount-1) ? totalPixels*4 : (i+1) * threadRange*4;
             uint index = startIndex;
 
-            sf::Uint32 color = 0x000000FF;
-            sf::Uint32 previousColor = 0x00000000;
+            uint32_t color = 0x000000FF;
+            uint32_t previousColor = 0x00000000;
             bool hasProvince = false;
 
             // Cast to edit directly the bytes of the color and pixels.
@@ -1016,11 +1016,12 @@ void Mod::LoadProvinceImage() {
                 }
             }
         }));
-        threads[threads.size()-1]->launch();
     }
 
-    for(auto& thread : threads)
-        thread->wait();
+    for (auto& thread : threads) {
+		if (thread->joinable())
+            thread->join();
+    }
 }
 
 void Mod::LoadProvincesDefinition() {
@@ -1045,7 +1046,7 @@ void Mod::LoadProvincesDefinition() {
             int g = std::stoi(line[2]);
             int b = std::stoi(line[3]);
             std::string name = line[4];
-            sf::Uint32 colorId = static_cast<sf::Uint32>((r << 24) | (g << 16) | (b << 8));
+            uint32_t colorId = static_cast<uint32_t>((r << 24) | (g << 16) | (b << 8));
 
             if(m_ProvincesByIds.count(id) > 0)
                 LOG_ERROR("Several provinces with same id: {}", id);

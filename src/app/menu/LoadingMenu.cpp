@@ -8,15 +8,15 @@ LoadingMenu::LoadingMenu(App& app, std::function<void()> completeCallback, std::
     Menu(app, "Loading"),
     m_State((LoadingState) 0),
     m_LoadingError(""),
+    m_Thread(nullptr),
     m_CompleteCallback(completeCallback), m_ErrorCallback(errorCallback)
 {
-    m_Thread = MakeShared<sf::Thread>([&]() {
-        m_App.GetMod().Load(
-            [&](){ m_State = LoadingState::FINISHED; },
-            [&](LoadingState state) { m_State = state; },
-            [&](const std::string& error){ m_LoadingError = error; m_State = LoadingState::FINISHED; }
-        );
-    });
+}
+
+LoadingMenu::~LoadingMenu() {
+    if (m_Thread && m_Thread->joinable()) {
+        m_Thread->join();
+	}
 }
 
 void LoadingMenu::Update(sf::Time delta) {
@@ -61,5 +61,11 @@ void LoadingMenu::SetState(LoadingState state) {
 }
 
 void LoadingMenu::Start() {
-    m_Thread->launch();
+    m_Thread = MakeUnique<std::thread>([&]() {
+        m_App.GetMod().Load(
+            [&]() { m_State = LoadingState::FINISHED; },
+            [&](LoadingState state) { m_State = state; },
+            [&](const std::string& error) { m_LoadingError = error; m_State = LoadingState::FINISHED; }
+        );
+    });
 }

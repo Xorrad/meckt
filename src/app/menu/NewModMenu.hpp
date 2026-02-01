@@ -46,6 +46,7 @@ const std::map<CreationState, std::string> CreationStateLabels = {
 class NewModMenu : public Menu {
 public:
     NewModMenu(App& app);
+    ~NewModMenu();
 
     virtual void Update(sf::Time delta);
     virtual void Event(const sf::Event& event);
@@ -77,5 +78,5 @@ private:
 
     bool m_IsCreating;
     CreationState m_CreationState;
-    UniquePtr<sf::Thread> m_CreationThread;
+    UniquePtr<std::thread> m_CreationThread;
 };

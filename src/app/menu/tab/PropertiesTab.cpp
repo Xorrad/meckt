@@ -13,6 +13,7 @@
 
 PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
+	m_SelectingTitleText(Configuration::fonts.Get(Fonts::NOTO_SANS)),
     m_SelectingTitle(false),
     m_SelectingProvince(false),
     m_DisplayCulturalNames(false),
@@ -44,7 +45,7 @@ void PropertiesTab::Update(sf::Time delta) {
     }
 
     // Cancel selecting a title or province by pressing escape.
-    if ((m_SelectingTitle || m_SelectingProvince) && sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+    if ((m_SelectingTitle || m_SelectingProvince) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
         if (m_SelectingTitle) m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
         if (m_SelectingProvince) m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
         m_SelectingTitle = false;
@@ -1085,11 +1086,11 @@ void PropertiesTab::RenderRegions() {
                             if (button != sf::Mouse::Button::Left)
                                 return SelectionCallbackResult::CONTINUE;
                             // Allow user to unwrap a title using LCtrl+LMB.
-                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                                 return SelectionCallbackResult::CONTINUE;
                             region->AddTitle(clickedTitle);
                             m_Menu.GetSelectionHandler().Update();
-                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
                             m_SelectingTitle = false;
                             return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
@@ -1170,7 +1171,7 @@ void PropertiesTab::RenderRegions() {
                                 return SelectionCallbackResult::INTERRUPT;
                             region->AddProvince(clickedProvince);
                             m_Menu.GetSelectionHandler().Update();
-                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
                             m_SelectingProvince = false;
                             return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
