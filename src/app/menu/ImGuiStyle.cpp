@@ -1,4 +1,4 @@
-#include "ImGuiStyle.hpp"
+﻿#include "ImGuiStyle.hpp"
 
 ImFont* ImGui::notoSansNormalFont = nullptr;
 ImFont* ImGui::notoSansMediumFont = nullptr;
@@ -182,4 +182,45 @@ bool ImGui::InputTextLocked(const char* label, std::string* str) {
         RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
 
     return pressed;
+}
+
+bool ImGui::InputTextCommitOnEnter(const char* label, std::string* value, ImGuiInputTextFlags flags) {
+    ImGuiID id = ImGui::GetID(label);
+
+    struct State {
+        std::string buffer;
+        bool editing = false;
+    };
+
+    static std::unordered_map<ImGuiID, State> states;
+    State& state = states[id];
+
+    flags |= ImGuiInputTextFlags_EnterReturnsTrue;
+
+    // Initialize buffer when first used.
+    if (!state.editing)
+        state.buffer = *value;
+
+    bool enterPressed = ImGui::InputText(label, &state.buffer, flags);
+
+    // User clicked into field.
+    if (ImGui::IsItemActivated()) {
+        state.buffer = *value;
+        state.editing = true;
+    }
+
+    // ENTER pressed -> commit.
+    if (enterPressed) {
+        *value = state.buffer;
+        state.editing = false;
+        return true;
+    }
+
+    // Lost focus without ENTER -> revert.
+    if (ImGui::IsItemDeactivated() && state.editing) {
+        state.buffer = *value;
+        state.editing = false;
+    }
+
+    return false;
 }

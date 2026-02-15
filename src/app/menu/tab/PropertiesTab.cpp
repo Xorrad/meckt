@@ -319,7 +319,7 @@ void PropertiesTab::RenderProvinces() {
             ImGui::EndDisabled();
 
             // PROVINCE: name (field)
-            ImGui::InputText("name", &province->m_Name);
+            ImGui::InputTextCommitOnEnter("name", &province->m_Name);
 
             // PROVINCE: color (colorpicker)
             sf::Color color = province->GetColor();
@@ -592,7 +592,7 @@ void PropertiesTab::RenderTitles() {
 
             // TITLE: name/tag (field)
             std::string formerName = title->m_Name;
-            if (ImGui::InputText("name", &title->m_Name)) {
+            if (ImGui::InputTextCommitOnEnter("name", &title->m_Name)) {
                 // Rename the title globally, including titles history.
                 m_Menu.GetApp().GetMod().RenameTitle(title, formerName);
             }
@@ -999,7 +999,7 @@ void PropertiesTab::RenderRegions() {
 
             // REGION: name/tag (field)
             std::string formerName = region->m_Name;
-            if (ImGui::InputText("name", &region->m_Name)) {
+            if (ImGui::InputTextCommitOnEnter("name", &region->m_Name)) {
                 m_Menu.GetApp().GetMod().RenameRegion(region, formerName);
             }
 
