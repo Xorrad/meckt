@@ -19,6 +19,8 @@ void ProvincesTab::Render() {
     static std::string filter = "";
     static std::vector<Province*> filteredProvinces;
     static ImGuiTableColumnSortSpecs lastSortingSpecs;
+	static Province* lastSelectedProvince = nullptr;
+
     // Keep track of how many provinces there were last time the list was updated.
     static size_t lastProvincesCount = 0;
     bool updated = false;
@@ -63,12 +65,14 @@ void ProvincesTab::Render() {
             SortProvinces(spec.ColumnIndex, spec.SortDirection);
             lastSortingSpecs = spec;
             sortSpecs->SpecsDirty = false;
+            lastSelectedProvince = nullptr;
         }
         else if (updated) {
             SortProvinces(lastSortingSpecs.ColumnIndex, lastSortingSpecs.SortDirection);
+            lastSelectedProvince = nullptr;
         }
 
-        for(Province* province : filteredProvinces) {
+        for (Province* province : filteredProvinces) {
             bool isSelected = m_Menu.GetSelectionHandler().IsSelected(province);
             bool severalSelected = m_Menu.GetSelectionHandler().GetProvinces().size() > 1;
 
@@ -83,19 +87,37 @@ void ProvincesTab::Render() {
             ImGui::TableNextColumn();
 
             if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                // Clear selection without LSHIFT.
-                if(!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
+                // Clear selection without LSHIFT or LCTRL.
+                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
                     m_Menu.GetSelectionHandler().ClearSelection();
                 }
 
-                // Unselect if selected and LSHIFT, select otherwise.
-                if(isSelected && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
-                    m_Menu.GetSelectionHandler().Deselect(province);
+                // Select a range of provinces between the last selected province and the clicked one if LSHIFT.
+                if (lastSelectedProvince != nullptr && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
+                    auto it1 = std::find(filteredProvinces.begin(), filteredProvinces.end(), lastSelectedProvince);
+                    auto it2 = std::find(filteredProvinces.begin(), filteredProvinces.end(), province);
+                    if (it1 != filteredProvinces.end() && it2 != filteredProvinces.end()) {
+                        if (it1 > it2) std::swap(it1, it2);
+                        for (auto it = it1; it != it2; it++) {
+                            m_Menu.GetSelectionHandler().Select(*it);
+                        }
+                    }
+                    m_Menu.GetSelectionHandler().Select(*it2);
                 }
-                else if(!isSelected || severalSelected) {
-                    m_Menu.GetSelectionHandler().Select(province);
+                else {
+                    if (isSelected && (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))) {
+                        m_Menu.GetSelectionHandler().Deselect(province);
+					}
+                    else if (isSelected && !severalSelected) {
+                        m_Menu.GetSelectionHandler().Deselect(province);
+                    }
+                    else {
+                        m_Menu.GetSelectionHandler().Select(province);
+                    }
+                    lastSelectedProvince = province;
                 }
             }
+
             if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                 sf::Vector2i titlePos = province->GetImagePosition();
                 m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
