@@ -10,6 +10,7 @@
 SelectionHandler::SelectionHandler(EditorMenu& menu) :
     m_Menu(menu),
     m_Provinces({}),
+    m_ProvincesLookup({}),
     m_Titles({}),
     m_Regions({}),
     m_ProvinceCallbacks({}),
@@ -18,11 +19,13 @@ SelectionHandler::SelectionHandler(EditorMenu& menu) :
     m_Count(0)
 {}
 
-void SelectionHandler::Select(Province* province) {
-    if(this->IsSelected(province))
+void SelectionHandler::Select(Province* province, bool update) {
+    if (m_ProvincesLookup.find(province) != m_ProvincesLookup.end())
         return;
     m_Provinces.push_back(province);
-    this->Update();
+    m_ProvincesLookup.emplace(province, true);
+    if (update)
+        this->Update();
 }
 
 void SelectionHandler::Select(Title* title) {
@@ -39,12 +42,17 @@ void SelectionHandler::Select(Region* region) {
     this->Update();
 }
 
-void SelectionHandler::Deselect(Province* province) {
+void SelectionHandler::Deselect(Province* province, bool update) {
+	auto it = m_ProvincesLookup.find(province);
+	if (it == m_ProvincesLookup.end())
+		return;
     m_Provinces.erase(
         std::remove(m_Provinces.begin(), m_Provinces.end(), province),
 		m_Provinces.end()
     );
-    this->Update();
+    m_ProvincesLookup.erase(it);
+    if (update)
+        this->Update();
 }
 
 void SelectionHandler::Deselect(Title* title) {
@@ -65,6 +73,7 @@ void SelectionHandler::Deselect(Region* region) {
 
 void SelectionHandler::ClearSelection() {
     m_Provinces.clear();
+    m_ProvincesLookup.clear();
     m_Titles.clear();
     m_Regions.clear();
     m_Colors.clear();
@@ -72,8 +81,8 @@ void SelectionHandler::ClearSelection() {
     this->Update();
 }
 
-bool SelectionHandler::IsSelected(const Province* province) const {
-    return std::find(m_Provinces.begin(), m_Provinces.end(), province) != m_Provinces.end();
+bool SelectionHandler::IsSelected(Province* province) const {
+    return m_ProvincesLookup.find(province) != m_ProvincesLookup.end();
 }
 
 bool SelectionHandler::IsSelected(const Title* title) const {

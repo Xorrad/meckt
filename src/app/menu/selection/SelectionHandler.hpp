@@ -5,15 +5,15 @@ friend PropertiesTab;
 public:
     SelectionHandler(EditorMenu& menu);
 
-    void Select(Province* province);
+    void Select(Province* province, bool update = true);
     void Select(Title* title);
     void Select(Region* region);
-    void Deselect(Province* province);
+    void Deselect(Province* province, bool update = true);
     void Deselect(Title* title);
     void Deselect(Region* region);
     void ClearSelection();
 
-    bool IsSelected(const Province* province) const;
+    bool IsSelected(Province* province) const;
     bool IsSelected(const Title* title) const;
     bool IsSelected(const Region* region) const;
 
@@ -38,6 +38,7 @@ private:
     EditorMenu& m_Menu;
 
     std::vector<Province*> m_Provinces;
+    std::unordered_map<Province*, bool> m_ProvincesLookup;
     std::vector<Title*> m_Titles;
     std::vector<Region*> m_Regions;
 

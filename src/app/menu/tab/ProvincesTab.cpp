@@ -104,10 +104,10 @@ void ProvincesTab::Render() {
                         if (it1 != filteredProvinces.end() && it2 != filteredProvinces.end()) {
                             if (it1 > it2) std::swap(it1, it2);
                             for (auto it = it1; it != it2; it++) {
-                                m_Menu.GetSelectionHandler().Select(*it);
+                                m_Menu.GetSelectionHandler().Select(*it, false);
                             }
                         }
-                        m_Menu.GetSelectionHandler().Select(*it2);
+                        m_Menu.GetSelectionHandler().Select(*it2, true);
                     }
                     else {
                         if (isSelected && (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))) {
