@@ -72,61 +72,68 @@ void ProvincesTab::Render() {
             lastSelectedProvince = nullptr;
         }
 
-        for (Province* province : filteredProvinces) {
-            bool isSelected = m_Menu.GetSelectionHandler().IsSelected(province);
-            bool severalSelected = m_Menu.GetSelectionHandler().GetProvinces().size() > 1;
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(filteredProvinces.size()));
 
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
+        while (clipper.Step()) {
+            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
+                Province* province = filteredProvinces.at(index);
+                bool isSelected = m_Menu.GetSelectionHandler().IsSelected(province);
+                bool severalSelected = m_Menu.GetSelectionHandler().GetProvinces().size() > 1;
 
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
-            if(isSelected)
-                flags |= ImGuiTreeNodeFlags_Selected;
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAllColumns;
+                if(isSelected)
+                    flags |= ImGuiTreeNodeFlags_Selected;
             
-            ImGui::TreeNodeEx(std::to_string(province->GetId()).c_str(), flags);
-            ImGui::TableNextColumn();
+                ImGui::TreeNodeEx(std::to_string(province->GetId()).c_str(), flags);
+                ImGui::TableNextColumn();
 
-            if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                // Clear selection without LSHIFT or LCTRL.
-                if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
-                    m_Menu.GetSelectionHandler().ClearSelection();
-                }
-
-                // Select a range of provinces between the last selected province and the clicked one if LSHIFT.
-                if (lastSelectedProvince != nullptr && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
-                    auto it1 = std::find(filteredProvinces.begin(), filteredProvinces.end(), lastSelectedProvince);
-                    auto it2 = std::find(filteredProvinces.begin(), filteredProvinces.end(), province);
-                    if (it1 != filteredProvinces.end() && it2 != filteredProvinces.end()) {
-                        if (it1 > it2) std::swap(it1, it2);
-                        for (auto it = it1; it != it2; it++) {
-                            m_Menu.GetSelectionHandler().Select(*it);
-                        }
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                    // Clear selection without LCTRL.
+                    if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
+                        m_Menu.GetSelectionHandler().ClearSelection();
                     }
-                    m_Menu.GetSelectionHandler().Select(*it2);
-                }
-                else {
-                    if (isSelected && (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))) {
-                        m_Menu.GetSelectionHandler().Deselect(province);
-					}
-                    else if (isSelected && !severalSelected) {
-                        m_Menu.GetSelectionHandler().Deselect(province);
+
+                    // Select a range of provinces between the last selected province and the clicked one if LSHIFT.
+                    if (lastSelectedProvince != nullptr && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
+                        auto it1 = std::find(filteredProvinces.begin(), filteredProvinces.end(), lastSelectedProvince);
+                        auto it2 = std::find(filteredProvinces.begin(), filteredProvinces.end(), province);
+                        if (it1 != filteredProvinces.end() && it2 != filteredProvinces.end()) {
+                            if (it1 > it2) std::swap(it1, it2);
+                            for (auto it = it1; it != it2; it++) {
+                                m_Menu.GetSelectionHandler().Select(*it);
+                            }
+                        }
+                        m_Menu.GetSelectionHandler().Select(*it2);
                     }
                     else {
-                        m_Menu.GetSelectionHandler().Select(province);
+                        if (isSelected && (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))) {
+                            m_Menu.GetSelectionHandler().Deselect(province);
+					    }
+                        else if (isSelected && !severalSelected) {
+                            m_Menu.GetSelectionHandler().Deselect(province);
+                        }
+                        else {
+                            m_Menu.GetSelectionHandler().Select(province);
+                        }
+                        lastSelectedProvince = province;
                     }
-                    lastSelectedProvince = province;
                 }
-            }
 
-            if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-                sf::Vector2i titlePos = province->GetImagePosition();
-                m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
-            }
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                    sf::Vector2i titlePos = province->GetImagePosition();
+                    m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                }
 
-            ImGui::Text(province->GetName().c_str());
-            ImGui::TableNextColumn();
-            ImGui::Text("(%d, %d, %d)", province->GetColor().r, province->GetColor().g, province->GetColor().b);
+                ImGui::Text(province->GetName().c_str());
+                ImGui::TableNextColumn();
+                ImGui::Text("(%d, %d, %d)", province->GetColor().r, province->GetColor().g, province->GetColor().b);
+            } 
         }
+        clipper.End();
 
         ImGui::EndTable();
     }
