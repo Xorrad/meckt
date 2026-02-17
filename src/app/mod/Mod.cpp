@@ -1725,8 +1725,8 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
 
                 if(landless && !dejureTitles.empty())
                     LOG_WARNING("Landless title has dejure vassals in definition: {}", key);
-                else if(!landless && dejureTitles.empty())
-                    LOG_WARNING("Title does not have any dejure vassals in definition: {}", key);
+                /*else if(!landless && dejureTitles.empty())
+                    LOG_WARNING("Title does not have any dejure vassals in definition: {}", key);*/
 
                 for(const auto& dejureTitle : dejureTitles) {
                     highTitle->AddDejureTitle(dejureTitle);
