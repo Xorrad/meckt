@@ -1693,7 +1693,7 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
             // correspond to a title type.
             TitleType type = GetTitleTypeByName(key);
 
-            sf::Color color = value->GetFirst("color")->As<sf::Color>(sf::Color::Black);
+            sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::Black);
             bool landless = value->GetFirst("landless")->As<bool>(false);
 
             // Need to use a custom function to create a UniquePtr<Title>
@@ -1754,7 +1754,7 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
                 }
 
                 if(value->Contains("cultural_names")) {
-                    SharedPtr<Jomini::Object> culturalNames = value->GetFirst("cultural_names");
+                    SharedPtr<Jomini::Object> culturalNames = value->Get("cultural_names");
                     if(culturalNames->Is(Jomini::Type::OBJECT)) {
                         // TODO: Rewrite this whole chunk of code correctly.
                         for(auto [culture, p] : culturalNames->GetMap()) {
