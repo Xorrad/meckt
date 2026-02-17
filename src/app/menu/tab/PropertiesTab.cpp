@@ -205,7 +205,7 @@ void PropertiesTab::RenderJointProvinces() {
         // PROVINCE: religion (field)
         if (ImGui::InputText("religion", &religion)) {
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
-                province->SetReligion(culture);
+                province->SetReligion(religion);
             }
         }
 
