@@ -15,6 +15,15 @@ std::string Menu::GetName() const {
 
 void Menu::Update(sf::Time delta) {}
 
-void Menu::Event(const sf::Event& event) {}
+void Menu::Event(const sf::Event& event) {
+    if (const auto* resize = event.getIf<sf::Event::Resized>()) {
+		sf::View defaultView = m_App.GetWindow().getDefaultView();
+        defaultView.setSize({
+            static_cast<float>(resize->size.x),
+            static_cast<float>(resize->size.y)
+        });
+		m_App.GetWindow().setView(defaultView);
+    }
+}
 
 void Menu::Render() {}

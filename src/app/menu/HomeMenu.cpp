@@ -20,7 +20,7 @@ void HomeMenu::Update(sf::Time delta) {
 }
 
 void HomeMenu::Event(const sf::Event& event) {
-
+    Menu::Event(event);
 }
 
 void HomeMenu::Render() {

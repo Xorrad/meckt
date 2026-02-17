@@ -24,7 +24,7 @@ void LoadingMenu::Update(sf::Time delta) {
 }
 
 void LoadingMenu::Event(const sf::Event& event) {
-
+    Menu::Event(event);
 }
 
 void LoadingMenu::Render() {

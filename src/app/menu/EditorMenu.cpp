@@ -280,6 +280,8 @@ void EditorMenu::Update(sf::Time delta) {
 }
 
 void EditorMenu::Event(const sf::Event& event) {
+    Menu::Event(event);
+
     sf::RenderWindow& window = m_App.GetWindow();
 
     // Report event to all currently opened tabs
@@ -344,6 +346,12 @@ void EditorMenu::Event(const sf::Event& event) {
             }
 
         }
+    }
+    else  if (const auto* resize = event.getIf<sf::Event::Resized>()) {
+        m_Camera.setSize({
+            static_cast<float>(resize->size.x),
+            static_cast<float>(resize->size.y)
+        });
     }
 }
 

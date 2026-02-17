@@ -43,7 +43,7 @@ void NewModMenu::Update(sf::Time delta) {
 }
 
 void NewModMenu::Event(const sf::Event& event) {
-
+    Menu::Event(event);
 }
 
 void NewModMenu::Render() {
