@@ -115,8 +115,14 @@ sf::Image Mod::GetCultureImage() {
 
                 for(const auto& dejureTitle : liege->GetDejureTitles()) {
                     BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
-                    Province* baronyProvince = m_ProvincesByIds.at(barony->GetProvinceId());
 
+					auto it = m_ProvincesByIds.find(barony->GetProvinceId());
+                    if (it == m_ProvincesByIds.end()) {
+						LOG_ERROR("Barony '{}' has unknown province id '{}'", barony->GetName(), barony->GetProvinceId());
+                        continue;
+                    }
+
+                    Province* baronyProvince = it->second;
                     if(baronyProvince != nullptr && !baronyProvince->GetCulture().empty()) {
                         cultureName = baronyProvince->GetCulture();
                         break;
@@ -170,7 +176,14 @@ sf::Image Mod::GetReligionImage() {
 
                 for(const auto& dejureTitle : liege->GetDejureTitles()) {
                     BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
-                    Province* baronyProvince = m_ProvincesByIds.at(barony->GetProvinceId());
+
+                    auto it = m_ProvincesByIds.find(barony->GetProvinceId());
+                    if (it == m_ProvincesByIds.end()) {
+                        LOG_ERROR("Barony '{}' has unknown province id '{}'", barony->GetName(), barony->GetProvinceId());
+                        continue;
+                    }
+
+                    Province* baronyProvince = it->second;
 
                     if(baronyProvince != nullptr && !baronyProvince->GetReligion().empty()) {
                         religionName = baronyProvince->GetReligion();
@@ -1680,8 +1693,8 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
             // correspond to a title type.
             TitleType type = GetTitleTypeByName(key);
 
-            sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::Black);
-            bool landless = value->Get("landless")->As<bool>(false);
+            sf::Color color = value->GetFirst("color")->As<sf::Color>(sf::Color::Black);
+            bool landless = value->GetFirst("landless")->As<bool>(false);
 
             // Need to use a custom function to create a UniquePtr<Title>
             // to get the right derived class such as BaronyTitle, CountyTitle...
@@ -1692,7 +1705,7 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
 
             if(type == TitleType::BARONY) {
                 BaronyTitle* baronyTitle = static_cast<BaronyTitle*>(title.get());
-                baronyTitle->SetProvinceId(value->Get("province")->As<int>(0));
+                baronyTitle->SetProvinceId(value->GetFirst("province")->As<int>(0));
                 
                 if(!value->Contains("province"))
                     LOG_ERROR("Barony title missing province id in definition: {}", key);
@@ -1725,7 +1738,7 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
 
                 if(type != TitleType::COUNTY) {
                     if(value->Contains("capital")) {
-                        std::string capitalName = value->Get("capital")->As<std::string>();
+                        std::string capitalName = value->GetFirst("capital")->As<std::string>();
 
 						auto it = m_Titles.find(capitalName);
                         if (it != m_Titles.end()) {
@@ -1741,7 +1754,7 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
                 }
 
                 if(value->Contains("cultural_names")) {
-                    SharedPtr<Jomini::Object> culturalNames = value->Get("cultural_names");
+                    SharedPtr<Jomini::Object> culturalNames = value->GetFirst("cultural_names");
                     if(culturalNames->Is(Jomini::Type::OBJECT)) {
                         // TODO: Rewrite this whole chunk of code correctly.
                         for(auto [culture, p] : culturalNames->GetMap()) {
@@ -1793,7 +1806,7 @@ void Mod::LoadTitlesCapitals() {
         SharedPtr<Jomini::Object> value = highTitle->GetOriginalData();
         if (!value->Contains("capital"))
             continue;
-        std::string capitalName = value->Get("capital")->As<std::string>();
+        std::string capitalName = value->GetFirst("capital")->As<std::string>();
         auto it = m_Titles.find(capitalName);
         if (it == m_Titles.end()) {
             LOG_ERROR("Undefined capital title '{}' for '{}'", capitalName, titleName);
