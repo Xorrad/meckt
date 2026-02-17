@@ -175,38 +175,24 @@ void SelectionHandler::Update() {
 }
 
 void SelectionHandler::UpdateColors() {
+    /*sf::Vector2f center = m_Menu.GetCamera().getCenter();
+    sf::Vector2f size = m_Menu.GetCamera().getSize()*2.f;
+
+    sf::FloatRect viewBounds(
+        { center.x - size.x / 2.0f, center.y - size.y / 2.0f },
+        { size.x, size.y }
+    );*/
+
     m_Colors.clear();
     m_Count = 0;
-
-    // The shader need the colors of provinces.
-    // Ttherefore, we have to loop recursively through
-    // each titles until we reach a barony tier and get the color.
-    // std::function<void(Title*)> PushTitleProvincesColor = [*](Title* title) {
-    //     if(title->Is(TitleType::BARONY)) {
-    //         BaronyTitle> barony = CastSharedPtr<BaronyTitle>(title);
-    //         Province* province = m_Menu->GetApp()->GetMod()->GetProvincesByIds()[barony->GetProvinceId()];
-    //         sf::Color c = province->GetColor();
-    //         m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f));
-    //         m_Count++;
-    //     }
-    //     else {
-    //         HighTitle* highTitle = CastSharedPtr<HighTitle>(title);
-    //         for(const auto* dejureTitle : highTitle->GetDejureTitles())
-    //             PushTitleProvincesColor(dejureTitle);
-    //     }
-    // };
-    // for(const auto* title : m_Titles)
-    //     PushTitleProvincesColor(title);
-
-    // The method above was too slow. So instead of highlighting the color of every selected province
-    // including the ones inside a title, we use the alpha channel to specify what is selected: a province
-    // a barony, a county, a duchy, a kingdom or an empire. This way, the shader doesn't have to highlight
-    // hundreds of provinces when selecting an empire, but only change the color of the empire title using
-    // the empire titles image.
 
     // Define functions to push colors of selected objects (province, title, region).
     const auto PushProvinces = [&](const auto& provinces) {
         for (const Province* province : provinces) {
+            /*sf::Vector2f worldPoint = m_Menu.GetMapSprite()->getTransform().transformPoint(sf::Vector2f(province->GetImagePosition()));
+            if (!viewBounds.contains(worldPoint))
+                continue;*/
+            //m_Count++;
             sf::Color c = province->GetColor();
             m_Colors.push_back(sf::Glsl::Vec4(c.r/255.f, c.g/255.f, c.b/255.f, 0.f));
         }

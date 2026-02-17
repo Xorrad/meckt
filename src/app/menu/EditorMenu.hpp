@@ -15,8 +15,10 @@ public:
     SelectionHandler& GetSelectionHandler();
     sf::View& GetCamera();
     ImGuiID GetDockspaceID() const;
+    std::optional<sf::Sprite> GetMapSprite() const;
 
     void UpdateHoveringText();
+    void UpdateCameraBounds();
     void ToggleCamera(bool enabled);
 
     void SwitchMapMode(MapMode mode, bool clearSelection = false);

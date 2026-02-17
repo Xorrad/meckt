@@ -57,9 +57,9 @@ Province* EditorMenu::GetHoveredProvince() {
 
     if(!m_MapSprite->getGlobalBounds().contains(mousePosition))
         return nullptr;
-
+    
     Mod& mod = m_App.GetMod();
-    sf::Vector2u mapMousePosition = sf::Vector2u(mousePosition - m_MapSprite->getPosition());
+    sf::Vector2u mapMousePosition = sf::Vector2u(mousePosition);
 
     sf::Color color = mod.GetProvinceImage().getPixel(mapMousePosition);
     uint32_t colorId = color.toInteger();
@@ -85,6 +85,10 @@ sf::View& EditorMenu::GetCamera() {
 
 ImGuiID EditorMenu::GetDockspaceID() const {
     return m_DockspaceID;
+}
+
+std::optional<sf::Sprite> EditorMenu::GetMapSprite() const {
+    return m_MapSprite;
 }
 
 void EditorMenu::UpdateHoveringText() {
@@ -153,6 +157,40 @@ void EditorMenu::UpdateHoveringText() {
     m_HoverText.setString("");
     m_HoverTitleText.setString("");
     m_HoverShape.setSize({0, 0});
+}
+
+void EditorMenu::UpdateCameraBounds() {
+    if (!m_MapSprite.has_value())
+		return;
+
+    sf::Vector2f viewCenter = m_Camera.getCenter();
+    sf::Vector2f viewSize = m_Camera.getSize();
+
+    // Calculate the top-left corner of the visible area.
+    float left = viewCenter.x - viewSize.x / 2.0f;
+    float top = viewCenter.y - viewSize.y / 2.0f;
+    float width = viewSize.x;
+    float height = viewSize.y;
+
+    // Clamp the rectangle so it doesn't exceed the texture boundaries.
+    const sf::Texture& mapTexture = *m_MapTextures.at(m_MapMode);
+    float texWidth = static_cast<float>(mapTexture.getSize().x);
+    float texHeight = static_cast<float>(mapTexture.getSize().y);
+
+    float clampedLeft = std::max(0.f, std::min(left, texWidth - width));
+    float clampedTop = std::max(0.f, std::min(top, texHeight - height));
+    float clampedWidth = std::min(width, texWidth - clampedLeft);
+    float clampedHeight = std::min(height, texHeight - clampedTop);
+
+    // Apply the visible rectangle to the sprite.
+    m_MapSprite->setTextureRect(sf::IntRect(
+        { static_cast<int>(clampedLeft), static_cast<int>(clampedTop) },
+        { static_cast<int>(clampedWidth), static_cast<int>(clampedHeight) }
+    ));
+
+    // Move the sprite to the world position of the top-left corner
+    // so it matches the camera physical location in the game world
+    m_MapSprite->setPosition({ clampedLeft, clampedTop });
 }
 
 void EditorMenu::ToggleCamera(bool enabled) {
@@ -274,6 +312,7 @@ void EditorMenu::Update(sf::Time delta) {
 
         m_Camera.move(delta);
         m_LastMousePosition = currentMousePosition;
+        UpdateCameraBounds();
     }
 
     ToggleCamera(false);
@@ -306,6 +345,7 @@ void EditorMenu::Event(const sf::Event& event) {
         m_TotalZoom *= factor;
         m_Camera.zoom(factor);
         ToggleCamera(false);
+        UpdateCameraBounds();
     }
     else if(const auto* mouseButton = event.getIf<sf::Event::MouseButtonPressed>()) {
         if(mouseButton->button == sf::Mouse::Button::Left) {
@@ -352,6 +392,7 @@ void EditorMenu::Event(const sf::Event& event) {
             static_cast<float>(resize->size.x),
             static_cast<float>(resize->size.y)
         });
+        UpdateCameraBounds();
     }
 }
 
