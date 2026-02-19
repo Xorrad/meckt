@@ -57,6 +57,11 @@ void App::OpenMod(UniquePtr<Mod> mod) {
     m_ActiveMenu = std::move(menu);
 }
 
+void App::CloseMod() {
+    m_ActiveMod.reset();
+	m_ActiveMenu = MakeUnique<HomeMenu>(*this);
+}
+
 void App::Init() {
     // Initialize random seed.
     srand(time(NULL));

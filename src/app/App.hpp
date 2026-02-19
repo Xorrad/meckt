@@ -19,8 +19,9 @@ public:
     Update::Details& GetUpdateDetails();
 
     void DebugSettings();
-    void OpenMod(UniquePtr<Mod> mod);
     void OpenMenu(UniquePtr<Menu> menu);
+    void OpenMod(UniquePtr<Mod> mod);
+    void CloseMod();
 
     void Init();
     void Run();

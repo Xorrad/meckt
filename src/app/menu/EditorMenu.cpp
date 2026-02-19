@@ -446,7 +446,8 @@ void EditorMenu::Render() {
     }
 
     if(m_ExitToMainMenu) {
-        m_App.OpenMenu(MakeUnique<HomeMenu>(m_App));
+        // m_App.OpenMenu(MakeUnique<HomeMenu>(m_App));
+        m_App.CloseMod();
     }
 }
 
@@ -589,9 +590,9 @@ void EditorMenu::RenderMenuBar() {
             if(ImGui::MenuItem("Export")) {
                 m_ModalName = "Export";
             }
-            if(ImGui::MenuItem("Close")) {
+            /*if(ImGui::MenuItem("Close")) {
                 m_ModalName = "Close";
-            }
+            }*/
             if(ImGui::MenuItem("Exit")) {
                 m_ModalName = "Exit";
             }
