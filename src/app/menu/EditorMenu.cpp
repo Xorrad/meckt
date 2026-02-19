@@ -600,22 +600,33 @@ void EditorMenu::RenderMenuBar() {
         }
         if(ImGui::BeginMenu("View")) {
 
+            if (ImGui::BeginMenu("Map")) {
+                for (int i = 0; i < (int)MapMode::COUNT; i++) {
+                    if (ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode)i)) {
+                        this->SwitchMapMode((MapMode)i);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::Separator();
+
             for(const auto& [type, tab] : m_Tabs) {
                 ImGui::MenuItem(tab->GetName().c_str(), "", &tab->IsVisible());
             }
             
+            ImGui::Separator();
+
             ImGui::MenuItem("Borders", "", &m_DisplayBorders);
             if(ImGui::MenuItem("Compact Tooltip", "", &Configuration::compactTooltip)) {
                 Configuration::Save();
             }
 
-            if(ImGui::BeginMenu("Map")) {
-                for(int i = 0; i < (int) MapMode::COUNT; i++) {
-                    if(ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode) i)) {
-                        this->SwitchMapMode((MapMode) i);
-                    }    
-                }
-                ImGui::EndMenu();
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Refresh all textures")) {
+                this->UpdateTextures();
+                this->SwitchMapMode(m_MapMode, false);
             }
 
             ImGui::EndMenu();
