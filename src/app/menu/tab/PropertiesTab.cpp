@@ -420,7 +420,7 @@ void PropertiesTab::RenderProvinces() {
                 }
 
                 // PROVINCE: history (collapsing header + child window (for borders) + collapsing header for each dates)
-                ImGui::SetNextItemOpen(m_DisplayHistory);
+                ImGui::SetNextItemOpen(m_DisplayHistory, ImGuiCond_Appearing);
                 if (ImGui::CollapsingHeader("history")) {
                     m_DisplayHistory = true;
 
@@ -652,7 +652,7 @@ void PropertiesTab::RenderTitles() {
                 ImGui::PopStyleVar();
 
                 // TITLE: cultural names (collapsing header + child window (for borders) + collapsing header for each culture)
-                ImGui::SetNextItemOpen(m_DisplayCulturalNames);
+                ImGui::SetNextItemOpen(m_DisplayCulturalNames, ImGuiCond_Appearing);
                 if (ImGui::CollapsingHeader("cultural names")) {
                     m_DisplayCulturalNames = true;
 
@@ -701,7 +701,7 @@ void PropertiesTab::RenderTitles() {
                 }
 
                 // TITLE: history (collapsing header + child window (for borders) + collapsing header for each dates)
-                ImGui::SetNextItemOpen(m_DisplayHistory);
+                ImGui::SetNextItemOpen(m_DisplayHistory, ImGuiCond_Appearing);
                 if (ImGui::CollapsingHeader("history")) {
                     m_DisplayHistory = true;
 
@@ -848,7 +848,7 @@ void PropertiesTab::RenderTitles() {
                     HighTitle* highTitle = static_cast<HighTitle*>(title);
 
                     // HIGHTITLE: dejure titles (list)
-                    ImGui::SetNextItemOpen(m_DisplayDejureTitles);
+                    ImGui::SetNextItemOpen(m_DisplayDejureTitles, ImGuiCond_Appearing);
                     if (ImGui::CollapsingHeader("dejure titles")) {
                         m_DisplayDejureTitles = true;
 
@@ -1041,7 +1041,7 @@ void PropertiesTab::RenderRegions() {
             ImGui::PopStyleVar();
 
             // REGION: titles (list)
-            ImGui::SetNextItemOpen(m_DisplayRegionsTitles);
+            ImGui::SetNextItemOpen(m_DisplayRegionsTitles, ImGuiCond_Appearing);
             if (ImGui::CollapsingHeader("titles")) {
                 m_DisplayRegionsTitles = true;
 
@@ -1138,7 +1138,7 @@ void PropertiesTab::RenderRegions() {
             }
             
             // REGION: provinces (list)
-            ImGui::SetNextItemOpen(m_DisplayRegionsProvinces);
+            ImGui::SetNextItemOpen(m_DisplayRegionsProvinces, ImGuiCond_Appearing);
             if (ImGui::CollapsingHeader("provinces")) {
                 m_DisplayRegionsProvinces = true;
 
@@ -1219,7 +1219,7 @@ void PropertiesTab::RenderRegions() {
             }
             
             // REGION: regions (list)
-            ImGui::SetNextItemOpen(m_DisplayRegionsRegions);
+            ImGui::SetNextItemOpen(m_DisplayRegionsRegions, ImGuiCond_Appearing);
             if (ImGui::CollapsingHeader("regions")) {
                 m_DisplayRegionsRegions = true;
 
