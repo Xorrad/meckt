@@ -213,12 +213,13 @@ bool HighTitle::IsDejureTitle(const Title* title) const {
 }
 
 void HighTitle::AddDejureTitle(Title* title) {
-    if(!this->IsDejureTitle(title))
+    if (!this->IsDejureTitle(title)) {
         m_DejureTitles.push_back(title);
 
-    HighTitle* previousLiege = title->GetLiegeTitle();
-    if(previousLiege != nullptr) {
-        previousLiege->RemoveDejureTitle(title);
+        HighTitle* previousLiege = title->GetLiegeTitle();
+        if (previousLiege != nullptr) {
+            previousLiege->RemoveDejureTitle(title);
+        }
     }
     title->SetLiegeTitle(this);
 }
