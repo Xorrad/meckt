@@ -898,7 +898,9 @@ void PropertiesTab::RenderTitles() {
                                 // TODO: it would be better not having to redraw the entire map
                                 // but only the relevant colors.
                                 MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                                m_Menu.UpdateTexture(liegeMapMode, false);
+                                for (int i = (int)liegeMapMode; i <= (int)MapMode::HEGEMONY; i++) {
+                                    m_Menu.UpdateTexture((MapMode)i, false);
+                                }
                                 m_Menu.SwitchMapMode(liegeMapMode, false);
                             }
                             ImGui::PopID();
@@ -920,7 +922,9 @@ void PropertiesTab::RenderTitles() {
                                         return SelectionCallbackResult::INTERRUPT;
                                     highTitle->AddDejureTitle(clickedTitle);
                                     MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                                    m_Menu.UpdateTexture(liegeMapMode, false);
+                                    for (int i = (int) liegeMapMode; i <= (int) MapMode::HEGEMONY; i++) {
+                                        m_Menu.UpdateTexture((MapMode)i, false);
+									}
                                     m_Menu.SwitchMapMode(liegeMapMode, false);
                                     m_SelectingTitle = false;
                                     return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
