@@ -221,7 +221,13 @@ void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
 		m_MapSprite = sf::Sprite(*m_MapTextures.at(m_MapMode));
 }
 
-void EditorMenu::RefreshMapMode(bool clearSelection, bool resetFocus) {
+void EditorMenu::RefreshMapMode(MapMode mode, bool clearSelection, bool resetFocus) {
+    this->UpdateTexture(mode, resetFocus);
+	if (mode == m_MapMode)
+        this->SwitchMapMode(mode, clearSelection);
+}
+
+void EditorMenu::RefreshCurrentMapMode(bool clearSelection, bool resetFocus) {
     // Recreate the image for the current map mode, update the shader
     // and update the map sprite on the screen.
     this->UpdateTexture(m_MapMode, resetFocus);
@@ -481,7 +487,7 @@ void EditorMenu::InitSelectionCallbacks() {
                     if (isSelected)
                         m_SelectionHandler.Deselect(title);
                     title->SetSelectionFocus(false);
-                    this->RefreshMapMode(false, false);
+                    this->RefreshCurrentMapMode(false, false);
                 }
                 return SelectionCallbackResult::CONTINUE;
             }
@@ -504,7 +510,7 @@ void EditorMenu::InitSelectionCallbacks() {
         else if(button == sf::Mouse::Button::Right) {
             if(title->GetLiegeTitle() != nullptr && !title->GetLiegeTitle()->HasSelectionFocus()) {
                 title->GetLiegeTitle()->SetSelectionFocus(true);
-                this->RefreshMapMode(false, false);
+                this->RefreshCurrentMapMode(false, false);
             }
         }
 
@@ -787,7 +793,7 @@ void EditorMenu::RenderModals() {
             mod.AddTitle(std::move(title));
 
             this->SwitchMapMode(TitleTypeToMapMode(type), true);
-            this->RefreshMapMode();
+            this->RefreshCurrentMapMode();
             m_SelectionHandler.Select(titlePtr);
         }
         if(isNameTaken) ImGui::EndDisabled();
@@ -906,7 +912,7 @@ void EditorMenu::RenderModals() {
             ImGui::CloseCurrentPopup();
             initialized = false;
             mod.HarmonizeTitlesColors(m_SelectionHandler.GetTitles(), color, hue/100.f, saturation/100.f);
-            this->RefreshMapMode(true, false);
+            this->RefreshCurrentMapMode(true, false);
         }
         if(!hasTitlesSelected) ImGui::EndDisabled();
 

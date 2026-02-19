@@ -142,7 +142,7 @@ void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province) {
     }
 
     if (updateMap)
-        m_Menu.RefreshMapMode(false);
+        m_Menu.RefreshCurrentMapMode(false);
 }
 
 void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province, Title* title) {
@@ -166,7 +166,7 @@ void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province, Tit
     }
 
     if (updateMap)
-        m_Menu.RefreshMapMode(false);
+        m_Menu.RefreshCurrentMapMode(false);
 }
 
 void SelectionHandler::Update() {

@@ -150,6 +150,7 @@ void PropertiesTab::RenderJointProvinces() {
                     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetTerrain(newTerrain);
                     }
+                    m_Menu.RefreshMapMode(MapMode::TERRAIN);
                 }
 
                 // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
@@ -196,17 +197,19 @@ void PropertiesTab::RenderJointProvinces() {
         }
 
         // PROVINCE: culture (field)
-        if (ImGui::InputText("culture", &culture)) {
+        if (ImGui::InputTextCommitOnEnter("culture", &culture)) {
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                 province->SetCulture(culture);
             }
+            m_Menu.RefreshMapMode(MapMode::CULTURE);
         }
 
         // PROVINCE: religion (field)
-        if (ImGui::InputText("religion", &religion)) {
+        if (ImGui::InputTextCommitOnEnter("religion", &religion)) {
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                 province->SetReligion(religion);
             }
+            m_Menu.RefreshMapMode(MapMode::RELIGION);
         }
 
         // PROVINCE: holding type (combobox)
@@ -251,28 +254,29 @@ void PropertiesTab::RenderJointProvinces() {
                 int width = 0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("normal winter factor override").x;
 
                 ImGui::SetNextItemWidth(width);
-                if (ImGui::InputText("winter severity bias", &winterSeverityBias)) {
+                if (ImGui::InputTextCommitOnEnter("winter severity bias", &winterSeverityBias)) {
                     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetWinterSeverityBias(winterSeverityBias);
                     }
+                    m_Menu.RefreshMapMode(MapMode::WINTER_SEVERITY);
                 }
 
                 ImGui::SetNextItemWidth(width);
-                if (ImGui::InputText("mild winter factor override", &mildWinterFactorOverride)) {
+                if (ImGui::InputTextCommitOnEnter("mild winter factor override", &mildWinterFactorOverride)) {
                     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetMildWinterFactorOverride(mildWinterFactorOverride);
                     }
                 }
 
                 ImGui::SetNextItemWidth(width);
-                if (ImGui::InputText("normal winter factor override", &normalWinterFactorOverride))  {
+                if (ImGui::InputTextCommitOnEnter("normal winter factor override", &normalWinterFactorOverride))  {
                     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetNormalWinterFactorOverride(normalWinterFactorOverride);
                     }
                 }
 
                 ImGui::SetNextItemWidth(width);
-                if (ImGui::InputText("harsh winter factor override", &harshWinterFactorOverride)) {
+                if (ImGui::InputTextCommitOnEnter("harsh winter factor override", &harshWinterFactorOverride)) {
                     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
                         province->SetHarshWinterFactorOverride(harshWinterFactorOverride);
                     }
@@ -341,8 +345,10 @@ void PropertiesTab::RenderProvinces() {
                 if (ImGui::BeginCombo("terrain type", province->GetTerrain().c_str())) {
                     for (const auto& [terrain, _] : m_Menu.GetApp().GetMod().GetTerrainTypes()) {
                         const bool isSelected = (province->GetTerrain() == terrain);
-                        if (ImGui::Selectable(terrain.c_str(), isSelected))
+                        if (ImGui::Selectable(terrain.c_str(), isSelected)) {
                             province->SetTerrain(terrain);
+                            m_Menu.RefreshMapMode(MapMode::TERRAIN);
+                        }
 
                         // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
                         if (isSelected)
@@ -392,10 +398,14 @@ void PropertiesTab::RenderProvinces() {
                 }
 
                 // PROVINCE: culture (field)
-                ImGui::InputText("culture", &province->m_Culture);
+                if (ImGui::InputTextCommitOnEnter("culture", &province->m_Culture)) {
+                    m_Menu.RefreshMapMode(MapMode::CULTURE);
+                }
 
                 // PROVINCE: religion (field)
-                ImGui::InputText("religion", &province->m_Religion);
+                if (ImGui::InputTextCommitOnEnter("religion", &province->m_Religion)) {
+                    m_Menu.RefreshMapMode(MapMode::RELIGION);
+                }
 
                 // PROVINCE: holding type (combobox)
                 if (ImGui::BeginCombo("holding", province->GetHolding().c_str())) {
@@ -537,16 +547,18 @@ void PropertiesTab::RenderProvinces() {
                         int width = 0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("normal winter factor override").x;
 
                         ImGui::SetNextItemWidth(width);
-                        ImGui::InputText("winter severity bias", &province->m_WinterSeverityBias);
+                        if (ImGui::InputTextCommitOnEnter("winter severity bias", &province->m_WinterSeverityBias)) {
+                            m_Menu.RefreshMapMode(MapMode::WINTER_SEVERITY);
+                        }
 
                         ImGui::SetNextItemWidth(width);
-                        ImGui::InputText("mild winter factor override", &province->m_MildWinterFactorOverride);
+                        ImGui::InputTextCommitOnEnter("mild winter factor override", &province->m_MildWinterFactorOverride);
 
                         ImGui::SetNextItemWidth(width);
-                        ImGui::InputText("normal winter factor override", &province->m_NormalWinterFactorOverride);
+                        ImGui::InputTextCommitOnEnter("normal winter factor override", &province->m_NormalWinterFactorOverride);
 
                         ImGui::SetNextItemWidth(width);
-                        ImGui::InputText("harsh winter factor override", &province->m_HarshWinterFactorOverride);
+                        ImGui::InputTextCommitOnEnter("harsh winter factor override", &province->m_HarshWinterFactorOverride);
 
                         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "note: leave fields empty if you don't want any value.");
                     }
@@ -612,13 +624,13 @@ void PropertiesTab::RenderTitles() {
                 }
 
                 // TITLE: localization name (field)
-                ImGui::InputText("loc. name", &title->GetLocName("english"));
+                ImGui::InputTextCommitOnEnter("loc. name", &title->GetLocName("english"));
 
                 // TITLE: localization adjective (field)
-                ImGui::InputText("loc. adjective", &title->GetLocAdjective("english"));
+                ImGui::InputTextCommitOnEnter("loc. adjective", &title->GetLocAdjective("english"));
 
                 // TITLE: localization article (field)
-                ImGui::InputText("loc. article", &title->GetLocArticle("english"));
+                ImGui::InputTextCommitOnEnter("loc. article", &title->GetLocArticle("english"));
 
                 // TITLE: tier/type (combo)
                 ImGui::BeginDisabled();
@@ -630,7 +642,7 @@ void PropertiesTab::RenderTitles() {
                 sf::Color color = title->GetColor();
                 if (ImGui::ColorEdit3("color", &color)) {
                     title->SetColor(color);
-                    m_Menu.RefreshMapMode(false);
+					m_Menu.RefreshMapMode(TitleTypeToMapMode(title->GetType()));
                     m_Menu.GetSelectionHandler().Update();
                 }
 
@@ -984,7 +996,7 @@ void PropertiesTab::RenderTitles() {
                         m_Menu.GetApp().GetMod().RemoveTitle(title);
 
                         m_Menu.UpdateTextures();
-                        m_Menu.RefreshMapMode(true, false);
+                        m_Menu.RefreshCurrentMapMode(true, false);
                     }
 
                     ImGui::SetItemDefaultFocus();

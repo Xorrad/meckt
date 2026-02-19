@@ -22,7 +22,8 @@ public:
     void ToggleCamera(bool enabled);
 
     void SwitchMapMode(MapMode mode, bool clearSelection = false);
-    void RefreshMapMode(bool clearSelection = false, bool resetFocus = true);
+    void RefreshMapMode(MapMode mode, bool clearSelection = false, bool resetFocus = false);
+    void RefreshCurrentMapMode(bool clearSelection = false, bool resetFocus = true);
     void UpdateTexture(MapMode mode, bool resetFocus = true);
     void UpdateTextures();
 
