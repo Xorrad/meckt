@@ -11,6 +11,18 @@
 #include <nlohmann/json.hpp>
 #include <errno.h>
 
+// Write callback for curl.
+size_t Update::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
+    size_t totalSize = size * nmemb;
+    output->append((char*) contents, totalSize);
+    return totalSize;
+}
+
+// Write binary callback for downloading.
+size_t Update::WriteFileCallback(void* contents, size_t size, size_t nmemb, FILE* file) {
+    return fwrite(contents, size, nmemb, file);
+}
+
 std::string Update::HttpGet(const std::string& url, const std::string& filePath) {
 #ifdef _WIN32
     std::string response = "";
