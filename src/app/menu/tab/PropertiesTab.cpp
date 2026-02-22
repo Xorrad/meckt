@@ -973,6 +973,16 @@ void PropertiesTab::RenderTitles() {
                 if (ImGui::Button("delete"))
                     ImGui::OpenPopup("Delete this title");
 
+                // TITLE: Switch to liege (button)
+                bool hasLiege = (!title->Is(TitleType::HEGEMONY) && title->GetLiegeTitle() != nullptr);
+                if (!hasLiege) ImGui::BeginDisabled();
+                if (ImGui::Button("switch to liege") && hasLiege) {
+					Title* liege = title->GetLiegeTitle();
+                    m_Menu.SwitchMapMode(TitleTypeToMapMode(liege->GetType()), true);
+                    m_Menu.GetSelectionHandler().Select(liege);
+                }
+                if (!hasLiege) ImGui::EndDisabled();
+
                 // TITLE: delete title (modal)
                 ImVec2 center = ImGui::GetMainViewport()->GetCenter();
                 ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
