@@ -11,18 +11,6 @@
 #include <nlohmann/json.hpp>
 #include <errno.h>
 
-// Write callback for curl.
-size_t Update::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
-    size_t totalSize = size * nmemb;
-    output->append((char*) contents, totalSize);
-    return totalSize;
-}
-
-// Write binary callback for downloading.
-size_t Update::WriteFileCallback(void* contents, size_t size, size_t nmemb, FILE* file) {
-    return fwrite(contents, size, nmemb, file);
-}
-
 std::string Update::HttpGet(const std::string& url, const std::string& filePath) {
 #ifdef _WIN32
     std::string response = "";
@@ -202,53 +190,4 @@ Update::Details Update::QueryDetails() {
     }
 
     return result;
-}
-
-std::string Update::Update(const Details& details) {
-    try {
-        HttpGet(details.lastBuildDownloadURL.c_str(), "latest_build.zip");
-    }
-    catch (std::exception& e) {
-        return e.what();
-    }
-        
-    // Write a bash script to extract the zip replace
-    // the former build files and restart the tool.
-#ifdef _WIN32
-    std::string script = R"(
-        @echo off
-        echo Updating...
-        timeout /t 3 > nul
-        powershell -Command "Expand-Archive -Force 'latest_build.zip' '.' -ErrorAction SilentlyContinue 2>$null"
-        del latest_build.zip
-        start "" "meckt.exe"
-        timeout /t 3 > nul
-        echo Updated successfully!
-        del "%~f0"
-    )";
-    std::ofstream scriptFile("update.bat");
-    scriptFile << script;
-    scriptFile.close();
-
-    std::system("start \"\" update.bat");
-#else
-    std::string script = R"(
-        #!/bin/bash
-        echo "Updating..."
-        sleep 3
-        unzip -o latest_build.zip -d .
-        rm latest_build.zip
-        ./meckt &
-        rm -- "$0"
-    )";
-    std::ofstream scriptFile("update.sh");
-    scriptFile << script;
-    scriptFile.close();
-
-    // Make the script executable.
-    system("chmod +x update.sh");
-    system("./update.sh &");
-#endif
-
-    return "";
 }

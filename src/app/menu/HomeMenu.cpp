@@ -211,24 +211,7 @@ void HomeMenu::RenderUpdateModal() {
         }
         ImGui::Separator();
 
-        bool disableDownload = false;
-#ifdef DEB
-        disableDownload = true;
-#endif
-
-        ImGui::SetItemDefaultFocus();
-        if (hasError || disableDownload) ImGui::BeginDisabled();
-        if(ImGui::Button("Download", ImVec2(120, 0))) {
-            m_App.GetUpdateDetails().error = Update::Update(m_App.GetUpdateDetails());
-
-            // Only restart if the download has been successful.
-            if (m_App.GetUpdateDetails().error.empty())
-                m_App.GetWindow().close();
-        }
-        if (hasError || disableDownload) ImGui::EndDisabled();
-
-        ImGui::SameLine();
-        if(ImGui::Button("Open GitHub", ImVec2(120, 0))) {
+        if(ImGui::Button("Open GitHub")) {
             std::string command;
 #ifdef _WIN32
             command = "start " + m_App.GetUpdateDetails().lastBuildURL;
@@ -239,7 +222,7 @@ void HomeMenu::RenderUpdateModal() {
         }
 
         ImGui::SameLine();
-        if(ImGui::Button("Close", ImVec2(120, 0))) {
+        if(ImGui::Button("Close")) {
             ImGui::CloseCurrentPopup();
             s_PromptUpdate = false;
         }
