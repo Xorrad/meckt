@@ -196,7 +196,7 @@ HighTitle::HighTitle() : Title("", sf::Color(0, 0, 0)), m_CapitalTitle(nullptr) 
 
 HighTitle::HighTitle(std::string name, sf::Color color, bool landless) : Title(name, color, landless), m_CapitalTitle(nullptr) {}
 
-std::vector<Title*> HighTitle::GetDejureTitles() {
+std::vector<Title*>& HighTitle::GetDejureTitles() {
     return m_DejureTitles;
 }
 

@@ -91,7 +91,7 @@ public:
     virtual ~HighTitle() = default;
 
     virtual TitleType GetType() const = 0;
-    std::vector<Title*> GetDejureTitles();
+    std::vector<Title*>& GetDejureTitles();
     const std::vector<Title*>& GetDejureTitles() const;
     CountyTitle* GetCapitalTitle();
     bool IsDejureTitle(const Title* title) const;
