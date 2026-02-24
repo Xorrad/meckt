@@ -62,12 +62,12 @@ std::string String::Join(std::vector<std::string> list, const std::string& delim
 
 std::string String::FileSizeFormat(uint size) {
     if(size < 1000)
-        return std::to_string(size) + " Bytes";
+        return std::format("{:} B", size);
     if(size < 1000000)
-        return std::to_string(size / 1000.f) + " KB";
+        return std::format("{:.1f} KB", size/1000.f);
     if(size < 1000000000)
-        return std::to_string(size / 1000000.f) + " MB";
-    return std::to_string(size / 1000000000.f) + " GB";
+        return std::format("{:.1f} MB", size/1000000.f);
+    return std::format("{:.1f} GB", size/1000000000.f);
 }
 
 std::string String::DurationFormat(const sf::Time& time) {
