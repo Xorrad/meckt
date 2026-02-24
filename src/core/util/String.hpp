@@ -7,8 +7,6 @@ namespace String {
     std::vector<std::string> Split(std::string str, const std::string& delimiter);
     std::string Join(std::vector<std::string> list, const std::string& delimiter);
 
-    int UTF8CharLength(char ch);
-
     std::string FileSizeFormat(uint size);
     std::string DurationFormat(const sf::Time& time);
 

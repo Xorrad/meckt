@@ -60,18 +60,6 @@ std::string String::Join(std::vector<std::string> list, const std::string& delim
     return result;
 }
 
-int UTF8CharLength(char ch) {
-    if((ch & 0x80) == 0)
-        return 1;
-    if((ch & 0xE0) == 0xC0)
-        return 2;
-    if((ch & 0xF0) == 0xE0)
-        return 3;
-    if((ch & 0xF8) == 0xF0)
-        return 4;
-    throw std::runtime_error("invalid UTF-8");
-}
-
 std::string String::FileSizeFormat(uint size) {
     if(size < 1000)
         return std::to_string(size) + " Bytes";
