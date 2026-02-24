@@ -1,4 +1,4 @@
-﻿name: Build Artifacts
+﻿name: Run Tests
 
 on:
   push:
@@ -34,20 +34,12 @@ jobs:
         cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build Executable
-      run: cmake --build ${{ github.workspace }}/build --target meckt-app --config Release --parallel
+      run: cmake --build ${{ github.workspace }}/build --target meckt-tests --config Release --parallel
         
-    - name: Upload ZIP Artifact (Windows)
-      uses: actions/upload-artifact@v4
-      if: runner.os == 'Windows'
-      with:
-        name: win-meckt-release
-        path: ${{ github.workspace }}/build/bin/Release
-        if-no-files-found: error
-
-    - name: Upload ZIP Artifact (Linux)
-      uses: actions/upload-artifact@v4
+    - name: Run meckt-tests (Linux)
       if: runner.os == 'Linux'
-      with:
-        name: linux-meckt-release
-        path: ${{ github.workspace }}/build/bin/Release
-        if-no-files-found: error
+      run: ./build/bin/Release/meckt-tests
+
+    - name: Run meckt-tests (Windows)
+      if: runner.os == 'Windows'
+      run: ./build/bin/Release/meckt-tests.exe
