@@ -94,18 +94,36 @@ bool String::IsAlphaNumeric(char ch) {
 
 double String::ParseDouble(const std::string& str) {
     std::stringstream ss(str);
+    double value;
+
     // Force the use of '.' as the decimal separator.
     ss.imbue(std::locale("C"));
-    double value;
-    ss >> value;
+
+    if (!(ss >> value))
+        throw std::invalid_argument("ParseDouble: invalid numeric format: " + str);
+
+    // Ensure there is no trailing garbage, except whitespace.
+    ss >> std::ws;
+    if (!ss.eof())
+        throw std::invalid_argument("ParseDouble: trailing characters in: " + str);
+
     return value;
 }
 
 int String::ParseInt(const std::string& str) {
     std::stringstream ss(str);
+    int value;
+
     // Force the use of '.' as the decimal separator.
     ss.imbue(std::locale("C"));
-    int value;
-    ss >> value;
+
+    if (!(ss >> value))
+        throw std::invalid_argument("ParseInt: invalid numeric format: " + str);
+
+    // Ensure there is no trailing garbage, except whitespace.
+    ss >> std::ws;
+    if (!ss.eof())
+        throw std::invalid_argument("ParseInt: trailing characters in: " + str);
+
     return value;
 }
