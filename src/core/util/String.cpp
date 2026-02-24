@@ -71,11 +71,11 @@ std::string String::FileSizeFormat(uint size) {
 }
 
 std::string String::DurationFormat(const sf::Time& time) {
-    if(time.asSeconds() > 1.f)
-        return std::to_string(time.asSeconds()) + "s";
-    if(time.asMilliseconds() > 1.f)
-        return std::to_string(time.asMilliseconds()) + "ms";
-    return std::to_string(time.asMicroseconds()) + "μs";
+    if(time.asMilliseconds() < 1.f)
+        return std::format("{:}μs", time.asMicroseconds());
+    if(time.asSeconds() < 1.f)
+        return std::format("{:}ms", time.asMilliseconds());
+    return std::format("{:.1f}s", time.asSeconds());
 }
 
 bool String::IsDigit(char ch) {
