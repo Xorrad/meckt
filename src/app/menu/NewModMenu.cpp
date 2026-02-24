@@ -1,11 +1,11 @@
 #include "NewModMenu.hpp"
 
-#include "app/App.hpp"
-#include "app/mod/Mod.hpp"
-#include "app/map/Title.hpp"
+#include "core/mod/Mod.hpp"
+#include "core/map/titles/Title.hpp"
 
-#include "HomeMenu.hpp"
-#include "EditorMenu.hpp"
+#include "app/App.hpp"
+#include "app/menu/HomeMenu.hpp"
+#include "app/menu/EditorMenu.hpp"
 
 #include "ImGuiStyle.hpp"
 #include <imgui/imgui.hpp>

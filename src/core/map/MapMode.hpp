@@ -1,7 +1,5 @@
 #pragma once
 
-enum class TitleType : int;
-
 enum class MapMode {
     PROVINCES       = 0,
     HEIGHTMAP       = 1,

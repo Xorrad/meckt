@@ -1,8 +1,11 @@
 #pragma once
 
+#if defined(BACKWARD_SYSTEM_LINUX) || defined(BACKWARD_SYSTEM_DARWIN)
 #define BACKWARD_HAS_BFD 1
 #define BACKWARD_HAS_DW 1
-#include <backward/backward.hpp>
+#endif
+
+#include <backward.hpp>
 #include <signal.h>
 
 #if defined(BACKWARD_SYSTEM_LINUX) || defined(BACKWARD_SYSTEM_DARWIN)

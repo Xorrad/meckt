@@ -18,6 +18,7 @@ enum class LoadingState {
     LOCALIZATION,
     FINISHED,
 };
+
 const std::map<LoadingState, std::string> LoadingStateLabels = {
     { LoadingState::TEXTURES, "Textures" },
     { LoadingState::HOLDING_TYPES, " Holding Types" },

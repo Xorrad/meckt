@@ -1,12 +1,13 @@
 #include "PropertiesTab.hpp"
-#include "app/menu/EditorMenu.hpp"
-#include "app/menu/selection/SelectionHandler.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/map/provinces/Province.hpp"
+#include "core/map/regions/Region.hpp"
+#include "core/map/titles/Title.hpp"
 
 #include "app/App.hpp"
-#include "app/mod/Mod.hpp"
-#include "app/map/Province.hpp"
-#include "app/map/Region.hpp"
-#include "app/map/Title.hpp"
+#include "app/menu/EditorMenu.hpp"
+#include "app/menu/selection/SelectionHandler.hpp"
 
 #include "imgui/imgui.hpp"
 #include "app/menu/ImGuiStyle.hpp"

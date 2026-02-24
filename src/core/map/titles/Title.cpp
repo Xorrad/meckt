@@ -1,6 +1,6 @@
 #include "Title.hpp"
-#include "app/mod/Mod.hpp"
-#include "app/map/Province.hpp"
+#include "mod/Mod.hpp"
+#include "map/provinces/Province.hpp"
 
 Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 

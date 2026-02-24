@@ -1,6 +1,8 @@
 #include "String.hpp"
 
 std::string String::Strip(std::string str, std::string toReplace) {
+    if (toReplace.empty())
+        return str;
     size_t i;
     while((i = str.find(toReplace)) != std::string::npos) {
         str.erase(i, toReplace.size());

@@ -1,3 +1,28 @@
+// Forward declarations
+enum class ClimateType : int;
+enum class ProvinceFlags : int;
+enum class TitleType : int;
+enum class MapMode : int;
+
+class Mod;
+
+class HoldingType;
+class Province;
+class TerrainType;
+class Region;
+class Title;
+class HighTitle;
+class BaronyTitle;
+class CountyTitle;
+class DuchyTitle;
+class KingdomTitle;
+class EmpireTitle;
+class HegemonyTitle;
+
+class Culture;
+class Religion;
+
+// Standard headers
 #include <iostream>
 #include <vector>
 #include <list>
@@ -18,49 +43,13 @@
 #include <type_traits> // std::underlying_type_t
 #include <thread> // std::thread
 
-#ifdef _WIN32
-typedef unsigned long ulong;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-#endif
-
+// SFML headers
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 
+// Internal headers
 #include <Jomini.hpp>
-
-// Custom backward::SignalHandling to print stacktrace to file.
-class SignalHandler;
-
-class App;
-
-class Mod;
-class Culture;
-class Religion;
-class Province;
-class Region;
-class Title;
-class HighTitle;
-class BaronyTitle;
-class CountyTitle;
-class DuchyTitle;
-class KingdomTitle;
-class EmpireTitle;
-
-class Menu;
-class HomeMenu;
-class LoadingMenu;
-class NewModMenu;
-class EditorMenu;
-
-class Tab;
-class TitlesTab;
-class RegionsTab;
-class ProvincesTab;
-class PropertiesTab;
-class CulturalNamesTab;
-class LogTab;
 
 #include "util/Ptr.hpp"
 #include "util/Logger.hpp"
@@ -72,11 +61,12 @@ class LogTab;
 #include "util/ScopedString.hpp"
 #include "util/Image.hpp"
 #include "util/OrderedMap.hpp"
-#include "app/Configuration.hpp"
-#include "app/mod/LoadingState.hpp"
 
-#include "app/map/TitleType.hpp"
-#include "app/map/MapMode.hpp"
-#include "app/map/Province.hpp"
-#include "app/menu/selection/SelectionCallbackResult.hpp"
-#include "app/menu/tab/Tab.hpp"
+#include "map/provinces/ClimateType.hpp"
+#include "map/provinces/HoldingType.hpp"
+#include "map/provinces/ProvinceFlags.hpp"
+#include "map/provinces/TerrainType.hpp"
+#include "map/titles/TitleType.hpp"
+#include "map/MapMode.hpp"
+
+#include "mod/LoadingState.hpp"

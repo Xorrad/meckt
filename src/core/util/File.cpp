@@ -1,6 +1,5 @@
 #include "File.hpp"
-#include "app/Update.hpp"
-
+#include "Http.hpp"
 #include <filesystem>
 
 std::set<std::string> File::ListFiles(const std::string& dirPath, bool recursive) {
@@ -71,7 +70,7 @@ void File::OpenFile(const std::string& path) {
 
 bool File::DownloadFile(const std::string& url, const std::string& dest) {
     try {
-        Update::HttpGet(url, dest);
+        Http::Get(url, dest);
     }
     catch (std::exception& e) {
         return false;

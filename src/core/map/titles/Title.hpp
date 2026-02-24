@@ -1,7 +1,6 @@
 #pragma once
 
 class Title {
-friend PropertiesTab;
 public:
     Title();
     Title(std::string name, sf::Color color, bool landless = false);
@@ -84,7 +83,6 @@ protected:
 };
 
 class HighTitle : public Title {
-friend PropertiesTab;
 public:
     HighTitle();
     HighTitle(std::string name, sf::Color color, bool landless = false);
@@ -110,7 +108,6 @@ protected:
 };
 
 class BaronyTitle : public Title {
-friend PropertiesTab;
 public:
     BaronyTitle();
     BaronyTitle(std::string name, sf::Color color, bool landless = false);
@@ -129,7 +126,6 @@ private:
 };
 
 class CountyTitle : public HighTitle {
-friend PropertiesTab;
 public:
     CountyTitle();
     CountyTitle(std::string name, sf::Color color, bool landless = false);
@@ -138,7 +134,6 @@ public:
 };
 
 class DuchyTitle : public HighTitle {
-friend PropertiesTab;
 public:
     DuchyTitle();
     DuchyTitle(std::string name, sf::Color color, bool landless = false);
@@ -147,7 +142,6 @@ public:
 };
 
 class KingdomTitle : public HighTitle {
-friend PropertiesTab;
 public:
     KingdomTitle();
     KingdomTitle(std::string name, sf::Color color, bool landless = false);
@@ -156,7 +150,6 @@ public:
 };
 
 class EmpireTitle : public HighTitle {
-friend PropertiesTab;
 public:
     EmpireTitle();
     EmpireTitle(std::string name, sf::Color color, bool landless = false);
@@ -165,7 +158,6 @@ public:
 };
 
 class HegemonyTitle : public HighTitle {
-friend PropertiesTab;
 public:
     HegemonyTitle();
     HegemonyTitle(std::string name, sf::Color color, bool landless = false);

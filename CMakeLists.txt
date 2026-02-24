@@ -3,26 +3,30 @@ cmake_minimum_required(VERSION 3.28)
 project(meckt LANGUAGES C CXX)
 
 ###############################################
-#  Global C++ configuration                   #
+#  Options                                    #
 ###############################################
+option(RUN_TESTS_POST_BUILD "Automatically run tests after building" ON)
+
+##################################################################
+#  Global configuration                                          #
+##################################################################
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Put executables in <build>/bin
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/Release)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Release)
 foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG_UPPER)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER}
-        ${CMAKE_SOURCE_DIR}/bin/${OUTPUTCONFIG})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} ${CMAKE_BINARY_DIR}/bin/${OUTPUTCONFIG})
 endforeach()
 
 # Enable folder grouping in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-###############################################
-#  Dependencies                               #
-###############################################
+##################################################################
+#  Dependencies                                                  #
+##################################################################
 include(FetchContent)
 
 ###############################################
@@ -180,29 +184,42 @@ FetchContent_MakeAvailable(nlohmann_json)
 set_target_properties(nlohmann_json PROPERTIES FOLDER "vendor")
 
 ###############################################
+#  doctest                                    #
+###############################################
+add_library(doctest INTERFACE)
+
+target_include_directories(doctest INTERFACE "${CMAKE_SOURCE_DIR}/vendor/doctest")
+
+set_target_properties(doctest PROPERTIES FOLDER "vendor")
+
+###############################################
+#  backward-cpp                               #
+###############################################
+FetchContent_Declare(backward
+    GIT_REPOSITORY https://github.com/bombela/backward-cpp
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(backward)
+
+set_target_properties(backward PROPERTIES FOLDER "vendor")
+
+###############################################
 #  Jomini Parser                              #
 ###############################################
 file(GLOB JOMINI_LIB_FILES
-    "${CMAKE_SOURCE_DIR}/vendor/includes/jomini-parser/src/Jomini.cpp"
-    "${CMAKE_SOURCE_DIR}/vendor/includes/jomini-parser/src/Jomini.hpp"
+    "${CMAKE_SOURCE_DIR}/vendor/jomini-parser/src/Jomini.cpp"
+    "${CMAKE_SOURCE_DIR}/vendor/jomini-parser/src/Jomini.hpp"
 )
-
-# file(GLOB JOMINI_FILES
-#    "${CMAKE_SOURCE_DIR}/vendor/includes/jomini-parser/src/*.cpp"
-#    "${CMAKE_SOURCE_DIR}/vendor/includes/jomini-parser/src/*.hpp"
-#    "${CMAKE_SOURCE_DIR}/vendor/includes/jomini-parser/tests/*.txt"
-#    "${CMAKE_SOURCE_DIR}/vendor/includes/jomini-parser/.github/workflows/**"
-# )
 
 add_library(jomini-parser STATIC ${JOMINI_LIB_FILES})
 
 source_group(
-    TREE "${CMAKE_SOURCE_DIR}/vendor/includes/jomini-parser"
+    TREE "${CMAKE_SOURCE_DIR}/vendor/jomini-parser"
     PREFIX "jomini-parser"
     FILES ${JOMINI_LIB_FILES}
 )
 
-target_include_directories(jomini-parser PUBLIC vendor/includes/jomini-parser/src)
+target_include_directories(jomini-parser PUBLIC vendor/jomini-parser/src)
 target_compile_features(jomini-parser PUBLIC cxx_std_20)
 
 target_link_libraries(jomini-parser PUBLIC
@@ -211,55 +228,38 @@ target_link_libraries(jomini-parser PUBLIC
     SFML::System
 )
 
+##################################################################
+#  meckt                                                         #
+##################################################################
+
 ###############################################
-#  meckt                                      #
+#  meckt-core                                 #
 ###############################################
-file(GLOB_RECURSE PROJECT_SOURCES
+file(GLOB_RECURSE MECKT_CORE_SOURCES
     CONFIGURE_DEPENDS
-    src/*.cpp
-    src/*.hpp
+    src/core/*.cpp
+    src/core/*.hpp
 )
-
-add_executable(meckt
-    ${PROJECT_SOURCES}
-)
-
-if(WIN32)
-    target_sources(meckt PRIVATE src/build/version.rc)
-	source_group(TREE ${CMAKE_SOURCE_DIR} FILES src/build/version.rc)
-endif()
 
 source_group(
     TREE ${CMAKE_SOURCE_DIR}
-    FILES ${PROJECT_SOURCES}
+    FILES ${MECKT_CORE_SOURCES}
 )
-
 source_group("cmake" REGULAR_EXPRESSION "cmake_pch.*")
 
-target_precompile_headers(meckt PRIVATE
-    src/pch.hpp
-)
+add_library(meckt-core STATIC ${MECKT_CORE_SOURCES})
 
-target_include_directories(meckt PRIVATE
-    src
-    vendor/includes
-    vendor/includes/jomini-parser/src
-)
-
-set_target_properties(meckt PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY
-        "$<TARGET_FILE_DIR:meckt>"
-)
-
-target_compile_definitions(meckt PUBLIC
-    SFML_STATIC
+target_compile_definitions(meckt-core PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
 )
 
-###############################################
-#  Link dependencies                          #
-###############################################
-target_link_libraries(meckt PRIVATE
+target_precompile_headers(meckt-core PUBLIC src/core/pch.hpp)
+
+target_include_directories(meckt-core PUBLIC src/core)
+target_include_directories(meckt-core SYSTEM PUBLIC vendor) # SYSTEM suppresses vendor warnings
+target_include_directories(meckt-core SYSTEM PUBLIC vendor/jomini-parser/src) # SYSTEM suppresses vendor warnings
+
+target_link_libraries(meckt-core PUBLIC
     imgui-sfml
     jomini-parser
     nfd
@@ -269,25 +269,122 @@ target_link_libraries(meckt PRIVATE
 )
 
 if (WIN32)
-    target_link_libraries(meckt PRIVATE
+    target_link_libraries(meckt-core PRIVATE
         opengl32
         gdi32
         winhttp
     )
 elseif (UNIX)
     find_package(CURL REQUIRED)
-    target_link_libraries(meckt PRIVATE CURL::libcurl)
+    target_link_libraries(meckt-core PRIVATE CURL::libcurl)
 endif()
 
 ###############################################
-#  Post-build steps                           #
+#  meckt-app                                  #
 ###############################################
+
+file(GLOB_RECURSE MECKT_APP_SOURCES
+    CONFIGURE_DEPENDS
+    src/app/*.cpp
+    src/app/*.hpp
+)
+
+source_group(
+    TREE ${CMAKE_SOURCE_DIR}
+    FILES ${MECKT_APP_SOURCES}
+)
+
+add_executable(meckt-app ${MECKT_APP_SOURCES})
+
+set_target_properties(meckt-app PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY
+        "$<TARGET_FILE_DIR:meckt-app>"
+)
+
+target_compile_definitions(meckt-app PUBLIC
+    SFML_STATIC
+    $<$<CONFIG:Debug>:DEBUG>
+)
+
+target_precompile_headers(meckt-app PRIVATE src/app/pch.hpp)
+
+target_include_directories(meckt-app PUBLIC src)
+target_include_directories(meckt-app SYSTEM PUBLIC vendor) # SYSTEM suppresses vendor warnings
+target_include_directories(meckt-app SYSTEM PUBLIC vendor/jomini-parser/src) # SYSTEM suppresses vendor warnings
+
+target_link_libraries(meckt-app PRIVATE
+    meckt-core
+)
+
+if(WIN32)
+    target_sources(meckt-app PRIVATE src/app/build/version.rc)
+	source_group(TREE ${CMAKE_SOURCE_DIR} FILES src/app/build/version.rc)
+endif()
 
 # Copy assets next to the executable
 add_custom_command(
-    TARGET meckt
+    TARGET meckt-app
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_SOURCE_DIR}/assets"
-            "$<TARGET_FILE_DIR:meckt>/assets"
+            "$<TARGET_FILE_DIR:meckt-app>/assets"
+    COMMENT "Post-build: Copying assets dir to target file dir..."
 )
+
+###############################################
+#  meckt-tests                                #
+###############################################
+
+file(GLOB_RECURSE MECKT_TESTS_SOURCES
+    CONFIGURE_DEPENDS
+    src/tests/*.cpp
+    src/tests/*.hpp
+)
+
+source_group(
+    TREE ${CMAKE_SOURCE_DIR}
+    FILES ${MECKT_TESTS_SOURCES}
+)
+
+add_executable(meckt-tests ${MECKT_TESTS_SOURCES})
+
+target_include_directories(meckt-tests PUBLIC src/app)
+target_include_directories(meckt-tests SYSTEM PUBLIC vendor) # SYSTEM suppresses vendor warnings
+target_include_directories(meckt-tests SYSTEM PUBLIC vendor/jomini-parser/src) # SYSTEM suppresses vendor warnings
+
+set_target_properties(meckt-tests PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY
+        "$<TARGET_FILE_DIR:meckt-tests>"
+)
+
+target_compile_definitions(meckt-tests PUBLIC
+    $<$<CONFIG:Debug>:DEBUG>
+)
+
+target_link_libraries(meckt-tests PUBLIC
+    meckt-core
+    doctest
+)
+
+# Copy assets next to the executable in post-build steps
+add_custom_command(
+    TARGET meckt-tests
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:meckt-tests>/assets"
+    COMMENT "Post-build: Copying assets dir to target file dir..."
+)
+
+# Automatically run the tests
+if(RUN_TESTS_POST_BUILD)
+add_custom_command(
+    TARGET meckt-tests
+    POST_BUILD
+    COMMAND "$<TARGET_FILE:meckt-tests>"
+    COMMENT "Post-build: Executing meckt-tests..."
+)
+endif()
+
+enable_testing()
+add_test(NAME meckt-tests COMMAND meckt-tests)

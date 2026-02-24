@@ -1,7 +1,6 @@
 #pragma once
 
 class Region {
-friend PropertiesTab;
 public:
     Region(std::string name);
 

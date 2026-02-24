@@ -1,6 +1,8 @@
 #include "CulturalNamesTab.hpp"
+
+#include "core/mod/Mod.hpp"
+
 #include "app/menu/EditorMenu.hpp"
-#include "app/mod/Mod.hpp"
 
 #include <imgui/imgui.hpp>
 

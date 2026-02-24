@@ -1,9 +1,9 @@
 #include "Mod.hpp"
-#include "app/mod/Culture.hpp"
-#include "app/mod/Religion.hpp"
-#include "app/map/Province.hpp"
-#include "app/map/Region.hpp"
-#include "app/map/Title.hpp"
+#include "mod/Culture.hpp"
+#include "mod/Religion.hpp"
+#include "map/provinces/Province.hpp"
+#include "map/regions/Region.hpp"
+#include "map/titles/Title.hpp"
 #include "util/Yaml.hpp"
 
 #include <filesystem>

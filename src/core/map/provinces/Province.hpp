@@ -1,67 +1,6 @@
 #pragma once
 
-enum class ClimateType {
-    NONE,
-    MILD_WINTER,
-    NORMAL_WINTER,
-    SEVERE_WINTER,
-    COUNT
-};
-const std::unordered_map<ClimateType, const char*> ClimateTypeLabels = {
-    { ClimateType::NONE, "None" },
-    { ClimateType::MILD_WINTER, "Mild Winter" },
-    { ClimateType::NORMAL_WINTER, "Normal Winter" },
-    { ClimateType::SEVERE_WINTER, "Severe Winter" },
-    { ClimateType::COUNT, "******" }
-};
-
-class HoldingType {
-public:
-    HoldingType();
-    HoldingType(const std::string& name);
-
-    std::string GetName() const;
-    void SetName(const std::string& name);
-
-private:
-    std::string m_Name;
-};
-
-class TerrainType {
-public:
-    TerrainType();
-    TerrainType(const std::string& name, const sf::Color& color);
-
-    std::string GetName() const;
-    void SetName(const std::string& name);
-    
-    sf::Color GetColor() const;
-    void SetColor(const sf::Color& color);
-
-private:
-    std::string m_Name;
-    sf::Color m_Color;
-};
-
-enum class ProvinceFlags {
-    NONE       = 0,
-    COASTAL    = 1 << 0,
-    LAKE       = 1 << 1,
-    ISLAND     = 1 << 2,
-    LAND       = 1 << 3,
-    SEA        = 1 << 4,
-    RIVER      = 1 << 5,
-    IMPASSABLE = 1 << 6,
-};
-
-ProvinceFlags operator|(ProvinceFlags a, ProvinceFlags b);
-ProvinceFlags operator&(ProvinceFlags a, ProvinceFlags b);
-ProvinceFlags operator~(ProvinceFlags a);
-ProvinceFlags& operator|=(ProvinceFlags& a, ProvinceFlags b);
-ProvinceFlags& operator&=(ProvinceFlags& a, ProvinceFlags b);
-
 class Province {
-friend PropertiesTab;
 public:
     Province(int id, sf::Color color, std::string name);
 
