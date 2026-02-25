@@ -18,6 +18,8 @@ std::set<std::string> File::ListFiles(const std::string& dirPath, bool recursive
 }
 
 std::string File::ReadString(std::ifstream& file) {
+    if (!file.is_open())
+        throw std::runtime_error("File::ReadString: invalid file stream");
     std::stringstream ss;
     ss << file.rdbuf();
     return ss.str();
