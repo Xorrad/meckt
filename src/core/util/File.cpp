@@ -29,22 +29,21 @@ std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath,
     std::ifstream file(filePath);
     std::vector<std::vector<std::string>> lines;
 
-    if (!file.is_open()) {
-        LOG_ERROR("Could not open and read csv file {}", filePath);
-        return lines;
-    }
+    if (!file.is_open())
+        throw std::runtime_error("File::ReadCSV: file couldn't be found at \"" + filePath + "\"");
 
     std::string line;
     while (std::getline(file, line)) {
         // Remove comments.
-        if (size_t comment_pos = line.find('#'); comment_pos != std::string::npos)
+        size_t comment_pos = line.find('#');
+        if (comment_pos != std::string::npos)
             line.erase(comment_pos);
 
         // Skip empty/whitespace-only lines.
         if (line.find_first_not_of(" \t") == std::string::npos)
             continue;
 
-        lines.push_back(String::Split(line, ";"));
+        lines.push_back(String::Split(line, delimiter));
     }
 
     return lines;
