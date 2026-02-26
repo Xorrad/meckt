@@ -83,8 +83,8 @@ bool File::DownloadFile(const std::string& url, const std::string& dest) {
 
 bool File::UnzipFile(const std::string& src, const std::string& dest) {
 #ifdef _WIN32
-    return (bool) std::system(std::string("powershell -Command \"Expand-Archive -Force '" + src + "' '" + dest + "'\"").c_str());
+    return std::system(std::string("powershell -Command \"Expand-Archive -Force '" + src + "' '" + dest + "'\"").c_str()) == 0;
 #else
-    return (bool) std::system(std::string("unzip -o " + src + " -d " + dest).c_str());
+    return std::system(std::string("unzip -o " + src + " -d " + dest).c_str()) == 0;
 #endif
 }
