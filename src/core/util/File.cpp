@@ -50,8 +50,10 @@ std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath,
 }
 
 void File::EncodeToUTF8BOM(std::ofstream& file) {
+    if (!file.is_open())
+        throw std::runtime_error("File::EncodeToUTF8BOM: invalid file stream");
     unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
-    file.seekp(file.beg);
+    file.seekp(0, std::ios::beg);
     file.write(reinterpret_cast<char*>(bom), sizeof(bom));
 }
 
