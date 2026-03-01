@@ -14,7 +14,7 @@ public:
 
     V& at(const K& key) {
         if (m_Index.find(key) == m_Index.end()) {
-            throw std::out_of_range("key not found");
+            throw std::out_of_range(std::format("OrderedMap: key not found for \"{}\"", key));
         }
         return m_Index[key]->second;
     }
@@ -26,8 +26,6 @@ public:
         }
         return m_Index[key]->second;
     }
-
-
 
     const V& operator[](const K& key) const {
         static V default_value{};
