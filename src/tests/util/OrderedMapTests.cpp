@@ -1,5 +1,7 @@
 #include "doctest/doctest.hpp"
 
+TEST_SUITE("OrderedMap") {
+
 TEST_CASE("[OrderedMap] insert") {
     OrderedMap<std::string, int> map;
 
@@ -194,4 +196,6 @@ TEST_CASE("[OrderedMap] clear") {
     CHECK(map.empty());
     CHECK(map.size() == 0);
     CHECK(map.keys().empty());
+}
+
 }

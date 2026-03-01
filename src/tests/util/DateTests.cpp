@@ -1,5 +1,7 @@
 #include "doctest/doctest.hpp"
 
+TEST_SUITE("Date") {
+
 TEST_CASE("[Date] Constructor") {
     // Default constructor
     Jomini::Date d;
@@ -100,4 +102,6 @@ TEST_CASE("[Date] ParseDate: invalid inputs") {
     CHECK_THROWS_AS(Date::ParseDate("1.1.32"), std::invalid_argument);
     CHECK_THROWS_AS(Date::ParseDate("1.0.1"), std::invalid_argument);
     CHECK_THROWS_AS(Date::ParseDate("1.13.1"), std::invalid_argument);
+}
+
 }

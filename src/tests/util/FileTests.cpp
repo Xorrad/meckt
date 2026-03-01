@@ -18,6 +18,8 @@ struct TempDir {
     }
 };
 
+TEST_SUITE("[File] ListFiles") {
+
 TEST_CASE("[File] ListFiles: non-existing directory") {
     auto result = File::ListFiles("non_existing_directory", false);
     CHECK(result.empty());
@@ -65,6 +67,10 @@ TEST_CASE("[File] ListFiles") {
     CHECK(result.count(subdir.string()) == 1);
     CHECK(result.count(nested.string()) == 1);
 }
+
+}
+
+TEST_SUITE("[File] ReadString") {
 
 TEST_CASE("[File] ReadString: full file content") {
     TempDir tmp;
@@ -131,8 +137,9 @@ TEST_CASE("[File] ReadString: invalid stream") {
     CHECK_THROWS_AS(File::ReadString(in), std::runtime_error);
 }
 
+}
 
-///////////////////////////////////////////////////////
+TEST_SUITE("[File] ReadCSV") {
 
 TEST_CASE("[File] ReadCSV: non-existing file") {
     CHECK_THROWS_AS(File::ReadCSV("file.csv", ";"), std::runtime_error);
@@ -225,6 +232,10 @@ TEST_CASE("[File] ReadCSV: delimiter") {
     CHECK(result[1] == std::vector<std::string>{"1","2","3"});
 }
 
+}
+
+TEST_SUITE("[File] EncodeToUTF8BOM") {
+
 TEST_CASE("[File] EncodeToUTF8BOM") {
     TempDir tmp;
     fs::path filePath = tmp.path / "file.txt";
@@ -249,4 +260,6 @@ TEST_CASE("[File] EncodeToUTF8BOM") {
 TEST_CASE("[File] EncodeToUTF8BOM: invalid stream") {
     std::ofstream out;
     CHECK_THROWS_AS(File::EncodeToUTF8BOM(out), std::runtime_error);
+}
+
 }

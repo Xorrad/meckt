@@ -115,6 +115,8 @@ TEST_CASE("[String] IsAlphaNumeric") {
     CHECK(String::IsAlphaNumeric('_'));
 }
 
+TEST_SUITE("[String] ParseDouble") {
+
 TEST_CASE("[String] ParseDouble: valid decimal numbers") {
     CHECK(String::ParseDouble("0") == doctest::Approx(0.0));
     CHECK(String::ParseDouble("123") == doctest::Approx(123.0));
@@ -169,6 +171,10 @@ TEST_CASE("[String] ParseDouble: locale") {
     std::locale::global(oldLocale);
 }
 
+}
+
+TEST_SUITE("[String] ParseInt") {
+
 TEST_CASE("[String] ParseInt: valid integers") {
     CHECK(String::ParseInt("0") == 0);
     CHECK(String::ParseInt("123") == 123);
@@ -201,4 +207,6 @@ TEST_CASE("[String] ParseInt: comma separator") {
 TEST_CASE("[String] ParseInt: trailing garbage") {
     CHECK_THROWS_AS(String::ParseInt("42x"), std::invalid_argument);
     CHECK_THROWS_AS(String::ParseInt("7 test"), std::invalid_argument);
+}
+
 }

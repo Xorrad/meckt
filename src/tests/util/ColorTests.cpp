@@ -16,6 +16,8 @@ TEST_CASE("[Color] Hash") {
 
 TEST_CASE("[Color] brightenColor") {}
 
+TEST_SUITE("HSVColor") {
+
 TEST_CASE("[Color] HSVColor: fromRgb") {
     sf::HSVColor red   = sf::HSVColor::fromRgb(sf::Color::Red);
     sf::HSVColor green = sf::HSVColor::fromRgb(sf::Color::Green);
@@ -65,4 +67,6 @@ TEST_CASE("[Color] HSVColor: toInteger") {
 TEST_CASE("[Color] HSVColor: fmt formatting") {
     CHECK_EQ(fmt::format("{}", sf::Color(10, 20, 30, 40)), "(10, 20, 30, 40)");
     CHECK_EQ(fmt::format("{}", sf::Color(10, 20, 30)), "(10, 20, 30, 255)");
+}
+
 }
