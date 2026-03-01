@@ -54,8 +54,9 @@ std::map<std::string, std::string> Yaml::Parse(const std::string& content) {
 
             // If there is a new line between the key and the next quote
             // then the value will be an empty string.
-            if(i < content.size() && content[i++] == '"') {
+            if(i < content.size() && content[i] == '"') {
                 // Read to buffer until second quotes and push key-value pair.
+                i++;
                 CaptureBuffer('"');
             }
 
