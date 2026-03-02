@@ -193,6 +193,18 @@ target_include_directories(doctest INTERFACE "${CMAKE_SOURCE_DIR}/vendor/doctest
 set_target_properties(doctest PROPERTIES FOLDER "vendor")
 
 ###############################################
+#  cmrc                                       #
+###############################################
+FetchContent_Declare(
+  cmrc
+  GIT_REPOSITORY https://github.com/vector-of-bool/cmrc.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(cmrc)
+
+# set_target_properties(cmrc PROPERTIES FOLDER "vendor")
+
+###############################################
 #  backward-cpp                               #
 ###############################################
 FetchContent_Declare(backward
@@ -280,6 +292,24 @@ elseif (UNIX)
 endif()
 
 ###############################################
+#  meckt-resources                            #
+###############################################
+
+# Embeed resources such as shaders and fonts.
+cmrc_add_resource_library(
+    meckt-resources
+    NAMESPACE Resources
+
+    resources/app/fonts/figtree_medium.ttf
+    resources/app/fonts/notoemoji.ttf
+    resources/app/fonts/notosans.ttf
+    resources/app/shaders/heightmap_landmass.frag
+    resources/app/shaders/provinces_landmass.frag
+    resources/app/shaders/provinces.frag
+    resources/app/shaders/provinces.vert
+)
+
+###############################################
 #  meckt-app                                  #
 ###############################################
 
@@ -314,6 +344,7 @@ target_include_directories(meckt-app SYSTEM PUBLIC vendor/jomini-parser/src) # S
 
 target_link_libraries(meckt-app PRIVATE
     meckt-core
+    meckt-resources
 )
 
 if(WIN32)
@@ -325,10 +356,12 @@ endif()
 add_custom_command(
     TARGET meckt-app
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/resources/app"
-            "$<TARGET_FILE_DIR:meckt-app>/resources"
-    COMMENT "Post-build: Copying resources dir to target file dir..."
+    COMMAND $<$<CONFIG:Debug>:${CMAKE_COMMAND}>
+            $<$<CONFIG:Debug>:-E>
+            $<$<CONFIG:Debug>:copy_directory>
+            $<$<CONFIG:Debug>:"${CMAKE_SOURCE_DIR}/resources/app">
+            $<$<CONFIG:Debug>:"$<TARGET_FILE_DIR:meckt-app>/resources">
+    COMMENT "Post-build: Copying resources directory..."
 )
 
 ###############################################
@@ -363,17 +396,18 @@ target_compile_definitions(meckt-tests PUBLIC
 
 target_link_libraries(meckt-tests PUBLIC
     meckt-core
+    meckt-resources
     doctest
 )
 
-# Copy test resources next to the executable in post-build steps
+# Copy resources next to the executable in post-build steps
 add_custom_command(
     TARGET meckt-tests
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/resources/tests"
+            "${CMAKE_SOURCE_DIR}/resources/"
             "$<TARGET_FILE_DIR:meckt-tests>/resources/"
-    COMMENT "Post-build: Copying test resources dir to target file dir..."
+    COMMENT "Post-build: Copying resources directory..."
 )
 
 # Automatically run the tests
