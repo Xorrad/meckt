@@ -1,6 +1,7 @@
 #include "Configuration.hpp"
 
 #include <nlohmann/json.hpp>
+#include <cmrc/cmrc.hpp>
 
 void Configuration::Initialize() {
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();

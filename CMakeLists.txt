@@ -245,6 +245,26 @@ target_link_libraries(jomini-parser PUBLIC
 ##################################################################
 
 ###############################################
+#  meckt-resources                            #
+###############################################
+
+# Embeed resources such as shaders and fonts.
+cmrc_add_resource_library(
+    meckt-resources
+    NAMESPACE Resources
+
+    resources/app/fonts/figtree_medium.ttf
+    resources/app/fonts/notoemoji.ttf
+    resources/app/fonts/notosans.ttf
+    resources/app/shaders/heightmap_landmass.frag
+    resources/app/shaders/provinces_landmass.frag
+    resources/app/shaders/provinces.frag
+    resources/app/shaders/provinces.vert
+    
+    resources/tests/resource_manager/test.png
+)
+
+###############################################
 #  meckt-core                                 #
 ###############################################
 file(GLOB_RECURSE MECKT_CORE_SOURCES
@@ -278,6 +298,7 @@ target_link_libraries(meckt-core PUBLIC
     lodepng
     fmt
     nlohmann_json::nlohmann_json
+    meckt-resources
 )
 
 if (WIN32)
@@ -290,24 +311,6 @@ elseif (UNIX)
     find_package(CURL REQUIRED)
     target_link_libraries(meckt-core PRIVATE CURL::libcurl)
 endif()
-
-###############################################
-#  meckt-resources                            #
-###############################################
-
-# Embeed resources such as shaders and fonts.
-cmrc_add_resource_library(
-    meckt-resources
-    NAMESPACE Resources
-
-    resources/app/fonts/figtree_medium.ttf
-    resources/app/fonts/notoemoji.ttf
-    resources/app/fonts/notosans.ttf
-    resources/app/shaders/heightmap_landmass.frag
-    resources/app/shaders/provinces_landmass.frag
-    resources/app/shaders/provinces.frag
-    resources/app/shaders/provinces.vert
-)
 
 ###############################################
 #  meckt-app                                  #
@@ -344,7 +347,6 @@ target_include_directories(meckt-app SYSTEM PUBLIC vendor/jomini-parser/src) # S
 
 target_link_libraries(meckt-app PRIVATE
     meckt-core
-    meckt-resources
 )
 
 if(WIN32)
@@ -360,7 +362,7 @@ add_custom_command(
             $<$<CONFIG:Debug>:-E>
             $<$<CONFIG:Debug>:copy_directory>
             $<$<CONFIG:Debug>:"${CMAKE_SOURCE_DIR}/resources/app">
-            $<$<CONFIG:Debug>:"$<TARGET_FILE_DIR:meckt-app>/resources">
+            $<$<CONFIG:Debug>:"$<TARGET_FILE_DIR:meckt-app>/resources/app">
     COMMENT "Post-build: Copying resources directory..."
 )
 
@@ -396,7 +398,6 @@ target_compile_definitions(meckt-tests PUBLIC
 
 target_link_libraries(meckt-tests PUBLIC
     meckt-core
-    meckt-resources
     doctest
 )
 
@@ -416,9 +417,13 @@ add_custom_command(
     TARGET meckt-tests
     POST_BUILD
     COMMAND "$<TARGET_FILE:meckt-tests>"
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:meckt-tests>"
     COMMENT "Post-build: Executing meckt-tests..."
 )
 endif()
 
 enable_testing()
 add_test(NAME meckt-tests COMMAND meckt-tests)
+set_tests_properties(meckt-tests PROPERTIES
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:meckt-tests>
+)

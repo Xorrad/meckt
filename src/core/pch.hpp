@@ -40,7 +40,7 @@ class Religion;
 #include <ranges> // std::views, std::ranges, std::reverse
 #include <functional> // lambda functions, std::function, std::reference_wrapper
 #include <span> // std::span
-#include <type_traits> // std::underlying_type_t
+#include <type_traits> // std::underlying_type_t, std::is_same_v
 #include <thread> // std::thread
 
 // SFML headers
