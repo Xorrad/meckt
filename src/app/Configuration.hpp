@@ -33,7 +33,7 @@ public:
     inline static std::string atlantisURL = "https://codeload.github.com/bombusfrigidus/Atlantis/zip/refs/heads/main";
     
     // Saved settings
-    inline static std::string assetsPath = "assets";
+    inline static std::string resourcesPath = "resources";
     inline static std::string settingsFile = "settings.json";
     inline static std::list<std::string> recentMods = std::list<std::string>{};
     inline static float defaultWaterLevel = 3.8f;

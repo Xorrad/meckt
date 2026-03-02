@@ -27,11 +27,11 @@ void ImGui::SetupFonts() {
     builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesGreek()); // Greek and Coptic
     builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesCyrillic()); // Cyrillic + Cyrillic Supplement + Cyrillic Extended-A + Cyrillic Extended-B
     builder.BuildRanges(&defaultRanges);
-    ImFont* defaultFont = io.Fonts->AddFontFromFileTTF((Configuration::assetsPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 18.0f, NULL, defaultRanges.Data);
+    ImFont* defaultFont = io.Fonts->AddFontFromFileTTF((Configuration::resourcesPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 18.0f, NULL, defaultRanges.Data);
     io.FontDefault = defaultFont;
     
     // Extend the normal sized noto sans font with emojis.
-    notoSansNormalFont = io.Fonts->AddFontFromFileTTF((Configuration::assetsPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 20.0f);
+    notoSansNormalFont = io.Fonts->AddFontFromFileTTF((Configuration::resourcesPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 20.0f);
     ImFontConfig emojiConfig;
     emojiConfig.MergeMode = true;
     emojiConfig.PixelSnapH = true;
@@ -47,12 +47,12 @@ void ImGui::SetupFonts() {
         0xFE0F,  0xFE0F,  // Variation Selector-16 (emoji style)
         0
     };
-    io.Fonts->AddFontFromFileTTF((Configuration::assetsPath + "/fonts/NotoEmoji-VariableFont_wght.ttf").c_str(), 20.0f, &emojiConfig, emojiRanges);
+    io.Fonts->AddFontFromFileTTF((Configuration::resourcesPath + "/fonts/NotoEmoji-VariableFont_wght.ttf").c_str(), 20.0f, &emojiConfig, emojiRanges);
 
 
     // Load NotoSans in different size for the main menu.
-    notoSansMediumFont = io.Fonts->AddFontFromFileTTF((Configuration::assetsPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 30.0f);
-    notoSansLargeFont = io.Fonts->AddFontFromFileTTF((Configuration::assetsPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 72.0f);
+    notoSansMediumFont = io.Fonts->AddFontFromFileTTF((Configuration::resourcesPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 30.0f);
+    notoSansLargeFont = io.Fonts->AddFontFromFileTTF((Configuration::resourcesPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf").c_str(), 72.0f);
 
     if(!ImGui::SFML::UpdateFontTexture())
         LOG_ERROR("Failed to extend default font with complementary fonts.");

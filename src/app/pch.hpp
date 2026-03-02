@@ -2,7 +2,6 @@
 #include "core/pch.hpp"
 
 // Forward declarations:
-
 enum class Textures : int;
 enum class Fonts : int;
 enum class Shaders : int;

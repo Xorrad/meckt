@@ -321,14 +321,14 @@ if(WIN32)
 	source_group(TREE ${CMAKE_SOURCE_DIR} FILES src/app/build/version.rc)
 endif()
 
-# Copy assets next to the executable
+# Copy resources directory next to the executable
 add_custom_command(
     TARGET meckt-app
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/assets"
-            "$<TARGET_FILE_DIR:meckt-app>/assets"
-    COMMENT "Post-build: Copying assets dir to target file dir..."
+            "${CMAKE_SOURCE_DIR}/resources/app"
+            "$<TARGET_FILE_DIR:meckt-app>/resources"
+    COMMENT "Post-build: Copying resources dir to target file dir..."
 )
 
 ###############################################
@@ -366,14 +366,14 @@ target_link_libraries(meckt-tests PUBLIC
     doctest
 )
 
-# Copy assets next to the executable in post-build steps
+# Copy test resources next to the executable in post-build steps
 add_custom_command(
     TARGET meckt-tests
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/assets"
-            "$<TARGET_FILE_DIR:meckt-tests>/assets"
-    COMMENT "Post-build: Copying assets dir to target file dir..."
+            "${CMAKE_SOURCE_DIR}/resources/tests"
+            "$<TARGET_FILE_DIR:meckt-tests>/resources/"
+    COMMENT "Post-build: Copying test resources dir to target file dir..."
 )
 
 # Automatically run the tests

@@ -11,7 +11,7 @@ void Configuration::Initialize() {
 #endif
 
 #ifdef DEB
-    Configuration::assetsPath = "/usr/local/share/meckt/assets";
+    Configuration::resourcesPath = "/usr/local/share/meckt/resources";
     Configuration::settingsFile = "/usr/local/share/meckt/" + Configuration::settingsFile;
 #endif
 
@@ -57,17 +57,17 @@ void Configuration::Save() {
 }
 
 void Configuration::InitializeTextures() {
-    // textures.Load(Textures::LOGO, Configuration::assetsPath + "/textures/logo.png");
+    // textures.Load(Textures::LOGO, Configuration::resourcesPath + "/textures/logo.png");
 }
 
 void Configuration::InitializeFonts() {
-    fonts.Load(Fonts::FIGTREE, Configuration::assetsPath + "/fonts/Figtree-Medium.ttf");
-    fonts.Load(Fonts::NOTO_SANS, Configuration::assetsPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf");
+    fonts.Load(Fonts::FIGTREE, Configuration::resourcesPath + "/fonts/Figtree-Medium.ttf");
+    fonts.Load(Fonts::NOTO_SANS, Configuration::resourcesPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf");
 }
 
 void Configuration::InitializeShaders() {
-    shaders.Load(Shaders::PROVINCES, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/provinces.frag");
-    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/heightmap_landmass.frag");
-    shaders.Load(Shaders::PROVINCES_LANDMASS, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/provinces_landmass.frag");
-    // shaders.Load(Shaders::PROVINCES, Configuration::assetsPath + "/shaders/provinces.frag", sf::Shader::Fragment);
+    shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "/shaders/provinces.vert", Configuration::resourcesPath + "/shaders/provinces.frag");
+    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, Configuration::resourcesPath + "/shaders/provinces.vert", Configuration::resourcesPath + "/shaders/heightmap_landmass.frag");
+    shaders.Load(Shaders::PROVINCES_LANDMASS, Configuration::resourcesPath + "/shaders/provinces.vert", Configuration::resourcesPath + "/shaders/provinces_landmass.frag");
+    // shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "/shaders/provinces.frag", sf::Shader::Fragment);
 }
