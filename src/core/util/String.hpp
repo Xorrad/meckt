@@ -6,6 +6,7 @@ namespace String {
     std::string StripNonPrintable(const std::string& str);
     std::vector<std::string> Split(std::string str, const std::string& delimiter);
     std::string Join(std::vector<std::string> list, const std::string& delimiter);
+    void ReplaceAll(std::string& str, const std::string& from, const std::string& to);
 
     std::string FileSizeFormat(uint size);
     std::string DurationFormat(const sf::Time& time);

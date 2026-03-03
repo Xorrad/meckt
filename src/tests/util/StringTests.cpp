@@ -52,6 +52,24 @@ TEST_CASE("[String] Join") {
     CHECK_EQ(String::Join({"one", "two", "three"}, ";"), "one;two;three");
 }
 
+TEST_CASE("[String] ReplaceAll") {
+    std::string str = "hello world";
+    String::ReplaceAll(str, "world", "");
+    CHECK_EQ(str, "hello ");
+    
+    str = "123456";
+    String::ReplaceAll(str, "345", "123");
+    CHECK_EQ(str, "121236");
+    
+    str = "aaaaaaaa";
+    String::ReplaceAll(str, "a", "b");
+    CHECK_EQ(str, "bbbbbbbb");
+    
+    str = "hello world";
+    String::ReplaceAll(str, "hello ", "");
+    CHECK_EQ(str, "world");
+}
+
 TEST_CASE("[String] FileSizeFormat") {
     CHECK_EQ(String::FileSizeFormat(1), "1 B");
     CHECK_EQ(String::FileSizeFormat(2), "2 B");
