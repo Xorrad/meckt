@@ -1,6 +1,9 @@
 #pragma once
 
 template <typename T>
+using Opt = std::optional<T>;
+
+template <typename T>
 using Ref = std::reference_wrapper<T>;
 
 template <typename T>
