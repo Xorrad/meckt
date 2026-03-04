@@ -58,6 +58,7 @@ TEST_CASE("[Resources] ResourceManager: Font") {
 
 TEST_CASE("[Resources] ResourceManager: Shader") {
     ResourceManager<sf::Shader, int> manager("shader");
+    REQUIRE(sf::Shader::isAvailable());
     CHECK_NOTHROW(manager.Load(1, "resources/app/shaders/provinces.vert", "resources/app/shaders/provinces.frag"));
     CHECK_NOTHROW(manager.Load(2, "resources/app/shaders/provinces_landmass.frag", sf::Shader::Type::Fragment));
     CHECK_NOTHROW(manager.Load(3, "resources/app/shaders/provinces.vert", sf::Shader::Type::Vertex));
