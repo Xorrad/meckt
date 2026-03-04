@@ -31,12 +31,12 @@ TEST_SUITE("[Resources] Embeeded files") {
 TEST_SUITE("[Resources] ResourceManager") {
 
 TEST_CASE("[Resources] ResourceManager: Texture") {
-    ResourceManager<sf::Texture, int> manager("texture");
+    // sf::Texture requires to load the texture on the graphics card.
+    ResourceManager<sf::Image, int> manager("texture");
     
     REQUIRE_NOTHROW(manager.Load(1, "resources/tests/resource_manager/test.png"));
 
-    sf::Texture& texture = manager.Get(1);
-    sf::Image image = texture.copyToImage();
+    sf::Image& image = manager.Get(1);
     REQUIRE(image.getSize() == sf::Vector2u{2, 2});
     CHECK_EQ(image.getPixel({0, 0}), sf::Color(13, 76, 127));
     CHECK_EQ(image.getPixel({1, 0}), sf::Color(13, 76, 127));
