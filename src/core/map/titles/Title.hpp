@@ -92,7 +92,7 @@ public:
     std::vector<Title*>& GetDejureTitles();
     const std::vector<Title*>& GetDejureTitles() const;
     CountyTitle* GetCapitalTitle();
-    bool IsDejureTitle(const Title* title) const;
+    bool HasDejureTitle(const Title* title) const;
 
     void AddDejureTitle(Title* title);
     void RemoveDejureTitle(Title* title);
@@ -176,5 +176,5 @@ inline UniquePtr<Title> MakeTitle(TitleType type, Args&& ...args) {
         case TitleType::HEGEMONY: return MakeUnique<HegemonyTitle>(std::forward<Args>(args)...);
         default: break;
     }
-    throw std::runtime_error("error: failed to create MakeUnique<Title> with unknown title type.");
+    throw std::invalid_argument("MakeTitle: invalid title type");
 }

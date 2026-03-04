@@ -36,6 +36,8 @@ bool Title::Is(TitleType type) const {
 }
 
 bool Title::IsVassal(HighTitle* title) const {
+    if (title == nullptr)
+        return false;
     HighTitle* liege = m_LiegeTitle;
     while(liege != nullptr) {
         if(liege == title)
@@ -208,12 +210,12 @@ CountyTitle* HighTitle::GetCapitalTitle() {
     return m_CapitalTitle;
 }
 
-bool HighTitle::IsDejureTitle(const Title* title) const {
+bool HighTitle::HasDejureTitle(const Title* title) const {
     return std::find(m_DejureTitles.begin(), m_DejureTitles.end(), title) != m_DejureTitles.end();
 }
 
 void HighTitle::AddDejureTitle(Title* title) {
-    if (!this->IsDejureTitle(title)) {
+    if (!this->HasDejureTitle(title)) {
         m_DejureTitles.push_back(title);
 
         HighTitle* previousLiege = title->GetLiegeTitle();

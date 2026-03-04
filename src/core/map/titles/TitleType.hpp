@@ -14,23 +14,28 @@ const std::vector<const char*> TitleTypeLabels = { "Barony", "County", "Duchy", 
 const std::vector<const char*> TitleTypePrefixes = { "b", "c", "d", "k", "e", "h" };
 
 inline TitleType GetTitleTypeByName(const std::string& name) {
-    for(int i = 0; i < (int) TitleType::COUNT; i++) {
-        std::string prefix = std::string(TitleTypePrefixes[i]) + "_";
-        if(name.starts_with(prefix))
-            return (TitleType) i;
+    if (name.size() > 2 && name[1] == '_' && name[2] != ' ') {
+        char ch = name[0];
+        for(int i = 0; i < static_cast<int>(TitleType::COUNT); i++) {
+            if (TitleTypePrefixes[i][0] == ch)
+                return static_cast<TitleType>(i);
+        }
     }
-    throw std::runtime_error("error: invalid title name.");
+    throw std::invalid_argument("GetTitleTypeByName: invalid title name");
 }
 
 inline std::string GetTitlePrefixByType(TitleType type) {
-    return TitleTypePrefixes[(int) type];
+    return TitleTypePrefixes[static_cast<int>(type)];
 }
 
 inline bool IsValidTitleName(const std::string& name, TitleType type) {
-    try {
-        GetTitleTypeByName(name);
-        return true;
-    }
-    catch (const std::runtime_error& e){}
-    return true;
+    if (name.size() < 3)
+        return false;
+    if (name[1] != '_')
+        return false;
+    if (name[2] == ' ')
+        return false;
+    if (TitleTypePrefixes.size() <= static_cast<int>(type))
+        return false;
+    return TitleTypePrefixes[static_cast<int>(type)][0] == name[0];
 }

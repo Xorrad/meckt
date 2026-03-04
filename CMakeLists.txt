@@ -383,7 +383,7 @@ source_group(
 
 add_executable(meckt-tests ${MECKT_TESTS_SOURCES})
 
-target_include_directories(meckt-tests PUBLIC src/app)
+target_include_directories(meckt-tests PUBLIC src)
 target_include_directories(meckt-tests SYSTEM PUBLIC vendor) # SYSTEM suppresses vendor warnings
 target_include_directories(meckt-tests SYSTEM PUBLIC vendor/jomini-parser/src) # SYSTEM suppresses vendor warnings
 
