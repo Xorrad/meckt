@@ -24,7 +24,16 @@ inline UniquePtr<T> MakeUnique(Args&& ...args) {
 
 template <typename Derived, typename Base>
 inline bool IsInstance(const SharedPtr<Base>& ptr) {
+    if (!ptr)
+        return false;
     return std::dynamic_pointer_cast<Derived>(ptr) != nullptr;
+}
+
+template <typename Derived, typename Base>
+inline bool IsInstance(const UniquePtr<Base>& ptr) {
+    if (!ptr)
+        return false;
+    return dynamic_cast<const Derived*>(ptr.get()) != nullptr;
 }
 
 template <typename Derived, typename Base>
