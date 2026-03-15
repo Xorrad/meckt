@@ -15,9 +15,8 @@ const std::vector<const char*> TitleTypePrefixes = { "b", "c", "d", "k", "e", "h
 
 inline TitleType GetTitleTypeByName(const std::string& name) {
     if (name.size() > 2 && name[1] == '_' && name[2] != ' ') {
-        char ch = name[0];
         for(int i = 0; i < static_cast<int>(TitleType::COUNT); i++) {
-            if (TitleTypePrefixes[i][0] == ch)
+            if (TitleTypePrefixes[i][0] == name[0])
                 return static_cast<TitleType>(i);
         }
     }
@@ -38,4 +37,18 @@ inline bool IsValidTitleName(const std::string& name, TitleType type) {
     if (TitleTypePrefixes.size() <= static_cast<int>(type))
         return false;
     return TitleTypePrefixes[static_cast<int>(type)][0] == name[0];
+}
+
+inline bool IsValidTitleName(const std::string& name) {
+    if (name.size() < 3)
+        return false;
+    if (name[1] != '_')
+        return false;
+    if (name[2] == ' ')
+        return false;
+    for(int i = 0; i < static_cast<int>(TitleType::COUNT); i++) {
+        if (TitleTypePrefixes[i][0] == name[0])
+            return true;
+    }
+    return false;
 }

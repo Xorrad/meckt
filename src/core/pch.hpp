@@ -6,6 +6,10 @@ enum class MapMode : int;
 
 class Mod;
 
+class ProvinceManager;
+class RegionManager;
+class TitleManager;
+
 class HoldingType;
 class Province;
 class TerrainType;
