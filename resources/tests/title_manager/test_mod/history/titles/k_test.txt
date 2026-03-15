@@ -1,0 +1,44 @@
+﻿k_test = {
+	866.1.1 = {
+		change_development_level = 1
+		first = yes
+	}
+
+	# Check that duplicate date entries are handled correctly.
+	866.1.1 = {
+		change_development_level = 2
+		second = yes
+	}
+}
+
+d_test1 = {
+	# Check that duplicate properties keep their default behaviour by making a list.
+	866.1.1 = {
+		change_development_level = 1
+		change_development_level = 2
+		holder = char1
+		holder = char2
+	}
+}
+
+c_test1 = {
+	# Check that "incomplete" date are handled correctly.
+	1 = { change_development_level = 1 }
+	10.2 = { change_development_level = 2 }
+}
+
+d_test2 = {
+	# Check that invalid date entry are ignored.
+	test = { change_development_level = 1 }
+}
+
+c_test2 = {
+	867.1.1 = {	change_development_level = 1 first = yes }
+	1066.1.1 = { change_development_level = 3 }
+}
+
+# Check that duplicate title entries are handled correctly.
+c_test2 = {
+	867.1.1 = {	change_development_level = 2 second = yes }
+	10.1.1 = { change_development_level = 4 }
+}
