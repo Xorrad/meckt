@@ -120,9 +120,10 @@ std::string& Title::GetLocName(const std::string& lang) {
 }
 
 std::string Title::GetLocName(const std::string& lang) const {
-    if(m_LocNames.count(lang) == 0)
+    auto it = m_LocNames.find(lang);
+    if (it == m_LocNames.end())
         return "";
-    return m_LocNames.at(lang);
+    return it->second;
 }
 
 bool Title::HasLocName(const std::string& lang) const {
