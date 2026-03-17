@@ -547,7 +547,7 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
     // 3. Asserts
 
     // Check that duplicate date entries within the same title are merged.
-    SUBCASE("duplicate date entries (k_test)") {
+    SUBCASE("duplicate date entries") {
         REQUIRE(manager.HasTitle("k_test"));
         auto& history = manager.GetTitle("k_test")->GetHistory();
 
@@ -573,7 +573,7 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
     }
 
     // Check that non-date keys in the history block are ignored.
-    SUBCASE("invalid date entries (d_test2)") {
+    SUBCASE("invalid date entries") {
         REQUIRE(manager.HasTitle("d_test2"));
         auto& history = manager.GetTitle("d_test2")->GetHistory();
 
@@ -614,6 +614,95 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
         // Check that dates in second entry are not ignored and merged.
         REQUIRE(history.contains(Jomini::Date(10, 1, 1)));
         CHECK(history.at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) == "change_development_level = 4");
+    }
+}
+
+TEST_CASE("[TitleManager] LoadTitlesLocalization") {
+    // 1. Initialize the mod and load the titles.
+    Mod mod("resources/tests/title_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+
+    TitleManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadTitles());
+
+    // 2. Load the titles localization.
+    REQUIRE_NOTHROW(manager.LoadTitlesLocalization());
+
+    // 3. Asserts
+
+    SUBCASE("name") {
+        CHECK(manager.GetTitle("b_test1")->GetLocNames().contains("english"));
+        CHECK(manager.GetTitle("b_test1")->GetLocName("english") == "bTest");
+
+        CHECK(manager.GetTitle("c_test1")->GetLocNames().contains("english"));
+        CHECK(manager.GetTitle("c_test1")->GetLocName("english") == "cTest");
+
+        CHECK(manager.GetTitle("d_test1")->GetLocNames().contains("english"));
+        CHECK(manager.GetTitle("d_test1")->GetLocName("english") == "dTest");
+        
+        CHECK(manager.GetTitle("k_test")->GetLocNames().contains("english"));
+        CHECK(manager.GetTitle("k_test")->GetLocName("english") == "kTest");
+        
+        CHECK(manager.GetTitle("e_test")->GetLocNames().contains("english"));
+        CHECK(manager.GetTitle("e_test")->GetLocName("english") == "Test Empire");
+
+        CHECK_FALSE(manager.GetTitle("b_test2")->GetLocNames().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test3")->GetLocNames().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test4")->GetLocNames().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("c_test2")->GetLocNames().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("d_test2")->GetLocNames().contains("english"));
+    }
+    
+    SUBCASE("article") {
+        CHECK(manager.GetTitle("e_test")->GetLocArticles().contains("english"));
+        CHECK(manager.GetTitle("e_test")->GetLocArticle("english") == "the ");
+
+        CHECK_FALSE(manager.GetTitle("b_test1")->GetLocArticles().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test2")->GetLocArticles().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test3")->GetLocArticles().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test4")->GetLocArticles().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("c_test1")->GetLocArticles().contains("english"));
+        CHECK_FALSE(manager.GetTitle("c_test2")->GetLocArticles().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("d_test2")->GetLocArticles().contains("english"));
+        CHECK_FALSE(manager.GetTitle("d_test1")->GetLocArticles().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("k_test")->GetLocArticles().contains("english"));
+    }
+    
+    SUBCASE("adjective") {
+        CHECK(manager.GetTitle("e_test")->GetLocAdjectives().contains("english"));
+        CHECK(manager.GetTitle("e_test")->GetLocAdjective("english") == "Testian");
+
+        CHECK_FALSE(manager.GetTitle("b_test1")->GetLocAdjectives().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test2")->GetLocAdjectives().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test3")->GetLocAdjectives().contains("english"));
+        CHECK_FALSE(manager.GetTitle("b_test4")->GetLocAdjectives().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("c_test1")->GetLocAdjectives().contains("english"));
+        CHECK_FALSE(manager.GetTitle("c_test2")->GetLocAdjectives().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("d_test2")->GetLocAdjectives().contains("english"));
+        CHECK_FALSE(manager.GetTitle("d_test1")->GetLocAdjectives().contains("english"));
+
+        CHECK_FALSE(manager.GetTitle("k_test")->GetLocAdjectives().contains("english"));
+    }
+    
+    SUBCASE("cultural names") {
+        REQUIRE(manager.GetLocCulturalNames().size() == 1);
+        REQUIRE(manager.GetLocCulturalNames("english").size() == 3);
+
+        REQUIRE(manager.HasLocCulturalName("english", "cn_naoned"));
+        CHECK(manager.GetLocCulturalName("english", "cn_naoned") == "Naoned");
+        
+        REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_article"));
+        CHECK(manager.GetLocCulturalName("english", "cn_naoned_article") == "the ");
+        
+        REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_adj"));
+        CHECK(manager.GetLocCulturalName("english", "cn_naoned_adj") == "naonedat");
     }
 }
 
