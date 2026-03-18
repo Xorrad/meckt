@@ -210,20 +210,20 @@ public:
 
     /**
      * @brief Recursively parses titles from a jomini data object.
-     * @param filePath The path to the original file.
+     * @param fileName The relative path to the original file.
      * @param data The data of the titles to parse.
      * @return A list of non-owning pointers to the titles defined in the data.
      */
-    std::vector<Title*> LoadTitlesFile(const std::string& filePath, SharedPtr<Jomini::Object> data);
+    std::vector<Title*> LoadTitlesFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
 
     /**
      * @brief Parses a title from a jomini data object.
-     * @param filePath The path to the title definition file.
+     * @param fileName The relativepath to the title definition file.
      * @param name The name of the title to parse.
      * @param data The data of the title to parse.
      * @return A non-owning pointer to the parsed title.
      */
-    UniquePtr<Title> ParseTitle(const std::string& filePath, const std::string& name, SharedPtr<Jomini::Object> data);
+    UniquePtr<Title> ParseTitle(const std::string& fileName, const std::string& name, SharedPtr<Jomini::Object> data);
 
     /**
      * @brief Initializes the capital title class members for high titles (duchy, kingdom, empire, hegemony).
@@ -240,10 +240,10 @@ public:
 
     /**
      * @brief Load the titles history of a specific file.
-     * @param filePath The path to the history file.
+     * @param fileName The relative path to the history file.
      * @param data The parsed data of the history file.
      */
-    void LoadTitlesHistoryFile(const std::string& filePath, SharedPtr<Jomini::Object> data);
+    void LoadTitlesHistoryFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
 
     /**
      * @brief Load the titles localization.
@@ -253,12 +253,29 @@ public:
 
     /////////////////////////////////////////////////////
 
+    /**
+     * @brief Exports the titles definitions.
+     */
     void ExportTitles();
+
+    /**
+     * @brief Exports a title definition to a specific file.
+     * @param title The title to export.
+     * @param file The file stream to export the title to.
+     * @param depth The depth of the title in the hierarchy, used for indentation.
+     */
     void ExportTitle(Title* title, std::ofstream& file, int depth);
     
-    void ExportTitlesLocalization();
-
+    /**
+    * @brief Exports the titles history.
+    */
     void ExportTitlesHistory();
+
+    /**
+     * @brief Exports the titles localization.
+     *        This includes names, adjectives, articles and cultural names.
+     */
+    void ExportTitlesLocalization();
 
 private:
     Mod& m_Mod;
@@ -274,7 +291,7 @@ private:
     // Map of cultural names by languages, including names, articles and adjectives.
     std::map<std::string, std::map<std::string, std::string>> m_LocCulturalNames;
 
-    // File paths of the localization file that will be used for export.
-    std::string m_TitlesLocalizationFilePath;
-    std::string m_CulturalNamesLocalizationFilePath;
+    // Relative file paths of the localization file that will be used for export.
+    std::string m_TitlesLocalizationFileName;
+    std::string m_CulturalNamesLocalizationFileName;
 };

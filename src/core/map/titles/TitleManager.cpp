@@ -3,11 +3,13 @@
 #include "mod/Mod.hpp"
 #include "util/Yaml.hpp"
 
+#include <fmt/ostream.h>
+
 TitleManager::TitleManager(Mod& mod) :
     m_Mod(mod),
     m_LocCulturalNames({std::make_pair("english", std::map<std::string, std::string>{})}),
-    m_TitlesLocalizationFilePath(mod.GetDir() + "/localization/english/00_titles_l_english.yml"),
-    m_CulturalNamesLocalizationFilePath(mod.GetDir() + "/localization/english/00_cultural_titles_l_english.yml")
+    m_TitlesLocalizationFileName(std::format("{}/{}", Paths::LOCALIZATION_ENGLISH, "00_titles_l_english.yml")), // Required for now since the localization directory can be 'replace/english' instead of 'english'
+    m_CulturalNamesLocalizationFileName(std::format("{}/{}", Paths::LOCALIZATION_ENGLISH, "00_cultural_titles_l_english.yml"))
 {
     for(int i = 0; i < static_cast<int>(TitleType::COUNT); i++)
         m_TitlesByType[static_cast<TitleType>(i)] = std::vector<Title*>();
@@ -305,7 +307,7 @@ void TitleManager::LoadTitles() {
     m_TitlesVariables.clear();
     m_TitlesHistoryVariables.clear();
 
-    std::set<std::string> filesPath = File::ListFiles(m_Mod.GetDir() + "/common/landed_titles/");
+    std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::COMMON_LANDED_TITLES) );
 
     for(int i = 0; i < static_cast<int>(TitleType::COUNT); i++)
         m_TitlesByType[static_cast<TitleType>(i)] = std::vector<Title*>();
@@ -316,7 +318,8 @@ void TitleManager::LoadTitles() {
 
         try {
             SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
-            std::ignore = this->LoadTitlesFile(filePath, data);
+            std::string fileName = m_Mod.GetRelativePath(Paths::COMMON_LANDED_TITLES, filePath);
+            std::ignore = this->LoadTitlesFile(fileName, data);
         }
         catch (std::exception& e) {
             LOG_ERROR("Failed to parse title definition file '{}': {}", filePath, e.what());
@@ -331,7 +334,7 @@ void TitleManager::LoadTitles() {
         LOG_INFO("Loaded {} {} titles", m_TitlesByType[static_cast<TitleType>(i)].size(), TitleTypeLabels[i]);
 }
 
-std::vector<Title*> TitleManager::LoadTitlesFile(const std::string& filePath, SharedPtr<Jomini::Object> data) {
+std::vector<Title*> TitleManager::LoadTitlesFile(const std::string& fileName, SharedPtr<Jomini::Object> data) {
     std::vector<Title*> titles;
     titles.reserve(5);
 
@@ -340,10 +343,10 @@ std::vector<Title*> TitleManager::LoadTitlesFile(const std::string& filePath, Sh
 
         // Handle variables that might be in the file and store them for export.
         if (key.starts_with("@")) {
-            if (!m_TitlesVariables.contains(filePath))
-                m_TitlesVariables[filePath] = MakeShared<Jomini::Object>();
-            if (!m_TitlesVariables[filePath]->Contains(key))
-                m_TitlesVariables[filePath]->Put(key, value);
+            if (!m_TitlesVariables.contains(fileName))
+                m_TitlesVariables[fileName] = MakeShared<Jomini::Object>();
+            if (!m_TitlesVariables[fileName]->Contains(key))
+                m_TitlesVariables[fileName]->Put(key, value);
             continue;
         }
 
@@ -353,19 +356,19 @@ std::vector<Title*> TitleManager::LoadTitlesFile(const std::string& filePath, Sh
             continue;
 
         try {
-            UniquePtr<Title> title = this->ParseTitle(filePath, key, value);
+            UniquePtr<Title> title = this->ParseTitle(fileName, key, value);
             titles.push_back(title.get());
             this->AddTitle(std::move(title));
         }
         catch(std::exception& e) {
-            LOG_ERROR("Failed to parse title '{}' in file '{}': {}", key, filePath, e.what());
+            LOG_ERROR("Failed to parse title '{}' in file '{}': {}", key, fileName, e.what());
         }
     }
 
     return titles;
 }
 
-UniquePtr<Title> TitleManager::ParseTitle(const std::string& filePath, const std::string& name, SharedPtr<Jomini::Object> data) {
+UniquePtr<Title> TitleManager::ParseTitle(const std::string& fileName, const std::string& name, SharedPtr<Jomini::Object> data) {
     
     // TODO: make this function a proper one since it will be reused for provinces, cultures, religions...
     const auto GetProperty = [&]<typename T>(const std::string& propertyName, T defaultValue, bool required) -> T {
@@ -447,7 +450,7 @@ UniquePtr<Title> TitleManager::ParseTitle(const std::string& filePath, const std
         BaronyTitle* barony = static_cast<BaronyTitle*>(title.get());
         barony->SetProvinceId(provinceId);
 
-        // TODO: reenable this alert using the refactored provinces manager.
+        // TODO: Reimplement this alert using the refactored provinces manager.
         // if(m_ProvincesByIds.contains(provinceId))
         //     LOG_ERROR("Title '{}' has an unknown province id '{}'", name, provinceId);
         if(m_BaroniesByProvinceId.contains(provinceId)) {
@@ -460,7 +463,7 @@ UniquePtr<Title> TitleManager::ParseTitle(const std::string& filePath, const std
         HighTitle* highTitle = static_cast<HighTitle*>(title.get());
 
         // Recursively parse the vassal titles.
-        std::vector<Title*> dejureTitles = this->LoadTitlesFile(filePath, data);
+        std::vector<Title*> dejureTitles = this->LoadTitlesFile(fileName, data);
 
         if(landless && !dejureTitles.empty())
             LOG_WARNING("Title '{}' has dejure titles even though it is landless", name);
@@ -471,7 +474,7 @@ UniquePtr<Title> TitleManager::ParseTitle(const std::string& filePath, const std
         }
     }
 
-    title->SetOriginalFilePath(filePath);
+    title->SetOriginalFileName(fileName);
     title->SetOriginalData(data);
 
     return std::move(title);
@@ -515,7 +518,7 @@ void TitleManager::LoadTitlesCapitals() {
 }
 
 void TitleManager::LoadTitlesHistory() {
-    std::set<std::string> filesPath = File::ListFiles(m_Mod.GetDir() + + "/history/titles/");
+    std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::HISTORY_TITLES) );
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
@@ -523,7 +526,8 @@ void TitleManager::LoadTitlesHistory() {
 
         try {
             SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
-            this->LoadTitlesHistoryFile(filePath, data);
+            std::string fileName = m_Mod.GetRelativePath(Paths::HISTORY_TITLES, filePath);
+            this->LoadTitlesHistoryFile(fileName, data);
         }
         catch (std::exception& e) {
             LOG_ERROR("Failed to parse titles history file '{}': {}", filePath, e.what());
@@ -531,23 +535,23 @@ void TitleManager::LoadTitlesHistory() {
     }
 }
 
-void TitleManager::LoadTitlesHistoryFile(const std::string& filePath, SharedPtr<Jomini::Object> data) {
+void TitleManager::LoadTitlesHistoryFile(const std::string& fileName, SharedPtr<Jomini::Object> data) {
     // Loop over titles.
     for(auto& [titleName, titlePair] : data->GetMap()) {
         auto& [_, titleValue] = titlePair;
 
         // Handle variables that might be in the file and store them for export.
         if (titleName.starts_with("@")) {
-            if (!m_TitlesHistoryVariables.contains(filePath))
-                m_TitlesHistoryVariables[filePath] = MakeShared<Jomini::Object>();
-            if (!m_TitlesHistoryVariables[filePath]->Contains(titleName))
-                m_TitlesHistoryVariables[filePath]->Put(titleName, titleValue);
+            if (!m_TitlesHistoryVariables.contains(fileName))
+                m_TitlesHistoryVariables[fileName] = MakeShared<Jomini::Object>();
+            if (!m_TitlesHistoryVariables[fileName]->Contains(titleName))
+                m_TitlesHistoryVariables[fileName]->Put(titleName, titleValue);
             continue;
         }
 
         // Ignore undefined titles.
         if(m_Titles.count(titleName) == 0) {
-            LOG_WARNING("Unknown title '{}' is defined in history file '{}'", titleName, filePath);
+            LOG_WARNING("Unknown title '{}' is defined in history file '{}'", titleName, fileName);
             continue;
         }
 
@@ -557,11 +561,11 @@ void TitleManager::LoadTitlesHistoryFile(const std::string& filePath, SharedPtr<
 
         // Assert that the value is a correct object where a key is a date.
         if (!titleValue->Is(Jomini::Type::OBJECT)) {
-            LOG_ERROR("Title '{}' has invalid history entry in '{}'", titleName, filePath);
+            LOG_ERROR("Title '{}' has invalid history entry in '{}'", titleName, fileName);
             continue;
         }
 
-        m_Titles[titleName]->SetOriginalHistoryFilePath(filePath);
+        m_Titles[titleName]->SetOriginalHistoryFileName(fileName);
 
         // Loop over dates.
         for(const auto& [dateString, datePair] : titleValue->GetMap()) {
@@ -572,7 +576,7 @@ void TitleManager::LoadTitlesHistoryFile(const std::string& filePath, SharedPtr<
                 date = Date::ParseDate(dateString);
             }
             catch (std::exception& e) {
-                LOG_ERROR("Title '{}' has invalid date syntax '{}' in '{}'", titleName, dateString, filePath);
+                LOG_ERROR("Title '{}' has invalid date syntax '{}' in '{}'", titleName, dateString, fileName);
                 continue;
             }
 
@@ -582,7 +586,7 @@ void TitleManager::LoadTitlesHistoryFile(const std::string& filePath, SharedPtr<
 
             // Make sure that the history entry is correct.
             if (!history->Is(Jomini::Type::OBJECT)) {
-                LOG_ERROR("Title '{}' has invalid history entry for '{}' in '{}'", titleName, dateString, filePath);
+                LOG_ERROR("Title '{}' has invalid history entry for '{}' in '{}'", titleName, dateString, fileName);
                 continue;
             }
             
@@ -592,8 +596,11 @@ void TitleManager::LoadTitlesHistoryFile(const std::string& filePath, SharedPtr<
 }
 
 void TitleManager::LoadTitlesLocalization() {
-    std::set<std::string> filesPath = File::ListFiles(m_Mod.GetDir() + "/localization/english/");
-    std::set<std::string> filesPath2 = File::ListFiles(m_Mod.GetDir() + "/localization/replace/english/");
+    m_TitlesLocalizationFileName = std::format("{}/{}", Paths::LOCALIZATION_ENGLISH, "00_titles_l_english.yml");
+    m_CulturalNamesLocalizationFileName = std::format("{}/{}", Paths::LOCALIZATION_ENGLISH, "00_cultural_titles_l_english.yml");
+
+    std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::LOCALIZATION_ENGLISH) );
+    std::set<std::string> filesPath2 = File::ListFiles( m_Mod.GetDirectory(Paths::LOCALIZATION_REPLACE_ENGLISH) );
     filesPath.insert(filesPath2.begin(), filesPath2.end());
 
     uint countNames = 0;
@@ -678,18 +685,129 @@ void TitleManager::LoadTitlesLocalization() {
         // as the main file for export.
         if(count > maxCount) {
             maxCount = count;
-            m_TitlesLocalizationFilePath = filePath;
+            m_TitlesLocalizationFileName = m_Mod.GetRelativePath("", filePath);
         }
         
         // Same for cultural names.
         if(countCulturalNames > maxCountCulturalNames) {
             maxCountCulturalNames = countCulturalNames;
-            m_CulturalNamesLocalizationFilePath = filePath;
+            m_CulturalNamesLocalizationFileName = m_Mod.GetRelativePath("", filePath);
         }
     }
 
-    LOG_INFO("Default titles localization file will be {}", m_TitlesLocalizationFilePath);
+    LOG_INFO("Default titles localization file will be {}", m_TitlesLocalizationFileName);
     LOG_INFO("Loaded {} titles names, {} adjectives and {} articles from {} localization files", countNames, countAdjectives, countArticles, filesPath.size());
-    LOG_INFO("Default cultural names localization file will be {}", m_CulturalNamesLocalizationFilePath);
+    LOG_INFO("Default cultural names localization file will be {}", m_CulturalNamesLocalizationFileName);
     LOG_INFO("Loaded {} cultural names from {} localization files", countCulturalNamesTotal, filesPath.size());
+}
+
+void TitleManager::ExportTitles() {
+    std::string dir = m_Mod.GetDirectory(Paths::COMMON_LANDED_TITLES);
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+
+    std::map<std::string, std::ofstream> files;
+
+    for(const auto& [name, title] : m_Titles) {
+        if(title->GetLiegeTitle() != nullptr)
+            continue;
+        std::string fileName = title->GetOriginalFileName();
+        if(fileName.empty())
+        fileName = "01_landed_titles.txt";
+        if(files.count(fileName) == 0) {
+            files[fileName] = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::out);
+            File::EncodeToUTF8BOM(files[fileName]);
+
+            // Export original script variables.
+            auto it = m_TitlesVariables.find(fileName);
+            if (it != m_TitlesVariables.end() && !it->second->GetMap().empty()) {
+                fmt::println(files[fileName], "{}\n", it->second->Serialize(0, true));
+            }
+        }
+
+        std::ofstream& file = files[fileName];
+        this->ExportTitle(title.get(), file, 0);
+    }
+
+    for(auto& [key, file] : files)
+        file.close();
+}
+
+void TitleManager::ExportTitle(Title* title, std::ofstream& file, int depth) {
+    // Define the different indentations levels for the header and the content.
+    std::string headerIndent = std::string(depth, '\t');
+    std::string indent = headerIndent + '\t';
+
+    // Write the title header to the file.
+    fmt::println(file, "{}{} = {{", headerIndent, title->GetName());
+
+    SharedPtr<Jomini::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Jomini::Object>(Jomini::ObjectMap{}) : title->GetOriginalData();
+
+    const auto ExportProperties = [&]<typename T>(const std::string& key, T value) {
+        fmt::println(file, "{}{} = {}", indent, key, value);
+    };
+
+    const auto ExportCulturalNames = [&]() {
+        if(!title->GetCulturalNames().empty()) {
+            fmt::println(file, "\n{}cultural_names = {{", indent);
+            for(auto [culture, name] : title->GetCulturalNames()) {
+                fmt::println(file, "{}\t{} = {}", indent, culture, name);
+            }
+            fmt::println(file, "{}}}", indent);
+        }
+    };
+
+    ExportProperties("color", fmt::format("{{ {} {} {} }}", title->GetColor().r, title->GetColor().g, title->GetColor().b));
+        
+    if(title->Is(TitleType::BARONY)) {
+        BaronyTitle* baronyTitle = static_cast<BaronyTitle*>(title);
+        ExportProperties("province", baronyTitle->GetProvinceId());
+        // TODO: warning if there is no province with this id.
+
+        ExportCulturalNames();
+
+        if(!data->GetMap().empty())
+            fmt::println(file, "{}", data->Serialize(depth, true));
+    }
+    else {
+        HighTitle* highTitle = static_cast<HighTitle*>(title);
+
+        // TODO: Reimplement this using the refactored provinces manager.
+        // Raise an error if the main barony of a county does not have any holding type.
+        // if(title->Is(TitleType::COUNTY) && !highTitle->GetDejureTitles().empty()) {
+        //     BaronyTitle* vassalTitle = dynamic_cast<BaronyTitle*>(highTitle->GetDejureTitles().front());
+        //     if(m_ProvincesByIds.count(vassalTitle->GetProvinceId()) > 0) {
+        //         Province* province = m_ProvincesByIds[vassalTitle->GetProvinceId()];
+        //         if(province->GetHolding() == "none") {
+        //             LOG_ERROR("Title '{}' is the first barony of '{}', but it does not have any holding", vassalTitle->GetName(), title->GetName());
+        //         }
+        //     }
+        // }
+
+        if(!title->Is(TitleType::COUNTY) && highTitle->GetCapitalTitle() != nullptr)
+            ExportProperties("capital", highTitle->GetCapitalTitle()->GetName());
+            
+        if(title->IsLandless())
+            ExportProperties("landless", "yes");
+
+        ExportCulturalNames();
+
+        if(!data->GetMap().empty())
+            fmt::println(file, "\n{}", data->Serialize(depth+1, true));
+
+        for(Title* dejureTitle : highTitle->GetDejureTitles()) {
+            this->ExportTitle(dejureTitle, file, depth+1);
+        }
+    }
+
+    // Write the title closing brace to the file.
+    fmt::println(file, "{}}}\n", headerIndent);
+}
+    
+void TitleManager::ExportTitlesHistory() {
+    
+}
+
+void TitleManager::ExportTitlesLocalization() {
+
 }

@@ -9,10 +9,10 @@
 #include <filesystem>
 #include <fmt/ostream.h>
 
-Mod::Mod(const std::string& dir) : Mod(dir, sf::Image(), sf::Image(), 3.8f) {}
+Mod::Mod(const std::string& rootDirectory) : Mod(rootDirectory, sf::Image(), sf::Image(), 3.8f) {}
 
-Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel) :
-    m_Dir(dir),
+Mod::Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel) :
+    m_RootDirectory(rootDirectory),
     m_HeightmapImage(heightmapImage),
     m_ProvinceImage(provincesImage),
     m_WaterLevel(waterLevel),
@@ -20,16 +20,58 @@ Mod::Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesIm
     m_DefaultLandTerrain("plains"),
     m_DefaultSeaTerrain("sea"),
     m_DefaultCoastalSeaTerrain("sea"),
-    m_TitlesLocalizationFilePath(dir + "/localization/english/00_titles_l_english.yml"),
-    m_CulturalNamesLocalizationFilePath(dir + "/localization/english/00_cultural_titles_l_english.yml")
+    m_TitlesLocalizationFilePath("00_titles_l_english.yml"),
+    m_CulturalNamesLocalizationFilePath("00_cultural_titles_l_english.yml")
 {
 
 }
 
 Mod::~Mod() = default;
 
+const std::string& Mod::GetRootDirectory() const {
+    return m_RootDirectory;
+}
+
+std::string Mod::GetDirectory(Directory directory) const {
+    std::string absoluteDirectoryPath = this->GetRootDirectory();
+    
+    // Make sure the directories are separated correctly.
+    if (!absoluteDirectoryPath.ends_with("/"))
+        absoluteDirectoryPath.append("/");
+
+    absoluteDirectoryPath.append(std::string(directory));
+
+    return std::move(absoluteDirectoryPath);
+}
+
+std::string Mod::GetAbsolutePath(Directory directory, const std::string& relativeFileName) const {
+    std::string absoluteFilePath = this->GetDirectory(directory);
+    
+    // Make sure the directories are separated correctly.
+    if (!absoluteFilePath.ends_with("/"))
+        absoluteFilePath.append("/");
+
+    absoluteFilePath.append(relativeFileName);
+    
+    return std::move(absoluteFilePath);
+}
+
+std::string Mod::GetRelativePath(Directory directory, const std::string& absolutePath) const {
+    std::string prefix = this->GetDirectory(directory);
+    
+    if (absolutePath.starts_with(prefix)) {
+        return absolutePath.substr(prefix.length());
+    }
+
+    return std::move(absolutePath);
+}
+
 std::string Mod::GetDir() const {
-    return m_Dir;
+    return m_RootDirectory;
+}
+
+void Mod::SetDir(const std::string& dir) {
+    m_RootDirectory = dir;
 }
 
 sf::Image& Mod::GetHeightmapImage() {
@@ -232,7 +274,7 @@ sf::Image Mod::GetTitleImage(TitleType type) {
 }
 
 bool Mod::HasMap() const {
-    return std::filesystem::exists(m_Dir + "/map_data/provinces.png");
+    return std::filesystem::exists(m_RootDirectory + "/map_data/provinces.png");
 }
 
 std::map<uint32_t, UniquePtr<Province>>& Mod::GetProvinces() {
@@ -754,7 +796,7 @@ void Mod::GenerateRivers() {
         }    
     });
 
-    std::filesystem::path filePath = std::filesystem::path(m_Dir) / "map_data" / "rivers.png";
+    std::filesystem::path filePath = std::filesystem::path(m_RootDirectory) / "map_data" / "rivers.png";
     m_RiversImage.saveToFile(filePath.string());
     Image::IndexImage(filePath.string(), Image::RIVERS_PALETTE);
 }
@@ -765,24 +807,24 @@ void Mod::GenerateWorld() {
 
 void Mod::Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback, bool loadImages) {
     if(loadImages && !this->HasMap()) {
-        errorCallback(fmt::format("File {} is missing and required to load the mod.", m_Dir + "/map_data/provinces.png"));
+        errorCallback(fmt::format("File {} is missing and required to load the mod.", m_RootDirectory + "/map_data/provinces.png"));
         return;
     }
 
     changeCallback(LoadingState::TEXTURES);
     
-    if(loadImages && !m_ProvinceImage.loadFromFile(m_Dir + "/map_data/provinces.png")) {
-        std::string error = fmt::format("Failed to load provinces image at {}", m_Dir + "/map_data/provinces.png");
+    if(loadImages && !m_ProvinceImage.loadFromFile(m_RootDirectory + "/map_data/provinces.png")) {
+        std::string error = fmt::format("Failed to load provinces image at {}", m_RootDirectory + "/map_data/provinces.png");
         LOG_ERROR("{}", error);
         errorCallback(error);
         return;
     }
-    if(loadImages && !m_HeightmapImage.loadFromFile(m_Dir + "/map_data/heightmap.png")) {
-        LOG_ERROR("Failed to load heightmap image at {}", m_Dir + "/map_data/heightmap.png");
+    if(loadImages && !m_HeightmapImage.loadFromFile(m_RootDirectory + "/map_data/heightmap.png")) {
+        LOG_ERROR("Failed to load heightmap image at {}", m_RootDirectory + "/map_data/heightmap.png");
         m_HeightmapImage.resize(m_ProvinceImage.getSize(), sf::Color::Black);
     }
-    if(loadImages && !m_RiversImage.loadFromFile(m_Dir + "/map_data/rivers.png")) {
-        LOG_ERROR("Failed to load rivers image at {}", m_Dir + "/map_data/rivers.png");
+    if(loadImages && !m_RiversImage.loadFromFile(m_RootDirectory + "/map_data/rivers.png")) {
+        LOG_ERROR("Failed to load rivers image at {}", m_RootDirectory + "/map_data/rivers.png");
         m_RiversImage.resize(m_ProvinceImage.getSize(), sf::Color::White);
     }
     
@@ -807,7 +849,7 @@ void Mod::Load(std::function<void()> completeCallback, std::function<void(Loadin
 }
 
 void Mod::LoadHoldingTypes() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/common/holdings/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/common/holdings/");
 
     // Manually define this type as it's not really type.
     m_HoldingTypes = OrderedMap<std::string, HoldingType>();
@@ -850,7 +892,7 @@ void Mod::LoadHoldingTypes() {
 }
 
 void Mod::LoadTerrainTypes() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/common/terrain_types/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/common/terrain_types/");
 
     m_TerrainTypes = OrderedMap<std::string, TerrainType>();
 
@@ -902,7 +944,7 @@ void Mod::LoadTerrainTypes() {
 }
 
 void Mod::LoadDefaultMapFile() {
-    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/map_data/default.map");
+    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_RootDirectory + "/map_data/default.map");
 
     // TODO: Coastal provinces??
     
@@ -1038,7 +1080,7 @@ void Mod::LoadProvinceImage() {
 }
 
 void Mod::LoadProvincesDefinition() {
-    std::string filePath = m_Dir + "/map_data/definition.csv";
+    std::string filePath = m_RootDirectory + "/map_data/definition.csv";
     
     // Create an empty definition file if it does not exist.
     if(!std::filesystem::exists(filePath))
@@ -1079,7 +1121,7 @@ void Mod::LoadProvincesDefinition() {
 }
 
 void Mod::LoadProvincesTerrain() {
-    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/common/province_terrain/00_province_terrain.txt");
+    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_RootDirectory + "/common/province_terrain/00_province_terrain.txt");
 
     m_DefaultLandTerrain = result->Get("default_land")->As<std::string>("plains");
     m_DefaultSeaTerrain = result->Get("default_sea")->As<std::string>("sea");
@@ -1129,7 +1171,7 @@ void Mod::LoadProvincesTerrain() {
 void Mod::LoadProvincesClimate() {
     // Load the province climate type: mild, normal, severe.
     std::string climateFile = "map_data/climate.txt";
-    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_Dir + "/" + climateFile);
+    SharedPtr<Jomini::Object> result = Jomini::ParseFile(m_RootDirectory + "/" + climateFile);
 
     const auto LoadClimateProvinces = [&](ClimateType type, std::string_view name) {
         if (!result->Contains(name))
@@ -1158,7 +1200,7 @@ void Mod::LoadProvincesClimate() {
 
     // Load province winter properties such as severity or factor override.
     std::string propertiesFile = "common/province_terrain/01_province_properties.txt";
-    result = Jomini::ParseFile(m_Dir + "/" + propertiesFile);
+    result = Jomini::ParseFile(m_RootDirectory + "/" + propertiesFile);
 
     for(const auto& [key, pair] : result->GetMap()) {
         // Save and ignore variables to only keep province ids.
@@ -1217,7 +1259,7 @@ void Mod::LoadProvincesClimate() {
 }
 
 void Mod::LoadProvincesHistory() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/provinces/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/history/provinces/");
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
@@ -1330,7 +1372,7 @@ void Mod::LoadProvincesHistory() {
 }
 
 void Mod::LoadTitlesHistory() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/history/titles/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/history/titles/");
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
@@ -1370,7 +1412,7 @@ void Mod::LoadTitlesHistory() {
             }
             ASSERT_IS_OBJECT("title", value, key, filePath);
 
-            m_Titles[key]->SetOriginalHistoryFilePath(filePath);
+            m_Titles[key]->SetOriginalHistoryFileName(filePath);
 
             // 2. Loop over dates in the title history.
             for(const auto& [strDate, pair2] : value->GetMap()) {
@@ -1410,7 +1452,7 @@ void Mod::LoadTitlesHistory() {
 }
 
 void Mod::LoadGeographicalRegions() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/map_data/geographical_regions/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/map_data/geographical_regions/");
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
@@ -1479,7 +1521,7 @@ void Mod::LoadGeographicalRegions() {
 }
 
 void Mod::LoadCultures() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/common/culture/cultures/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/common/culture/cultures/");
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
@@ -1505,7 +1547,7 @@ void Mod::LoadCultures() {
 }
 
 void Mod::LoadReligions() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/common/religion/religions/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/common/religion/religions/");
 
     // Faiths are defined within a religion, so we have to loop over every religion
     // keys, and then over every keys inside "faiths".
@@ -1543,8 +1585,8 @@ void Mod::LoadReligions() {
 }
 
 void Mod::LoadLocalization() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/localization/english/");
-    std::set<std::string> filesPath2 = File::ListFiles(m_Dir + "/localization/replace/english/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/localization/english/");
+    std::set<std::string> filesPath2 = File::ListFiles(m_RootDirectory + "/localization/replace/english/");
     filesPath.insert(filesPath2.begin(), filesPath2.end());
 
     uint countNames = 0;
@@ -1648,7 +1690,7 @@ void Mod::LoadLocalization() {
 }
 
 void Mod::LoadTitles() {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/common/landed_titles/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/common/landed_titles/");
 
     for(int i = 0; i < (int) TitleType::COUNT; i++)
         m_TitlesByType[(TitleType) i] = std::vector<Title*>();
@@ -1777,7 +1819,7 @@ std::vector<Title*> Mod::ParseTitles(const std::string& filePath, SharedPtr<Jomi
             value->Remove("color");
             value->Remove("landless");
             value->Remove("cultural_names");
-            title->SetOriginalFilePath(filePath);
+            title->SetOriginalFileName(filePath);
             title->SetOriginalData(value);
 
             m_TitlesByType[type].push_back(title.get());
@@ -1869,7 +1911,7 @@ void Mod::Export(
 void Mod::ExportDefaultMapFile() {
     // Read the file and keep all values except for the terrain flags
     // such as: sea_zones, impassable_seas, lakes, impassable_mountains, river_provinces
-    SharedPtr<Jomini::Object> data = Jomini::ParseFile(m_Dir + "/map_data/default.map");
+    SharedPtr<Jomini::Object> data = Jomini::ParseFile(m_RootDirectory + "/map_data/default.map");
 
     SharedPtr<Jomini::Object> zonesData = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
 
@@ -1908,7 +1950,7 @@ void Mod::ExportDefaultMapFile() {
 
     // TODO: add error log if file can't be opened.
 
-    std::ofstream file(m_Dir + "/map_data/default.map", std::ios::out);
+    std::ofstream file(m_RootDirectory + "/map_data/default.map", std::ios::out);
     File::EncodeToUTF8BOM(file);
 
     #define PRINT_DATA(key, def) fmt::println(file, "{} = {}", key, data->Get(key)->As<std::string>(def)); data->Remove(key)
@@ -1939,7 +1981,7 @@ void Mod::ExportDefaultMapFile() {
 }
 
 void Mod::ExportProvincesDefinition() {
-    std::ofstream file(m_Dir + "/map_data/definition.csv", std::ios::out);
+    std::ofstream file(m_RootDirectory + "/map_data/definition.csv", std::ios::out);
 
     // The format of definition.csv is as following:
     // [ID];[RED];[GREEN];[BLUE];[Barony Name];x;
@@ -1972,8 +2014,8 @@ void Mod::ExportProvincesDefinition() {
 }
 
 void Mod::ExportProvincesTerrain() {
-    std::filesystem::create_directories(m_Dir + "/common/province_terrain/");
-    std::ofstream file(m_Dir + "/common/province_terrain/00_province_terrain.txt", std::ios::out);
+    std::filesystem::create_directories(m_RootDirectory + "/common/province_terrain/");
+    std::ofstream file(m_RootDirectory + "/common/province_terrain/00_province_terrain.txt", std::ios::out);
     File::EncodeToUTF8BOM(file);
 
     fmt::println(file, "default_land={}", m_DefaultLandTerrain);
@@ -2000,11 +2042,11 @@ void Mod::ExportProvincesTerrain() {
 
 void Mod::ExportProvincesClimate() {
     // Create the directories and files.
-    std::filesystem::create_directories(m_Dir + "/map_data/");
-    std::ofstream climateFile(m_Dir + "/map_data/climate.txt", std::ios::out);
+    std::filesystem::create_directories(m_RootDirectory + "/map_data/");
+    std::ofstream climateFile(m_RootDirectory + "/map_data/climate.txt", std::ios::out);
 
-    std::filesystem::create_directories(m_Dir + "/common/province_terrain/");
-    std::ofstream propertiesFile(m_Dir + "/common/province_terrain/01_province_properties.txt", std::ios::out);
+    std::filesystem::create_directories(m_RootDirectory + "/common/province_terrain/");
+    std::ofstream propertiesFile(m_RootDirectory + "/common/province_terrain/01_province_properties.txt", std::ios::out);
     File::EncodeToUTF8BOM(propertiesFile);
 
     // Initialize the object for the climate.txt file with the 3 winter types.
@@ -2066,7 +2108,7 @@ void Mod::ExportProvincesHistory() {
     // instead of looping the provinces and having the file/kingdom
     // in disorder.
 
-    std::string dir = m_Dir + "/history/provinces";
+    std::string dir = m_RootDirectory + "/history/provinces";
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
 
@@ -2137,7 +2179,7 @@ void Mod::ExportProvincesHistory() {
 }
 
 void Mod::ExportTitles() {
-    std::string dir = m_Dir + "/common/landed_titles";
+    std::string dir = m_RootDirectory + "/common/landed_titles";
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
 
@@ -2146,7 +2188,7 @@ void Mod::ExportTitles() {
     for(const auto& [name, title] : m_Titles) {
         if(title->GetLiegeTitle() != nullptr)
             continue;
-        std::string filePath = title->GetOriginalFilePath();
+        std::string filePath = title->GetOriginalFileName();
         if(filePath.empty())
             filePath = dir + "/01_landed_titles.txt";
         if(files.count(filePath) == 0) {
@@ -2173,7 +2215,7 @@ void Mod::ExportTitles() {
 }
 
 void Mod::ExportTitlesHistory() {
-    std::string dir = m_Dir + "/history/titles";
+    std::string dir = m_RootDirectory + "/history/titles";
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
 
@@ -2202,7 +2244,7 @@ void Mod::ExportTitlesHistory() {
     for(const auto& [name, title] : m_Titles) {
         if(title->GetHistory().size() == 0)
             continue;
-        std::string filePath = title->GetOriginalHistoryFilePath();
+        std::string filePath = title->GetOriginalHistoryFileName();
         if(filePath.empty())
             filePath = dir + "/" + GetTitleFileName(title.get()) + ".txt";
         if(files.count(filePath) == 0) {
@@ -2301,7 +2343,7 @@ void Mod::ExportTitle(Title* title, std::ofstream& file, int depth) {
 
 void Mod::ExportGeographicalRegions() {
     // Create the directories and files.
-    std::string dir = m_Dir + "/map_data/geographical_regions";
+    std::string dir = m_RootDirectory + "/map_data/geographical_regions";
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
     std::ofstream file(dir + "/geographical_region.txt", std::ios::out);
@@ -2443,8 +2485,8 @@ void Mod::ExportCulturalNamesLocalization() {
 }
 
 void Mod::DeleteTitlesLocalization(bool titlesLocalization, bool culturalNamesLocalization) {
-    std::set<std::string> filesPath = File::ListFiles(m_Dir + "/localization/english/");
-    std::set<std::string> filesPath2 = File::ListFiles(m_Dir + "/localization/replace/english/");
+    std::set<std::string> filesPath = File::ListFiles(m_RootDirectory + "/localization/english/");
+    std::set<std::string> filesPath2 = File::ListFiles(m_RootDirectory + "/localization/replace/english/");
     filesPath.insert(filesPath2.begin(), filesPath2.end());
 
     for(const auto& filePath : filesPath) {

@@ -74,3 +74,4 @@ class Religion;
 #include "map/MapMode.hpp"
 
 #include "mod/LoadingState.hpp"
+#include "mod/Paths.hpp"

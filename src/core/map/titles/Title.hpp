@@ -24,13 +24,13 @@ public:
     void SetLiegeTitle(HighTitle* title);
     void SetLandless(bool landless);
     
-    std::string GetOriginalFilePath() const;
+    std::string GetOriginalFileName() const;
     SharedPtr<Jomini::Object> GetOriginalData() const;
-    void SetOriginalFilePath(const std::string& filePath);
+    void SetOriginalFileName(const std::string& fileName);
     void SetOriginalData(SharedPtr<Jomini::Object> data);
 
-    std::string GetOriginalHistoryFilePath() const;
-    void SetOriginalHistoryFilePath(const std::string& filePath);
+    std::string GetOriginalHistoryFileName() const;
+    void SetOriginalHistoryFileName(const std::string& fileName);
     std::map<Jomini::Date, SharedPtr<Jomini::Object>>& GetHistory();
     void AddHistory(Jomini::Date date, SharedPtr<Jomini::Object> data);
     void RemoveHistory(Jomini::Date date);
@@ -68,10 +68,10 @@ protected:
     HighTitle* m_LiegeTitle;
     bool m_Landless;
 
-    std::string m_OriginalFilePath;
+    std::string m_OriginalFileName;
     SharedPtr<Jomini::Object> m_OriginalData;
 
-    std::string m_OriginalHistoryFilePath;
+    std::string m_OriginalHistoryFileName;
     std::map<Jomini::Date, SharedPtr<Jomini::Object>> m_History;
     std::map<std::string, std::string> m_CulturalNames;
 

@@ -8,11 +8,44 @@
 
 class Mod {
 public:
-    Mod(const std::string& dir);
-    Mod(const std::string& dir, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel);
+    Mod(const std::string& rootDirectory);
+    Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel);
     ~Mod();
 
+    /**
+     * @brief Gets the absolute root directory of the mod.
+     * @return The absolute path to the root directory.
+     */
+    const std::string& GetRootDirectory() const;
+
+    /**
+     * @brief Gets the directory path for a specific directory.
+     * @param directory The directory.
+     * @return The directory path as a string.
+     */
+    std::string GetDirectory(Directory directory) const;
+
+    /**
+     * @brief Resolves a relative file name to an absolute path based on its directory.
+     * @param directory The directory of the file.
+     * @param relativeFileName The relative file name (e.g. "subdir/my_file.txt").
+     * @return The resolved absolute path as a string.
+     */
+    std::string GetAbsolutePath(Directory directory, const std::string& relativeFileName) const;
+
+    /**
+     * @brief Converts an absolute path to a relative path based on its directory.
+     * @param directory The directory of the file.
+     * @param absolutePath The absolute path to convert.
+     * @return The relative path as a string (e.g. "01_landed_titles.txt" instead of "mod/common/landed_titles/01_landed_titles.txt").
+     */
+    std::string GetRelativePath(Directory directory, const std::string& absolutePath) const;
+
+    ///////////////////////////////////////
+
     std::string GetDir() const;
+    void SetDir(const std::string& dir);
+
     sf::Image& GetHeightmapImage();
     sf::Image& GetProvinceImage();
     sf::Image& GetRiversImage();
@@ -119,7 +152,7 @@ public:
     void DeleteTitlesLocalization(bool titlesLocalization, bool culturalNamesLocalization);
 
 private:
-    std::string m_Dir;
+    std::string m_RootDirectory;
     sf::Image m_HeightmapImage;
     sf::Image m_ProvinceImage;
     sf::Image m_RiversImage;

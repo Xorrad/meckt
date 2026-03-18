@@ -63,28 +63,28 @@ void Title::SetLandless(bool landless) {
     m_Landless = landless;
 }
 
-std::string Title::GetOriginalFilePath() const {
-    return m_OriginalFilePath;
+std::string Title::GetOriginalFileName() const {
+    return m_OriginalFileName;
 }
 
 SharedPtr<Jomini::Object> Title::GetOriginalData() const {
     return m_OriginalData;
 }
 
-void Title::SetOriginalFilePath(const std::string& filePath) {
-    m_OriginalFilePath = filePath;
+void Title::SetOriginalFileName(const std::string& filePath) {
+    m_OriginalFileName = filePath;
 }
 
 void Title::SetOriginalData(SharedPtr<Jomini::Object> data) {
     m_OriginalData = data;
 }
 
-std::string Title::GetOriginalHistoryFilePath() const {
-    return m_OriginalHistoryFilePath;
+std::string Title::GetOriginalHistoryFileName() const {
+    return m_OriginalHistoryFileName;
 }
 
-void Title::SetOriginalHistoryFilePath(const std::string& filePath) {
-    m_OriginalHistoryFilePath = filePath;
+void Title::SetOriginalHistoryFileName(const std::string& filePath) {
+    m_OriginalHistoryFileName = filePath;
 }
 
 std::map<Jomini::Date, SharedPtr<Jomini::Object>>& Title::GetHistory() {
