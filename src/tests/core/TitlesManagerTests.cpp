@@ -358,9 +358,9 @@ TEST_CASE("[TitleManager] LoadTitles") {
 
     // Check that the variables have been stored.
     SUBCASE("variables") {
-        std::string filePath = "resources/tests/title_manager/test_mod/common/landed_titles/00_landed_titles.txt";
-        REQUIRE(manager.GetTitlesVariables().contains(filePath));
-        const SharedPtr<Jomini::Object>& variables = manager.GetTitlesVariables().at(filePath);
+        std::string fileName = "00_landed_titles.txt";
+        REQUIRE(manager.GetTitlesVariables().contains(fileName));
+        const SharedPtr<Jomini::Object>& variables = manager.GetTitlesVariables().at(fileName);
         REQUIRE(variables->Contains("@correct_culture_primary_score"));
         CHECK(variables->Get("@correct_culture_primary_score")->As<std::string>() == "100");
 
@@ -703,6 +703,51 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
         
         REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_adj"));
         CHECK(manager.GetLocCulturalName("english", "cn_naoned_adj") == "naonedat");
+    }
+}
+
+TEST_CASE("[TitleManager] ExportTitles") {
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/title_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+
+    {
+        TitleManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadTitles());
+
+        // Edit some titles.
+        manager.RenameTitle("b_test1", "b_modified1");
+        manager.RenameTitle("c_test1", "c_modified1");
+        manager.RenameTitle("d_test1", "d_modified1");
+        manager.RenameTitle("k_test", "k_modified");
+        manager.RenameTitle("e_test", "e_modified");
+        
+        // 2. Export the titles definition.
+        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportTitles());
+    }
+
+    // Reload the titles.
+    TitleManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadTitles());
+
+    // 3. Asserts
+
+    SUBCASE("title keys") {
+        CHECK(manager.HasTitle("b_modified1"));
+        CHECK(manager.HasTitle("b_test2"));
+        CHECK(manager.HasTitle("b_test3"));
+        CHECK(manager.HasTitle("b_test4"));
+        CHECK(manager.HasTitle("c_modified1"));
+        CHECK(manager.HasTitle("c_test2"));
+        CHECK(manager.HasTitle("d_modified1"));
+        CHECK(manager.HasTitle("d_test2"));
+        CHECK(manager.HasTitle("k_modified"));
+        CHECK(manager.HasTitle("e_modified"));
+
+        CHECK_FALSE(manager.HasTitle("b_test1"));
+        CHECK_FALSE(manager.HasTitle("c_test1"));
+        CHECK_FALSE(manager.HasTitle("d_test1"));
     }
 }
 
