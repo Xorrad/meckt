@@ -749,6 +749,135 @@ TEST_CASE("[TitleManager] ExportTitles") {
         CHECK_FALSE(manager.HasTitle("c_test1"));
         CHECK_FALSE(manager.HasTitle("d_test1"));
     }
+
+    SUBCASE("hierarchy") {
+        CHECK(manager.GetTitle("b_test2")->GetLiegeTitle() == manager.GetTitle("c_modified1"));
+        CHECK(manager.GetTitle("b_test3")->GetLiegeTitle() == manager.GetTitle("c_test2"));
+        CHECK(manager.GetTitle("b_test4")->GetLiegeTitle() == manager.GetTitle("c_test2"));
+        CHECK(manager.GetTitle("c_test2")->GetLiegeTitle() == manager.GetTitle("d_test2"));
+        CHECK(manager.GetTitle("d_test2")->GetLiegeTitle() == manager.GetTitle("k_modified"));
+
+        CHECK(manager.GetTitle("b_modified1")->GetLiegeTitle() == manager.GetTitle("c_modified1"));
+        CHECK(manager.GetTitle("c_modified1")->GetLiegeTitle() == manager.GetTitle("d_modified1"));
+        CHECK(manager.GetTitle("d_modified1")->GetLiegeTitle() == manager.GetTitle("k_modified"));
+        CHECK(manager.GetTitle("k_modified")->GetLiegeTitle() == manager.GetTitle("e_modified"));
+    }
+
+    SUBCASE("properties") {
+        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_modified1")->GetProvinceId(), 1);
+        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test2")->GetProvinceId(), 2);
+        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test3")->GetProvinceId(), 3);
+        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test4")->GetProvinceId(), 4);
+        
+        CHECK_EQ(manager.GetTitle("b_test2")->GetColor(), sf::Color(20, 20, 20));
+        CHECK_EQ(manager.GetTitle("b_test3")->GetColor(), sf::Color(50, 50, 50));
+        CHECK_EQ(manager.GetTitle("b_test4")->GetColor(), sf::Color(50, 50, 50));
+
+        CHECK_EQ(manager.GetTitle("c_test2")->GetColor(), sf::Color(40, 40, 40));
+        CHECK_EQ(manager.GetTitle("d_test2")->GetColor(), sf::Color(30, 30, 30));
+        
+        CHECK_EQ(manager.GetTitle("b_modified1")->GetColor(), sf::Color(20, 20, 20));
+        CHECK_EQ(manager.GetTitle("c_modified1")->GetColor(), sf::Color(10, 10, 10));
+        CHECK_EQ(manager.GetTitle("d_modified1")->GetColor(), sf::Color(170, 255, 170));
+        CHECK_EQ(manager.GetTitle("k_modified")->GetColor(), sf::Color(244, 227, 160));
+        CHECK_EQ(manager.GetTitle("e_modified")->GetColor(), sf::Color(234, 217, 110));
+
+        CHECK_EQ(manager.GetTitle("k_papal_state")->GetColor(), sf::Color(255, 249, 198));
+        CHECK(manager.GetTitle("k_papal_state")->IsLandless());
+        CHECK(manager.GetTitle("k_papal_state")->GetOriginalData()->Serialize(0, true, false) ==
+            "definite_form = yes\n"
+            "ruler_uses_title_name = no\n"
+            "can_use_nomadic_naming = no\n"
+            "ai_primary_priority = {\n"
+            "	add = @always_primary_score\n"
+            "}"
+        );
+    }
+    
+    SUBCASE("capitals") {
+        CHECK_EQ(manager.GetTitleAs<HighTitle>("d_modified1")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_modified1"));
+        CHECK_EQ(manager.GetTitleAs<HighTitle>("d_test2")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_test2"));
+        CHECK_EQ(manager.GetTitleAs<HighTitle>("k_modified")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_modified1"));
+        CHECK_EQ(manager.GetTitleAs<HighTitle>("e_modified")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_modified1"));
+        CHECK_EQ(manager.GetTitleAs<HighTitle>("k_papal_state")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_test2"));
+    }
+
+    // Clear the exported test mod directory.
+    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+}
+
+TEST_CASE("[TitleManager] ExportTitlesHistory") {
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/title_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+
+    {
+        TitleManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadTitlesHistory());
+
+        // Edit some titles history.
+
+        // Add an empty history entry, that shouldn't be exported.
+        manager.GetTitle("d_test1")->AddHistory(Jomini::Date(1, 1, 1), MakeShared<Jomini::Object>(Jomini::Type::OBJECT));
+
+        // Add a non-empty history entry, that should be exported.
+        manager.GetTitle("d_test1")->AddHistory(Jomini::Date(10, 1, 1), MakeShared<Jomini::Object>(Jomini::Type::OBJECT));
+        manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(10, 1, 1))->Put("change_development_level", 10);
+        
+        // 2. Export the titles definition.
+        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportTitles());
+        REQUIRE_NOTHROW(manager.ExportTitlesHistory());
+    }
+
+    // Reload the titles.
+    TitleManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitlesHistory());
+
+    // 3. Asserts
+
+    REQUIRE(manager.HasTitle("k_test"));
+    REQUIRE(manager.GetTitle("k_test")->GetHistory().contains(Jomini::Date(866, 1, 1)));
+    CHECK(manager.GetTitle("k_test")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, true) ==
+        "change_development_level = 1 first = yes second = yes");
+
+    REQUIRE(manager.HasTitle("d_test1"));
+    REQUIRE(manager.GetTitle("d_test1")->GetHistory().contains(Jomini::Date(866, 1, 1)));
+    CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, false) == 
+        "change_development_level = 1\n"
+        "change_development_level = 2\n\n"
+        "holder = char1\n"
+        "holder = char2\n"
+    );
+    REQUIRE(manager.GetTitle("d_test1")->GetHistory().contains(Jomini::Date(10, 1, 1)));
+    CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) ==
+        "change_development_level = 10");
+
+    REQUIRE(manager.HasTitle("d_test2"));
+    CHECK(manager.GetTitle("d_test2")->GetHistory().empty());
+
+    REQUIRE(manager.HasTitle("c_test1"));
+    REQUIRE(manager.GetTitle("c_test1")->GetHistory().contains(Jomini::Date(1, 1, 1)));
+    CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(1, 1, 1))->Serialize(0, true, true) == "change_development_level = 1");
+    REQUIRE(manager.GetTitle("c_test1")->GetHistory().contains(Jomini::Date(1, 1, 1)));
+    CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(10, 2, 1))->Serialize(0, true, true) == "change_development_level = 2");
+        
+    REQUIRE(manager.HasTitle("c_test2"));
+    REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(867, 1, 1)));
+    REQUIRE(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Is(Jomini::Type::OBJECT));
+    CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Serialize(0, true, true) ==
+        "change_development_level = 1 first = yes second = yes");
+    
+    REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(1066, 1, 1)));
+    CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(1066, 1, 1))->Serialize(0, true, true) == "change_development_level = 3");
+    
+    REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(10, 1, 1)));
+    CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) == "change_development_level = 4");
+
+    // Clear the exported test mod directory.
+    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
 }
 
 }
