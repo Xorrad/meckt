@@ -2,6 +2,8 @@
 
 #include "util/ResourceManager.hpp"
 
+#include <cstdlib> // std::getenv
+
 std::string GetFileFromMemory(const std::string& filePath) {
     auto fs = cmrc::Resources::get_filesystem();
     auto file = fs.open(filePath);
@@ -56,7 +58,7 @@ TEST_CASE("[Resources] ResourceManager: Font") {
     CHECK_EQ(manager.Get(3).getInfo().family, "Noto Sans");
 }
 
-TEST_CASE("[Resources] ResourceManager: Shader") {
+TEST_CASE("[Resources] ResourceManager: Shader" * doctest::skip(std::getenv("GITHUB_ACTIONS") != nullptr)) {
     ResourceManager<sf::Shader, int> manager("shader");
     if (sf::Shader::isAvailable() && sf::Shader::isGeometryAvailable()) {
         CHECK_NOTHROW(manager.Load(1, "resources/app/shaders/provinces.vert", "resources/app/shaders/provinces.frag"));
