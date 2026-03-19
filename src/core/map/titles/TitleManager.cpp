@@ -805,7 +805,65 @@ void TitleManager::ExportTitle(Title* title, std::ofstream& file, int depth) {
 }
     
 void TitleManager::ExportTitlesHistory() {
-    
+    std::string dir = m_Mod.GetDirectory(Paths::HISTORY_TITLES);
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+
+    std::map<std::string, std::ofstream> files;
+
+    // 1. Use original history file if the title has one.
+    // 2. Use hegemony_titles.txt for hegemony tier titles.
+    // 3. Use empire_titles.txt for empire tier titles.
+    // 4. Use kingdom tier liege for other titles (i.e k_the_wall).
+    // 5. Use "landless_titles.txt" for landless titles.
+    // 6. Use "special_titles.txt" for everything else.
+    const std::function<std::string(Title*)> GetTitleFileName = [&](Title* liege) {
+        if(liege->Is(TitleType::HEGEMONY))
+            return std::string("hegemony_titles");
+        if(liege->Is(TitleType::EMPIRE))
+            return std::string("empire_titles");
+        if(liege->Is(TitleType::KINGDOM))
+            return liege->GetName();
+        if(liege->IsLandless()) 
+            return std::string("landless_titles");
+        if(liege->GetLiegeTitle() == nullptr)
+            return std::string("special_titles");
+        return GetTitleFileName(liege->GetLiegeTitle());
+    };
+
+    for(const auto& [name, title] : m_Titles) {
+        if(title->GetHistory().size() == 0)
+            continue;
+        std::string fileName = title->GetOriginalHistoryFileName();
+        if(fileName.empty())
+            fileName = GetTitleFileName(title.get()) + ".txt";
+        if(files.count(fileName) == 0) {
+            std::string filePath = m_Mod.GetAbsolutePath(Paths::HISTORY_TITLES, fileName);
+            files[fileName] = std::ofstream(filePath, std::ios::out);
+            File::EncodeToUTF8BOM(files[fileName]);
+
+            // Export original script variables.
+            auto it = m_TitlesHistoryVariables.find(fileName);
+            if (it != m_TitlesHistoryVariables.end() && !it->second->GetMap().empty()) {
+                fmt::println(files[fileName], "{}\n", it->second->Serialize(0, true));
+            }
+        }
+        std::ofstream& file = files[fileName];
+        
+        SharedPtr<Jomini::Object> history = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+        for(auto const& [date, data] : title->GetHistory()) {
+            history->Put((std::string) date, data);
+        }
+
+        // Because of indentation and curly brackets, we need to put the history inside an object and print that object.
+        SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+        object->Put(title->GetName(), history);
+
+        fmt::println(file, "{}", object->Serialize());
+    }
+
+    for(auto& [key, file] : files)
+        file.close();
 }
 
 void TitleManager::ExportTitlesLocalization() {
