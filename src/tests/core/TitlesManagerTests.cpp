@@ -880,4 +880,83 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
     std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
 }
 
+TEST_CASE("[TitleManager] ExportTitlesLocalization") {
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/title_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+
+    {
+        TitleManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadTitlesLocalization());
+
+        // Edit some titles localization.
+
+        manager.GetTitle("d_test1")->SetLocName("english", "Duchy Test1 Modified");
+        manager.GetTitle("d_test1")->SetLocArticle("english", "the ");
+        manager.GetTitle("d_test1")->SetLocAdjective("english", "Modified Testian");
+        
+        // 2. Export the titles definition.
+        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportTitles());
+        REQUIRE_NOTHROW(manager.ExportTitlesLocalization());
+    }
+
+    // Reload the titles.
+    TitleManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitlesLocalization());
+
+    // 3. Asserts
+
+    SUBCASE("titles localization") {
+
+        // Check that the modified localization has been exported.
+        REQUIRE(manager.HasTitle("d_test1"));
+        const Title* dtest1 = manager.GetTitle("d_test1");
+        CHECK(dtest1->GetLocName("english") == "Duchy Test1 Modified");
+        CHECK(dtest1->GetLocArticle("english") == "the ");
+        CHECK(dtest1->GetLocAdjective("english") == "Modified Testian");
+
+        // Check that the unmodified localization has been kept.
+        REQUIRE(manager.HasTitle("b_test1"));
+        const Title* b_test1 = manager.GetTitle("b_test1");
+        CHECK(b_test1->GetLocName("english") == "bTest");
+        CHECK_FALSE(b_test1->HasLocArticle("english"));
+        CHECK_FALSE(b_test1->HasLocAdjective("english"));
+        
+        REQUIRE(manager.HasTitle("c_test1"));
+        const Title* c_test1 = manager.GetTitle("c_test1");
+        CHECK(c_test1->GetLocName("english") == "cTest");
+        CHECK_FALSE(c_test1->HasLocArticle("english"));
+        CHECK_FALSE(c_test1->HasLocAdjective("english"));
+
+        REQUIRE(manager.HasTitle("k_test"));
+        const Title* k_test = manager.GetTitle("k_test");
+        CHECK(k_test->GetLocName("english") == "kTest");
+        CHECK_FALSE(k_test->HasLocArticle("english"));
+        CHECK_FALSE(k_test->HasLocAdjective("english"));
+
+        REQUIRE(manager.HasTitle("e_test"));
+        const Title* e_test = manager.GetTitle("e_test");
+        CHECK(e_test->GetLocName("english") == "Test Empire");
+        CHECK(e_test->GetLocArticle("english") == "the ");
+        CHECK(e_test->GetLocAdjective("english") == "Testian");
+
+        // Check that no extra localization has been added.
+        std::vector<std::string> titlesWithoutLocalization = { "b_test2", "b_test3", "b_test4", "c_test2", "d_test2", "k_papal_state" };
+        for (const auto& titleKey : titlesWithoutLocalization) {
+            REQUIRE(manager.HasTitle(titleKey));
+            const Title* title = manager.GetTitle(titleKey);
+            CHECK_FALSE(title->HasLocName("english"));
+            CHECK_FALSE(title->HasLocArticle("english"));
+            CHECK_FALSE(title->HasLocAdjective("english"));
+        }
+    }
+
+    SUBCASE("file path") {
+
+    }
+}
+
 }
