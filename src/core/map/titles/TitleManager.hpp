@@ -273,9 +273,19 @@ public:
 
     /**
      * @brief Exports the titles localization.
-     *        This includes names, adjectives, articles and cultural names.
+     *        This includes names, adjectives, articles.
      */
     void ExportTitlesLocalization();
+
+    /**
+     * @brief Exports the cultural names localization.
+     */
+    void ExportCulturalNamesLocalization();
+
+    ///////
+
+    void DeleteTitlesLocalization();
+    void DeleteCulturalNamesLocalization();
 
 private:
     Mod& m_Mod;

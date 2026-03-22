@@ -867,5 +867,37 @@ void TitleManager::ExportTitlesHistory() {
 }
 
 void TitleManager::ExportTitlesLocalization() {
+    std::string filePath = m_Mod.GetAbsolutePath("", m_TitlesLocalizationFileName);
+    std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+    std::ofstream file(filePath, std::ios::out);
+    File::EncodeToUTF8BOM(file);
 
+    fmt::println(file, "l_english:");
+    for(auto [type, titles] : m_TitlesByType) {
+        for(auto title : titles) {
+            std::string name = title->GetLocName("english");
+            std::string adjective = title->GetLocAdjective("english");
+            std::string article = title->GetLocArticle("english");
+
+            if(!name.empty()) fmt::println(file, " {}: \"{}\"", title->GetName(), name);
+            if(!adjective.empty()) fmt::println(file, " {}_adj: \"{}\"", title->GetName(), adjective);
+            if(!article.empty()) fmt::println(file, " {}_article: \"{}\"", title->GetName(), article);
+        }
+    }
+
+    file.close();
+}
+
+void TitleManager::ExportCulturalNamesLocalization() {
+    std::string filePath = m_Mod.GetAbsolutePath("", m_CulturalNamesLocalizationFileName);
+    std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+    std::ofstream file(filePath, std::ios::out);
+    File::EncodeToUTF8BOM(file);
+
+    fmt::println(file, "l_english:");
+    for(auto [key, name] : m_LocCulturalNames["english"]) {
+        if(!name.empty()) fmt::println(file, " {}: \"{}\"", key, name);
+    }
+
+    file.close();
 }
