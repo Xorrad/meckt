@@ -595,7 +595,7 @@ void TitleManager::LoadTitlesHistoryFile(const std::string& fileName, SharedPtr<
     }
 }
 
-void TitleManager::LoadTitlesLocalization() {
+void TitleManager::LoadLocalization() {
     m_TitlesLocalizationFileName = std::format("{}/{}", Paths::LOCALIZATION_ENGLISH, "00_titles_l_english.yml");
     m_CulturalNamesLocalizationFileName = std::format("{}/{}", Paths::LOCALIZATION_ENGLISH, "00_cultural_titles_l_english.yml");
 

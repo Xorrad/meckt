@@ -171,6 +171,7 @@ public:
     /**
      * @brief Adds a new title.
      * @param title The unique pointer of the title.
+     * @note If a title with the same name already exists, it will be overwritten with the new one.
      */
     void AddTitle(UniquePtr<Title> title);
 
@@ -198,6 +199,7 @@ public:
      * @param lang The localization language (e.g `english`).
      * @param key The cultural name key (e.g `cn_naoned`).
      * @param name The cultural name localization (e.g `Naoned`)
+     * @note If the key already exists, it will be overwritten with the new name.
      */
     void AddLocCulturalName(const std::string& lang, const std::string& key, const std::string& name);
 
@@ -249,7 +251,7 @@ public:
      * @brief Load the titles localization.
      *        This includes names, adjectives, articles and cultural names.
      */
-    void LoadTitlesLocalization();
+    void LoadLocalization();
 
     /////////////////////////////////////////////////////
 

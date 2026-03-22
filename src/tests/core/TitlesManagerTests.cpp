@@ -626,7 +626,7 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
     REQUIRE_NOTHROW(manager.LoadTitles());
 
     // 2. Load the titles localization.
-    REQUIRE_NOTHROW(manager.LoadTitlesLocalization());
+    REQUIRE_NOTHROW(manager.LoadLocalization());
 
     // 3. Asserts
 
@@ -922,7 +922,7 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
     {
         TitleManager manager(mod);
         REQUIRE_NOTHROW(manager.LoadTitles());
-        REQUIRE_NOTHROW(manager.LoadTitlesLocalization());
+        REQUIRE_NOTHROW(manager.LoadLocalization());
 
         // Edit some titles localization.
 
@@ -939,7 +939,7 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
     // Reload the titles.
     TitleManager manager(mod);
     REQUIRE_NOTHROW(manager.LoadTitles());
-    REQUIRE_NOTHROW(manager.LoadTitlesLocalization());
+    REQUIRE_NOTHROW(manager.LoadLocalization());
 
     // 3. Asserts
 
@@ -994,6 +994,72 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
 
         // The test mod has only one localization file with titles localization in it, so it should be the one used for export.
         std::string expectedPath = mod.GetAbsolutePath("", "localization/english/titles_l_english.yml");
+
+        // Check that the file exists and is a regular file.
+        REQUIRE(std::filesystem::exists(expectedPath));
+        CHECK(std::filesystem::is_regular_file(expectedPath));
+        
+        // Check that the file is UTF-8 BOM encoded by checking the first 3 bytes.
+        std::ifstream file(expectedPath, std::ios::binary);
+        char bom[3];
+        file.read(bom, 3);
+        CHECK(bom[0] == static_cast<char>(0xEF));
+        CHECK(bom[1] == static_cast<char>(0xBB));
+        CHECK(bom[2] == static_cast<char>(0xBF));
+    }
+}
+
+TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/title_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+
+    {
+        TitleManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadLocalization());
+
+        // Add new cultural names localization.
+        manager.AddLocCulturalName("english", "cn_roazhon", "Roazhon");
+
+        // Edit exiting cultural names localization.
+        manager.AddLocCulturalName("english", "cn_naoned", "Naoned Modified");
+        manager.AddLocCulturalName("english", "cn_naoned_article", "the ");
+        manager.AddLocCulturalName("english", "cn_naoned_adj", "Modified naonedat");
+        
+        // 2. Export the titles definition.
+        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportTitles());
+        REQUIRE_NOTHROW(manager.ExportCulturalNamesLocalization());
+    }
+
+    // Reload the titles.
+    TitleManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadLocalization());
+
+    // 3. Asserts
+
+    SUBCASE("cultural names localization") {
+
+        // Check that the modified localization has been exported.
+        REQUIRE(manager.HasTitle("d_test1"));
+        const Title* dtest1 = manager.GetTitle("d_test1");
+        CHECK(dtest1->GetLocName("english") == "Duchy Test1 Modified");
+        CHECK(dtest1->GetLocArticle("english") == "the ");
+        CHECK(dtest1->GetLocAdjective("english") == "Modified Testian");
+
+        // Check that new cultural names localization have been exported.
+        REQUIRE(manager.HasLocCulturalName("english", "cn_roazhon"));
+        CHECK(manager.GetLocCulturalName("english", "cn_roazhon") == "Roazhon");
+    }
+
+    SUBCASE("UTF-8 BOM encoding") {
+        // By default, it should be the original localization file with the most titles localization in it.
+        // Otherwise, it should be a new file named "00_cultural_titles_l_english.yml".
+
+        // The test mod has only one localization file with titles localization in it, so it should be the one used for export.
+        std::string expectedPath = mod.GetAbsolutePath("", "localization/english/titles_cultural_names_l_english.yml");
 
         // Check that the file exists and is a regular file.
         REQUIRE(std::filesystem::exists(expectedPath));
