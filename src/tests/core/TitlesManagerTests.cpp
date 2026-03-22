@@ -802,6 +802,22 @@ TEST_CASE("[TitleManager] ExportTitles") {
         CHECK_EQ(manager.GetTitleAs<HighTitle>("k_papal_state")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_test2"));
     }
 
+    SUBCASE("UTF-8 BOM encoding") {
+        // Check that titles files are encoded as UTF-8 BOM.
+        std::set<std::string> filesPath = File::ListFiles( mod.GetDirectory(Paths::COMMON_LANDED_TITLES) );
+
+        for(const auto& filePath : filesPath) {
+            if(!filePath.ends_with(".txt"))
+                continue;
+            std::ifstream file(filePath, std::ios::binary);
+            char bom[3];
+            file.read(bom, 3);
+            CHECK(bom[0] == static_cast<char>(0xEF));
+            CHECK(bom[1] == static_cast<char>(0xBB));
+            CHECK(bom[2] == static_cast<char>(0xBF));
+        }
+    }
+
     // Clear the exported test mod directory.
     std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
 }
@@ -838,43 +854,61 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
 
     // 3. Asserts
 
-    REQUIRE(manager.HasTitle("k_test"));
-    REQUIRE(manager.GetTitle("k_test")->GetHistory().contains(Jomini::Date(866, 1, 1)));
-    CHECK(manager.GetTitle("k_test")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, true) ==
-        "change_development_level = 1 first = yes second = yes");
+    SUBCASE("history entries") {
+        REQUIRE(manager.HasTitle("k_test"));
+        REQUIRE(manager.GetTitle("k_test")->GetHistory().contains(Jomini::Date(866, 1, 1)));
+        CHECK(manager.GetTitle("k_test")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, true) ==
+            "change_development_level = 1 first = yes second = yes");
 
-    REQUIRE(manager.HasTitle("d_test1"));
-    REQUIRE(manager.GetTitle("d_test1")->GetHistory().contains(Jomini::Date(866, 1, 1)));
-    CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, false) == 
-        "change_development_level = 1\n"
-        "change_development_level = 2\n\n"
-        "holder = char1\n"
-        "holder = char2\n"
-    );
-    REQUIRE(manager.GetTitle("d_test1")->GetHistory().contains(Jomini::Date(10, 1, 1)));
-    CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) ==
-        "change_development_level = 10");
+        REQUIRE(manager.HasTitle("d_test1"));
+        REQUIRE(manager.GetTitle("d_test1")->GetHistory().contains(Jomini::Date(866, 1, 1)));
+        CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, false) == 
+            "change_development_level = 1\n"
+            "change_development_level = 2\n\n"
+            "holder = char1\n"
+            "holder = char2\n"
+        );
+        REQUIRE(manager.GetTitle("d_test1")->GetHistory().contains(Jomini::Date(10, 1, 1)));
+        CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) ==
+            "change_development_level = 10");
 
-    REQUIRE(manager.HasTitle("d_test2"));
-    CHECK(manager.GetTitle("d_test2")->GetHistory().empty());
+        REQUIRE(manager.HasTitle("d_test2"));
+        CHECK(manager.GetTitle("d_test2")->GetHistory().empty());
 
-    REQUIRE(manager.HasTitle("c_test1"));
-    REQUIRE(manager.GetTitle("c_test1")->GetHistory().contains(Jomini::Date(1, 1, 1)));
-    CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(1, 1, 1))->Serialize(0, true, true) == "change_development_level = 1");
-    REQUIRE(manager.GetTitle("c_test1")->GetHistory().contains(Jomini::Date(1, 1, 1)));
-    CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(10, 2, 1))->Serialize(0, true, true) == "change_development_level = 2");
+        REQUIRE(manager.HasTitle("c_test1"));
+        REQUIRE(manager.GetTitle("c_test1")->GetHistory().contains(Jomini::Date(1, 1, 1)));
+        CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(1, 1, 1))->Serialize(0, true, true) == "change_development_level = 1");
+        REQUIRE(manager.GetTitle("c_test1")->GetHistory().contains(Jomini::Date(1, 1, 1)));
+        CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(10, 2, 1))->Serialize(0, true, true) == "change_development_level = 2");
+            
+        REQUIRE(manager.HasTitle("c_test2"));
+        REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(867, 1, 1)));
+        REQUIRE(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Is(Jomini::Type::OBJECT));
+        CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Serialize(0, true, true) ==
+            "change_development_level = 1 first = yes second = yes");
         
-    REQUIRE(manager.HasTitle("c_test2"));
-    REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(867, 1, 1)));
-    REQUIRE(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Is(Jomini::Type::OBJECT));
-    CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Serialize(0, true, true) ==
-        "change_development_level = 1 first = yes second = yes");
-    
-    REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(1066, 1, 1)));
-    CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(1066, 1, 1))->Serialize(0, true, true) == "change_development_level = 3");
-    
-    REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(10, 1, 1)));
-    CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) == "change_development_level = 4");
+        REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(1066, 1, 1)));
+        CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(1066, 1, 1))->Serialize(0, true, true) == "change_development_level = 3");
+        
+        REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(10, 1, 1)));
+        CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) == "change_development_level = 4");
+    }
+
+    SUBCASE("UTF-8 BOM encoding") {
+        // Check that titles history files are encoded as UTF-8 BOM.
+        std::set<std::string> filesPath = File::ListFiles( mod.GetDirectory(Paths::HISTORY_TITLES) );
+
+        for(const auto& filePath : filesPath) {
+            if(!filePath.ends_with(".txt"))
+                continue;
+            std::ifstream file(filePath, std::ios::binary);
+            char bom[3];
+            file.read(bom, 3);
+            CHECK(bom[0] == static_cast<char>(0xEF));
+            CHECK(bom[1] == static_cast<char>(0xBB));
+            CHECK(bom[2] == static_cast<char>(0xBF));
+        }
+    }
 
     // Clear the exported test mod directory.
     std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
@@ -954,8 +988,24 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
         }
     }
 
-    SUBCASE("file path") {
+    SUBCASE("UTF-8 BOM encoding") {
+        // By default, it should be the original localization file with the most titles localization in it.
+        // Otherwise, it should be a new file named "00_titles_l_english.yml".
 
+        // The test mod has only one localization file with titles localization in it, so it should be the one used for export.
+        std::string expectedPath = mod.GetAbsolutePath("", "localization/english/titles_l_english.yml");
+
+        // Check that the file exists and is a regular file.
+        REQUIRE(std::filesystem::exists(expectedPath));
+        CHECK(std::filesystem::is_regular_file(expectedPath));
+        
+        // Check that the file is UTF-8 BOM encoded by checking the first 3 bytes.
+        std::ifstream file(expectedPath, std::ios::binary);
+        char bom[3];
+        file.read(bom, 3);
+        CHECK(bom[0] == static_cast<char>(0xEF));
+        CHECK(bom[1] == static_cast<char>(0xBB));
+        CHECK(bom[2] == static_cast<char>(0xBF));
     }
 }
 
