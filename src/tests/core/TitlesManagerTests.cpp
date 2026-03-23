@@ -2,6 +2,7 @@
 
 #include "mod/Mod.hpp"
 #include "map/titles/TitleManager.hpp"
+#include "util/Yaml.hpp"
 
 TEST_SUITE("[TitleManager]") {
 
@@ -693,7 +694,7 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
     
     SUBCASE("cultural names") {
         REQUIRE(manager.GetLocCulturalNames().size() == 1);
-        REQUIRE(manager.GetLocCulturalNames("english").size() == 3);
+        REQUIRE(manager.GetLocCulturalNames("english").size() == 4);
 
         REQUIRE(manager.HasLocCulturalName("english", "cn_naoned"));
         CHECK(manager.GetLocCulturalName("english", "cn_naoned") == "Naoned");
@@ -703,10 +704,16 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
         
         REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_adj"));
         CHECK(manager.GetLocCulturalName("english", "cn_naoned_adj") == "naonedat");
+
+        REQUIRE(manager.HasLocCulturalName("english", "cn_brest"));
+        CHECK(manager.GetLocCulturalName("english", "cn_brest") == "Brest");
     }
 }
 
 TEST_CASE("[TitleManager] ExportTitles") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
     REQUIRE(std::filesystem::exists(mod.GetDir()));
@@ -817,12 +824,12 @@ TEST_CASE("[TitleManager] ExportTitles") {
             CHECK(bom[2] == static_cast<char>(0xBF));
         }
     }
-
-    // Clear the exported test mod directory.
-    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
 }
 
 TEST_CASE("[TitleManager] ExportTitlesHistory") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
     REQUIRE(std::filesystem::exists(mod.GetDir()));
@@ -909,12 +916,12 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
             CHECK(bom[2] == static_cast<char>(0xBF));
         }
     }
-
-    // Clear the exported test mod directory.
-    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
 }
 
 TEST_CASE("[TitleManager] ExportTitlesLocalization") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
     REQUIRE(std::filesystem::exists(mod.GetDir()));
@@ -1010,6 +1017,9 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
 }
 
 TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
     REQUIRE(std::filesystem::exists(mod.GetDir()));
@@ -1043,11 +1053,12 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
     SUBCASE("cultural names localization") {
 
         // Check that the modified localization has been exported.
-        REQUIRE(manager.HasTitle("d_test1"));
-        const Title* dtest1 = manager.GetTitle("d_test1");
-        CHECK(dtest1->GetLocName("english") == "Duchy Test1 Modified");
-        CHECK(dtest1->GetLocArticle("english") == "the ");
-        CHECK(dtest1->GetLocAdjective("english") == "Modified Testian");
+        REQUIRE(manager.HasLocCulturalName("english", "cn_naoned"));
+        CHECK(manager.GetLocCulturalName("english", "cn_naoned") == "Naoned Modified");
+        REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_article"));
+        CHECK(manager.GetLocCulturalName("english", "cn_naoned_article") == "the ");
+        REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_adj"));
+        CHECK(manager.GetLocCulturalName("english", "cn_naoned_adj") == "Modified naonedat");
 
         // Check that new cultural names localization have been exported.
         REQUIRE(manager.HasLocCulturalName("english", "cn_roazhon"));
@@ -1073,6 +1084,52 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
         CHECK(bom[1] == static_cast<char>(0xBB));
         CHECK(bom[2] == static_cast<char>(0xBF));
     }
+}
+
+TEST_CASE("[TitleManager] DeleteLocalization") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/title_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+
+    {
+        TitleManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadLocalization());
+        
+        // Copy the original mod localization files to the temp export directory.
+        std::filesystem::copy(mod.GetDir(), "resources/tests/title_manager/test_mod_modified", std::filesystem::copy_options::recursive);
+        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+
+        REQUIRE_NOTHROW(manager.ExportTitles());
+        REQUIRE_NOTHROW(manager.DeleteLocalization(true, true));
+        REQUIRE_NOTHROW(manager.ExportTitlesLocalization());
+        REQUIRE_NOTHROW(manager.ExportCulturalNamesLocalization());
+    }
+
+    // Reload the titles.
+    TitleManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadLocalization());
+
+    // 3. Asserts
+        
+    // Check that the secondary localization file still exists.
+    std::string filePath = mod.GetAbsolutePath("", "localization/english/test_titles_l_english.yml");
+    REQUIRE(std::filesystem::exists(filePath));
+    REQUIRE(std::filesystem::is_regular_file(filePath));
+    
+    // Check that the titles localization have been removed from that file.
+    std::map<std::string, std::string> entries = Yaml::ParseFile(filePath);
+    CHECK(entries.size() == 3);
+    CHECK_FALSE(entries.contains("b_test1"));
+    CHECK_FALSE(entries.contains("cn_brest"));
+    CHECK(entries.contains("example_loc"));
+    CHECK(entries.at("example_loc") == "Example Loc");
+    CHECK(entries.contains("example_loc2"));
+    CHECK(entries.at("example_loc2") == "Example Loc 2");
 }
 
 }
