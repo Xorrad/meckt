@@ -866,6 +866,13 @@ void TitleManager::ExportTitlesHistory() {
         file.close();
 }
 
+void TitleManager::ExportLocalization() {
+    this->DeleteLocalization(true, true);
+
+    this->ExportTitlesLocalization();
+    this->ExportCulturalNamesLocalization();
+}
+
 void TitleManager::ExportTitlesLocalization() {
     std::string filePath = m_Mod.GetAbsolutePath("", m_TitlesLocalizationFileName);
     std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
@@ -900,4 +907,80 @@ void TitleManager::ExportCulturalNamesLocalization() {
     }
 
     file.close();
+}
+
+void TitleManager::DeleteLocalization(bool titlesLocalization, bool culturalNamesLocalization) {
+    std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::LOCALIZATION_ENGLISH) );
+    std::set<std::string> filesPath2 = File::ListFiles( m_Mod.GetDirectory(Paths::LOCALIZATION_REPLACE_ENGLISH) );
+    filesPath.insert(filesPath2.begin(), filesPath2.end());
+
+    for(const auto& filePath : filesPath) {
+        if(!filePath.ends_with(".yml"))
+            continue;
+        if(filePath.find("titles") == std::string::npos && filePath.find("cultural") == std::string::npos)
+            continue;
+        if(filePath.ends_with(m_TitlesLocalizationFileName) || filePath.ends_with(m_CulturalNamesLocalizationFileName))
+            continue;
+
+        std::ifstream file(filePath);
+        std::ofstream tmpFile(filePath + ".tmp");
+        std::map<std::string, std::string> loc = Yaml::ParseFile(filePath);
+
+        // Rewrite the localization line by line while
+        // omitting titles and adjectives localization.
+        std::string line;
+        while(std::getline(file, line)) {
+            // Remove all blanks from the string until reading ':'
+            // in order to extract the key.
+            std::string key = "";
+            for(int i = 0; i < line.size(); i++) {
+                if(line[i] == ' ' || line[i] == '\t' || line[i] == '\r')
+                    continue;
+                if(line[i] == ':' || line[i] == '#')
+                    break;
+                key.push_back(line[i]);
+            }
+
+            // If the line is empty or contains a comment, then we keep it.
+            if(key.empty()) {
+                fmt::println(tmpFile, "{}", line);
+                continue;
+            }
+
+            // Ignore lines with a cultural name.
+            if(key.starts_with("cn_") && culturalNamesLocalization) {
+                continue;
+            }
+
+            // If the line is not related to titles, then we keep it.
+            if(!titlesLocalization || (!key.starts_with("b_")
+            && !key.starts_with("c_")
+            && !key.starts_with("d_")
+            && !key.starts_with("k_")
+            && !key.starts_with("e_"))) {
+                fmt::println(tmpFile, "{}", line);
+                continue;
+            }
+
+            // Determine the title name/id from the key.
+            std::string titleId = key;
+            if(key.ends_with("_adj")) {
+                titleId = key.substr(0, key.size()-4);
+            }
+            else if(key.ends_with("_article")) {
+                titleId = key.substr(0, key.size()-8);
+            }
+            
+            // If there isn't any titles by that name, then we keep it.
+            if(!m_Titles.contains(titleId)) {
+                fmt::println(tmpFile, "{}", line);
+                continue;
+            }
+        }
+
+        file.close();
+        tmpFile.close();
+        std::remove(filePath.c_str());
+        std::rename((filePath + ".tmp").c_str(), filePath.c_str());
+    }
 }

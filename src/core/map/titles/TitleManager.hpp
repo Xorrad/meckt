@@ -253,7 +253,7 @@ public:
      */
     void LoadLocalization();
 
-    /////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
 
     /**
      * @brief Exports the titles definitions.
@@ -274,6 +274,12 @@ public:
     void ExportTitlesHistory();
 
     /**
+     * @brief Exports the titles and cultural names localization files.
+     *        It also removes former localization keys from the original mod files.
+     */
+    void ExportLocalization();
+
+    /**
      * @brief Exports the titles localization.
      *        This includes names, adjectives, articles.
      */
@@ -284,10 +290,13 @@ public:
      */
     void ExportCulturalNamesLocalization();
 
-    ///////
+    ////////////////////////////////////////////////////
 
-    void DeleteTitlesLocalization();
-    void DeleteCulturalNamesLocalization();
+    /**
+     * @brief Removes the former titles and cultural names localization
+     *        from the original mod files in order to avoid duplicates.
+     */
+    void DeleteLocalization(bool titlesLocalization, bool culturalNamesLocalization);
 
 private:
     Mod& m_Mod;
