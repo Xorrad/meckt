@@ -23,7 +23,7 @@ public:
      * @param directory The directory.
      * @return The directory path as a string.
      */
-    std::string GetDirectory(Directory directory) const;
+    std::string GetDirectory(GamePath directory) const;
 
     /**
      * @brief Resolves a relative file name to an absolute path based on its directory.
@@ -31,7 +31,7 @@ public:
      * @param relativeFileName The relative file name (e.g. "subdir/my_file.txt").
      * @return The resolved absolute path as a string.
      */
-    std::string GetAbsolutePath(Directory directory, const std::string& relativeFileName) const;
+    std::string GetAbsolutePath(GamePath directory, const std::string& relativeFileName = "") const;
 
     /**
      * @brief Converts an absolute path to a relative path based on its directory.
@@ -39,7 +39,7 @@ public:
      * @param absolutePath The absolute path to convert.
      * @return The relative path as a string (e.g. "01_landed_titles.txt" instead of "mod/common/landed_titles/01_landed_titles.txt").
      */
-    std::string GetRelativePath(Directory directory, const std::string& absolutePath) const;
+    std::string GetRelativePath(GamePath directory, const std::string& absolutePath) const;
 
     ///////////////////////////////////////
 

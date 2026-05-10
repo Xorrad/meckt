@@ -32,7 +32,7 @@ const std::string& Mod::GetRootDirectory() const {
     return m_RootDirectory;
 }
 
-std::string Mod::GetDirectory(Directory directory) const {
+std::string Mod::GetDirectory(GamePath directory) const {
     std::string absoluteDirectoryPath = this->GetRootDirectory();
     
     // Make sure the directories are separated correctly.
@@ -44,19 +44,19 @@ std::string Mod::GetDirectory(Directory directory) const {
     return std::move(absoluteDirectoryPath);
 }
 
-std::string Mod::GetAbsolutePath(Directory directory, const std::string& relativeFileName) const {
+std::string Mod::GetAbsolutePath(GamePath directory, const std::string& relativeFileName) const {
     std::string absoluteFilePath = this->GetDirectory(directory);
     
     // Make sure the directories are separated correctly.
-    if (!absoluteFilePath.ends_with("/"))
-        absoluteFilePath.append("/");
+    // if (!absoluteFilePath.ends_with("/"))
+    //     absoluteFilePath.append("/");
 
     absoluteFilePath.append(relativeFileName);
     
     return std::move(absoluteFilePath);
 }
 
-std::string Mod::GetRelativePath(Directory directory, const std::string& absolutePath) const {
+std::string Mod::GetRelativePath(GamePath directory, const std::string& absolutePath) const {
     std::string prefix = this->GetDirectory(directory);
     
     if (absolutePath.starts_with(prefix)) {
