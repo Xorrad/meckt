@@ -1,0 +1,62 @@
+test1_holding = {
+	primary_building = castle_01
+	buildings = {
+		capital_bureau_01
+		
+		hospices_01
+		curtain_walls_01
+		watchtowers_01
+		outposts_01
+		hill_forts_01
+		ramparts_01
+		farm_estates_01
+		cereal_fields_01
+		pastures_01
+		peat_quarries_01
+		hill_farms_01
+		logging_camps_01
+		plantations_01
+		quarries_01
+		orchards_01
+		elephant_pens_01
+		hunting_grounds_01
+		regimental_grounds_01
+		barracks_01
+		military_camps_01
+		camel_farms_01
+		stables_01
+		smiths_01
+		hillside_grazing_01
+		warrior_lodges_01
+		horse_pastures_01
+		windmills_01
+		watermills_01
+		caravanserai_01
+		workshops_01
+		wind_furnace_01
+
+		common_tradeport_01
+		hall_of_heroes_01
+		special_sicilian_parliament_01
+		special_greenhouse_01
+		qanats_01
+		murex_farm_01
+	}
+}
+
+test2_holding = {
+	primary_building = tribe_01
+
+	buildings = {
+		palisades_01
+		war_camps_01
+		longhouses_01
+		market_villages_01
+		
+		hillside_grazing_01
+		warrior_lodges_01
+		horse_pastures_01
+
+		common_tradeport_01 # only for trade_ports_enabled_for_tribals culture parameter
+	}
+}

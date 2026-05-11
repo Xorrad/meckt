@@ -1,0 +1,21 @@
+@azerbaijan_mountains = 0.40
+@the_alps = 0.80
+ 
+1 = {
+	winter_severity_bias = 0.1
+	mild_winter_factor_override = 0.2
+	normal_winter_factor_override = 0.3
+	harsh_winter_factor_override = 0.4
+}
+
+2 = {
+	winter_severity_bias = 0.2
+}
+
+3 = {
+	winter_severity_bias = 0.3
+}
+
+4 = {
+	winter_severity_bias = @the_alps
+}

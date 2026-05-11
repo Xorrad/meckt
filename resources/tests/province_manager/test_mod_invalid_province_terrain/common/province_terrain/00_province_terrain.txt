@@ -1,0 +1,7 @@
+﻿default_land=plains
+default_sea=sea
+default { { _coastal_sea=coastal_sea
+1=mountains
+2=tai}ga
+3=plains
+4=hill====

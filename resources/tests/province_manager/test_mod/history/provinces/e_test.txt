@@ -1,0 +1,54 @@
+# Should only keep first values.
+1 = {
+	culture = breton
+	culture = french
+	
+	religion = catholic
+	religion = insular
+
+	holding = castle_holding
+	holding = church_holding
+}
+
+# Should discard the second definition of holding, and keep the new culture. 
+2 = {
+	culture = french
+	religion = insular
+
+	1104.1.1 = {
+		holding = city_holding
+	}
+	1104.1.1 = {
+		culture = breton
+		holding = church_holding
+	}
+}
+
+3 = {
+	culture = czech
+	religion = slavic_pagan
+	holding = castle_holding
+}
+
+# Should only keep first holding value.
+4 = {
+	culture = breton
+	religion = catholic
+	holding = church_holding
+}
+4 = {
+	holding = castle_holding
+}
+
+5 = {
+	culture = breton
+	religion = catholic
+	holding = castle_holding
+	1066.1.1 = {
+		buildings = {
+			ramparts_01
+			#outposts_01
+			hunting_grounds_01
+		}
+	}
+}

@@ -1,0 +1,44 @@
+test1 = {
+	color = hsv { 0.0 0.0 0.5 }
+	travel_danger_color = hsv { 0.1 0.5 0.8 }
+	travel_danger_score = 10
+	provision_cost = @provisions_cost_light
+	county_fertility = 30
+
+	province_modifier = {
+		supply_limit_mult = 0
+		travel_danger = 10
+		county_fertility_growth_add = plains_county_fertility_value
+	}
+	
+	audio_parameter = 1.0
+}
+
+test2 = {
+	color = hsv { 0.0 0.0 0.1 }
+	travel_danger_color = hsv { 0.00 0.00 1.00 0.00 }
+	travel_danger_score = 20
+	provision_cost = @provisions_cost_high
+	
+	province_modifier = {
+		travel_danger = 75
+
+	}
+}
+
+plains = {
+	color = hsv { 0.0 0.0 0.9 }
+	travel_danger_color = hsv { 0.1 0.5 0.8 }
+	travel_danger_score = 10
+	provision_cost = @provisions_cost_light
+	county_fertility = 30
+
+	province_modifier = {
+		supply_limit_mult = 0
+		travel_danger = 10
+		county_fertility_growth_add = plains_county_fertility_value
+	}
+	
+	audio_parameter = 1.0
+}
+

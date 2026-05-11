@@ -1,0 +1,43 @@
+#max_provinces = 1466
+definitions = "definition.csv"
+provinces = "provinces.png"
+#positions = "positions.txt"
+rivers = "rivers.png"
+#terrain_definition = "terrain.txt"
+topology = "heightmap.heightmap"
+#tree_definition = "trees.bmp"
+continent = "continent.txt"
+adjacencies = "adjacencies.csv"
+#climate = "climate.txt"
+island_region = "island_region.txt"
+seasons = "seasons.txt"
+
+#############
+# SEA ZONES
+#############
+sea_zones = RANGE { 1 3 }
+sea_zones = LIST { 5 }
+
+###############
+# MAJOR RIVERS
+###############
+river_provinces = LIST { 5 }
+river_provinces = RANGE { 1 3 }
+
+########
+# LAKES
+########
+lakes = LIST { 5 1 2 }
+lakes = RANGE { 1 3 }
+
+#####################
+# IMPASSABLE TERRAIN
+#####################
+impassable_mountains = LIST { 5 }
+impassable_mountains = RANGE { 1 3 }
+
+#####################
+# IMPASSABLE SEA ZONES
+#####################
+impassable_seas = LIST { 5 }
+impassable_seas = RANGE { 1 3 }
