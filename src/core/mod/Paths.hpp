@@ -12,6 +12,7 @@ namespace Paths {
 
     // History directory paths.
     static constexpr GamePath HISTORY_TITLES = "history/titles/";
+    static constexpr GamePath HISTORY_PROVINCES = "history/provinces/";
 
     // Map data directory paths.
     static constexpr GamePath MAP_DATA_DEFINITIONS = "map_data/definition.csv";

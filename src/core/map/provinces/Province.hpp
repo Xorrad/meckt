@@ -5,6 +5,7 @@ public:
     Province(int id, sf::Color color, std::string name);
 
     int GetId() const;
+    void SetId(int id);
     
     sf::Color GetColor() const;
     uint32_t GetColorId() const;

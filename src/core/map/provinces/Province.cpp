@@ -24,6 +24,10 @@ int Province::GetId() const {
     return m_Id;
 }
 
+void Province::SetId(int id) {
+    m_Id = id;
+}
+
 sf::Color Province::GetColor() const {
     return m_Color;
 }
