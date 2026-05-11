@@ -15,7 +15,7 @@ std::map<std::string, std::string> Yaml::ParseFile(std::ifstream& file) {
 std::map<std::string, std::string> Yaml::Parse(const std::string& content) {
     std::map<std::string, std::string> values;
 
-    uint i = 0;
+    size_t i = 0;
     std::string key = "";
     std::string buffer = "";
 

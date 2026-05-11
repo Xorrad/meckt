@@ -44,11 +44,5 @@
 	culture = breton
 	religion = catholic
 	holding = castle_holding
-	1066.1.1 = {
-		buildings = {
-			ramparts_01
-			#outposts_01
-			hunting_grounds_01
-		}
-	}
+	special_building_slot = kutna_hora_mines_01
 }

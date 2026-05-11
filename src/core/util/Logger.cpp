@@ -2,11 +2,11 @@
 
 Logger::Message::Message() : Message(time(0), "", 0, "", MessageType::INFO, "") {}
 
-Logger::Message::Message(std::string file, uint line, std::string function, MessageType type, std::string text) :
+Logger::Message::Message(std::string file, size_t line, std::string function, MessageType type, std::string text) :
     Message(time(0), file, line, function, type, text)
 {}
 
-Logger::Message::Message(time_t time, std::string file, uint line, std::string function, MessageType type, std::string text) :
+Logger::Message::Message(time_t time, std::string file, size_t line, std::string function, MessageType type, std::string text) :
     m_Time(time),
     m_File(file),
     m_Line(line),
@@ -23,7 +23,7 @@ std::string Logger::Message::GetFile() const {
     return m_File;
 }
 
-uint Logger::Message::GetLine() const {
+size_t Logger::Message::GetLine() const {
     return m_Line;
 }
 

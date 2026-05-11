@@ -603,13 +603,13 @@ void TitleManager::LoadLocalization() {
     std::set<std::string> filesPath2 = File::ListFiles( m_Mod.GetDirectory(Paths::LOCALIZATION_REPLACE_ENGLISH) );
     filesPath.insert(filesPath2.begin(), filesPath2.end());
 
-    uint countNames = 0;
-    uint countAdjectives = 0;
-    uint countArticles = 0;
-    uint countCulturalNamesTotal = 0;
+    size_t countNames = 0;
+    size_t countAdjectives = 0;
+    size_t countArticles = 0;
+    size_t countCulturalNamesTotal = 0;
 
-    uint maxCount = 0;
-    uint maxCountCulturalNames = 0;
+    size_t maxCount = 0;
+    size_t maxCountCulturalNames = 0;
 
     if(filesPath.empty())
         LOG_WARNING("No localization files have been found in 'localization/english', nor in 'localization/replace/english'");
@@ -623,8 +623,8 @@ void TitleManager::LoadLocalization() {
         std::map<std::string, std::string> loc = Yaml::ParseFile(filePath);
 
         // Count the number of localization for this file.
-        uint count = countNames + countAdjectives;
-        uint countCulturalNames = 0;
+        size_t count = countNames + countAdjectives;
+        size_t countCulturalNames = 0;
 
         for(auto [key, value] : loc) {
             // TODO: handle cultural names.

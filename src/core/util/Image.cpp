@@ -16,9 +16,9 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     // fmt::println("mapping colors: {}", String::DurationFormat(clock.restart()));
     // fmt::println("mapped: {} colors", mappedColors.size())
 
-    uint width = originalImage.getSize().x;
-    uint height = originalImage.getSize().y;
-    uint totalPixels = width * height;
+    size_t width = originalImage.getSize().x;
+    size_t height = originalImage.getSize().y;
+    size_t totalPixels = width * height;
 
     // Use vectors to avoid using SFML getters and setters for pixels.
     const uint8_t* originalPixels = originalImage.getPixelsPtr();
@@ -34,14 +34,14 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     // Split the image vertically between all the threads.
     // Need to be careful not to split a color from all its composites
     // in the process (so by block of 4).
-    const uint threadRange = totalPixels / threadsCount;
+    const size_t threadRange = totalPixels / threadsCount;
 
-    for (uint i = 0; i < threadsCount; i++) {
+    for (size_t i = 0; i < threadsCount; i++) {
 
         threads.push_back(MakeUnique<std::thread>([&, i]() {
-            uint startIndex = i * threadRange * 4;
-            uint endIndex = (i == threadsCount - 1) ? totalPixels * 4 : (i + 1) * threadRange * 4;
-            uint index = startIndex;
+            size_t startIndex = i * threadRange * 4;
+            size_t endIndex = (i == threadsCount - 1) ? totalPixels * 4 : (i + 1) * threadRange * 4;
+            size_t index = startIndex;
 
             uint32_t color = 0x000000FF;
             uint32_t previousColor = 0x00000000;
@@ -92,7 +92,7 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     // fmt::println("filling pixels: {}", String::DurationFormat(clock.restart()));
     // fmt::println("initializing image: {}", String::DurationFormat(clock.restart()));
 
-    return sf::Image({ width, height }, newPixels.data());
+    return sf::Image({ static_cast<uint32_t>(width), static_cast<uint32_t>(height) }, newPixels.data());
 }
 
 void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>& palette) {
@@ -123,15 +123,15 @@ void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>
         return bestIndex;
     };
 
-    uint width = image.getSize().x;
-    uint height = image.getSize().y;
+    size_t width = image.getSize().x;
+    size_t height = image.getSize().y;
 
     // Indexed image buffer (1 byte per pixel).
     std::vector<unsigned char> indexedPixels(width * height);
 
     // Map each pixel to closest palette index.
-    for (uint y = 0; y < height; y++) {
-        for (uint x = 0; x < width; x++) {
+    for (size_t y = 0; y < height; y++) {
+        for (size_t x = 0; x < width; x++) {
             sf::Color pixelColor = image.getPixel(sf::Vector2u(x, y));
             int index = findClosestColorIndex(pixelColor);
             indexedPixels[y * width + x] = static_cast<unsigned char>(index);
@@ -156,7 +156,7 @@ void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>
 
     // Encode the image.
     std::vector<unsigned char> data;
-    uint error = lodepng::encode(data, indexedPixels, width, height, state);
+    uint32_t error = lodepng::encode(data, indexedPixels, width, height, state);
     if (error) {
         LOG_ERROR("Failed to encode image '{}': {}", filePath, lodepng_error_text(error));
         return;

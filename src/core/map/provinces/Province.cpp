@@ -169,7 +169,7 @@ sf::Vector2i Province::GetImagePosition() const {
     return m_ImagePosition;
 }
 
-uint Province::GetImagePixelsCount() const {
+size_t Province::GetImagePixelsCount() const {
     return m_ImagePixelsCount;
 }
 
@@ -177,7 +177,7 @@ void Province::SetImagePosition(sf::Vector2i pos) {
     m_ImagePosition = pos;
 }
 
-void Province::SetImagePixelsCount(uint count) {
+void Province::SetImagePixelsCount(size_t count) {
     m_ImagePixelsCount = count;
 }
 

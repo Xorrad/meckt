@@ -355,11 +355,11 @@ void ProvinceManager::LoadProvincesImage() {
     const auto& pixels = m_ProvincesImage.getPixelsPtr();
     std::map<uint32_t, bool> colors;
 
-    uint width = m_ProvincesImage.getSize().x;
-    uint height = m_ProvincesImage.getSize().y;
-    uint totalPixels = width * height;
+    size_t width = m_ProvincesImage.getSize().x;
+    size_t height = m_ProvincesImage.getSize().y;
+    size_t totalPixels = width * height;
 
-    const auto& GetIndexPosition = [&](uint index) {
+    const auto& GetIndexPosition = [&](size_t index) {
         index = index - 4;
         return sf::Vector2i((index / 4) % width, floor(index / (4*width)));
     };
@@ -367,14 +367,14 @@ void ProvinceManager::LoadProvincesImage() {
     // Split the image vertically between all the threads.
     const int threadsCount = 4;
     std::vector<UniquePtr<std::thread>> threads;
-    const uint threadRange = totalPixels / threadsCount;
+    const size_t threadRange = totalPixels / threadsCount;
 
-    for(uint i = 0; i < threadsCount; i++) {
+    for(size_t i = 0; i < threadsCount; i++) {
 
         threads.push_back(MakeUnique<std::thread>([&, i](){
-            uint startIndex = i * threadRange*4;
-            uint endIndex = (i == threadsCount-1) ? totalPixels*4 : (i+1) * threadRange*4;
-            uint index = startIndex;
+            size_t startIndex = i * threadRange*4;
+            size_t endIndex = (i == threadsCount-1) ? totalPixels*4 : (i+1) * threadRange*4;
+            size_t index = startIndex;
 
             uint32_t color = 0x000000FF;
             uint32_t previousColor = 0x00000000;
@@ -677,7 +677,7 @@ void ProvinceManager::LoadProvincesHistory() {
     std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::HISTORY_PROVINCES) );
 
     for(const auto& filePath : filesPath) {
-        if(!filePath.ends_with(".txt"))
+        if (!filePath.ends_with(".txt"))
             continue;
 
         try {
@@ -692,21 +692,32 @@ void ProvinceManager::LoadProvincesHistory() {
 }
 
 void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, SharedPtr<Jomini::Object> data) {
-    for(auto& [provinceId, provincePair] : data->GetMap()) {
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::HISTORY_PROVINCES, fileName);
+
+    for(auto& [key, provincePair] : data->GetMap()) {
         auto& [_, provinceValue] = provincePair;
 
         // Handle variables that might be in the file and store them for export.
-        if (provinceId.starts_with("@")) {
+        if (key.starts_with("@")) {
             if (!m_ProvincesHistoryVariables.contains(fileName))
                 m_ProvincesHistoryVariables[fileName] = MakeShared<Jomini::Object>();
-            if (!m_ProvincesHistoryVariables[fileName]->Contains(provinceId))
-                m_ProvincesHistoryVariables[fileName]->Put(provinceId, provinceValue);
+            if (!m_ProvincesHistoryVariables[fileName]->Contains(key))
+                m_ProvincesHistoryVariables[fileName]->Put(key, provinceValue);
+            continue;
+        }
+
+        int provinceId = 0;
+        try {
+            provinceId = String::ParseInt(key);
+        }
+        catch (std::exception& e) {
+            LOG_ERROR("Province '{}' has invalid id in {}", key, filePath);
             continue;
         }
 
         // Ignore undefined provinces.
-        if(m_ProvincesByIds.count(provinceId) == 0) {
-            LOG_WARNING("Unknown province '{}' is defined in history file '{}'", provinceId, fileName);
+        if(!m_ProvincesByIds.contains(provinceId)) {
+            LOG_WARNING("Unknown province '{}' is defined in '{}'", provinceId, filePath);
             continue;
         }
 
@@ -716,35 +727,34 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
 
         // Assert that the value is a correct object where a key is a date.
         if (!provinceValue->Is(Jomini::Type::OBJECT)) {
-            LOG_ERROR("Province '{}' has invalid history entry in '{}'", provinceId, fileName);
+            LOG_ERROR("Province '{}' has invalid history entry in '{}'", provinceId, filePath);
             continue;
         }
 
         // 1. Extract global values such as culture, religion or holding.
-        if(value->Contains("culture"))
-            m_ProvincesByIds[provinceId]->SetCulture(value->GetFirst("culture")->As<std::string>(""));
-        if(value->Contains("religion"))
-            m_ProvincesByIds[provinceId]->SetReligion(value->GetFirst("religion")->As<std::string>(""));
-        if(value->Contains("holding")) {
-            m_ProvincesByIds[provinceId]->SetHolding(value->GetFirst("holding")->As<std::string>(""));
+        if(provinceValue->Contains("culture"))
+            m_ProvincesByIds[provinceId]->SetCulture(provinceValue->GetFirst("culture")->As<std::string>(""));
+        if(provinceValue->Contains("religion"))
+            m_ProvincesByIds[provinceId]->SetReligion(provinceValue->GetFirst("religion")->As<std::string>(""));
+        if(provinceValue->Contains("holding")) {
+            m_ProvincesByIds[provinceId]->SetHolding(provinceValue->GetFirst("holding")->As<std::string>(""));
         }
 
         if(!m_HoldingTypes.contains(m_ProvincesByIds[provinceId]->GetHolding())) {
-            LOG_WARNING("Province '{}' has undefined holding type '{}'", provinceId, m_ProvincesByIds[provinceId]->GetHolding());
-            continue;
+            LOG_WARNING("Province '{}' has undefined holding type '{}' in '{}'", provinceId, m_ProvincesByIds[provinceId]->GetHolding(), filePath);
         }
 
         // Remove those attributes to avoid duplicates when exporting and to reduce memory usage a bit.
-        value->Remove("culture");
-        value->Remove("religion");
-        value->Remove("holding");
+        provinceValue->Remove("culture");
+        provinceValue->Remove("religion");
+        provinceValue->Remove("holding");
 
         // 2. Loop over dates in the province history and process them.
         
         // Some titles might have other attributes not assigned to a date in their history (e.g special_building_slot).
         SharedPtr<Jomini::Object> extraHistoryData = MakeShared<Jomini::Object>();
 
-        for(const auto& [dateString, datePair] : titleValue->GetMap()) {
+        for(const auto& [dateString, datePair] : provinceValue->GetMap()) {
             auto [__, history] = datePair;
 
             Jomini::Date date;
@@ -752,8 +762,8 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
                 date = Date::ParseDate(dateString);
             }
             catch (std::exception& e) {
-                if (strDate.find(".") != std::string::npos) {
-                    LOG_ERROR("Province '{}' has invalid date syntax '{}' in '{}'", provinceId, dateString, fileName);
+                if (dateString.find(".") != std::string::npos) {
+                    LOG_ERROR("Province '{}' has invalid date syntax '{}' in '{}'", provinceId, dateString, filePath);
                 }
                 else {
                     extraHistoryData->Put(dateString, history, __);
@@ -767,7 +777,7 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
 
             // Make sure that the history entry is correct.
             if (!history->Is(Jomini::Type::OBJECT)) {
-                LOG_ERROR("Province '{}' has invalid history entry for '{}' in '{}'", provinceId, dateString, fileName);
+                LOG_ERROR("Province '{}' has invalid history entry for '{}' in '{}'", provinceId, dateString, filePath);
                 continue;
             }
             

@@ -53,9 +53,9 @@ public:
     void RemoveHistory(Jomini::Date date);
     
     sf::Vector2i GetImagePosition() const;
-    uint GetImagePixelsCount() const;
+    size_t GetImagePixelsCount() const;
     void SetImagePosition(sf::Vector2i pos);
-    void SetImagePixelsCount(uint count);
+    void SetImagePixelsCount(size_t count);
     void IncrementImagePixelsCount();
 
 private:
@@ -74,7 +74,7 @@ private:
     std::map<Jomini::Date, SharedPtr<Jomini::Object>> m_History;
 
     sf::Vector2i m_ImagePosition;
-    uint m_ImagePixelsCount;
+    size_t m_ImagePixelsCount;
 
     ClimateType m_ClimateType;
     std::string m_WinterSeverityBias;

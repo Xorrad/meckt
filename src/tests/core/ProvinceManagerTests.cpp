@@ -678,14 +678,15 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
         REQUIRE_NOTHROW(manager.LoadProvincesHistory());
     }
 
-    Mod mod("resources/tests/province_manager/test_mod");
-    ProvinceManager manager(mod);
-
-    // Load the provinces.
-    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
-    REQUIRE_NOTHROW(manager.LoadProvincesHistory());
-
     SUBCASE("Check that provinces have the correct history data") {
+        Mod mod("resources/tests/province_manager/test_mod");
+        ProvinceManager manager(mod);
+
+        // Load the provinces.
+        REQUIRE_NOTHROW(manager.LoadHoldingTypes());
+        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+        REQUIRE_NOTHROW(manager.LoadProvincesHistory());
+
         struct ProvinceHistoryTestData {
             int id;
             std::string culture;
@@ -695,11 +696,11 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
             std::map<Jomini::Date, std::string> history;
         };
         const std::vector<ProvinceHistoryTestData> testData = {
-            {1, "breton", "catholic", "castle_holding", {}, ""},
-            {2, "french", "insular", "", {}, ""},
-            {3, "czech", "slavic_pagan", "castle_holding", {}, ""},
-            {4, "breton", "catholic", "church_holding", {}, ""},
-            {5, "breton", "catholic", "castle_holding", {}, ""}
+            {1, "breton", "catholic", "castle_holding", "", std::map<Jomini::Date, std::string>{}},
+            {2, "french", "insular", "none", "", std::map<Jomini::Date, std::string>{std::make_pair(Jomini::Date(1104, 1, 1), "holding = city_holding culture = breton")}},
+            {3, "czech", "slavic_pagan", "castle_holding", "", std::map<Jomini::Date, std::string>{}},
+            {4, "breton", "catholic", "church_holding", "", std::map<Jomini::Date, std::string>{}},
+            {5, "breton", "catholic", "castle_holding", "special_building_slot = kutna_hora_mines_01", std::map<Jomini::Date, std::string>{}}
         };
 
         for (const auto& data : testData) {
@@ -708,11 +709,14 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
             CHECK_EQ(manager.GetProvinceById(data.id)->GetReligion(), data.religion);
             CHECK_EQ(manager.GetProvinceById(data.id)->GetHolding(), data.holding);
             CHECK_EQ(manager.GetProvinceById(data.id)->GetExtraHistoryData()->Serialize(0, true, true), data.extra);
+
             CHECK_EQ(manager.GetProvinceById(data.id)->GetHistory().size(), data.history.size());
             for (const auto& [date, content] : data.history) {
-                REQUIRE(manager.GetProvinceById(data.id)->GetHistory()->Contains(date));
-                CHECK_EQ(manager.GetProvinceById(data.id)->GetHistory()->Get(date)->Serialize(0, true, true), content);
+                REQUIRE(manager.GetProvinceById(data.id)->GetHistory().contains(date));
+                CHECK_EQ(manager.GetProvinceById(data.id)->GetHistory().at(date)->Serialize(0, true, true), content);
             }
         }
     }
+}
+
 }

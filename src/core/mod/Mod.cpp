@@ -531,12 +531,12 @@ void Mod::GenerateMissingProvinces() {
     int count = 0;
     int nextId = 1;
 
-    uint width = m_ProvinceImage.getSize().x;
-    uint height = m_ProvinceImage.getSize().y;
-    uint pixels = width * height * 4;
+    size_t width = m_ProvinceImage.getSize().x;
+    size_t height = m_ProvinceImage.getSize().y;
+    size_t pixels = width * height * 4;
     const uint8_t* provincesPixels = m_ProvinceImage.getPixelsPtr();
 
-    uint index = 0;
+    size_t index = 0;
     uint32_t provinceColor = 0x000000FF;
     uint32_t previousProvinceColor = 0x00000000;
 
@@ -633,8 +633,8 @@ void Mod::GenerateTitlesLocalization(const std::string& lang, bool names, bool a
         return str + "ian";
     };
 
-    uint countNames = 0;
-    uint countAdjectives = 0;
+    size_t countNames = 0;
+    size_t countAdjectives = 0;
 
     for (auto& [key, title] : m_Titles) {
         if (names && !title->HasLocName(lang)) {
@@ -685,7 +685,7 @@ float Mod::CalculateWinterSeverityBias(Province* province, bool override, float 
 }
 
 void Mod::GenerateProvincesClimate(bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold) {
-    uint countProvinces = 0;
+    size_t countProvinces = 0;
     for(const auto& [provinceColorId, province] : m_Provinces) {
         float winterSeverityBias = this->CalculateWinterSeverityBias(province.get(), override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
         bool hasChanged = false;
@@ -725,16 +725,16 @@ void Mod::DetermineProvincesFlags() {
     // pixels that are below water level, in order to determine
     // if that province is a sea or land.
 
-    // First uint is the total number of pixels.
-    // Second uint is the number of pixels below water level.
-    std::unordered_map<uint32_t, std::pair<uint, uint>> count;
+    // First size_t is the total number of pixels.
+    // Second size_t is the number of pixels below water level.
+    std::unordered_map<uint32_t, std::pair<size_t, size_t>> count;
     count.reserve(m_Provinces.size());
 
-    uint pixels = m_ProvinceImage.getSize().x * m_ProvinceImage.getSize().y * 4;
+    size_t pixels = m_ProvinceImage.getSize().x * m_ProvinceImage.getSize().y * 4;
     const uint8_t* provincesPixels = m_ProvinceImage.getPixelsPtr();
     const uint8_t* heightmapPixels = m_HeightmapImage.getPixelsPtr();
 
-    uint index = 0;
+    size_t index = 0;
     uint32_t provinceColor = 0x000000FF;
     uint32_t previousProvinceColor = 0x00000000;
 
@@ -760,7 +760,7 @@ void Mod::DetermineProvincesFlags() {
         if (previousProvinceColor != provinceColor) {
             it = count.find(provinceColor);
             if (it == count.end())
-                it = count.insert({provinceColor, std::pair<uint, uint>(0, 0)}).first;
+                it = count.insert({provinceColor, std::pair<size_t, size_t>(0, 0)}).first;
         }
 
         it->second.first++;
@@ -1003,11 +1003,11 @@ void Mod::LoadProvinceImage() {
     const auto& pixels = m_ProvinceImage.getPixelsPtr();
     std::map<uint32_t, bool> colors;
 
-    uint width = m_ProvinceImage.getSize().x;
-    uint height = m_ProvinceImage.getSize().y;
-    uint totalPixels = width * height;
+    size_t width = m_ProvinceImage.getSize().x;
+    size_t height = m_ProvinceImage.getSize().y;
+    size_t totalPixels = width * height;
 
-    const auto& GetIndexPosition = [&](uint index) {
+    const auto& GetIndexPosition = [&](size_t index) {
         index = index - 4;
         return sf::Vector2i((index / 4) % width, floor(index / (4*width)));
     };
@@ -1015,14 +1015,14 @@ void Mod::LoadProvinceImage() {
     // Split the image vertically between all the threads.
     const int threadsCount = 4;
     std::vector<UniquePtr<std::thread>> threads;
-    const uint threadRange = totalPixels / threadsCount;
+    const size_t threadRange = totalPixels / threadsCount;
 
-    for(uint i = 0; i < threadsCount; i++) {
+    for(size_t i = 0; i < threadsCount; i++) {
 
         threads.push_back(MakeUnique<std::thread>([&, i](){
-            uint startIndex = i * threadRange*4;
-            uint endIndex = (i == threadsCount-1) ? totalPixels*4 : (i+1) * threadRange*4;
-            uint index = startIndex;
+            size_t startIndex = i * threadRange*4;
+            size_t endIndex = (i == threadsCount-1) ? totalPixels*4 : (i+1) * threadRange*4;
+            size_t index = startIndex;
 
             uint32_t color = 0x000000FF;
             uint32_t previousColor = 0x00000000;
@@ -1589,13 +1589,13 @@ void Mod::LoadLocalization() {
     std::set<std::string> filesPath2 = File::ListFiles(m_RootDirectory + "/localization/replace/english/");
     filesPath.insert(filesPath2.begin(), filesPath2.end());
 
-    uint countNames = 0;
-    uint countAdjectives = 0;
-    uint countArticles = 0;
-    uint countCulturalNamesTotal = 0;
+    size_t countNames = 0;
+    size_t countAdjectives = 0;
+    size_t countArticles = 0;
+    size_t countCulturalNamesTotal = 0;
 
-    uint maxCount = 0;
-    uint maxCountCulturalNames = 0;
+    size_t maxCount = 0;
+    size_t maxCountCulturalNames = 0;
 
     if(filesPath.empty())
         LOG_WARNING("No localization files have been found in /localization/english/, nor /localization/replace/english/");
@@ -1611,8 +1611,8 @@ void Mod::LoadLocalization() {
         // fmt::println("{}\t{}", filePath, loc.size());
 
         // Count the number of localization for this file.
-        uint count = countNames + countAdjectives;
-        uint countCulturalNames = 0;
+        size_t count = countNames + countAdjectives;
+        size_t countCulturalNames = 0;
 
         for(auto [key, value] : loc) {
             // TODO: handle cultural names.

@@ -70,7 +70,7 @@ void String::ReplaceAll(std::string& str, const std::string& from, const std::st
     }
 } 
 
-std::string String::FileSizeFormat(uint size) {
+std::string String::FileSizeFormat(size_t size) {
     if(size < 1000)
         return std::format("{:} B", size);
     if(size < 1000000)

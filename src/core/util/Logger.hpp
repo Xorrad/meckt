@@ -26,12 +26,12 @@ namespace Logger {
     class Message {
     public:
         Message();
-        Message(std::string file, uint line, std::string function, MessageType type, std::string text);
-        Message(time_t time, std::string file, uint line, std::string function, MessageType type, std::string text);
+        Message(std::string file, size_t line, std::string function, MessageType type, std::string text);
+        Message(time_t time, std::string file, size_t line, std::string function, MessageType type, std::string text);
 
         time_t GetTime() const;
         std::string GetFile() const;
-        uint GetLine() const;
+        size_t GetLine() const;
         std::string GetFunction() const;
         MessageType GetType() const;
         std::string GetText() const;
@@ -42,7 +42,7 @@ namespace Logger {
     private:
         time_t m_Time;
         std::string m_File;
-        uint m_Line;
+        size_t m_Line;
         std::string m_Function;
         MessageType m_Type;
         std::string m_Text;
@@ -71,7 +71,7 @@ namespace Logger {
     UniquePtr<Logger>& Get();
 
     template <typename ...Args>
-    void LogMessage(const std::string& filePath, const std::string& sourceFile, uint line, const std::string& func, const MessageType& type, const std::string& fmt, Args... args) {
+    void LogMessage(const std::string& filePath, const std::string& sourceFile, size_t line, const std::string& func, const MessageType& type, const std::string& fmt, Args... args) {
         std::string text = fmt::format(fmt::runtime(fmt), std::forward<Args>(args)...);
         SharedPtr<Message> message = MakeShared<Message>(sourceFile, line, func, type, text);
         Get()->PushMessage(message);
