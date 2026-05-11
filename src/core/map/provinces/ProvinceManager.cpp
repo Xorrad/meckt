@@ -303,8 +303,8 @@ void ProvinceManager::LoadProvincesDefinition() {
     // Create an empty definition file if it does not exist.
     if (!std::filesystem::exists(filePath)) {
         std::ofstream file(filePath);
-        if (!file)
-            throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesDefinition: Failed to create an empty definition file at \"{}\"", filePath));
+        /*if (!file)
+            throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesDefinition: Failed to create an empty definition file at \"{}\"", filePath));*/
         return;
     }
     
