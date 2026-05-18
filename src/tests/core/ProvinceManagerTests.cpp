@@ -2,6 +2,7 @@
 
 #include "mod/Mod.hpp"
 #include "map/provinces/ProvinceManager.hpp"
+#include "map/titles/TitleManager.hpp"
 #include "util/Yaml.hpp"
 
 TEST_SUITE("[ProvinceManager]") {
@@ -678,15 +679,15 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
         REQUIRE_NOTHROW(manager.LoadProvincesHistory());
     }
 
+    Mod mod("resources/tests/province_manager/test_mod");
+    ProvinceManager manager(mod);
+
+    // Load the provinces.
+    REQUIRE_NOTHROW(manager.LoadHoldingTypes());
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadProvincesHistory());
+
     SUBCASE("Check that provinces have the correct history data") {
-        Mod mod("resources/tests/province_manager/test_mod");
-        ProvinceManager manager(mod);
-
-        // Load the provinces.
-        REQUIRE_NOTHROW(manager.LoadHoldingTypes());
-        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
-        REQUIRE_NOTHROW(manager.LoadProvincesHistory());
-
         struct ProvinceHistoryTestData {
             int id;
             std::string culture;
@@ -716,6 +717,324 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
                 CHECK_EQ(manager.GetProvinceById(data.id)->GetHistory().at(date)->Serialize(0, true, true), content);
             }
         }
+    }
+
+    SUBCASE("Check that the variables are saved") {
+        const std::string filePath = "00_k_test_prov.txt";
+
+        REQUIRE(manager.GetProvincesHistoryVariables().contains(filePath));
+        REQUIRE(manager.GetProvincesHistoryVariables().at(filePath)->Is(Jomini::Type::OBJECT));
+
+        REQUIRE(manager.GetProvincesHistoryVariables().at(filePath)->Contains("@test"));
+        CHECK(manager.GetProvincesHistoryVariables().at(filePath)->Get("@test")->As<std::string>() == "1.0");
+    }
+}
+
+TEST_CASE("[ProvinceManager] ExportProvincesDefinition") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/province_manager/test_mod_modified");
+
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/province_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+
+    {
+        ProvinceManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+
+        // Edit some provinces.
+        manager.GetProvinceById(1)->SetName("TEST1_MODIFIED");
+        manager.GetProvinceById(2)->SetColor(sf::Color(10, 10, 10));
+        manager.AddProvince(MakeUnique<Province>(6, sf::Color(6, 6, 6), "TEST6"));
+
+        // 2. Export the provinces definition.
+        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
+    }
+
+    // Reload the provinces definition.
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+
+    // 3. Asserts
+    struct ProvinceTestData {
+        int id;
+        sf::Color color;
+        std::string name;
+    };
+    const std::vector<ProvinceTestData> testData = {
+        {1, sf::Color(1, 1, 1), "TEST1_MODIFIED"},
+        {2, sf::Color(10, 10, 10), "TEST2"},
+        {4, sf::Color(4, 4, 4), "TEST4"},
+        {5, sf::Color(5, 5, 5), "TEST5"},
+        {6, sf::Color(6, 6, 6), "TEST6"}
+    };
+
+    for (const auto& data : testData) {
+        REQUIRE(manager.HasProvinceById(data.id));
+        CHECK_EQ(manager.GetProvinceById(data.id)->GetColor(), data.color);
+        CHECK_EQ(manager.GetProvinceById(data.id)->GetName(), data.name);
+    }
+}
+
+TEST_CASE("[ProvinceManager] ExportDefaultMapFile") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/province_manager/test_mod_modified");
+    
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/province_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadDefaultMapFile());
+    
+    // Edit some provinces.
+    manager.GetProvinceById(1)->SetFlags(ProvinceFlags::IMPASSABLE);
+    manager.GetProvinceById(2)->SetFlags(ProvinceFlags::RIVER | ProvinceFlags::LAKE);
+    manager.GetProvinceById(5)->SetFlags(ProvinceFlags::NONE);
+    
+    // 2. Export the default map file.
+    mod.SetDir("resources/tests/province_manager/test_mod_modified");
+    REQUIRE_NOTHROW(manager.ExportDefaultMapFile());
+    
+    // Reload the provinces flags.
+    REQUIRE_NOTHROW(manager.LoadDefaultMapFile());
+    
+    // 3. Asserts
+    struct ProvinceFlagTestData {
+        int id;
+        ProvinceFlags expectedFlags;
+    };
+    const std::vector<ProvinceFlagTestData> testData = {
+        {1, ProvinceFlags::LAND | ProvinceFlags::IMPASSABLE},
+        {2, ProvinceFlags::RIVER | ProvinceFlags::LAKE},
+        {3, ProvinceFlags::LAND | ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE | ProvinceFlags::IMPASSABLE},
+        {4, ProvinceFlags::NONE},
+        {5, ProvinceFlags::NONE}
+    };
+    
+    for (const auto& data : testData) {
+        REQUIRE(manager.HasProvinceById(data.id));
+        CHECK_EQ(manager.GetProvinceById(data.id)->GetFlags(), data.expectedFlags);
+    }
+}
+
+TEST_CASE("[ProvinceManager] ExportProvincesTerrain") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/province_manager/test_mod_modified");
+    
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/province_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    
+    {
+        ProvinceManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadTerrainTypes());
+        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+        REQUIRE_NOTHROW(manager.LoadProvincesTerrain());
+        
+        // Only land provinces can have terrain.
+        for (auto& [id, province] : manager.GetProvincesByIds()) {
+            province->SetFlags(ProvinceFlags::LAND);
+        }
+
+        manager.GetProvinceById(1)->SetTerrain("hills");
+        manager.GetProvinceById(2)->SetTerrain("mountains");
+        manager.GetProvinceById(3)->SetTerrain("taiga");
+        manager.GetProvinceById(4)->SetTerrain("");
+        manager.GetProvinceById(5)->SetTerrain("plains");
+        
+        // 2. Export the provinces terrain.
+        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
+        REQUIRE_NOTHROW(manager.ExportProvincesTerrain());
+    }
+    
+    // Reload the provinces.
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadTerrainTypes());
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadProvincesTerrain());
+    
+    // 3. Asserts
+    struct ProvinceTerrainTestData {
+        int id;
+        std::string terrain;
+    };
+    const std::vector<ProvinceTerrainTestData> testData = {
+        {1, "hills"},
+        {2, "mountains"},
+        {3, "taiga"},
+        {4, "plains"},
+        {5, "plains"}
+    };
+    
+    for (const auto& data : testData) {
+        REQUIRE(manager.HasProvinceById(data.id));
+        CHECK_EQ(manager.GetProvinceById(data.id)->GetTerrain(), data.terrain);
+    }
+}
+
+TEST_CASE("[ProvinceManager] ExportProvincesClimate") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/province_manager/test_mod_modified");
+    
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/province_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    
+    {
+        ProvinceManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+        REQUIRE_NOTHROW(manager.LoadProvincesClimate());
+        
+        manager.GetProvinceById(1)->SetClimateType(ClimateType::MILD_WINTER);
+        manager.GetProvinceById(1)->SetWinterSeverityBias("0.5");
+        manager.GetProvinceById(1)->SetMildWinterFactorOverride("0.6");
+        manager.GetProvinceById(1)->SetNormalWinterFactorOverride("0.7");
+        manager.GetProvinceById(1)->SetHarshWinterFactorOverride("0.8");
+        
+        manager.GetProvinceById(2)->SetClimateType(ClimateType::NORMAL_WINTER);
+        
+        manager.GetProvinceById(3)->SetClimateType(ClimateType::SEVERE_WINTER);
+        
+        manager.GetProvinceById(4)->SetClimateType(ClimateType::MILD_WINTER);
+        
+        manager.GetProvinceById(5)->SetClimateType(ClimateType::NORMAL_WINTER);
+        
+        // 2. Export the provinces climate.
+        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
+        REQUIRE_NOTHROW(manager.ExportProvincesClimate());
+    }
+    
+    // Reload the provinces.
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadProvincesClimate());
+    
+    // 3. Asserts
+    SUBCASE("Check that provinces have the correct climate types and factors") {
+        struct ProvinceClimateTestData {
+            int id;
+            ClimateType expectedClimate;
+            std::string expectedWinterSeverityBias;
+            std::string expectedMildWinterFactorOverride;
+            std::string expectedNormalWinterFactorOverride;
+            std::string expectedHarshWinterFactorOverride;
+        };
+        const std::vector<ProvinceClimateTestData> testData = {
+            {1, ClimateType::MILD_WINTER, "0.5", "0.6", "0.7", "0.8"},
+            {2, ClimateType::NORMAL_WINTER, "0.2", "", "", ""},
+            {3, ClimateType::SEVERE_WINTER, "0.3", "", "", ""},
+            {4, ClimateType::MILD_WINTER, "@the_alps", "", "", ""},
+            {5, ClimateType::NORMAL_WINTER, "", "", "", ""}
+        };
+        
+        for (const auto& data : testData) {
+            REQUIRE(manager.HasProvinceById(data.id));
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetClimateType(), data.expectedClimate);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetWinterSeverityBias(), data.expectedWinterSeverityBias);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetMildWinterFactorOverride(), data.expectedMildWinterFactorOverride);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetNormalWinterFactorOverride(), data.expectedNormalWinterFactorOverride);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetHarshWinterFactorOverride(), data.expectedHarshWinterFactorOverride);
+        }
+    }
+
+    SUBCASE("Check that the properties file variables are saved") {
+        REQUIRE(manager.GetTerrainPropertiesVariables()->Is(Jomini::Type::OBJECT));
+        
+        REQUIRE(manager.GetTerrainPropertiesVariables()->Contains("@azerbaijan_mountains"));
+        CHECK(manager.GetTerrainPropertiesVariables()->Get("@azerbaijan_mountains")->As<std::string>() == "0.40");
+        
+        REQUIRE(manager.GetTerrainPropertiesVariables()->Contains("@the_alps"));
+        CHECK(manager.GetTerrainPropertiesVariables()->Get("@the_alps")->As<std::string>() == "0.80");
+    }
+}
+
+TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/province_manager/test_mod_modified");
+    
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/province_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    
+    {
+        TitleManager titleManager(mod);
+
+        ProvinceManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadHoldingTypes());
+        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+        REQUIRE_NOTHROW(manager.LoadProvincesHistory());
+        REQUIRE_NOTHROW(titleManager.LoadTitles());
+        
+        manager.GetProvinceById(1)->SetCulture("modified_culture");
+        manager.GetProvinceById(1)->SetReligion("modified_religion");
+        manager.GetProvinceById(1)->SetHolding("modified_holding");
+
+        auto extraHistory = MakeShared<Jomini::Object>(Jomini::Type::OBJECT);
+        extraHistory->Put("extra", "modified_extra", Jomini::Operator::EQUAL);
+        manager.GetProvinceById(1)->SetExtraHistoryData(extraHistory);
+
+        auto newDate = MakeShared<Jomini::Object>(Jomini::Type::OBJECT);
+        newDate->Put("holding", "modified_holding", Jomini::Operator::EQUAL);
+        manager.GetProvinceById(1)->AddHistory(Jomini::Date(1104, 1, 1), newDate);
+        
+        // 2. Export the provinces history.
+        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
+        REQUIRE_NOTHROW(manager.ExportProvincesHistory(titleManager));
+    }
+    
+    // Reload the provinces.
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadHoldingTypes());
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadProvincesHistory());
+    
+    // 3. Asserts
+    SUBCASE("Check that provinces have the correct history data") {
+        struct ProvinceHistoryTestData {
+            int id;
+            std::string culture;
+            std::string religion;
+            std::string holding;
+            std::string extra;
+            std::map<Jomini::Date, std::string> history;
+        };
+        const std::vector<ProvinceHistoryTestData> testData = {
+            {1, "modified_culture", "modified_religion", "modified_holding", "extra = modified_extra", std::map<Jomini::Date, std::string>{{Jomini::Date(1104, 1, 1), "holding = modified_holding"}}},
+            {2, "french", "insular", "none", "", std::map<Jomini::Date, std::string>{{Jomini::Date(1104, 1, 1), "holding = city_holding culture = breton"}}},
+            {3, "czech", "slavic_pagan", "castle_holding", "", std::map<Jomini::Date, std::string>{}},
+            {4, "breton", "catholic", "church_holding", "", std::map<Jomini::Date, std::string>{}},
+            {5, "breton", "catholic", "castle_holding", "special_building_slot = kutna_hora_mines_01", std::map<Jomini::Date, std::string>{}}
+        };
+
+        for (const auto& data : testData) {
+            REQUIRE(manager.HasProvinceById(data.id));
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetCulture(), data.culture);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetReligion(), data.religion);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetHolding(), data.holding);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetExtraHistoryData()->Serialize(0, true, true), data.extra);
+
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetHistory().size(), data.history.size());
+            for (const auto& [date, content] : data.history) {
+                REQUIRE(manager.GetProvinceById(data.id)->GetHistory().contains(date));
+                CHECK_EQ(manager.GetProvinceById(data.id)->GetHistory().at(date)->Serialize(0, true, true), content);
+            }
+        }
+    }
+
+    SUBCASE("Check that the variables are saved") {
+        const std::string filePath = "00_k_test_prov.txt";
+
+        REQUIRE(manager.GetProvincesHistoryVariables().contains(filePath));
+        REQUIRE(manager.GetProvincesHistoryVariables().at(filePath)->Is(Jomini::Type::OBJECT));
+
+        REQUIRE(manager.GetProvincesHistoryVariables().at(filePath)->Contains("@test"));
+        CHECK(manager.GetProvincesHistoryVariables().at(filePath)->Get("@test")->As<std::string>() == "1.0");
     }
 }
 
