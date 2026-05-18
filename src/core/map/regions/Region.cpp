@@ -8,7 +8,8 @@ Region::Region(std::string name) :
     m_Counties({}),
     m_Provinces({}),
     m_Regions({}),
-    m_GenerateModifiers(false)
+    m_GenerateModifiers(false),
+    m_ShouldRememberCountiesOrder(false)
 {}
 
 std::string Region::GetName() const {
@@ -64,6 +65,10 @@ bool Region::HasRegion(Region* region) const {
 
 bool Region::DoesGenerateModifiers() const {
     return m_GenerateModifiers;
+}
+
+bool Region::ShouldRememberCountiesOrder() const {
+    return m_ShouldRememberCountiesOrder;
 }
 
 void Region::SetName(std::string name) {
@@ -155,4 +160,8 @@ void Region::RemoveRegion(Region* region) {
 
 void Region::SetGenerateModifiers(bool generateModifiers) {
     m_GenerateModifiers = generateModifiers;
+}
+
+void Region::SetShouldRememberCountiesOrder(bool shouldRememberCountiesOrder) {
+    m_ShouldRememberCountiesOrder = shouldRememberCountiesOrder;
 }

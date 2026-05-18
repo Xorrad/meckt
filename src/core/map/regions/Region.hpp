@@ -14,6 +14,7 @@ public:
     bool HasProvince(Province* province) const;
     bool HasRegion(Region* region) const;
     bool DoesGenerateModifiers() const;
+    bool ShouldRememberCountiesOrder() const;
 
     void SetName(std::string name);
     void AddTitle(Title* title);
@@ -29,6 +30,7 @@ public:
     void AddRegion(Region* region);
     void RemoveRegion(Region* region);
     void SetGenerateModifiers(bool generateModifiers);
+    void SetShouldRememberCountiesOrder(bool shouldRememberCountiesOrder);
 
 private:
     std::string m_Name;
@@ -38,4 +40,5 @@ private:
     std::vector<Province*> m_Provinces;
     std::vector<Region*> m_Regions;
     bool m_GenerateModifiers;
+    bool m_ShouldRememberCountiesOrder;
 };
