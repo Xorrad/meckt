@@ -14,6 +14,7 @@ public:
     std::string GetName() const;
     sf::Color GetColor() const;
     HighTitle* GetLiegeTitle();
+    HighTitle* GetLiegeTitle(TitleType type);
     bool IsLandless() const;
 
     bool Is(TitleType type) const;

@@ -87,6 +87,20 @@ template const EmpireTitle* TitleManager::GetTitleAs<EmpireTitle>(const std::str
 template const HegemonyTitle* TitleManager::GetTitleAs<HegemonyTitle>(const std::string& name) const;
 template const HighTitle* TitleManager::GetTitleAs<HighTitle>(const std::string& name) const;
 
+BaronyTitle* TitleManager::GetBaronyByProvinceId(int provinceId) {
+    auto it = m_BaroniesByProvinceId.find(provinceId);
+    if (it == m_BaroniesByProvinceId.end())
+        return nullptr;
+    return it->second;
+}
+
+const BaronyTitle* TitleManager::GetBaronyByProvinceId(int provinceId) const {
+    auto it = m_BaroniesByProvinceId.find(provinceId);
+    if (it == m_BaroniesByProvinceId.end())
+        return nullptr;
+    return it->second;
+}
+
 std::map<std::string, UniquePtr<Title>>& TitleManager::GetTitles() {
     return m_Titles;
 }
@@ -713,7 +727,7 @@ void TitleManager::ExportTitles() {
             continue;
         std::string fileName = title->GetOriginalFileName();
         if(fileName.empty())
-        fileName = "01_landed_titles.txt";
+            fileName = "01_landed_titles.txt";
         if(files.count(fileName) == 0) {
             files[fileName] = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::out);
             File::EncodeToUTF8BOM(files[fileName]);
@@ -741,7 +755,7 @@ void TitleManager::ExportTitle(Title* title, std::ofstream& file, int depth) {
     // Write the title header to the file.
     fmt::println(file, "{}{} = {{", headerIndent, title->GetName());
 
-    SharedPtr<Jomini::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Jomini::Object>(Jomini::ObjectMap{}) : title->GetOriginalData();
+    SharedPtr<Jomini::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Jomini::Object>(Jomini::ObjectMap{}) : title->GetOriginalData()->Copy();
 
     const auto ExportProperties = [&]<typename T>(const std::string& key, T value) {
         fmt::println(file, "{}{} = {}", indent, key, value);

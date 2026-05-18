@@ -77,6 +77,20 @@ public:
     template <typename T> const T* GetTitleAs(const std::string& name) const;
 
     /**
+     * @brief Retrieves a barony title by its province id.
+     * @param provinceId The province id of the barony title to retrieve.
+     * @return The pointer to the barony title if it exists, nullptr otherwise.
+     */
+    BaronyTitle* GetBaronyByProvinceId(int provinceId);
+
+    /**
+     * @brief Retrieves a barony title by its province id.
+     * @param provinceId The province id of the barony title to retrieve.
+     * @return The pointer to the barony title if it exists, nullptr otherwise.
+     */
+    const BaronyTitle* GetBaronyByProvinceId(int provinceId) const;
+
+    /**
      * @brief Retrieves a map of titles.
      * @return The map of titles paired by their name.
      */

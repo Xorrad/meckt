@@ -41,6 +41,18 @@ public:
      */
     std::string GetRelativePath(GamePath directory, const std::string& absolutePath) const;
 
+    /**
+     * @brief Access the title manager.
+     * @return A pointer to the title manager.
+     */
+    // TitleManager* GetTitleManager();
+
+    /**
+     * @brief Access the title manager.
+     * @return A const pointer to the title manager.
+     */
+    // const TitleManager* GetTitleManager() const;
+
     ///////////////////////////////////////
 
     std::string GetDir() const;

@@ -1,6 +1,7 @@
 #include "ProvinceManager.hpp"
 
 #include "mod/Mod.hpp"
+#include "map/titles/TitleManager.hpp"
 
 #include <fmt/ostream.h>
 
@@ -545,14 +546,13 @@ void ProvinceManager::LoadProvincesTerrain() {
             terrain = value->As<std::string>();
         }
 
-        if(m_ProvincesByIds.count(provinceId) == 0) {
+        if(!m_ProvincesByIds.contains(provinceId)) {
             LOG_WARNING("Terrain type assigned to undefined province: '{}'", provinceId);
             continue;
         }
 
         if(!m_TerrainTypes.contains(terrain)) {
             LOG_WARNING("Undefined terrain type '{}' assigned to province '{}'", terrain, provinceId);
-            continue;
         }
 
         m_ProvincesByIds[provinceId]->SetTerrain(terrain);
@@ -784,7 +784,346 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
             m_ProvincesByIds[provinceId]->AddHistory(date, history);
         }
 
-        m_ProvincesByIds[provinceId]->SetOriginalHistoryFilePath(fileName);
+        m_ProvincesByIds[provinceId]->SetOriginalHistoryFileName(fileName);
         m_ProvincesByIds[provinceId]->SetExtraHistoryData(extraHistoryData);
+    }
+}
+
+void ProvinceManager::ExportProvincesDefinition() {
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_DEFINITIONS);
+    
+    // Create the directory if it does not exist.
+    std::filesystem::path fileDir = std::filesystem::path(filePath).parent_path();
+    if (!std::filesystem::exists(fileDir)) std::filesystem::create_directories(fileDir);
+
+    std::ofstream file(filePath, std::ios::out);
+    if (!file) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesDefinition: Failed to open file for writing at '{}'", filePath));
+
+    // The format of definition.csv is as following:
+    // [ID];[RED];[GREEN];[BLUE];[Barony Name];x;
+    fmt::println(file, "0;0;0;0;x;x;\n");
+
+    // IDs must be sequential, or the game will crash. That's why m_ProvincesByIds is a map and not an unordered map.
+    for(const auto& [id, province] : m_ProvincesByIds) {
+        fmt::println(file,
+            "{};{};{};{};{};x;",
+            province->GetId(),
+            province->GetColor().r,
+            province->GetColor().g,
+            province->GetColor().b,
+            province->GetName()
+        );
+    }
+}
+
+void ProvinceManager::ExportDefaultMapFile() {
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_DEFAULT_MAP);
+    
+    // Create the directory if it does not exist.
+    std::filesystem::path fileDir = std::filesystem::path(filePath).parent_path();
+    if (!std::filesystem::exists(fileDir)) std::filesystem::create_directories(fileDir);
+
+    // Read the file and keep all values except for the terrain flags
+    // such as: sea_zones, impassable_seas, lakes, impassable_mountains, river_provinces
+    SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
+
+    SharedPtr<Jomini::Object> zonesData = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+    zonesData->Put("sea_zones", std::vector<double>());
+    zonesData->Put("river_provinces", std::vector<double>());
+    zonesData->Put("lakes", std::vector<double>());
+    zonesData->Put("impassable_mountains", std::vector<double>());
+    zonesData->Put("impassable_seas", std::vector<double>());
+
+    for (auto [key, object] : zonesData->GetMap())
+        object.second->SetFlag(Jomini::Flags::RANGE, true);
+
+    // Remove those keys since they are printed seperately.
+    data->Remove("sea_zones");
+    data->Remove("river_provinces");
+    data->Remove("lakes");
+    data->Remove("impassable_mountains");
+    data->Remove("impassable_seas");
+
+    for(const auto& [id, province] : m_ProvincesByIds) {
+        if(province->HasFlag(ProvinceFlags::RIVER))
+            zonesData->Get("river_provinces")->Push<int>(id);
+        
+        if(province->HasFlag(ProvinceFlags::LAKE))
+            zonesData->Get("lakes")->Push<int>(id);
+
+        if(province->HasFlag(ProvinceFlags::SEA)) {
+            zonesData->Get("sea_zones")->Push<int>(id);
+            if(province->HasFlag(ProvinceFlags::IMPASSABLE))
+                zonesData->Get("impassable_seas")->Push<int>(id);
+        }
+        else if(province->HasFlag(ProvinceFlags::IMPASSABLE)) {
+            zonesData->Get("impassable_mountains")->Push<int>(id);
+        }
+    }
+
+    std::ofstream file(filePath, std::ios::out);
+    if (!file) throw std::runtime_error(fmt::format("ProvinceManager::ExportDefaultMapFile: Failed to open file for writing at '{}'", filePath));
+
+    #define PRINT_DATA(key, def) fmt::println(file, "{} = {}", key, data->Get(key)->As<std::string>(def)); data->Remove(key)
+    #define FORMAT_LIST(key) zonesData->Get(key)->SerializeArrayRange(key, Jomini::Operator::EQUAL, 0)
+
+    PRINT_DATA("definitions", "\"definition.csv\"");
+    PRINT_DATA("provinces", "\"provinces.png\"");
+    PRINT_DATA("rivers", "\"rivers.png\"");
+    PRINT_DATA("topology", "\"heightmap.heightmap\"");
+    PRINT_DATA("continent", "\"continent.txt\"");
+    PRINT_DATA("adjacencies", "\"adjacencies.csv\"");
+    PRINT_DATA("island_region", "\"island_region.txt\"");
+    PRINT_DATA("geographical_region", "\"geographical_region.txt\"");
+    PRINT_DATA("seasons", "\"seasons.txt\"");
+
+    fmt::println(
+        file, 
+        "\n{}\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}",
+        data->Serialize(),
+        "#############\n# SEA ZONES\n#############",
+        FORMAT_LIST("sea_zones"),
+        "#############\n# MAJOR RIVERS\n#############",
+        FORMAT_LIST("river_provinces"),
+        "#############\n# LAKES\n#############",
+        FORMAT_LIST("lakes"),
+        "#############\n# IMPASSABLE TERRAIN\n#############",
+        FORMAT_LIST("impassable_mountains"),
+        "#############\n# IMPASSABLE SEA ZONES\n#############",
+        FORMAT_LIST("impassable_seas")
+    );
+}
+
+void ProvinceManager::ExportProvincesTerrain() {
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN);
+    
+    // Create the directory if it does not exist.
+    std::filesystem::path fileDir = std::filesystem::path(filePath).parent_path();
+    if (!std::filesystem::exists(fileDir)) std::filesystem::create_directories(fileDir);
+
+    std::ofstream file(filePath, std::ios::out);
+    if (!file) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesTerrain: Failed to open file for writing at '{}'", filePath));
+    File::EncodeToUTF8BOM(file);
+
+    fmt::println(file, "default_land={}", m_DefaultLandTerrain);
+    fmt::println(file, "default_sea={}", m_DefaultSeaTerrain);
+    fmt::println(file, "default_coastal_sea={}\n", m_DefaultCoastalSeaTerrain);
+
+    for(auto& [id, province] : m_ProvincesByIds) {
+        if(!province->HasFlag(ProvinceFlags::LAND) || province->HasFlag(ProvinceFlags::IMPASSABLE))
+            continue;
+        if (province->GetTerrain().empty()) {
+            LOG_ERROR("Land province '{}' does not have any specified terrain.", id);
+            continue;
+        }
+        fmt::println(file,
+            "{}={}",
+            province->GetId(),
+            province->GetTerrain()
+        );
+    }
+}
+
+void ProvinceManager::ExportProvincesClimate() {
+    std::string climateFilePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_CLIMATE);
+    std::string propertiesFilePath = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_PROPERTIES);
+    
+    // Create the directories if they do not exist.
+    std::filesystem::path climateFileDir = std::filesystem::path(climateFilePath).parent_path();
+    if (!std::filesystem::exists(climateFileDir)) std::filesystem::create_directories(climateFileDir);
+    std::filesystem::path propertiesFileDir = std::filesystem::path(propertiesFilePath).parent_path();
+    if (!std::filesystem::exists(propertiesFileDir)) std::filesystem::create_directories(propertiesFileDir);
+
+    std::ofstream climateFile(climateFilePath, std::ios::out);
+    if (!climateFile) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesClimate: Failed to open file for writing at '{}'", climateFilePath));
+    
+    std::ofstream propertiesFile(propertiesFilePath, std::ios::out);
+    if (!propertiesFile) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesClimate: Failed to open file for writing at '{}'", propertiesFilePath));
+    File::EncodeToUTF8BOM(propertiesFile);
+
+    SharedPtr<Jomini::Object> climateObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+    climateObject->Put("mild_winter", std::vector<int>());
+    climateObject->Put("normal_winter", std::vector<int>());
+    climateObject->Put("severe_winter", std::vector<int>());
+
+    SharedPtr<Jomini::Object> mildWinterObject = climateObject->Get("mild_winter");
+    SharedPtr<Jomini::Object> normalWinterObject = climateObject->Get("normal_winter");
+    SharedPtr<Jomini::Object> severeWinterObject = climateObject->Get("severe_winter");
+
+    // Write variables that were in the properties file before loading the mod.
+    fmt::println(propertiesFile, "{}\n", m_TerrainPropertiesVariables->Serialize());
+
+    for (auto& [id, province] : m_ProvincesByIds) {
+        // Insert the province id to its corresponding climate type.
+        if (province->GetClimateType() != ClimateType::NONE) {
+            switch (province->GetClimateType()) {
+                case ClimateType::MILD_WINTER: mildWinterObject->Push(id); break;
+                case ClimateType::NORMAL_WINTER: normalWinterObject->Push(id); break;
+                case ClimateType::SEVERE_WINTER: severeWinterObject->Push(id); break;
+                default: break;
+            }
+        }
+
+        // Export individual provinces climate properties to 'common/province_terrain/01_province_properties.txt'.
+        bool hasProperty = !province->GetWinterSeverityBias().empty()
+            || !province->GetMildWinterFactorOverride().empty()
+            || province->GetNormalWinterFactorOverride().empty()
+            || province->GetHarshWinterFactorOverride().empty();
+        
+        // Ignore provinces without any specified properties.
+        if (hasProperty) {
+            SharedPtr<Jomini::Object> propertiesObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+            if (!province->GetWinterSeverityBias().empty()) propertiesObject->Put("winter_severity_bias", province->GetWinterSeverityBias());
+            if (!province->GetMildWinterFactorOverride().empty()) propertiesObject->Put("mild_winter_factor_override", province->GetMildWinterFactorOverride());
+            if (!province->GetNormalWinterFactorOverride().empty()) propertiesObject->Put("normal_winter_factor_override", province->GetNormalWinterFactorOverride());
+            if (!province->GetHarshWinterFactorOverride().empty()) propertiesObject->Put("harsh_winter_factor_override", province->GetHarshWinterFactorOverride());
+
+            fmt::println(propertiesFile, "{} = {}", id, propertiesObject->Serialize(1, false, false));
+        }
+    }
+
+    // Export provinces climate type in 'map_data/climate.txt'
+    fmt::println(climateFile, "{}", climateObject->Serialize());
+}
+
+void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {    
+    // Create the directories if they do not exist.
+    std::string dir = m_Mod.GetDirectory(Paths::HISTORY_PROVINCES);
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+
+    struct FileData {
+        std::ofstream file;
+        bool kingdomComment = false;
+        bool duchyComment = false;
+        bool countyComment = false;
+    };
+    std::map<std::string, FileData> files;
+
+    std::vector<Province*> provinces(m_ProvincesByIds.size());
+    std::transform(m_ProvincesByIds.begin(), m_ProvincesByIds.end(), provinces.begin(), [](const auto& pair) { return pair.second; });
+
+    // In order to be able to add comments for the kingdom, duchy and county tiers, we need to have provinces grouped by their liege titles.
+    std::sort(provinces.begin(), provinces.end(), [&](const Province* a, const Province* b) {
+        BaronyTitle* aBaronyTitle = titleManager.GetBaronyByProvinceId(a->GetId());
+        BaronyTitle* bBaronyTitle = titleManager.GetBaronyByProvinceId(b->GetId());
+
+        // Provinces without barony title are sorted at the end.
+        if (!aBaronyTitle || !bBaronyTitle)
+            return aBaronyTitle != nullptr;
+
+        HighTitle* aCountyTitle = aBaronyTitle->GetLiegeTitle(TitleType::COUNTY);
+        HighTitle* bCountyTitle = bBaronyTitle->GetLiegeTitle(TitleType::COUNTY);
+
+        // Provinces without county title are sorted at the end.
+        if (!aCountyTitle || !bCountyTitle)
+            return aCountyTitle != nullptr;
+
+        HighTitle* aDuchyTitle = aCountyTitle->GetLiegeTitle(TitleType::DUCHY);
+        HighTitle* bDuchyTitle = bCountyTitle->GetLiegeTitle(TitleType::DUCHY);
+
+        if (!aDuchyTitle || !bDuchyTitle)
+            return aCountyTitle->GetName() < bCountyTitle->GetName();
+
+        HighTitle* aKingdomTitle = aDuchyTitle->GetLiegeTitle(TitleType::KINGDOM);
+        HighTitle* bKingdomTitle = bDuchyTitle->GetLiegeTitle(TitleType::KINGDOM);
+
+        if (!aKingdomTitle || !bKingdomTitle)
+            return aDuchyTitle->GetName() < bDuchyTitle->GetName();
+
+        return aKingdomTitle->GetName() < bKingdomTitle->GetName();
+    });
+
+    HighTitle* lastKingdomTitle = nullptr;
+    HighTitle* lastDuchyTitle = nullptr;
+    HighTitle* lastCountyTitle = nullptr;
+
+    for(const auto& province : provinces) {
+        int provinceId = province->GetId();
+
+        // Determine the file name for the province history.
+        // The original file name is kept if the province history was loaded from an existing file,
+        // otherwise we generate a new one based on the kingdom tier title of the province,
+        // and if the province doesn't have any kingdom tier liege then we assign it to a default file.
+        std::string fileName = province->GetOriginalHistoryFileName();
+        if(fileName.empty()) {
+            fileName = "00_temp_prov.txt";
+            if (BaronyTitle* baronyTitle = titleManager.GetBaronyByProvinceId(provinceId)) {
+                if (HighTitle* kingdomTitle = baronyTitle->GetLiegeTitle(TitleType::KINGDOM)) {
+                    fileName = "00_" + kingdomTitle->GetName() + "_prov.txt";
+                }
+            }
+        }
+        std::string filePath = dir + "/" + fileName;
+
+        // Open the file if it is not already open, and write the original script variables if there are any.
+        if(!files.contains(fileName)) {
+            files[fileName] = FileData{};
+            files[fileName].file = std::ofstream(filePath, std::ios::out);
+            if (!files[fileName].file) {
+                LOG_ERROR("Failed to open file for writing '{}' for province '{}'", filePath, provinceId);
+                continue;
+            }
+            File::EncodeToUTF8BOM(files[fileName].file);
+
+            // Export original script variables.
+            auto it = m_ProvincesHistoryVariables.find(fileName);
+            if (it != m_ProvincesHistoryVariables.end() && !it->second->GetMap().empty()) {
+                fmt::println(files[fileName].file, "{}\n", it->second->Serialize(0, true));
+            }
+        }
+
+        std::ofstream& file = files[fileName].file;
+        
+        BaronyTitle* baronyTitle = titleManager.GetBaronyByProvinceId(provinceId);
+        HighTitle* countyTitle = (baronyTitle != nullptr) ? baronyTitle->GetLiegeTitle(TitleType::COUNTY) : nullptr;
+        HighTitle* duchyTitle = (countyTitle != nullptr) ? countyTitle->GetLiegeTitle(TitleType::DUCHY) : nullptr;
+        HighTitle* kingdomTitle = (duchyTitle != nullptr) ? duchyTitle->GetLiegeTitle(TitleType::KINGDOM) : nullptr;
+
+        // Comments about the kingdoms, duchies and counties should be written only once per file, with all their provinces grouped together.
+        if (lastKingdomTitle != kingdomTitle) {
+            lastKingdomTitle = kingdomTitle;
+            lastDuchyTitle = nullptr;
+            lastCountyTitle = nullptr;
+            for (auto& [_, fileData] : files)
+                fileData.kingdomComment = false;
+        }
+        if (lastDuchyTitle != duchyTitle) {
+            lastDuchyTitle = duchyTitle;
+            lastCountyTitle = nullptr;
+            for (auto& [_, fileData] : files)
+                fileData.duchyComment = false;
+        }
+        if (lastCountyTitle != countyTitle) {
+            lastCountyTitle = countyTitle;
+            for (auto& [_, fileData] : files)
+                fileData.countyComment = false;
+        }
+        if (kingdomTitle != nullptr && !files[fileName].kingdomComment) {
+            fmt::println(file, "##### {} ############################\n", kingdomTitle->GetName());
+            files[fileName].kingdomComment = true;
+        }
+        if (duchyTitle != nullptr && !files[fileName].duchyComment) {
+            fmt::println(file, "### {}", duchyTitle->GetName());
+            files[fileName].duchyComment = true;
+        }
+        if (countyTitle != nullptr && !files[fileName].countyComment) {
+            fmt::println(file, "## {}", countyTitle->GetName());
+            files[fileName].countyComment = true;
+        }
+                    
+        SharedPtr<Jomini::Object> data = province->GetExtraHistoryData()->Copy();
+        if(!province->GetCulture().empty()) data->Put("culture", province->GetCulture());
+        if(!province->GetReligion().empty()) data->Put("religion", province->GetReligion());
+        data->Put("holding", province->GetHolding().empty() ? "none" : province->GetHolding());
+        for(const auto& [date, historyData] : province->GetHistory()) data->Put((std::string) date, historyData);
+
+        SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+        object->Put(std::to_string(province->GetId()), data);
+
+        fmt::println(file, "# {}", province->GetName());
+        fmt::println(file, "{}", object->Serialize());
     }
 }

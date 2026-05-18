@@ -9,6 +9,7 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_Terrain(""),
     m_Culture(""),
     m_Religion(""),
+    m_OriginalHistoryFileName(""),
     m_ExtraHistoryData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
     m_History({}),
     m_ImagePosition(sf::Vector2i(0, 0)),
@@ -137,12 +138,12 @@ void Province::SetHarshWinterFactorOverride(std::string factor) {
     m_HarshWinterFactorOverride = factor;
 }
 
-std::string Province::GetOriginalHistoryFilePath() const {
-    return m_OriginalHistoryFilePath;
+std::string Province::GetOriginalHistoryFileName() const {
+    return m_OriginalHistoryFileName;
 }
 
-void Province::SetOriginalHistoryFilePath(const std::string& filePath) {
-    m_OriginalHistoryFilePath = filePath;
+void Province::SetOriginalHistoryFileName(const std::string& fileName) {
+    m_OriginalHistoryFileName = fileName;
 }
 
 SharedPtr<Jomini::Object> Province::GetExtraHistoryData() const {

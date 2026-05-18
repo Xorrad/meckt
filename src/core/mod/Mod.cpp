@@ -66,6 +66,16 @@ std::string Mod::GetRelativePath(GamePath directory, const std::string& absolute
     return std::move(absolutePath);
 }
 
+// TitleManager* Mod::GetTitleManager() {
+//     return m_TitleManager.get();
+// }
+
+// const TitleManager* Mod::GetTitleManager() const {
+//     return m_TitleManager.get();
+// }
+
+////////////////////////////////////////////
+
 std::string Mod::GetDir() const {
     return m_RootDirectory;
 }
@@ -1365,7 +1375,7 @@ void Mod::LoadProvincesHistory() {
                 m_ProvincesByIds[provinceId]->AddHistory(date, history);
             }
 
-            m_ProvincesByIds[provinceId]->SetOriginalHistoryFilePath(filePath);
+            m_ProvincesByIds[provinceId]->SetOriginalHistoryFileName(filePath);
             m_ProvincesByIds[provinceId]->SetExtraHistoryData(extraHistoryData);
         }
     }
@@ -2281,7 +2291,7 @@ void Mod::ExportTitlesHistory() {
 
 void Mod::ExportTitle(Title* title, std::ofstream& file, int depth) {
     std::string indent = std::string(depth, '\t');
-    SharedPtr<Jomini::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Jomini::Object>(Jomini::ObjectMap{}) : title->GetOriginalData();
+    SharedPtr<Jomini::Object> data = (title->GetOriginalData() == nullptr) ? MakeShared<Jomini::Object>(Jomini::ObjectMap{}) : title->GetOriginalData()->Copy();
 
     #define EXPORT_PROPERTIES(key, value) fmt::println(file, "{}{} = {}", indent, key, value)
 

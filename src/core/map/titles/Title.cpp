@@ -27,6 +27,14 @@ HighTitle* Title::GetLiegeTitle() {
     return m_LiegeTitle;
 }
 
+HighTitle* Title::GetLiegeTitle(TitleType type) {
+    if (m_LiegeTitle == nullptr)
+        return nullptr;
+    if (m_LiegeTitle->Is(type))
+        return m_LiegeTitle;
+    return m_LiegeTitle->GetLiegeTitle(type);
+}
+
 bool Title::IsLandless() const {
     return m_Landless;
 }
@@ -71,8 +79,8 @@ SharedPtr<Jomini::Object> Title::GetOriginalData() const {
     return m_OriginalData;
 }
 
-void Title::SetOriginalFileName(const std::string& filePath) {
-    m_OriginalFileName = filePath;
+void Title::SetOriginalFileName(const std::string& fileName) {
+    m_OriginalFileName = fileName;
 }
 
 void Title::SetOriginalData(SharedPtr<Jomini::Object> data) {
@@ -83,8 +91,8 @@ std::string Title::GetOriginalHistoryFileName() const {
     return m_OriginalHistoryFileName;
 }
 
-void Title::SetOriginalHistoryFileName(const std::string& filePath) {
-    m_OriginalHistoryFileName = filePath;
+void Title::SetOriginalHistoryFileName(const std::string& fileName) {
+    m_OriginalHistoryFileName = fileName;
 }
 
 std::map<Jomini::Date, SharedPtr<Jomini::Object>>& Title::GetHistory() {

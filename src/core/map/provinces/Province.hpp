@@ -42,8 +42,8 @@ public:
     void SetNormalWinterFactorOverride(std::string factor);
     void SetHarshWinterFactorOverride(std::string factor);
 
-    std::string GetOriginalHistoryFilePath() const;
-    void SetOriginalHistoryFilePath(const std::string& filePath);
+    std::string GetOriginalHistoryFileName() const;
+    void SetOriginalHistoryFileName(const std::string& fileName);
 
     SharedPtr<Jomini::Object> GetExtraHistoryData() const;
     void SetExtraHistoryData(SharedPtr<Jomini::Object> data);
@@ -69,7 +69,7 @@ private:
     std::string m_Culture;
     std::string m_Religion;
 
-    std::string m_OriginalHistoryFilePath;
+    std::string m_OriginalHistoryFileName;
     SharedPtr<Jomini::Object> m_ExtraHistoryData;
     std::map<Jomini::Date, SharedPtr<Jomini::Object>> m_History;
 

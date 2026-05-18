@@ -267,7 +267,7 @@ public:
      */
     void LoadProvincesHistory();
 
-        /**
+    /**
      * @brief Load the provinces history of a specific file.
      * @param fileName The relative path to the history file.
      * @param data The parsed data of the history file.
@@ -275,12 +275,36 @@ public:
     void LoadProvincesHistoryFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
 
     ////////////////////////////////////////////////////
-
-    void ExportDefaultMapFile();
+    
+    /**
+     * @brief Exports the provinces definition to the definition.csv file.
+     * @throws std::runtime_error if the file cannot be written.
+     */
     void ExportProvincesDefinition();
+
+    /**
+     * @brief Exports the provinces flags to the default.map file.
+     * @throws std::runtime_error if the file cannot be written.
+	 */
+    void ExportDefaultMapFile();
+
+    /**
+     * @brief Exports the provinces terrain to the province terrain file (common/terrain_types/00_province_terrain.txt).
+     * @throws std::runtime_error if the file cannot be written.
+     */
     void ExportProvincesTerrain();
+
+    /**
+     * @brief Exports the provinces climate to the province properties file (common/terrain_types/01_province_properties.txt).
+     * @throws std::runtime_error if the file cannot be written.
+     */
     void ExportProvincesClimate();
-    void ExportProvincesHistory();
+
+    /**
+     * @brief Exports the provinces history to the history files.
+     * @throws std::runtime_error if any of the files cannot be written.
+     */
+    void ExportProvincesHistory(TitleManager& titleManager);
 
 private:
     Mod& m_Mod;
