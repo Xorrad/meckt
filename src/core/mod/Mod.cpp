@@ -1,5 +1,5 @@
 #include "Mod.hpp"
-#include "mod/Culture.hpp"
+#include "cultures/Culture.hpp"
 #include "mod/Religion.hpp"
 #include "map/provinces/Province.hpp"
 #include "map/regions/Region.hpp"
