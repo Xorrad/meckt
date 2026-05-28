@@ -143,6 +143,8 @@ TEST_CASE("[TitleManager] GetTitleAs") {
     CHECK_EQ(std::as_const(manager).GetTitleAs<DuchyTitle>("c_test"), nullptr);
 }
 
+//////////////////////////////////////////////////////
+
 struct TitleTestData {
     TitleType type;
     std::string name;
@@ -344,6 +346,8 @@ TEST_CASE("[TitleManager] RenameTitle: throws exception when trying to rename to
     CHECK_EQ(manager.GetTitle("c_old")->GetName(), "c_old");
     CHECK_EQ(manager.GetTitle("c_new")->GetName(), "c_new");
 }
+
+//////////////////////////////////////////////////////
 
 TEST_CASE("[TitleManager] LoadTitles") {
     Mod mod("resources/tests/title_manager/test_mod");
@@ -709,6 +713,8 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
         CHECK(manager.GetLocCulturalName("english", "cn_brest") == "Brest");
     }
 }
+
+//////////////////////////////////////////////////////
 
 TEST_CASE("[TitleManager] ExportTitles") {
     // Removes the temporary export directory if it already exists from a previous test.

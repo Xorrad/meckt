@@ -306,6 +306,8 @@ TEST_CASE("[ProvinceManager] RenameProvinceId") {
 
 }
 
+//////////////////////////////////////////////////////
+
 TEST_CASE("[ProvinceManager] LoadHoldingTypes") {
     Mod mod("resources/tests/province_manager/test_mod");
     ProvinceManager manager(mod);
@@ -729,6 +731,8 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
         CHECK(manager.GetProvincesHistoryVariables().at(filePath)->Get("@test")->As<std::string>() == "1.0");
     }
 }
+
+//////////////////////////////////////////////////////
 
 TEST_CASE("[ProvinceManager] ExportProvincesDefinition") {
     // Removes the temporary export directory if it already exists from a previous test.

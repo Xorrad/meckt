@@ -11,6 +11,12 @@ public:
     //////////////////////////////////////////////////////
 
     /**
+     * @brief Counts the total number of regions.
+     * @return The total number of regions.
+     */
+    size_t CountRegions() const;
+
+    /**
      * @brief Checks if a region exists.
      * @param name The name of the region to search for.
      * @return True if the region exists, false otherwise.
@@ -92,6 +98,10 @@ public:
     
     //////////////////////////////////////////////////////
 
+    /**
+     * @brief Exports all geographical regions.
+     * @throws std::runtime_error if the file cannot be opened for writing.
+     */
     void ExportGeographicalRegions();
     
 private:

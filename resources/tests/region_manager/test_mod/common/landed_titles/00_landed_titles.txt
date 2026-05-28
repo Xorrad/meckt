@@ -1,0 +1,42 @@
+﻿e_test = {
+	color = { 234 217 110 }
+	capital = c_test1
+
+	k_test = {
+		color = { 244 227 160 }
+		capital = c_test1
+
+		d_test1 = {
+			color = { 170 255 170 }
+			capital = c_test1
+
+			c_test1 = {
+				color = { 10 10 10 }
+				b_test1 = {
+					province = 1
+					color = { 20 20 20 }
+				}
+				b_test2 = {
+					province = 2
+					color = { 20 20 20 }
+				}
+			}
+		}
+		d_test2 = {
+			color = { 30 30 30 }
+			capital = c_test2
+
+			c_test2 = {
+				color = { 40 40 40 }
+				b_test3 = {
+					province = 3
+					color = { 50 50 50 }
+				}
+				b_test4 = {
+					province = 4
+					color = { 50 50 50 }
+				}
+			}
+		}
+	}
+}

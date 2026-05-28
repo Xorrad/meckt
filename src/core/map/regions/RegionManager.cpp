@@ -4,9 +4,15 @@
 #include "map/provinces/ProvinceManager.hpp"
 #include "map/titles/TitleManager.hpp"
 
+#include <fmt/ostream.h>
+
 RegionManager::RegionManager(Mod& mod) : m_Mod(mod) {}
 
 //////////////////////////////////////////////////////
+
+size_t RegionManager::CountRegions() const {
+    return m_Regions.size();
+}
 
 bool RegionManager::HasRegion(const std::string& name) const {
     return m_Regions.find(name) != m_Regions.end();
@@ -42,11 +48,20 @@ void RegionManager::AddRegion(UniquePtr<Region> region) {
 void RegionManager::RemoveRegion(Region* region) {
     if (region == nullptr)
         return;
-    this->RemoveRegion(region->GetName());
+
+    // Remove the region from all regions that contain it, otherwise there will be dangling pointers.
+    for (auto& [_, otherRegion] : m_Regions) {
+        otherRegion->RemoveRegion(region);
+    }
+
+    m_Regions.erase(region->GetName());
 }
 
 void RegionManager::RemoveRegion(const std::string& name) {
-    m_Regions.erase(name);
+    auto it = m_Regions.find(name);
+    if (it == m_Regions.end())
+        return;
+    this->RemoveRegion(it->second.get());
 }
 
 void RegionManager::RenameRegion(const std::string& formerName, const std::string& newName) {
@@ -102,11 +117,11 @@ void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, Shar
             continue;
         }
 
-        std::vector<std::string> kingdoms = regionData->GetFirst("kingdoms")->AsArray<std::string>({});
-        std::vector<std::string> duchies = regionData->GetFirst("duchies")->AsArray<std::string>({});
-        std::vector<std::string> counties = regionData->GetFirst("counties")->AsArray<std::string>({});
-        std::vector<std::string> provinces = regionData->GetFirst("provinces")->AsArray<std::string>({});
-        std::vector<std::string> regions = regionData->GetFirst("regions")->AsArray<std::string>({});
+        std::vector<std::string> kingdoms = regionData->Get("kingdoms")->AsArray<std::string>({});
+        std::vector<std::string> duchies = regionData->Get("duchies")->AsArray<std::string>({});
+        std::vector<std::string> counties = regionData->Get("counties")->AsArray<std::string>({});
+        std::vector<std::string> provinces = regionData->Get("provinces")->AsArray<std::string>({});
+        std::vector<std::string> regions = regionData->Get("regions")->AsArray<std::string>({});
         bool generateModifiers = regionData->GetFirst("generate_modifiers")->As<bool>(false);
         bool shouldRememberCountiesOrder = regionData->GetFirst("should_remember_counties_order")->As<bool>(false);
         
@@ -155,4 +170,116 @@ void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, Shar
             region->AddRegion(m_Regions[otherRegionName].get());
         }
     }
+}
+
+void RegionManager::ExportGeographicalRegions() {
+
+    // Create the directories and files.
+    std::string dir = m_Mod.GetDirectory( Paths::MAP_DATA_GEOGRAPHICAL_REGIONS );
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    std::ofstream file(dir + "/geographical_region.txt", std::ios::out);
+    if (!file) throw std::runtime_error(fmt::format("RegionManager::ExportGeographicalRegions: Failed to open file for writing at '{}'", dir + "/geographical_region.txt"));
+    File::EncodeToUTF8BOM(file);
+
+    // Determine geographical regions order based on their dependencies.
+    // We use a topological sort to solve that problem.
+    std::vector<Region*> regions;
+    for (const auto& [_, region] : m_Regions)
+        regions.push_back(region.get());
+
+    std::unordered_map<Region*, int> indegree;
+    std::unordered_map<Region*, std::vector<Region*>> graph;
+
+    // Build a graph of the regions.
+    for (const auto& [_, a] : m_Regions) {
+        indegree[a.get()] = 0;
+        for (const auto& [_, b] : m_Regions) {
+            // If region A contains region B, then A is dependant on B, and B must come first.
+            if (a != b && a->HasRegion(b.get())) {
+                graph[b.get()].push_back(a.get());
+                indegree[a.get()]++;
+            }
+        }
+    }
+
+    // Queue of regions with no dependencies.
+    std::queue<Region*> queue;
+    for (const auto& [node, deg] : indegree) {
+        if (deg == 0) queue.push(node);
+    }
+
+    std::vector<Region*> sortedRegions;
+    std::unordered_set<Region*> visited;
+    while (!queue.empty()) {
+        auto region = queue.front();
+        queue.pop();
+        visited.insert(region);
+        sortedRegions.push_back(region);
+        for (auto next : graph[region]) {
+            if (--indegree[next] == 0) {
+                queue.push(next);
+            }
+        }
+    }
+
+    // Check if there are cycles and add any remaining regions to the end of the list.
+    for (const auto& [_, region] : m_Regions) {
+        if (!visited.count(region.get())) {
+            LOG_ERROR("Geographical region '{}' has a cycle", region->GetName());
+            sortedRegions.push_back(region.get());
+        }
+    }
+
+    // Initialize the object for the geographical regions that will be serialized into the file.
+    SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+    for (auto region : sortedRegions) {
+        SharedPtr<Jomini::Object> regionObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+        if (region->DoesGenerateModifiers())
+            regionObject->Put("generate_modifiers", region->DoesGenerateModifiers());
+            
+        if (region->ShouldRememberCountiesOrder())
+            regionObject->Put("should_remember_counties_order", region->ShouldRememberCountiesOrder());
+
+        if (!region->GetKingdoms().empty()) {
+            std::vector<std::string> titles = std::vector<std::string>(region->GetKingdoms().size());
+            for (auto title : region->GetKingdoms())
+                titles.push_back(title->GetName());
+            regionObject->Put("kingdoms", titles);
+        }
+
+        if (!region->GetDuchies().empty()) {
+            std::vector<std::string> titles = std::vector<std::string>(region->GetDuchies().size());
+            for (auto title : region->GetDuchies())
+                titles.push_back(title->GetName());
+            regionObject->Put("duchies", titles);
+        }
+
+        if (!region->GetCounties().empty()) {
+            std::vector<std::string> titles = std::vector<std::string>(region->GetCounties().size());
+            for (auto title : region->GetCounties())
+                titles.push_back(title->GetName());
+            regionObject->Put("counties", titles);
+        }
+
+        if (!region->GetProvinces().empty()) {
+            std::vector<std::string> provinces = std::vector<std::string>(region->GetProvinces().size());
+            for (auto province : region->GetProvinces())
+                provinces.push_back(std::to_string(province->GetId()));
+            regionObject->Put("provinces", provinces);
+        }
+
+        if (!region->GetRegions().empty()) {
+            std::vector<std::string> subRegions = std::vector<std::string>(region->GetRegions().size());
+            for (auto subRegion : region->GetRegions())
+                subRegions.push_back(subRegion->GetName());
+            regionObject->Put("regions", subRegions);
+        }
+
+        object->Put(region->GetName(), regionObject);
+    }
+
+    fmt::println(file, "{}\n", object->Serialize());
 }
