@@ -11,7 +11,7 @@ TEST_SUITE("[RegionManager]") {
 //////////////////////////////////////////////////////
 
 TEST_CASE("[RegionManager] CountRegions") {
-    Mod mod("test_mod");
+    Mod mod("");
     RegionManager regionManager(mod);
 
     CHECK(regionManager.CountRegions() == 0);
@@ -30,7 +30,7 @@ TEST_CASE("[RegionManager] CountRegions") {
 }
 
 TEST_CASE("[RegionManager] HasRegion") {
-    Mod mod("test_mod");
+    Mod mod("");
     RegionManager regionManager(mod);
 
     CHECK_FALSE(regionManager.HasRegion("region1"));
@@ -56,7 +56,7 @@ TEST_CASE("[RegionManager] HasRegion") {
 //////////////////////////////////////////////////////
 
 TEST_CASE("[RegionManager] GetRegion") {
-    Mod mod("test_mod");
+    Mod mod("");
     RegionManager regionManager(mod);
 
     CHECK(regionManager.GetRegion("region1") == nullptr);
@@ -86,7 +86,7 @@ TEST_CASE("[RegionManager] GetRegion") {
 //////////////////////////////////////////////////////
 
 TEST_CASE("[RegionManager] AddRegion") {
-    Mod mod("test_mod");
+    Mod mod("");
     RegionManager regionManager(mod);
 
     CHECK(regionManager.CountRegions() == 0);
@@ -103,7 +103,7 @@ TEST_CASE("[RegionManager] AddRegion") {
 }
 
 TEST_CASE("[RegionManager] RemoveRegion") {
-    Mod mod("test_mod");
+    Mod mod("");
     RegionManager regionManager(mod);
 
     CHECK(regionManager.CountRegions() == 0);
@@ -143,7 +143,7 @@ TEST_CASE("[RegionManager] RemoveRegion") {
 }
 
 TEST_CASE("[RegionManager] RenameRegion") {
-    Mod mod("test_mod");
+    Mod mod("");
     RegionManager regionManager(mod);
 
     CHECK(regionManager.CountRegions() == 0);
