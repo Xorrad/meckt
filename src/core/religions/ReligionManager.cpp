@@ -59,7 +59,7 @@ void ReligionManager::LoadFaiths() {
             for(auto& [key, pair] : data->GetMap()) {
                 auto& [op, value] = pair;
 
-                // Merge all objects into a single one when there are duplicate definitions for the same culture.
+                // Merge all objects into a single one when there are duplicate definitions for the same faith.
                 if (value->Is(Jomini::Type::ARRAY))
                     value = value->Flatten(false);
 
@@ -75,7 +75,7 @@ void ReligionManager::LoadFaiths() {
                 for(auto& [faithKey, faithPair] : value->Get("faiths")->GetMap()) {
                     auto& [op2, faithValue] = faithPair;
 
-                    // Merge all objects into a single one when there are duplicate definitions for the same culture.
+                    // Merge all objects into a single one when there are duplicate definitions for the same faith.
                     if (faithValue->Is(Jomini::Type::ARRAY))
                         faithValue = faithValue->Flatten(false);
 
