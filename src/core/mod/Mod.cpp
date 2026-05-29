@@ -1,6 +1,6 @@
 #include "Mod.hpp"
 #include "cultures/Culture.hpp"
-#include "mod/Religion.hpp"
+#include "religions/Faith.hpp"
 #include "map/provinces/Province.hpp"
 #include "map/regions/Region.hpp"
 #include "map/titles/Title.hpp"
@@ -409,7 +409,7 @@ void Mod::AddCulture(UniquePtr<Culture> culture) {
     m_Cultures[culture->GetName()] = std::move(culture);
 }
 
-void Mod::AddReligion(UniquePtr<Religion> religion) {
+void Mod::AddReligion(UniquePtr<Faith> religion) {
     m_Religions[religion->GetName()] = std::move(religion);
 }
 
@@ -1581,8 +1581,7 @@ void Mod::LoadReligions() {
                     ASSERT_IS_OBJECT("faith", faithValue, key, filePath);
 
                     sf::Color color = faithValue->Get("color")->As<sf::Color>(sf::Color::White);
-                    SharedPtr<Religion> religion = MakeShared<Religion>(faithKey, color);
-                    this->AddReligion(MakeUnique<Religion>(faithKey, color));
+                    this->AddReligion(MakeUnique<Faith>(faithKey, color));
                 }
             }
         }

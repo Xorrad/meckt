@@ -93,7 +93,7 @@ public:
     void SetLocCulturalName(const std::string& lang, const std::string& key, std::string name);
 
     void AddCulture(UniquePtr<Culture> culture);
-    void AddReligion(UniquePtr<Religion> religion);
+    void AddReligion(UniquePtr<Faith> religion);
     void AddProvince(UniquePtr<Province> province);
 
     void AddTitle(UniquePtr<Title> title);
@@ -186,7 +186,7 @@ private:
     std::map<std::string, SharedPtr<Jomini::Object>> m_ProvincesHistoryVariables;
 
     std::map<std::string, UniquePtr<Culture>> m_Cultures;
-    std::map<std::string, UniquePtr<Religion>> m_Religions;
+    std::map<std::string, UniquePtr<Faith>> m_Religions;
 
     OrderedMap<std::string, HoldingType> m_HoldingTypes;
     OrderedMap<std::string, TerrainType> m_TerrainTypes;

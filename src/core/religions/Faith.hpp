@@ -1,9 +1,9 @@
 #pragma once
 
-class Religion {
+class Faith {
 public:
-    Religion();
-    Religion(const std::string& name, const sf::Color& color);
+    Faith();
+    Faith(const std::string& name, const sf::Color& color);
 
     std::string GetName() const;
     sf::Color GetColor() const;

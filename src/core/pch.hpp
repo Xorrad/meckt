@@ -9,6 +9,8 @@ class Mod;
 class ProvinceManager;
 class RegionManager;
 class TitleManager;
+class CultureManager;
+class ReligionManager;
 
 class HoldingType;
 class Province;
@@ -24,7 +26,7 @@ class EmpireTitle;
 class HegemonyTitle;
 
 class Culture;
-class Religion;
+class Faith;
 
 // Standard headers
 #include <iostream>
