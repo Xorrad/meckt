@@ -1,7 +1,7 @@
 #include "doctest/doctest.hpp"
 
 #include "mod/Mod.hpp"
-#include "map/titles/TitleManager.hpp"
+#include "titles/TitleManager.hpp"
 
 TEST_SUITE("[TitleType]") {
 

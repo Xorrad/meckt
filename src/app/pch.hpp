@@ -6,6 +6,8 @@ enum class Textures : int;
 enum class Fonts : int;
 enum class Shaders : int;
 
+enum class MapMode : int;
+
 // Custom backward::SignalHandling to print stacktrace to file.
 class SignalHandler;
 
@@ -28,6 +30,7 @@ class LogTab;
 
 // Internal headers
 #include "app/Configuration.hpp"
+#include "app/MapMode.hpp"
 
 #include "app/menu/selection/SelectionCallbackResult.hpp"
 #include "app/menu/tab/Tab.hpp"

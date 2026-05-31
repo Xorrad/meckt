@@ -99,7 +99,7 @@ void PropertiesTab::RenderJointProvinces() {
     Province* firstProvince = m_Menu.GetSelectionHandler().GetProvinces().front();
 
     std::string culture = firstProvince->GetCulture();
-    std::string religion = firstProvince->GetReligion();
+    std::string religion = firstProvince->GetFaith();
     std::string holding = firstProvince->GetHolding();
     std::string terrain = firstProvince->GetTerrain();
 
@@ -119,7 +119,7 @@ void PropertiesTab::RenderJointProvinces() {
 
     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
         if (province->GetCulture() != culture) culture = "*****";
-        if (province->GetReligion() != religion) religion = "*****";
+        if (province->GetFaith() != religion) religion = "*****";
         if (province->GetHolding() != holding) holding = "*****";
         if (province->GetTerrain() != terrain) terrain = "*****";
         if (province->GetClimateType() != climateType) climateType = ClimateType::COUNT;
@@ -208,7 +208,7 @@ void PropertiesTab::RenderJointProvinces() {
         // PROVINCE: religion (field)
         if (ImGui::InputTextCommitOnEnter("religion", &religion)) {
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
-                province->SetReligion(religion);
+                province->SetFaith(religion);
             }
             m_Menu.RefreshMapMode(MapMode::RELIGION);
         }
@@ -404,7 +404,7 @@ void PropertiesTab::RenderProvinces() {
                 }
 
                 // PROVINCE: religion (field)
-                if (ImGui::InputTextCommitOnEnter("religion", &province->m_Religion)) {
+                if (ImGui::InputTextCommitOnEnter("religion", &province->m_Faith)) {
                     m_Menu.RefreshMapMode(MapMode::RELIGION);
                 }
 

@@ -1,13 +1,15 @@
 #include "ProvinceManager.hpp"
 
 #include "mod/Mod.hpp"
-#include "map/titles/TitleManager.hpp"
+#include "titles/TitleManager.hpp"
 
 #include <fmt/ostream.h>
 
 ProvinceManager::ProvinceManager(Mod& mod) :
     m_Mod(mod),
     m_ProvincesImage(sf::Image()),
+    m_HeightmapImage(sf::Image()),
+    m_RiversImage(sf::Image()),
     m_ProvincesHistoryVariables({}),
     m_TerrainPropertiesVariables(MakeShared<Jomini::Object>(Jomini::Type::OBJECT)),
     m_TerrainTypesVariables(MakeShared<Jomini::Object>(Jomini::Type::OBJECT))
@@ -48,6 +50,78 @@ const sf::Image& ProvinceManager::GetProvincesImage() const {
     return m_ProvincesImage;
 }
 
+sf::Image& ProvinceManager::GetHeightmapImage() {
+    return m_HeightmapImage;
+}
+
+const sf::Image& ProvinceManager::GetHeightmapImage() const {
+    return m_HeightmapImage;
+}
+
+sf::Image& ProvinceManager::GetRiversImage() {
+    return m_RiversImage;
+}
+
+const sf::Image& ProvinceManager::GetRiversImage() const {
+    return m_RiversImage;
+}
+
+sf::Image ProvinceManager::GetTerrainImage() const {
+    // - Map provinces colors to their terrain color.
+    // - Copy province image.
+    // - Replace province pixels by their mapped color.
+    sf::Color defaultColor = sf::Color(0, 0, 0);
+
+    sf::Image image = Image::MapPixels(
+        m_ProvincesImage,
+        [&](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : m_ProvincesByColors) {
+                std::string terrain = province->GetTerrain();
+                sf::Color color = defaultColor;
+
+                if(m_TerrainTypes.contains(terrain)) {
+                    const TerrainType& terrainType = m_TerrainTypes.at(terrain);
+                    color = terrainType.GetColor();
+                }
+
+                mappedColors[province->GetColor().toInteger()] = color.toInteger();
+            }    
+        }
+    );
+    return image;
+}
+
+sf::Image ProvinceManager::GetWinterSeverityBiasImage() const {
+    // - Map provinces colors to their winter severity bias.
+    // - Copy province image.
+    // - Replace province pixels by their mapped color.
+    sf::Color defaultColor = sf::Color(255, 0, 0);
+
+    sf::Image image = Image::MapPixels(
+        m_ProvincesImage, 
+        [&](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : m_ProvincesByColors) {
+                sf::Color color = defaultColor;
+
+                if (!province->GetWinterSeverityBias().empty()) {
+                    try {
+                        double winterSeverity = std::clamp(0.0, 1.0,
+                            province->GetWinterSeverityBias().starts_with("@")
+                                ? String::ParseDouble(m_TerrainPropertiesVariables->Get(province->GetWinterSeverityBias())->As<std::string>("0.0"))
+                                : String::ParseDouble(province->GetWinterSeverityBias())
+                        );
+                        color = sf::Color(winterSeverity * 255, winterSeverity * 255, winterSeverity * 255, 255);
+                    }
+                    catch(std::exception&){}
+                }
+
+                mappedColors[province->GetColor().toInteger()] = color.toInteger();
+            }    
+        }
+    );
+    return image;
+}
+
 Province* ProvinceManager::GetProvinceByColor(uint32_t color) {
     auto it = m_ProvincesByColors.find(color);
     return (it != m_ProvincesByColors.end()) ? it->second.get() : nullptr;
@@ -66,6 +140,10 @@ Province* ProvinceManager::GetProvinceById(int id) {
 const Province* ProvinceManager::GetProvinceById(int id) const {
     auto it = m_ProvincesByIds.find(id);
     return (it != m_ProvincesByIds.end()) ? it->second : nullptr;
+}
+
+std::optional<int> ProvinceManager::GetMaxProvinceId() const {
+    return m_ProvincesByIds.empty() ? std::nullopt : std::optional<int>(m_ProvincesByIds.rbegin()->first);
 }
 
 std::unordered_map<uint32_t, UniquePtr<Province>>& ProvinceManager::GetProvincesByColors() {
@@ -433,6 +511,24 @@ void ProvinceManager::LoadProvincesImage() {
     }
 }
 
+void ProvinceManager::LoadHeightmapImage() {
+    // Load the heightmap image from the mod files.
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_HEIGHTMAP);
+    if (!std::filesystem::exists(filePath))
+        throw std::runtime_error(fmt::format("ProvinceManager::LoadHeightmapImage: Failed to load heightmap image at '{}': file does not exist", filePath));
+    if(!m_HeightmapImage.loadFromFile(filePath))
+        throw std::runtime_error(fmt::format("ProvinceManager::LoadHeightmapImage: Failed to load heightmap image at '{}': file couldn't be opened", filePath));
+}
+
+void ProvinceManager::LoadRiversImage() {
+    // Load the rivers image from the mod files.
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_RIVERS);
+    if (!std::filesystem::exists(filePath))
+        throw std::runtime_error(fmt::format("ProvinceManager::LoadRiversImage: Failed to load rivers image at '{}': file does not exist", filePath));
+    if(!m_RiversImage.loadFromFile(filePath))
+        throw std::runtime_error(fmt::format("ProvinceManager::LoadRiversImage: Failed to load rivers image at '{}': file couldn't be opened", filePath));
+}
+
 void ProvinceManager::LoadDefaultMapFile() {
     std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_DEFAULT_MAP);
     
@@ -735,7 +831,7 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
         if(provinceValue->Contains("culture"))
             m_ProvincesByIds[provinceId]->SetCulture(provinceValue->GetFirst("culture")->As<std::string>(""));
         if(provinceValue->Contains("religion"))
-            m_ProvincesByIds[provinceId]->SetReligion(provinceValue->GetFirst("religion")->As<std::string>(""));
+            m_ProvincesByIds[provinceId]->SetFaith(provinceValue->GetFirst("religion")->As<std::string>(""));
         if(provinceValue->Contains("holding")) {
             m_ProvincesByIds[provinceId]->SetHolding(provinceValue->GetFirst("holding")->As<std::string>(""));
         }
@@ -988,7 +1084,7 @@ void ProvinceManager::ExportProvincesClimate() {
     fmt::println(climateFile, "{}", climateObject->Serialize());
 }
 
-void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {    
+void ProvinceManager::ExportProvincesHistory(TitleManager* titleManager) {
     // Create the directories if they do not exist.
     std::string dir = m_Mod.GetDirectory(Paths::HISTORY_PROVINCES);
     std::filesystem::remove_all(dir);
@@ -1007,8 +1103,8 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
 
     // In order to be able to add comments for the kingdom, duchy and county tiers, we need to have provinces grouped by their liege titles.
     std::sort(provinces.begin(), provinces.end(), [&](const Province* a, const Province* b) {
-        BaronyTitle* aBaronyTitle = titleManager.GetBaronyByProvinceId(a->GetId());
-        BaronyTitle* bBaronyTitle = titleManager.GetBaronyByProvinceId(b->GetId());
+        BaronyTitle* aBaronyTitle = titleManager->GetBaronyByProvinceId(a->GetId());
+        BaronyTitle* bBaronyTitle = titleManager->GetBaronyByProvinceId(b->GetId());
 
         // Provinces without barony title are sorted at the end.
         if (!aBaronyTitle || !bBaronyTitle)
@@ -1050,7 +1146,7 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
         std::string fileName = province->GetOriginalHistoryFileName();
         if(fileName.empty()) {
             fileName = "00_temp_prov.txt";
-            if (BaronyTitle* baronyTitle = titleManager.GetBaronyByProvinceId(provinceId)) {
+            if (BaronyTitle* baronyTitle = titleManager->GetBaronyByProvinceId(provinceId)) {
                 if (HighTitle* kingdomTitle = baronyTitle->GetLiegeTitle(TitleType::KINGDOM)) {
                     fileName = "00_" + kingdomTitle->GetName() + "_prov.txt";
                 }
@@ -1077,7 +1173,7 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
 
         std::ofstream& file = files[fileName].file;
         
-        BaronyTitle* baronyTitle = titleManager.GetBaronyByProvinceId(provinceId);
+        BaronyTitle* baronyTitle = titleManager->GetBaronyByProvinceId(provinceId);
         HighTitle* countyTitle = (baronyTitle != nullptr) ? baronyTitle->GetLiegeTitle(TitleType::COUNTY) : nullptr;
         HighTitle* duchyTitle = (countyTitle != nullptr) ? countyTitle->GetLiegeTitle(TitleType::DUCHY) : nullptr;
         HighTitle* kingdomTitle = (duchyTitle != nullptr) ? duchyTitle->GetLiegeTitle(TitleType::KINGDOM) : nullptr;
@@ -1116,7 +1212,7 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
                     
         SharedPtr<Jomini::Object> data = province->GetExtraHistoryData()->Copy();
         if(!province->GetCulture().empty()) data->Put("culture", province->GetCulture());
-        if(!province->GetReligion().empty()) data->Put("religion", province->GetReligion());
+        if(!province->GetFaith().empty()) data->Put("religion", province->GetFaith());
         data->Put("holding", province->GetHolding().empty() ? "none" : province->GetHolding());
         for(const auto& [date, historyData] : province->GetHistory()) data->Put((std::string) date, historyData);
 
@@ -1126,4 +1222,159 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
         fmt::println(file, "# {}", province->GetName());
         fmt::println(file, "{}", object->Serialize());
     }
+}
+
+////////////////////////////////////////////////////
+
+void ProvinceManager::GenerateMissingProvinces() {
+    // Loop through the province image and generate provinces for any color
+    // that does not already have one.
+
+    int count = 0;
+    int nextId = 1;
+
+    size_t width = m_ProvincesImage.getSize().x;
+    size_t height = m_ProvincesImage.getSize().y;
+    size_t pixels = width * height * 4;
+    const uint8_t* provincesPixels = m_ProvincesImage.getPixelsPtr();
+
+    size_t index = 0;
+    uint32_t provinceColor = 0x000000FF;
+    uint32_t previousProvinceColor = 0x00000000;
+
+    // Cast to edit directly the bytes of the color and pixels.
+    // - colorPtr is used to read the color from the provinces map image.
+    char* colorPtr = static_cast<char*>((void*) &provinceColor);
+
+    while(index < pixels) {
+        // Copy the four bytes corresponding to RGB from the provinces image pixels
+        // to the array for the titles image.
+        // The bytes need to be flipped, otherwise provinceColor would
+        // be ABGR and we couldn't find the associated title color in the map.
+        colorPtr[3] = provincesPixels[index++]; // R
+        colorPtr[2] = provincesPixels[index++]; // G
+        colorPtr[1] = provincesPixels[index++]; // B
+        index++;
+        if(previousProvinceColor != provinceColor) {
+            if(!m_ProvincesByColors.contains(provinceColor)) {
+                // Skip ids that are already taken by another province.
+                while(m_ProvincesByIds.count(nextId) != 0)
+                    nextId++;
+
+                this->AddProvince(
+                    MakeUnique<Province>(nextId, sf::Color(provinceColor), fmt::format("province_{}", nextId))
+                );
+                count++;
+                nextId++;
+            }
+        }
+        previousProvinceColor = provinceColor;
+    }
+    LOG_INFO("Generated {} new provinces based on the province image.", count);
+}
+
+void ProvinceManager::GenerateProvincesClimate(bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold) {
+    size_t countProvinces = 0;
+    for(const auto& [provinceColorId, province] : m_ProvincesByIds) {
+        float winterSeverityBias = province->CalculateWinterSeverityBias(this, override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
+        bool hasChanged = false;
+
+        if (province->GetClimateType() == ClimateType::NONE || override) {
+            if (winterSeverityBias >= severeWinterThreshold) province->SetClimateType(ClimateType::SEVERE_WINTER);
+            else if (winterSeverityBias >= normalWinterThreshold) province->SetClimateType(ClimateType::NORMAL_WINTER);
+            else if (winterSeverityBias >= mildWinterThreshold) province->SetClimateType(ClimateType::MILD_WINTER);
+            else province->SetClimateType(ClimateType::NONE);
+            hasChanged = true;
+        }
+
+        if (province->GetWinterSeverityBias().empty() || override) {
+            province->SetWinterSeverityBias(fmt::format("{:.2f}", winterSeverityBias));
+            hasChanged = true;
+        }
+
+        countProvinces += hasChanged;
+    }
+
+    LOG_INFO("Generated climate for {} provinces.", countProvinces);
+}
+
+void ProvinceManager::GenerateProvincesFlags(float waterLevel) {
+    // Loop through the province image to count the number of
+    // pixels that are below water level, in order to determine
+    // if that province is a sea or land.
+
+    // First size_t is the total number of pixels.
+    // Second size_t is the number of pixels below water level.
+    std::unordered_map<uint32_t, std::pair<size_t, size_t>> count;
+    count.reserve(m_ProvincesByColors.size());
+
+    size_t pixels = m_ProvincesImage.getSize().x * m_ProvincesImage.getSize().y * 4;
+    const uint8_t* provincesPixels = m_ProvincesImage.getPixelsPtr();
+    const uint8_t* heightmapPixels = m_HeightmapImage.getPixelsPtr();
+
+    size_t index = 0;
+    uint32_t provinceColor = 0x000000FF;
+    uint32_t previousProvinceColor = 0x00000000;
+
+    // Keep track of the last province iterator to avoid searching
+    // for it on successive colors of the same province.
+    auto it = count.begin();
+
+    // Cast to edit directly the bytes of the color and pixels.
+    // - colorPtr is used to read the color from the provinces map image.
+    char* colorPtr = static_cast<char*>((void*) &provinceColor);
+
+    while (index < pixels) {
+        // Copy the four bytes corresponding to RGB from the provinces image pixels
+        // to the array for the titles image.
+        // The bytes need to be flipped, otherwise provinceColor would
+        // be ABGR and we couldn't find the associated title color in the map.
+        float elevation = ((float) heightmapPixels[index] / 255.f)*100.f;
+        colorPtr[3] = provincesPixels[index++]; // R
+        colorPtr[2] = provincesPixels[index++]; // G
+        colorPtr[1] = provincesPixels[index++]; // B
+        index++;
+        
+        if (previousProvinceColor != provinceColor) {
+            it = count.find(provinceColor);
+            if (it == count.end())
+                it = count.insert({provinceColor, std::pair<size_t, size_t>(0, 0)}).first;
+        }
+
+        it->second.first++;
+        it->second.second += (elevation >= waterLevel);
+
+        previousProvinceColor = provinceColor;
+    }
+
+    // Assign the province flags depending on the ratio
+    // of pixels below water level.
+    for (const auto& [color, pair] : count) {
+        auto it = m_ProvincesByColors.find(color);
+        if (it == m_ProvincesByColors.end())
+            continue;
+        bool isLand = (pair.first <= 2*pair.second);
+        it->second->SetFlags(ProvinceFlags::NONE);
+        it->second->SetFlag(ProvinceFlags::LAND, isLand);
+        it->second->SetFlag(ProvinceFlags::SEA, !isLand);
+        it->second->SetTerrain(isLand ? m_DefaultLandTerrain : m_DefaultSeaTerrain);
+    }
+}
+
+void ProvinceManager::GenerateRivers() {
+    // - Map provinces colors to pink if sea, white otherwise.
+    // - Copy province image.
+    // - Replace province pixels by their mapped color.
+    constexpr uint32_t seaColor = sf::Color(255, 0, 128).toInteger();
+    constexpr uint32_t landColor = sf::Color(255, 255, 255).toInteger();
+
+    m_RiversImage = Image::MapPixels(m_ProvincesImage, [&](auto& mappedColors){
+        for(const auto& [provinceColorId, province] : m_ProvincesByIds) {
+            mappedColors[province->GetColor().toInteger()] = (province->HasFlag(ProvinceFlags::SEA)) ? seaColor : landColor;
+        }    
+    });
+
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_RIVERS);
+    std::ignore = m_RiversImage.saveToFile(filePath);
+    Image::IndexImage(filePath, Image::RIVERS_PALETTE);
 }

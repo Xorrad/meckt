@@ -1,6 +1,8 @@
 #include "ReligionManager.hpp"
 
 #include "mod/Mod.hpp"
+#include "provinces/ProvinceManager.hpp"
+#include "titles/TitleManager.hpp"
 
 ReligionManager::ReligionManager(Mod& mod) :
     m_Mod(mod)
@@ -33,6 +35,77 @@ const Faith* ReligionManager::GetFaith(const std::string& name) const {
     if (it == m_Faiths.end())
         return nullptr;
     return it->second.get();
+}
+
+sf::Image ReligionManager::GetFaithImage(ProvinceManager* provinceManager, TitleManager* titleManager) const {
+    // - Map provinces colors to their faith color (province -> county -> county capital -> province).
+    // - Copy province image.
+    // - Replace province pixels by their mapped color.
+    // - Provinces with an explicit faith assigned will have alpha=0
+    //   in order to inform the shader.
+    sf::Color defaultColor = sf::Color(127, 127, 127);
+
+    sf::Image image = Image::MapPixels(
+        provinceManager->GetProvincesImage(),
+        [&](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : provinceManager->GetProvincesByColors()) {
+                std::string faith = province->GetFaith();
+                sf::Color color = defaultColor;
+                uint8_t alpha = faith.empty() ? 255 : 0;
+
+                if(faith.empty()) {
+                    CountyTitle* liege = static_cast<CountyTitle*>(province->GetProvinceLiegeTitle(titleManager, TitleType::COUNTY));
+
+                    if(liege == nullptr) {
+                        goto End;
+                    }
+
+                    for(const auto& dejureTitle : liege->GetDejureTitles()) {
+                        BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
+                        Province* baronyProvince = provinceManager->GetProvinceById(barony->GetProvinceId());
+
+                        if (baronyProvince == nullptr) {
+                            LOG_ERROR("Barony '{}' has unknown province id '{}'", barony->GetName(), barony->GetProvinceId());
+                            continue;
+                        }
+
+                        if(!baronyProvince->GetFaith().empty()) {
+                            faith = baronyProvince->GetFaith();
+                            break;
+                        }
+                    }
+                }
+
+                if (faith.empty()) {
+                    color = sf::Color::Black;
+                    goto End;
+                }
+                
+                {
+                    auto it = m_Faiths.find(faith);
+                    if(it == m_Faiths.end()) {
+                        color = sf::Color(faith[0], faith[1], faith[2]);
+                    } 
+                    else {
+                        color = it->second->GetColor();
+                    }
+                }
+
+                End:
+                color.a = alpha;
+                mappedColors[province->GetColor().toInteger()] = color.toInteger();
+            }    
+        }
+    );
+    return image;
+}
+
+std::unordered_map<std::string, UniquePtr<Faith>>& ReligionManager::GetFaiths() {
+    return m_Faiths;
+}
+
+const std::unordered_map<std::string, UniquePtr<Faith>>& ReligionManager::GetFaiths() const {
+    return m_Faiths;
 }
 
 //////////////////////////////////////////////////////

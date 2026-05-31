@@ -1,16 +1,20 @@
 #pragma once
 
-#define ASSERT_IS_OBJECT(property, value, key, filePath) \
-    if (!value->Is(Jomini::Type::OBJECT)) { \
-        LOG_ERROR("Wrong value for {} '{}' in {}\nThis is probably caused by duplicates definition of key '{}'.", property, key, filePath, key); \
-        continue; \
-    } \
-
 class Mod {
 public:
     Mod(const std::string& rootDirectory);
     Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel);
     ~Mod();
+    
+    //////////////////////////////////////////////////////
+
+    /**
+     * @brief Checks if the mod has a map (provinces image).
+     * @return True if the mod has a map, false otherwise.
+     */
+    bool HasMap() const;
+
+    //////////////////////////////////////////////////////
 
     /**
      * @brief Gets the absolute root directory of the mod.
@@ -41,102 +45,53 @@ public:
      */
     std::string GetRelativePath(GamePath directory, const std::string& absolutePath) const;
 
-    /**
-     * @brief Access the title manager.
-     * @return A pointer to the title manager.
-     */
-    // TitleManager* GetTitleManager();
+    //////////////////////////////////////////////////////
+
+    #define DECLARE_MANAGER_GETTER(ManagerName) \
+        ManagerName##Manager* Get##ManagerName##Manager(); \
+        const ManagerName##Manager* Get##ManagerName##Manager() const;
+
+    DECLARE_MANAGER_GETTER(Title);
+    DECLARE_MANAGER_GETTER(Province);
+    DECLARE_MANAGER_GETTER(Region);
+    DECLARE_MANAGER_GETTER(Culture);
+    DECLARE_MANAGER_GETTER(Religion);
+
+    //////////////////////////////////////////////////////
 
     /**
-     * @brief Access the title manager.
-     * @return A const pointer to the title manager.
+     * @brief Sets the root directory of the mod.
+     * @param dir The absolute path to the root directory.
      */
-    // const TitleManager* GetTitleManager() const;
+    void SetRootDirectory(const std::string& rootDirectory);
 
-    ///////////////////////////////////////
+    //////////////////////////////////////////////////////
 
-    std::string GetDir() const;
-    void SetDir(const std::string& dir);
+    /**
+     * @brief Initializes all the data managers and loads the mod data from the root directory.
+     * @param completeCallback The callback function to call when the loading is complete.
+     * @param changeCallback The callback function to call when the loading state changes, with the new loading state as a parameter.
+     * @param errorCallback The callback function to call when an error occurs during loading, with the error message as a parameter.
+     */
+    void Load(
+        std::function<void()> completeCallback,
+        std::function<void(LoadingState)> changeCallback,
+        std::function<void(const std::string&)> errorCallback
+    );
 
-    sf::Image& GetHeightmapImage();
-    sf::Image& GetProvinceImage();
-    sf::Image& GetRiversImage();
-    sf::Image GetTerrainImage();
-    sf::Image GetWinterSeverityImage();
-    sf::Image GetCultureImage();
-    sf::Image GetReligionImage();
-    sf::Image GetTitleImage(TitleType type);
-    bool HasMap() const;
-
-    std::map<uint32_t, UniquePtr<Province>>& GetProvinces();
-    std::map<int, Province*>& GetProvincesByIds();
-    Title* GetProvinceLiegeTitle(Province* province, TitleType type);
-    Title* GetProvinceFocusedTitle(Province* province, TitleType type);
-    int GetMaxProvinceId() const;
-    
-    std::map<std::string, UniquePtr<Region>>& GetRegions();
-
-    std::map<std::string, UniquePtr<Title>>& GetTitles();
-    std::map<TitleType, std::vector<Title*>>& GetTitlesByType();
-    std::map<int, BaronyTitle*>& GetBaroniesByProvinceIds();
-
-    const OrderedMap<std::string, HoldingType>& GetHoldingTypes() const;
-    const OrderedMap<std::string, TerrainType>& GetTerrainTypes() const;
-
-    const std::string& GetTitlesLocalizationFilePath() const;
-    const std::string& GetCulturalNamesLocalizationFilePath() const;
-
-    std::map<std::string, std::map<std::string, std::string>>& GetLocCulturalNames();
-    std::map<std::string, std::string>& GetLocCulturalNames(const std::string& lang);
-    std::string& GetLocCulturalName(const std::string& lang, const std::string& key);
-    std::string GetLocCulturalName(const std::string& lang, const std::string& key) const;
-    void SetLocCulturalName(const std::string& lang, const std::string& key, std::string name);
-
-    void AddCulture(UniquePtr<Culture> culture);
-    void AddReligion(UniquePtr<Faith> religion);
-    void AddProvince(UniquePtr<Province> province);
-
-    void AddTitle(UniquePtr<Title> title);
-    void RemoveTitle(Title* title);
-    void RenameTitle(Title* title, std::string formerName);
-    
-    void AddRegion(UniquePtr<Region> region);
-    void RenameRegion(Region* region, std::string formerName);
-    void RemoveRegion(Region* region);
-
-    void HarmonizeTitlesColors(std::span<Title*> titles, sf::Color color, float hue, float saturation);
-    void GenerateMissingProvinces();
-    void GenerateMissingBaronies();
-    void GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles);
-
-    float CalculateWinterSeverityBias(Province* province, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const;
-    void GenerateProvincesClimate(bool override, float elevationStrength, float elevationOffset, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold);
-
-    void ClearProvinces(); // Remove all current provinces.
-    void ClearTitles(); // Remove all current titles.
-    void DetermineProvincesFlags(); // Determine province flags (land, sea...) for each province depending on elevation.
-    void GenerateRivers(); // Generate a blank rivers image using the landmass.
-    void GenerateWorld(); // Generate a provinces image using the heightmap, voronoi and conquests.
-
-    void Load(std::function<void()> completeCallback, std::function<void(LoadingState)> changeCallback, std::function<void(const std::string&)> errorCallback, bool loadImages = true);
-    void LoadHoldingTypes();
-    void LoadTerrainTypes();
-    void LoadProvinceImage();
-    void LoadDefaultMapFile();
-    void LoadProvincesDefinition();
-    void LoadProvincesTerrain();
-    void LoadProvincesClimate();
-    void LoadProvincesHistory();
-    void LoadTitles();
-    void LoadTitlesCapitals();
-    void LoadTitlesHistory();
-    void LoadGeographicalRegions();
-    void LoadCultures();
-    void LoadReligions();
-    void LoadLocalization();
-
-    std::vector<Title*> ParseTitles(const std::string& filePath, SharedPtr<Jomini::Object> data);
-
+    /**
+     * @brief Exports the current mod data to the mod files in the root directory.
+     * @param defaultMap If true, exports the provinces flags to the default.map file.
+     * @param provincesDefinition If true, exports the provinces definition to the definition.csv file.
+     * @param provincesTerrain If true, exports the provinces terrain to the province terrain file.
+     * @param provincesClimate If true, exports the provinces climate to the province properties file.
+     * @param provincesHistory If true, exports the provinces history to the history files.
+     * @param titles If true, exports the titles definitions to the landed_titles files.
+     * @param titlesHistory If true, exports the titles history to the history files.
+     * @param titlesLocalization If true, exports the titles localization to the localization files.
+     * @param culturalNamesLocalization If true, exports the cultural names localization to the localization files.
+     * @param geographicalRegions If true, exports the geographical regions to the geographical regions files.
+     */
     void Export(
         bool defaultMap = true,
         bool provincesDefinition = true,
@@ -149,55 +104,15 @@ public:
         bool culturalNamesLocalization = true,
         bool geographicalRegions = true
     );
-    void ExportDefaultMapFile();
-    void ExportProvincesDefinition();
-    void ExportProvincesTerrain();
-    void ExportProvincesClimate();
-    void ExportProvincesHistory();
-    void ExportTitles();
-    void ExportTitlesHistory();
-    void ExportTitle(Title* title, std::ofstream& file, int depth);
-    void ExportGeographicalRegions();
-
-    void ExportTitlesLocalization();
-    void ExportCulturalNamesLocalization();
-    void DeleteTitlesLocalization(bool titlesLocalization, bool culturalNamesLocalization);
 
 private:
     std::string m_RootDirectory;
-    sf::Image m_HeightmapImage;
-    sf::Image m_ProvinceImage;
-    sf::Image m_RiversImage;
 
-    float m_WaterLevel;
+    float m_WaterLevel; // TODO: move to a define manager.
 
-    std::map<uint32_t, UniquePtr<Province>> m_Provinces;
-    std::map<int, Province*> m_ProvincesByIds;
-    
-    std::map<std::string, UniquePtr<Region>> m_Regions;
-
-    std::map<std::string, UniquePtr<Title>> m_Titles;
-    std::map<TitleType, std::vector<Title*>> m_TitlesByType;
-    std::map<int, BaronyTitle*> m_BaroniesByProvinceIds;
-
-    // Map variables in common/landed_titles & history/titles & history/provinces with their respective filename.
-    std::map<std::string, SharedPtr<Jomini::Object>> m_TitlesVariables;
-    std::map<std::string, SharedPtr<Jomini::Object>> m_TitlesHistoryVariables;
-    std::map<std::string, SharedPtr<Jomini::Object>> m_ProvincesHistoryVariables;
-
-    std::map<std::string, UniquePtr<Culture>> m_Cultures;
-    std::map<std::string, UniquePtr<Faith>> m_Religions;
-
-    OrderedMap<std::string, HoldingType> m_HoldingTypes;
-    OrderedMap<std::string, TerrainType> m_TerrainTypes;
-    SharedPtr<Jomini::Object> m_TerrainPropertiesVariables;
-
-    std::string m_DefaultLandTerrain;
-    std::string m_DefaultSeaTerrain;
-    std::string m_DefaultCoastalSeaTerrain;
-
-    std::string m_TitlesLocalizationFilePath;
-    std::string m_CulturalNamesLocalizationFilePath;
-
-    std::map<std::string, std::map<std::string, std::string>> m_LocCulturalNames;
+    UniquePtr<TitleManager> m_TitleManager;
+    UniquePtr<ProvinceManager> m_ProvinceManager;
+    UniquePtr<RegionManager> m_RegionManager;
+    UniquePtr<CultureManager> m_CultureManager;
+    UniquePtr<ReligionManager> m_ReligionManager;
 };

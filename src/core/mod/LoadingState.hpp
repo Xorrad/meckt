@@ -12,10 +12,10 @@ enum class LoadingState {
     PROVINCES_HISTORY,
     TITLES,
     TITLES_HISTORY,
+    TITLES_LOCALIZATION,
     GEOGRAPHICAL_REGIONS,
     CULTURES,
-    RELIGIONS,
-    LOCALIZATION,
+    FAITHS,
     FINISHED,
 };
 
@@ -31,9 +31,9 @@ const std::map<LoadingState, std::string> LoadingStateLabels = {
     { LoadingState::PROVINCES_HISTORY, "Provinces History" },
     { LoadingState::TITLES, "Titles" },
     { LoadingState::TITLES_HISTORY, "Titles History" },
+    { LoadingState::TITLES_LOCALIZATION, "Titles Localization" },
     { LoadingState::GEOGRAPHICAL_REGIONS, "Geographical Regions" },
     { LoadingState::CULTURES, "Cultures" },
-    { LoadingState::RELIGIONS, "Religions" },
-    { LoadingState::LOCALIZATION, "Localization" },
+    { LoadingState::FAITHS, "Faiths" },
     { LoadingState::FINISHED, "Finished" }
 };

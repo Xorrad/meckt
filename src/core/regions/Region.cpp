@@ -1,5 +1,5 @@
 #include "Region.hpp"
-#include "map/titles/Title.hpp"
+#include "titles/Title.hpp"
 
 Region::Region(std::string name) :
     m_Name(name),

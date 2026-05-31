@@ -1,9 +1,9 @@
 #include "doctest/doctest.hpp"
 
 #include "mod/Mod.hpp"
-#include "map/regions/RegionManager.hpp"
-#include "map/provinces/ProvinceManager.hpp"
-#include "map/titles/TitleManager.hpp"
+#include "regions/RegionManager.hpp"
+#include "provinces/ProvinceManager.hpp"
+#include "titles/TitleManager.hpp"
 #include "util/Yaml.hpp"
 
 TEST_SUITE("[RegionManager]") {
@@ -170,7 +170,7 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
 
     REQUIRE_NOTHROW(provinceManager.LoadProvincesDefinition());
     REQUIRE_NOTHROW(titleManager.LoadTitles());
-    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(provinceManager, titleManager));
+    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(&provinceManager, &titleManager));
 
     struct RegionTestData {
         std::vector<std::string> regions;
@@ -236,12 +236,12 @@ TEST_CASE("[RegionManager] ExportGeographicalRegions") {
 
     REQUIRE_NOTHROW(provinceManager.LoadProvincesDefinition());
     REQUIRE_NOTHROW(titleManager.LoadTitles());
-    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(provinceManager, titleManager));
+    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(&provinceManager, &titleManager));
 
     regionManager.GetRegion("region1")->AddDuchy(titleManager.GetTitleAs<DuchyTitle>("d_test2"));
     regionManager.GetRegion("region1")->RemoveCounty(titleManager.GetTitleAs<CountyTitle>("c_test2"));
 
-    mod.SetDir("resources/tests/region_manager/test_mod_modified");
+    mod.SetRootDirectory("resources/tests/region_manager/test_mod_modified");
     REQUIRE_NOTHROW(regionManager.ExportGeographicalRegions());
 
     SUBCASE("Check that the exported content match") {

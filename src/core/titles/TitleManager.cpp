@@ -1,6 +1,7 @@
 #include "TitleManager.hpp"
 
 #include "mod/Mod.hpp"
+#include "provinces/ProvinceManager.hpp"
 #include "util/Yaml.hpp"
 
 #include <fmt/ostream.h>
@@ -99,6 +100,25 @@ const BaronyTitle* TitleManager::GetBaronyByProvinceId(int provinceId) const {
     if (it == m_BaroniesByProvinceId.end())
         return nullptr;
     return it->second;
+}
+
+sf::Image TitleManager::GetTitleImage(ProvinceManager* provinceManager, TitleType type) {
+    sf::Image image = Image::MapPixels(
+        provinceManager->GetProvincesImage(),
+        [=](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : provinceManager->GetProvincesByColors()) {
+                Title* liege = province->GetProvinceFocusedTitle(this, type);
+
+                if(liege == nullptr) {
+                    mappedColors[province->GetColor().toInteger()] = 0x505050ff;
+                    continue;
+                }
+
+                mappedColors[province->GetColor().toInteger()] = liege->GetColor().toInteger();
+            }    
+        }
+    );
+    return image;
 }
 
 std::map<std::string, UniquePtr<Title>>& TitleManager::GetTitles() {
@@ -880,11 +900,13 @@ void TitleManager::ExportTitlesHistory() {
         file.close();
 }
 
-void TitleManager::ExportLocalization() {
-    this->DeleteLocalization(true, true);
+void TitleManager::ExportLocalization(bool exportTitlesLocalization, bool exportCulturalNamesLocalization) {
+    this->DeleteLocalization(exportTitlesLocalization, exportCulturalNamesLocalization);
 
-    this->ExportTitlesLocalization();
-    this->ExportCulturalNamesLocalization();
+    if (exportTitlesLocalization)
+        this->ExportTitlesLocalization();
+    if (exportCulturalNamesLocalization)
+        this->ExportCulturalNamesLocalization();
 }
 
 void TitleManager::ExportTitlesLocalization() {
@@ -923,7 +945,7 @@ void TitleManager::ExportCulturalNamesLocalization() {
     file.close();
 }
 
-void TitleManager::DeleteLocalization(bool titlesLocalization, bool culturalNamesLocalization) {
+void TitleManager::DeleteLocalization(bool exportTitlesLocalization, bool exportCulturalNamesLocalization) {
     std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::LOCALIZATION_ENGLISH) );
     std::set<std::string> filesPath2 = File::ListFiles( m_Mod.GetDirectory(Paths::LOCALIZATION_REPLACE_ENGLISH) );
     filesPath.insert(filesPath2.begin(), filesPath2.end());
@@ -962,12 +984,12 @@ void TitleManager::DeleteLocalization(bool titlesLocalization, bool culturalName
             }
 
             // Ignore lines with a cultural name.
-            if(key.starts_with("cn_") && culturalNamesLocalization) {
+            if(key.starts_with("cn_") && exportCulturalNamesLocalization) {
                 continue;
             }
 
             // If the line is not related to titles, then we keep it.
-            if(!titlesLocalization || (!key.starts_with("b_")
+            if(!exportTitlesLocalization || (!key.starts_with("b_")
             && !key.starts_with("c_")
             && !key.starts_with("d_")
             && !key.starts_with("k_")
@@ -996,5 +1018,122 @@ void TitleManager::DeleteLocalization(bool titlesLocalization, bool culturalName
         tmpFile.close();
         std::remove(filePath.c_str());
         std::rename((filePath + ".tmp").c_str(), filePath.c_str());
+    }
+}
+
+////////////////////////////////////////////////////
+
+void TitleManager::GenerateMissingBaronies(ProvinceManager* provinceManager) {
+    int count = 0;
+    for(auto& [id, province] : provinceManager->GetProvincesByIds()) {
+        if(!province->HasFlag(ProvinceFlags::LAND))
+            continue;
+        if(province->HasFlag(ProvinceFlags::IMPASSABLE))
+            continue;
+        if (provinceManager->HasProvinceById(id))
+            continue;
+        
+        // Make sure to use a title name that isn't already taken.
+        std::string baronyName = "b_" + String::ToLowercase(province->GetName());
+        int i = 1;
+        while(m_Titles.count(baronyName) > 0) {
+            baronyName = "b_" + String::ToLowercase(province->GetName()) + std::to_string(i);
+            i++;
+        }
+
+        // Create a new barony title for that land province.
+        UniquePtr<Title> title = MakeTitle(TitleType::BARONY, baronyName, province->GetColor(), false);
+        BaronyTitle* baronyTitle = dynamic_cast<BaronyTitle*>(title.get());
+        baronyTitle->SetProvinceId(province->GetId());
+
+        // Add the barony title.
+        this->AddTitle(std::move(title));
+        count++;
+    }
+    LOG_INFO("Generated {} new barony titles for passable land provinces without any barony.", count);
+}
+
+void TitleManager::GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles) {
+    const auto FormatLocName = [&](const std::string& key) {
+        std::string str = "";
+        bool capitalize = true;
+        for (size_t i = 2; i < key.size(); i++) {
+            char ch = key[i];
+            if (ch == '_') {
+                str += ' ';
+                capitalize = true;
+            }
+            else {
+                str += (capitalize ? std::toupper(ch) : ch);
+                capitalize = false;
+            }
+        }
+        return str;
+    };
+    const auto FormatLocAdjective = [&](const std::string& key) {
+        std::string str = FormatLocName(key);
+        if (str.ends_with("ian"))
+            return str;
+        if (str.ends_with("i") || str.ends_with("y"))
+            str.pop_back();
+        if (str.ends_with("e"))
+            return str + "an";
+        if (str.ends_with("ea") || str.ends_with("ia"))
+            return str + "n";
+        if (str.ends_with("land"))
+            return str + "er";
+        return str + "ian";
+    };
+
+    size_t countNames = 0;
+    size_t countAdjectives = 0;
+
+    for (auto& [key, title] : m_Titles) {
+        if (names && !title->HasLocName(lang)) {
+            title->SetLocName(lang, FormatLocName(key));
+            countNames++;
+        }
+        if (adjectives && !title->Is(TitleType::BARONY) && !title->HasLocAdjective(lang)) {
+            title->SetLocAdjective(lang, FormatLocAdjective(key));
+            countAdjectives++;
+        }
+    }
+
+    LOG_INFO("Generated name localization for {} titles.", countNames);
+    LOG_INFO("Generated adjective localization for {} titles.", countAdjectives);
+}
+
+void TitleManager::HarmonizeTitlesColors(std::span<Title*> titles, sf::Color rgb, float hue, float saturation) {
+    // Generate a list of colors with uniformly spaced saturations around
+    // the saturation of the original color while picking a random hue.
+    sf::HSVColor defaultColor = rgb;
+    std::vector<sf::HSVColor> colors;
+
+    // Define the range of values for hue and saturation.
+    float hues[] = { std::max(0.f, defaultColor.h - hue), std::min(360.f, defaultColor.h + hue) };
+    float saturations[] = { std::max(0.f, defaultColor.s - saturation), std::min(1.f, defaultColor.s + saturation) };
+
+    // Initialize first saturation value and the speed/step at which to increment it.
+    float s = saturations[0];
+    float saturationStep = (saturations[1] - saturations[0]) / (float) titles.size();
+
+    while(colors.size() < titles.size()) {
+        // TODO: check if the color isn't already used by another title when generating one.
+
+        float h = Math::RandomFloat(hues[0], hues[1]);
+        sf::HSVColor color = sf::HSVColor(h, s, defaultColor.v);
+        colors.push_back(color);
+        s += saturationStep;
+    }
+
+    // Shuffle the colors not to have a gradient but random
+    // distribution which may make it easier to discern titles.
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(colors.begin(), colors.end(), g);
+
+    // Apply those colors to the titles.
+    for(int i = 0; i < titles.size(); i++) {
+        titles[i]->SetColor(colors[i]);
     }
 }

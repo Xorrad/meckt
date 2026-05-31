@@ -46,6 +46,16 @@ public:
     const Culture* GetCulture(const std::string& name) const;
 
     /**
+     * @brief Generates the cultures image.
+     *        Each province's color is replaced by its culture color.
+     * @note  This function can be expensive: to be used with sparingly.
+     * @param provinceManager The province manager.
+     * @param titleManager The title manager.
+     * @return The generated cultures image.
+     */
+    sf::Image GetCultureImage(ProvinceManager* provinceManager, TitleManager* titleManager) const;
+
+    /**
      * @brief Retrieves a map of cultures.
      * @return The map of cultures.
      */
@@ -83,5 +93,5 @@ public:
 
 private:
     Mod& m_Mod;
-    std::map<std::string, UniquePtr<Culture>> m_Cultures;
+    std::unordered_map<std::string, UniquePtr<Culture>> m_Cultures;
 };

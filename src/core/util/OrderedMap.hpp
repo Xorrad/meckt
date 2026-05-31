@@ -18,19 +18,26 @@ public:
         }
         return m_Index[key]->second;
     }
+    
+    const V& at(const K& key) const {
+        if (m_Index.find(key) == m_Index.end()) {
+            throw std::out_of_range(std::format("OrderedMap: key not found for \"{}\"", key));
+        }
+        return m_Index.at(key)->second;
+    }
 
     V& operator[](const K& key) {
         if (m_Index.find(key) == m_Index.end()) {
             m_Items.emplace_back(key, V());
             m_Index[key] = --m_Items.end();
         }
-        return m_Index[key]->second;
+        return m_Index.at(key)->second;
     }
 
     const V& operator[](const K& key) const {
-        static V default_value{};
+        static V s_DefaultValue{};
         auto it = m_Index.find(key);
-        return (it != m_Index.end()) ? it->second->second : default_value;
+        return (it != m_Index.end()) ? it->second->second : s_DefaultValue;
     }
 
     typename std::list<std::pair<K, V>>::iterator begin() {

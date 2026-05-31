@@ -46,6 +46,16 @@ public:
     const Faith* GetFaith(const std::string& name) const;
 
     /**
+     * @brief Generates the faiths image.
+     *        Each province's color is replaced by its faith color.
+     * @note  This function can be expensive: to be used with sparingly.
+     * @param provinceManager The province manager.
+     * @param titleManager The title manager.
+     * @return The generated faiths image.
+     */
+    sf::Image GetFaithImage(ProvinceManager* provinceManager, TitleManager* titleManager) const;
+
+    /**
      * @brief Retrieves a map of faiths.
      * @return The map of faiths.
      */
@@ -83,5 +93,5 @@ public:
 
 private:
     Mod& m_Mod;
-    std::map<std::string, UniquePtr<Faith>> m_Faiths;
+    std::unordered_map<std::string, UniquePtr<Faith>> m_Faiths;
 };

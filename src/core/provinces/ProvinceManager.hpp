@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map/provinces/Province.hpp"
+#include "provinces/Province.hpp"
 
 class ProvinceManager {
 public:
@@ -63,6 +63,46 @@ public:
      * @return The reference to the provinces image.
      */
     const sf::Image& GetProvincesImage() const;
+    
+    /**
+     * @brief Retrieves the heightmap image.
+     * @return The reference to the heightmap image.
+     */
+    sf::Image& GetHeightmapImage();
+
+    /**
+     * @brief Retrieves the heightmap image.
+     * @return The reference to the heightmap image.
+     */
+    const sf::Image& GetHeightmapImage() const;
+    
+    /**
+     * @brief Retrieves the rivers image.
+     * @return The reference to the rivers image.
+     */
+    sf::Image& GetRiversImage();
+
+    /**
+     * @brief Retrieves the rivers image.
+     * @return The reference to the rivers image.
+     */
+    const sf::Image& GetRiversImage() const;
+
+    /**
+     * @brief Generates the terrain image.
+     *        Each province's color is replaced by its terrain color.
+     * @note  This function can be expensive: to be used with sparingly.
+     * @return The generated terrain image.
+     */
+    sf::Image GetTerrainImage() const;
+
+    /**
+     * @brief Generates the winter severity bias image.
+     *        Each province's color is replaced by a shade of gray corresponding to its winter severity.
+     * @note  This function can be expensive: to be used with sparingly.
+     * @return The generated winter severity bias image.
+     */
+    sf::Image GetWinterSeverityBiasImage() const;
 
     /**
      * @brief Retrieves a province by its color.
@@ -91,6 +131,12 @@ public:
      * @return The pointer to the province if it exists, nullptr otherwise.
      */
     const Province* GetProvinceById(int id) const;
+
+    /**
+     * @brief Retrieves the maximum province id.
+     * @return The maximum province id if there are provinces, std::nullopt otherwise.
+     */
+    std::optional<int> GetMaxProvinceId() const;
 
     /**
      * @brief Retrieves a map of provinces paired by their colors.
@@ -242,6 +288,18 @@ public:
      * @throws std::runtime_error if the file doesn't exist or cannot be opened as an image.
      */
     void LoadProvincesImage();
+    
+    /**
+     * @brief Loads the heightmap image from the mod files.
+     * @throws std::runtime_error if the file doesn't exist or cannot be opened as an image.
+     */
+    void LoadHeightmapImage();
+    
+    /**
+     * @brief Loads the rivers image from the mod files.
+     * @throws std::runtime_error if the file doesn't exist or cannot be opened as an image.
+     */
+    void LoadRiversImage();
 
     /**
      * @brief Loads provinces data from the default map file (map_data/default.map).
@@ -304,18 +362,44 @@ public:
      * @brief Exports the provinces history to the history files.
      * @throws std::runtime_error if any of the files cannot be written.
      */
-    void ExportProvincesHistory(TitleManager& titleManager);
+    void ExportProvincesHistory(TitleManager* titleManager);
+
+    ////////////////////////////////////////////////////
+
+    /**
+     * @brief Generates missing provinces for passable land provinces that don't have a province yet.
+     */
+    void GenerateMissingProvinces();
+
+    /**
+     * @brief Generates the climate of the provinces based on their latitude and elevation.
+     */
+    void GenerateProvincesClimate(bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold);
+
+    /**
+     * @brief Determines flags (land or sea) for the provinces depending on their elevation on the heightmap and the water level.
+     * @param waterLevel The water level.
+     */
+    void GenerateProvincesFlags(float waterLevel);
+
+    /**
+     * @brief Generates a blank rivers image using the landmass of the provinces.
+     * @note This create an image file, and any existing rivers image will be overwritten.
+     */
+    void GenerateRivers();
 
 private:
     Mod& m_Mod;
 
-    sf::Image m_ProvincesImage;
+    sf::Image m_ProvincesImage; // map_data/provinces.png
+    sf::Image m_HeightmapImage; // map_data/heightmap.png
+    sf::Image m_RiversImage; // map_data/rivers.png
 
     std::unordered_map<uint32_t, UniquePtr<Province>> m_ProvincesByColors;
     std::map<int, Province*> m_ProvincesByIds;
 
-    OrderedMap<std::string, HoldingType> m_HoldingTypes;
-    OrderedMap<std::string, TerrainType> m_TerrainTypes;
+    OrderedMap<std::string, HoldingType> m_HoldingTypes; // common/holdings/
+    OrderedMap<std::string, TerrainType> m_TerrainTypes; // common/terrain_types/
 
     std::string m_DefaultLandTerrain;
     std::string m_DefaultSeaTerrain;

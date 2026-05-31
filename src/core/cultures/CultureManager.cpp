@@ -1,6 +1,8 @@
 #include "CultureManager.hpp"
 
 #include "mod/Mod.hpp"
+#include "provinces/ProvinceManager.hpp"
+#include "titles/TitleManager.hpp"
 
 CultureManager::CultureManager(Mod& mod) :
     m_Mod(mod)
@@ -33,6 +35,69 @@ const Culture* CultureManager::GetCulture(const std::string& name) const {
     if (it == m_Cultures.end())
         return nullptr;
     return it->second.get();
+}
+
+sf::Image CultureManager::GetCultureImage(ProvinceManager* provinceManager, TitleManager* titleManager) const {
+    // - Map provinces colors to their culture color (province -> county -> county capital -> province).
+    // - Copy province image.
+    // - Replace province pixels by their mapped color.
+    // - Provinces with an explicit culture assigned will have alpha=0
+    //   in order to inform the shader.
+    sf::Color defaultColor = sf::Color(127, 127, 127);
+
+    sf::Image image = Image::MapPixels(
+        provinceManager->GetProvincesImage(),
+        [&](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : provinceManager->GetProvincesByColors()) {
+                std::string culture = province->GetCulture();
+                sf::Color color = defaultColor;
+                uint8_t alpha = culture.empty() ? 255 : 0;
+
+                if(culture.empty()) {
+                    CountyTitle* liege = static_cast<CountyTitle*>(province->GetProvinceLiegeTitle(titleManager, TitleType::COUNTY));
+
+                    if(liege == nullptr) {
+                        goto End;
+                    }
+
+                    for(const auto& dejureTitle : liege->GetDejureTitles()) {
+                        BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
+                        Province* baronyProvince = provinceManager->GetProvinceById(barony->GetProvinceId());
+
+                        if (baronyProvince == nullptr) {
+                            LOG_ERROR("Barony '{}' has unknown province id '{}'", barony->GetName(), barony->GetProvinceId());
+                            continue;
+                        }
+
+                        if(!baronyProvince->GetCulture().empty()) {
+                            culture = baronyProvince->GetCulture();
+                            break;
+                        }
+                    }
+                }
+
+                if (culture.empty()) {
+                    color = sf::Color::Black;
+                    goto End;
+                }
+
+                {
+                    auto it = m_Cultures.find(culture);
+                    if (it == m_Cultures.end()) {
+                        color = sf::Color(culture[0], culture[1], culture[2]);
+                    }
+                    else {
+                        color = it->second->GetColor();
+                    }
+                }
+
+                End:
+                color.a = alpha;
+                mappedColors[province->GetColor().toInteger()] = color.toInteger();
+            }    
+        }
+    );
+    return image;
 }
 
 //////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map/titles/Title.hpp"
+#include "titles/Title.hpp"
 
 class TitleManager {
 public:
@@ -89,6 +89,16 @@ public:
      * @return The pointer to the barony title if it exists, nullptr otherwise.
      */
     const BaronyTitle* GetBaronyByProvinceId(int provinceId) const;
+
+        /**
+     * @brief Generates the titles image.
+     *        Each province is mapped to the focused highest title of the specified type.
+     * @note  This function can be expensive: to be used with sparingly.
+     * @param provinceManager The province manager.
+     * @param type The highest title type.
+     * @return The generated titles image.
+     */
+    sf::Image GetTitleImage(ProvinceManager* provinceManager, TitleType type);
 
     /**
      * @brief Retrieves a map of titles.
@@ -290,8 +300,10 @@ public:
     /**
      * @brief Exports the titles and cultural names localization files.
      *        It also removes former localization keys from the original mod files.
+     * @param exportTitlesLocalization If true, exports the titles localization (names, adjectives and articles).
+     * @param exportCulturalNamesLocalization If true, exports the cultural names localization.
      */
-    void ExportLocalization();
+    void ExportLocalization(bool exportTitlesLocalization, bool exportCulturalNamesLocalization);
 
     /**
      * @brief Exports the titles localization.
@@ -305,12 +317,37 @@ public:
     void ExportCulturalNamesLocalization();
 
     ////////////////////////////////////////////////////
-
+    
     /**
      * @brief Removes the former titles and cultural names localization
      *        from the original mod files in order to avoid duplicates.
+     * @param exportTitlesLocalization If true, removes lines related to title localization (names, adjectives and articles).
+     * @param exportCulturalNamesLocalization If true, removes lines related to cultural names localization
      */
-    void DeleteLocalization(bool titlesLocalization, bool culturalNamesLocalization);
+    void DeleteLocalization(bool exportTitlesLocalization, bool exportCulturalNamesLocalization);
+    
+    ////////////////////////////////////////////////////
+
+    /**
+     * @brief Generates barony titles for provinces that don't have one.
+     *        The generated baronies will be named after their province (e.g. `b_naoned` for the province of Naoned) and colored with the color of their province.
+     */
+    void GenerateMissingBaronies(ProvinceManager* provinceManager);
+
+    /**
+     * @brief Generates localization for titles that don't have one.
+     *       The generated localization will be based on the title name (e.g. `Naoned` for the title c_naoned).
+     */
+    void GenerateTitlesLocalization(const std::string& lang, bool names, bool adjectives, bool articles);
+
+    /**
+     * @brief Harmonizes the colors of a list of titles by applying a hue and saturation shift to a base color.
+     * @param titles The list of titles to harmonize the colors of.
+     * @param color The base color to use for the harmonization.
+     * @param hue The maximum hue shift to apply to the base color, in [0.f, 360.f].
+     * @param saturation The maximum saturation shift to apply to the base color, in [0.f, 1.f].
+     */
+    void HarmonizeTitlesColors(std::span<Title*> titles, sf::Color color, float hue, float saturation);
 
 private:
     Mod& m_Mod;

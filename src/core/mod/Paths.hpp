@@ -19,6 +19,8 @@ namespace Paths {
     // Map data directory paths.
     static constexpr GamePath MAP_DATA_DEFINITIONS = "map_data/definition.csv";
     static constexpr GamePath MAP_DATA_PROVINCES = "map_data/provinces.png";
+    static constexpr GamePath MAP_DATA_HEIGHTMAP = "map_data/heightmap.png";
+    static constexpr GamePath MAP_DATA_RIVERS = "map_data/rivers.png";
     static constexpr GamePath MAP_DATA_DEFAULT_MAP = "map_data/default.map";
     static constexpr GamePath MAP_DATA_CLIMATE = "map_data/climate.txt";
     static constexpr GamePath MAP_DATA_GEOGRAPHICAL_REGIONS = "map_data/geographical_regions/";

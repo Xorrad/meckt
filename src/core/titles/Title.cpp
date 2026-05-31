@@ -1,6 +1,6 @@
 #include "Title.hpp"
 #include "mod/Mod.hpp"
-#include "map/provinces/Province.hpp"
+#include "provinces/ProvinceManager.hpp"
 
 Title::Title() : Title("", sf::Color(0, 0, 0)) {}
 
@@ -261,10 +261,10 @@ void HighTitle::SetSelectionFocus(bool focus) {
     }
 }
 
-sf::Vector2i HighTitle::GetImagePosition(Mod& mod) const {
+sf::Vector2i HighTitle::GetImagePosition(ProvinceManager* provinceManager) const {
     if(m_DejureTitles.empty())
         return sf::Vector2i(0, 0);
-    return m_DejureTitles.front()->GetImagePosition(mod);
+    return m_DejureTitles.front()->GetImagePosition(provinceManager);
 }
 
 BaronyTitle::BaronyTitle() : Title(), m_ProvinceId(0) {}
@@ -287,11 +287,10 @@ bool BaronyTitle::HasSelectionFocus() const {
     return true;
 }
 
-sf::Vector2i BaronyTitle::GetImagePosition(Mod& mod) const {
-	auto it = mod.GetProvincesByIds().find(m_ProvinceId);
-    if (it == mod.GetProvincesByIds().end())
-        return sf::Vector2i(0, 0);
-    return it->second->GetImagePosition();
+sf::Vector2i BaronyTitle::GetImagePosition(ProvinceManager* provinceManager) const {
+    if (Province* province = provinceManager->GetProvinceById(m_ProvinceId))
+        return province->GetImagePosition();
+    return sf::Vector2i(0, 0);
 }
 
 CountyTitle::CountyTitle() : HighTitle() {}

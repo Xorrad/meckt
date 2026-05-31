@@ -1,8 +1,8 @@
 #include "doctest/doctest.hpp"
 
 #include "mod/Mod.hpp"
-#include "map/provinces/ProvinceManager.hpp"
-#include "map/titles/TitleManager.hpp"
+#include "provinces/ProvinceManager.hpp"
+#include "titles/TitleManager.hpp"
 #include "util/Yaml.hpp"
 
 TEST_SUITE("[ProvinceManager]") {
@@ -709,7 +709,7 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
         for (const auto& data : testData) {
             REQUIRE(manager.HasProvinceById(data.id));
             CHECK_EQ(manager.GetProvinceById(data.id)->GetCulture(), data.culture);
-            CHECK_EQ(manager.GetProvinceById(data.id)->GetReligion(), data.religion);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetFaith(), data.religion);
             CHECK_EQ(manager.GetProvinceById(data.id)->GetHolding(), data.holding);
             CHECK_EQ(manager.GetProvinceById(data.id)->GetExtraHistoryData()->Serialize(0, true, true), data.extra);
 
@@ -740,7 +740,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesDefinition") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/province_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         ProvinceManager manager(mod);
@@ -752,7 +752,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesDefinition") {
         manager.AddProvince(MakeUnique<Province>(6, sf::Color(6, 6, 6), "TEST6"));
 
         // 2. Export the provinces definition.
-        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
     }
 
@@ -787,7 +787,7 @@ TEST_CASE("[ProvinceManager] ExportDefaultMapFile") {
     
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/province_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
     
     ProvinceManager manager(mod);
     REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
@@ -799,7 +799,7 @@ TEST_CASE("[ProvinceManager] ExportDefaultMapFile") {
     manager.GetProvinceById(5)->SetFlags(ProvinceFlags::NONE);
     
     // 2. Export the default map file.
-    mod.SetDir("resources/tests/province_manager/test_mod_modified");
+    mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
     REQUIRE_NOTHROW(manager.ExportDefaultMapFile());
     
     // Reload the provinces flags.
@@ -830,7 +830,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesTerrain") {
     
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/province_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
     
     {
         ProvinceManager manager(mod);
@@ -850,7 +850,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesTerrain") {
         manager.GetProvinceById(5)->SetTerrain("plains");
         
         // 2. Export the provinces terrain.
-        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
         REQUIRE_NOTHROW(manager.ExportProvincesTerrain());
     }
@@ -886,7 +886,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesClimate") {
     
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/province_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
     
     {
         ProvinceManager manager(mod);
@@ -908,7 +908,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesClimate") {
         manager.GetProvinceById(5)->SetClimateType(ClimateType::NORMAL_WINTER);
         
         // 2. Export the provinces climate.
-        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
         REQUIRE_NOTHROW(manager.ExportProvincesClimate());
     }
@@ -963,7 +963,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
     
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/province_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
     
     {
         TitleManager titleManager(mod);
@@ -975,7 +975,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
         REQUIRE_NOTHROW(titleManager.LoadTitles());
         
         manager.GetProvinceById(1)->SetCulture("modified_culture");
-        manager.GetProvinceById(1)->SetReligion("modified_religion");
+        manager.GetProvinceById(1)->SetFaith("modified_religion");
         manager.GetProvinceById(1)->SetHolding("modified_holding");
 
         auto extraHistory = MakeShared<Jomini::Object>(Jomini::Type::OBJECT);
@@ -987,9 +987,9 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
         manager.GetProvinceById(1)->AddHistory(Jomini::Date(1104, 1, 1), newDate);
         
         // 2. Export the provinces history.
-        mod.SetDir("resources/tests/province_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
-        REQUIRE_NOTHROW(manager.ExportProvincesHistory(titleManager));
+        REQUIRE_NOTHROW(manager.ExportProvincesHistory(&titleManager));
     }
     
     // Reload the provinces.
@@ -1019,7 +1019,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
         for (const auto& data : testData) {
             REQUIRE(manager.HasProvinceById(data.id));
             CHECK_EQ(manager.GetProvinceById(data.id)->GetCulture(), data.culture);
-            CHECK_EQ(manager.GetProvinceById(data.id)->GetReligion(), data.religion);
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetFaith(), data.religion);
             CHECK_EQ(manager.GetProvinceById(data.id)->GetHolding(), data.holding);
             CHECK_EQ(manager.GetProvinceById(data.id)->GetExtraHistoryData()->Serialize(0, true, true), data.extra);
 

@@ -4,6 +4,44 @@ class Province {
 public:
     Province(int id, sf::Color color, std::string name);
 
+    //////////////////////////////////////////////////////
+
+    /**
+     * @brief Retrieves the liege title of the province for a given title type.
+     * @param titleManager The title manager to use for retrieving titles.
+     * @param type The title type to retrieve the liege title for.
+     * @return The pointer to the liege title if it exists, nullptr otherwise.
+     */
+    Title* GetProvinceLiegeTitle(TitleManager* titleManager, TitleType type) const;
+
+    /**
+     * @brief Retrieves the focused title of the province for a given title type.
+     *        The focused title change when the user wrap/unwrap titles.
+     * @param titleManager The title manager to use for retrieving titles.
+     * @param type The title type to retrieve the focused title for.
+     * @return The pointer to the focused title if it exists, nullptr otherwise.
+     */
+    Title* GetProvinceFocusedTitle(TitleManager* titleManager, TitleType type) const;
+
+    //////////////////////////////////////////////////////
+
+    /**
+     * @brief Calculates the winter severity bias for the province based on several parameters.
+     * @param provinceManager The province manager.
+     * @param override Whether to override the existing bias or not.
+     * @param elevationOffset The offset to apply to the province's elevation when calculating the bias.
+     * @param elevationStrength The strength of the elevation's influence on the bias.
+     * @param elevationFactor The factor to apply to the elevation when calculating the bias.
+     * @param hemisphereOffset The offset to apply to the province's latitude when calculating the bias.
+     * @param hemisphereSize The size of the hemisphere in degrees (e.g. 90 for northern/southern hemisphere, 180 for eastern/western hemisphere).
+     * @param hemisphereStrength The strength of the hemisphere's influence on the bias.
+     * @param hemisphereFactor The factor to apply to the hemisphere when calculating the bias.
+     * @return The calculated winter severity bias in [0.f, 1.f].
+     */
+    float CalculateWinterSeverityBias(ProvinceManager* provinceManager, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const;
+
+    //////////////////////////////////////////////////////
+
     int GetId() const;
     void SetId(int id);
     
@@ -28,8 +66,8 @@ public:
     std::string GetCulture() const;
     void SetCulture(std::string culture);
 
-    std::string GetReligion() const;
-    void SetReligion(std::string religion);
+    std::string GetFaith() const;
+    void SetFaith(std::string faith);
 
     ClimateType GetClimateType() const;
     std::string GetWinterSeverityBias() const;
@@ -67,7 +105,7 @@ private:
     std::string m_Holding;
     std::string m_Terrain;
     std::string m_Culture;
-    std::string m_Religion;
+    std::string m_Faith;
 
     std::string m_OriginalHistoryFileName;
     SharedPtr<Jomini::Object> m_ExtraHistoryData;

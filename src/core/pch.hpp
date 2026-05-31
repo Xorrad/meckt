@@ -2,7 +2,6 @@
 enum class ClimateType : int;
 enum class ProvinceFlags : int;
 enum class TitleType : int;
-enum class MapMode : int;
 
 class Mod;
 
@@ -68,12 +67,11 @@ class Faith;
 #include "util/Image.hpp"
 #include "util/OrderedMap.hpp"
 
-#include "map/provinces/ClimateType.hpp"
-#include "map/provinces/HoldingType.hpp"
-#include "map/provinces/ProvinceFlags.hpp"
-#include "map/provinces/TerrainType.hpp"
-#include "map/titles/TitleType.hpp"
-#include "map/MapMode.hpp"
+#include "provinces/ClimateType.hpp"
+#include "provinces/HoldingType.hpp"
+#include "provinces/ProvinceFlags.hpp"
+#include "provinces/TerrainType.hpp"
+#include "titles/TitleType.hpp"
 
 #include "mod/LoadingState.hpp"
 #include "mod/Paths.hpp"

@@ -1,5 +1,8 @@
 #include "Province.hpp"
 
+#include "titles/TitleManager.hpp"
+#include "provinces/ProvinceManager.hpp"
+
 Province::Province(int id, sf::Color color, std::string name) :
     m_Id(id),
     m_Name(name),
@@ -8,7 +11,7 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_Holding("none"),
     m_Terrain(""),
     m_Culture(""),
-    m_Religion(""),
+    m_Faith(""),
     m_OriginalHistoryFileName(""),
     m_ExtraHistoryData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
     m_History({}),
@@ -20,6 +23,67 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_NormalWinterFactorOverride(""),
     m_HarshWinterFactorOverride("")
 {}
+
+Title* Province::GetProvinceLiegeTitle(TitleManager* titleManager, TitleType type) const {
+    Title* liege = static_cast<Title*>(titleManager->GetBaronyByProvinceId(m_Id));
+
+    while (liege != nullptr) {
+        if(liege->Is(type))
+            return liege;
+
+        liege = liege->GetLiegeTitle();
+    }
+
+    return liege;
+}
+
+Title* Province::GetProvinceFocusedTitle(TitleManager* titleManager, TitleType type) const {
+    BaronyTitle* baronyTitle = titleManager->GetBaronyByProvinceId(m_Id);
+    if (baronyTitle == nullptr)
+        return nullptr;
+    Title* title = static_cast<Title*>(baronyTitle);
+
+    while(title->GetLiegeTitle() != nullptr && static_cast<int>(title->GetType()) < static_cast<int>(type) && title->GetLiegeTitle()->HasSelectionFocus()) {
+        title = title->GetLiegeTitle();
+    }
+
+    // Return nullptr if the title hasn't any liege title of the provided type.
+    if (static_cast<int>(title->GetType()) < static_cast<int>(type) && title->GetLiegeTitle() == nullptr)
+        return nullptr;
+
+    return title;
+}
+
+float Province::CalculateWinterSeverityBias(ProvinceManager* provinceManager, bool override,float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const {
+    // If no overrides and the climate is already initialized, then we use that value for the preview.
+    if (!override && (m_ClimateType != ClimateType::NONE || !m_WinterSeverityBias.empty())) {
+        if (!m_WinterSeverityBias.empty() && String::IsDigit(m_WinterSeverityBias[0]))
+            return static_cast<float>(std::stod(m_WinterSeverityBias));
+        if (m_ClimateType != ClimateType::NONE)
+            return (m_ClimateType == ClimateType::MILD_WINTER ? 0.f :
+                (m_ClimateType == ClimateType::MILD_WINTER ? 0.5f : 1.f)
+            );
+        return 0.f;
+    }
+
+    // Otherwise, if the province is safe to edit, then determine the winter severity
+    // using the elevation and hemisphere.
+    sf::Color color = (m_ImagePosition.x < 0 || m_ImagePosition.x >= provinceManager->GetHeightmapImage().getSize().x || m_ImagePosition.y < 0 || m_ImagePosition.y >= provinceManager->GetHeightmapImage().getSize().y)
+        ? sf::Color::Black
+        : provinceManager->GetHeightmapImage().getPixel(sf::Vector2u(m_ImagePosition.x, m_ImagePosition.y));
+    float elevation = std::min(1.f, color.r/255.f) * elevationStrength + elevationOffset;
+
+    float hemisphere = std::min(
+        1.f, 
+        (hemisphereStrength * abs(m_ImagePosition.y - (provinceManager->GetHeightmapImage().getSize().y / 2.f) + hemisphereOffset) - hemisphereSize) / provinceManager->GetHeightmapImage().getSize().y
+    );
+    
+    float winterSeverityBias = elevation * elevationFactor + hemisphere * hemisphereFactor;
+    winterSeverityBias = std::max(0.f, std::min(1.f, winterSeverityBias));
+    winterSeverityBias = winterSeverityBias;
+
+    return winterSeverityBias;
+}
 
 int Province::GetId() const {
     return m_Id;
@@ -90,12 +154,12 @@ void Province::SetCulture(std::string culture) {
     m_Culture = culture;
 }
 
-std::string Province::GetReligion() const {
-    return m_Religion;
+std::string Province::GetFaith() const {
+    return m_Faith;
 }
 
-void Province::SetReligion(std::string religion) {
-    m_Religion = religion;
+void Province::SetFaith(std::string faith) {
+    m_Faith = faith;
 }
 
 ClimateType Province::GetClimateType() const {

@@ -1,8 +1,8 @@
 #include "RegionManager.hpp"
 
 #include "mod/Mod.hpp"
-#include "map/provinces/ProvinceManager.hpp"
-#include "map/titles/TitleManager.hpp"
+#include "provinces/ProvinceManager.hpp"
+#include "titles/TitleManager.hpp"
 
 #include <fmt/ostream.h>
 
@@ -82,7 +82,7 @@ void RegionManager::RenameRegion(const std::string& formerName, const std::strin
     m_Regions.insert(std::move(nodeHandler));
 }
 
-void RegionManager::LoadGeographicalRegions(ProvinceManager& provinceManager, TitleManager& titleManager) {
+void RegionManager::LoadGeographicalRegions(ProvinceManager* provinceManager, TitleManager* titleManager) {
     m_Regions.clear();
 
     std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS) );
@@ -104,7 +104,7 @@ void RegionManager::LoadGeographicalRegions(ProvinceManager& provinceManager, Ti
     LOG_INFO("Loaded {} geographical regions from {} files", m_Regions.size(), filesPath.size());
 }
 
-void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, SharedPtr<Jomini::Object> data, ProvinceManager& provinceManager, TitleManager& titleManager) {
+void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, SharedPtr<Jomini::Object> data, ProvinceManager* provinceManager, TitleManager* titleManager) {
     for(auto& [regionName, regionPair] : data->GetMap()) {
         auto& [_, regionData] = regionPair;
 
@@ -136,11 +136,11 @@ void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, Shar
         // Add kingdom, duchy and county titles.
         const auto AddTitles = [&](auto titles) {
             for (auto& title : titles) {
-                if (!titleManager.HasTitle(title)) {
+                if (!titleManager->HasTitle(title)) {
                     LOG_ERROR("Geographical region '{}' has unknown title '{}'", regionName, title);
                     continue;
                 }
-                region->AddTitle(titleManager.GetTitle(title));
+                region->AddTitle(titleManager->GetTitle(title));
             }
         };
         AddTitles(kingdoms);
@@ -154,11 +154,11 @@ void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, Shar
                 continue;
             }
             int provinceId = String::ParseInt(province);
-            if (!provinceManager.HasProvinceById(provinceId)) {
+            if (!provinceManager->HasProvinceById(provinceId)) {
                 LOG_ERROR("Geographical region '{}' has unknown province '{}'", regionName, provinceId);
                 continue;
             }
-            region->AddProvince(provinceManager.GetProvinceById(provinceId));
+            region->AddProvince(provinceManager->GetProvinceById(provinceId));
         }
         
         // Add regions.

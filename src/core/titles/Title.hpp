@@ -61,7 +61,7 @@ public:
     virtual bool HasSelectionFocus() const;
     virtual void SetSelectionFocus(bool focus);
 
-    virtual sf::Vector2i GetImagePosition(Mod& mod) const = 0;
+    virtual sf::Vector2i GetImagePosition(ProvinceManager* provinceManager) const = 0;
 
 protected:
     std::string m_Name;
@@ -102,7 +102,7 @@ public:
 
     virtual void SetSelectionFocus(bool focus) override;
 
-    virtual sf::Vector2i GetImagePosition(Mod& mod) const;
+    virtual sf::Vector2i GetImagePosition(ProvinceManager* provinceManager) const;
 protected:
     std::vector<Title*> m_DejureTitles;
     CountyTitle* m_CapitalTitle;
@@ -120,7 +120,7 @@ public:
 
     virtual bool HasSelectionFocus() const override;
 
-    virtual sf::Vector2i GetImagePosition(Mod& mod) const;
+    virtual sf::Vector2i GetImagePosition(ProvinceManager* provinceManager) const;
 
 private:
     int m_ProvinceId;

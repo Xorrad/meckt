@@ -1,7 +1,7 @@
 #include "doctest/doctest.hpp"
 
 #include "mod/Mod.hpp"
-#include "map/titles/TitleManager.hpp"
+#include "titles/TitleManager.hpp"
 #include "util/Yaml.hpp"
 
 TEST_SUITE("[TitleManager]") {
@@ -351,7 +351,7 @@ TEST_CASE("[TitleManager] RenameTitle: throws exception when trying to rename to
 
 TEST_CASE("[TitleManager] LoadTitles") {
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     TitleManager manager(mod);
     REQUIRE(manager.CountTitles() == 0);
@@ -541,7 +541,7 @@ TEST_CASE("[TitleManager] LoadTitles") {
 TEST_CASE("[TitleManager] LoadTitlesHistory") {
     // 1. Initialize the mod and load the titles.
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     TitleManager manager(mod);
     REQUIRE_NOTHROW(manager.LoadTitles());
@@ -625,7 +625,7 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
 TEST_CASE("[TitleManager] LoadTitlesLocalization") {
     // 1. Initialize the mod and load the titles.
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     TitleManager manager(mod);
     REQUIRE_NOTHROW(manager.LoadTitles());
@@ -722,7 +722,7 @@ TEST_CASE("[TitleManager] ExportTitles") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
@@ -736,7 +736,7 @@ TEST_CASE("[TitleManager] ExportTitles") {
         manager.RenameTitle("e_test", "e_modified");
         
         // 2. Export the titles definition.
-        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
     }
 
@@ -838,7 +838,7 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
@@ -855,7 +855,7 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
         manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(10, 1, 1))->Put("change_development_level", 10);
         
         // 2. Export the titles definition.
-        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
         REQUIRE_NOTHROW(manager.ExportTitlesHistory());
     }
@@ -930,7 +930,7 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
@@ -944,7 +944,7 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
         manager.GetTitle("d_test1")->SetLocAdjective("english", "Modified Testian");
         
         // 2. Export the titles definition.
-        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
         REQUIRE_NOTHROW(manager.ExportTitlesLocalization());
     }
@@ -1028,7 +1028,7 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
@@ -1044,7 +1044,7 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
         manager.AddLocCulturalName("english", "cn_naoned_adj", "Modified naonedat");
         
         // 2. Export the titles definition.
-        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
         REQUIRE_NOTHROW(manager.ExportCulturalNamesLocalization());
     }
@@ -1098,7 +1098,7 @@ TEST_CASE("[TitleManager] DeleteLocalization") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
-    REQUIRE(std::filesystem::exists(mod.GetDir()));
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
@@ -1106,8 +1106,8 @@ TEST_CASE("[TitleManager] DeleteLocalization") {
         REQUIRE_NOTHROW(manager.LoadLocalization());
         
         // Copy the original mod localization files to the temp export directory.
-        std::filesystem::copy(mod.GetDir(), "resources/tests/title_manager/test_mod_modified", std::filesystem::copy_options::recursive);
-        mod.SetDir("resources/tests/title_manager/test_mod_modified");
+        std::filesystem::copy(mod.GetRootDirectory(), "resources/tests/title_manager/test_mod_modified", std::filesystem::copy_options::recursive);
+        mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
 
         REQUIRE_NOTHROW(manager.ExportTitles());
         REQUIRE_NOTHROW(manager.DeleteLocalization(true, true));

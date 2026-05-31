@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map/regions/Region.hpp"
+#include "regions/Region.hpp"
 
 class RegionManager {
 public:
@@ -85,7 +85,7 @@ public:
      * @param provinceManager The province manager to get provinces from.
      * @param titleManager The title manager to get titles from.
      */
-    void LoadGeographicalRegions(ProvinceManager& provinceManager, TitleManager& titleManager);
+    void LoadGeographicalRegions(ProvinceManager* provinceManager, TitleManager* titleManager);
 
     /**
      * @brief Loads a geographical region file.
@@ -94,7 +94,7 @@ public:
      * @param provinceManager The province manager to get provinces from.
      * @param titleManager The title manager to get titles from.
      */
-    void LoadGeographicalRegionFile(const std::string& fileName, SharedPtr<Jomini::Object> data, ProvinceManager& provinceManager, TitleManager& titleManager);
+    void LoadGeographicalRegionFile(const std::string& fileName, SharedPtr<Jomini::Object> data, ProvinceManager* provinceManager, TitleManager* titleManager);
     
     //////////////////////////////////////////////////////
 
