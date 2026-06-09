@@ -989,7 +989,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
         // 2. Export the provinces history.
         mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
-        REQUIRE_NOTHROW(manager.ExportProvincesHistory(&titleManager));
+        REQUIRE_NOTHROW(manager.ExportProvincesHistory(titleManager));
     }
     
     // Reload the provinces.

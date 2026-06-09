@@ -68,8 +68,8 @@ std::string Mod::GetRelativePath(GamePath directory, const std::string& absolute
 //////////////////////////////////////////////////////
 
 #define DEFINE_MANAGER_GETTER(ManagerName) \
-    ManagerName##Manager* Mod::Get##ManagerName##Manager() { return m_##ManagerName##Manager.get(); } \
-    const ManagerName##Manager* Mod::Get##ManagerName##Manager() const { return m_##ManagerName##Manager.get(); }
+    ManagerName##Manager& Mod::Get##ManagerName##Manager() { return *m_##ManagerName##Manager; } \
+    const ManagerName##Manager& Mod::Get##ManagerName##Manager() const { return *m_##ManagerName##Manager; }
 
 DEFINE_MANAGER_GETTER(Title);
 DEFINE_MANAGER_GETTER(Province);
@@ -126,7 +126,7 @@ void Mod::Load(
     LOAD_CATCH(m_TitleManager->LoadTitles(), LoadingState::TITLES, "titles", true);
     LOAD_CATCH(m_TitleManager->LoadTitlesHistory(), LoadingState::TITLES_HISTORY, "titles history", true);
     LOAD_CATCH(m_TitleManager->LoadLocalization(), LoadingState::TITLES_LOCALIZATION, "titles localization", true);
-    LOAD_CATCH(m_RegionManager->LoadGeographicalRegions(m_ProvinceManager.get(), m_TitleManager.get()), LoadingState::GEOGRAPHICAL_REGIONS, "geographical regions", true);
+    LOAD_CATCH(m_RegionManager->LoadGeographicalRegions(*m_ProvinceManager, *m_TitleManager), LoadingState::GEOGRAPHICAL_REGIONS, "geographical regions", true);
     LOAD_CATCH(m_CultureManager->LoadCultures(), LoadingState::CULTURES, "cultures", true);
     LOAD_CATCH(m_ReligionManager->LoadFaiths(), LoadingState::FAITHS, "religions", true);
 
@@ -155,7 +155,7 @@ void Mod::Export(
     if (provincesClimate)
         m_ProvinceManager->ExportProvincesClimate();
     if (provincesHistory)
-        m_ProvinceManager->ExportProvincesHistory(m_TitleManager.get());
+        m_ProvinceManager->ExportProvincesHistory(*m_TitleManager);
 
     if (titles)
         m_TitleManager->ExportTitles();

@@ -170,7 +170,7 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
 
     REQUIRE_NOTHROW(provinceManager.LoadProvincesDefinition());
     REQUIRE_NOTHROW(titleManager.LoadTitles());
-    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(&provinceManager, &titleManager));
+    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(provinceManager, titleManager));
 
     struct RegionTestData {
         std::vector<std::string> regions;
@@ -236,7 +236,7 @@ TEST_CASE("[RegionManager] ExportGeographicalRegions") {
 
     REQUIRE_NOTHROW(provinceManager.LoadProvincesDefinition());
     REQUIRE_NOTHROW(titleManager.LoadTitles());
-    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(&provinceManager, &titleManager));
+    REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(provinceManager, titleManager));
 
     regionManager.GetRegion("region1")->AddDuchy(titleManager.GetTitleAs<DuchyTitle>("d_test2"));
     regionManager.GetRegion("region1")->RemoveCounty(titleManager.GetTitleAs<CountyTitle>("c_test2"));

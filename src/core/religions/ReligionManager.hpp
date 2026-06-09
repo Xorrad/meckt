@@ -53,7 +53,7 @@ public:
      * @param titleManager The title manager.
      * @return The generated faiths image.
      */
-    sf::Image GetFaithImage(ProvinceManager* provinceManager, TitleManager* titleManager) const;
+    sf::Image GetFaithImage(ProvinceManager& provinceManager, TitleManager& titleManager) const;
 
     /**
      * @brief Retrieves a map of faiths.

@@ -1084,7 +1084,7 @@ void ProvinceManager::ExportProvincesClimate() {
     fmt::println(climateFile, "{}", climateObject->Serialize());
 }
 
-void ProvinceManager::ExportProvincesHistory(TitleManager* titleManager) {
+void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
     // Create the directories if they do not exist.
     std::string dir = m_Mod.GetDirectory(Paths::HISTORY_PROVINCES);
     std::filesystem::remove_all(dir);
@@ -1103,8 +1103,8 @@ void ProvinceManager::ExportProvincesHistory(TitleManager* titleManager) {
 
     // In order to be able to add comments for the kingdom, duchy and county tiers, we need to have provinces grouped by their liege titles.
     std::sort(provinces.begin(), provinces.end(), [&](const Province* a, const Province* b) {
-        BaronyTitle* aBaronyTitle = titleManager->GetBaronyByProvinceId(a->GetId());
-        BaronyTitle* bBaronyTitle = titleManager->GetBaronyByProvinceId(b->GetId());
+        BaronyTitle* aBaronyTitle = titleManager.GetBaronyByProvinceId(a->GetId());
+        BaronyTitle* bBaronyTitle = titleManager.GetBaronyByProvinceId(b->GetId());
 
         // Provinces without barony title are sorted at the end.
         if (!aBaronyTitle || !bBaronyTitle)
@@ -1146,7 +1146,7 @@ void ProvinceManager::ExportProvincesHistory(TitleManager* titleManager) {
         std::string fileName = province->GetOriginalHistoryFileName();
         if(fileName.empty()) {
             fileName = "00_temp_prov.txt";
-            if (BaronyTitle* baronyTitle = titleManager->GetBaronyByProvinceId(provinceId)) {
+            if (BaronyTitle* baronyTitle = titleManager.GetBaronyByProvinceId(provinceId)) {
                 if (HighTitle* kingdomTitle = baronyTitle->GetLiegeTitle(TitleType::KINGDOM)) {
                     fileName = "00_" + kingdomTitle->GetName() + "_prov.txt";
                 }
@@ -1173,7 +1173,7 @@ void ProvinceManager::ExportProvincesHistory(TitleManager* titleManager) {
 
         std::ofstream& file = files[fileName].file;
         
-        BaronyTitle* baronyTitle = titleManager->GetBaronyByProvinceId(provinceId);
+        BaronyTitle* baronyTitle = titleManager.GetBaronyByProvinceId(provinceId);
         HighTitle* countyTitle = (baronyTitle != nullptr) ? baronyTitle->GetLiegeTitle(TitleType::COUNTY) : nullptr;
         HighTitle* duchyTitle = (countyTitle != nullptr) ? countyTitle->GetLiegeTitle(TitleType::DUCHY) : nullptr;
         HighTitle* kingdomTitle = (duchyTitle != nullptr) ? duchyTitle->GetLiegeTitle(TitleType::KINGDOM) : nullptr;
@@ -1276,7 +1276,7 @@ void ProvinceManager::GenerateMissingProvinces() {
 void ProvinceManager::GenerateProvincesClimate(bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor, float mildWinterThreshold, float normalWinterThreshold, float severeWinterThreshold) {
     size_t countProvinces = 0;
     for(const auto& [provinceColorId, province] : m_ProvincesByIds) {
-        float winterSeverityBias = province->CalculateWinterSeverityBias(this, override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
+        float winterSeverityBias = province->CalculateWinterSeverityBias(*this, override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
         bool hasChanged = false;
 
         if (province->GetClimateType() == ClimateType::NONE || override) {

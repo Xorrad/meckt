@@ -12,7 +12,7 @@ public:
      * @param type The title type to retrieve the liege title for.
      * @return The pointer to the liege title if it exists, nullptr otherwise.
      */
-    Title* GetProvinceLiegeTitle(TitleManager* titleManager, TitleType type) const;
+    Title* GetProvinceLiegeTitle(TitleManager& titleManager, TitleType type) const;
 
     /**
      * @brief Retrieves the focused title of the province for a given title type.
@@ -21,7 +21,7 @@ public:
      * @param type The title type to retrieve the focused title for.
      * @return The pointer to the focused title if it exists, nullptr otherwise.
      */
-    Title* GetProvinceFocusedTitle(TitleManager* titleManager, TitleType type) const;
+    Title* GetProvinceFocusedTitle(TitleManager& titleManager, TitleType type) const;
 
     //////////////////////////////////////////////////////
 
@@ -38,7 +38,7 @@ public:
      * @param hemisphereFactor The factor to apply to the hemisphere when calculating the bias.
      * @return The calculated winter severity bias in [0.f, 1.f].
      */
-    float CalculateWinterSeverityBias(ProvinceManager* provinceManager, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const;
+    float CalculateWinterSeverityBias(ProvinceManager& provinceManager, bool override, float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const;
 
     //////////////////////////////////////////////////////
 

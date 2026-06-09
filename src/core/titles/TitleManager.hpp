@@ -98,7 +98,7 @@ public:
      * @param type The highest title type.
      * @return The generated titles image.
      */
-    sf::Image GetTitleImage(ProvinceManager* provinceManager, TitleType type);
+    sf::Image GetTitleImage(ProvinceManager& provinceManager, TitleType type);
 
     /**
      * @brief Retrieves a map of titles.
@@ -332,7 +332,7 @@ public:
      * @brief Generates barony titles for provinces that don't have one.
      *        The generated baronies will be named after their province (e.g. `b_naoned` for the province of Naoned) and colored with the color of their province.
      */
-    void GenerateMissingBaronies(ProvinceManager* provinceManager);
+    void GenerateMissingBaronies(ProvinceManager& provinceManager);
 
     /**
      * @brief Generates localization for titles that don't have one.

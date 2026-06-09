@@ -37,7 +37,7 @@ const Faith* ReligionManager::GetFaith(const std::string& name) const {
     return it->second.get();
 }
 
-sf::Image ReligionManager::GetFaithImage(ProvinceManager* provinceManager, TitleManager* titleManager) const {
+sf::Image ReligionManager::GetFaithImage(ProvinceManager& provinceManager, TitleManager& titleManager) const {
     // - Map provinces colors to their faith color (province -> county -> county capital -> province).
     // - Copy province image.
     // - Replace province pixels by their mapped color.
@@ -46,9 +46,9 @@ sf::Image ReligionManager::GetFaithImage(ProvinceManager* provinceManager, Title
     sf::Color defaultColor = sf::Color(127, 127, 127);
 
     sf::Image image = Image::MapPixels(
-        provinceManager->GetProvincesImage(),
+        provinceManager.GetProvincesImage(),
         [&](auto& mappedColors){
-            for(const auto& [provinceColorId, province] : provinceManager->GetProvincesByColors()) {
+            for(const auto& [provinceColorId, province] : provinceManager.GetProvincesByColors()) {
                 std::string faith = province->GetFaith();
                 sf::Color color = defaultColor;
                 uint8_t alpha = faith.empty() ? 255 : 0;
@@ -62,7 +62,7 @@ sf::Image ReligionManager::GetFaithImage(ProvinceManager* provinceManager, Title
 
                     for(const auto& dejureTitle : liege->GetDejureTitles()) {
                         BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
-                        Province* baronyProvince = provinceManager->GetProvinceById(barony->GetProvinceId());
+                        Province* baronyProvince = provinceManager.GetProvinceById(barony->GetProvinceId());
 
                         if (baronyProvince == nullptr) {
                             LOG_ERROR("Barony '{}' has unknown province id '{}'", barony->GetName(), barony->GetProvinceId());

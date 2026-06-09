@@ -360,9 +360,10 @@ public:
 
     /**
      * @brief Exports the provinces history to the history files.
+     * @param titleManager A reference to the mod's title manager.
      * @throws std::runtime_error if any of the files cannot be written.
      */
-    void ExportProvincesHistory(TitleManager* titleManager);
+    void ExportProvincesHistory(TitleManager& titleManager);
 
     ////////////////////////////////////////////////////
 

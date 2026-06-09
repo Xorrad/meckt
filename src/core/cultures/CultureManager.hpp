@@ -53,7 +53,7 @@ public:
      * @param titleManager The title manager.
      * @return The generated cultures image.
      */
-    sf::Image GetCultureImage(ProvinceManager* provinceManager, TitleManager* titleManager) const;
+    sf::Image GetCultureImage(ProvinceManager& provinceManager, TitleManager& titleManager) const;
 
     /**
      * @brief Retrieves a map of cultures.

@@ -24,8 +24,8 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_HarshWinterFactorOverride("")
 {}
 
-Title* Province::GetProvinceLiegeTitle(TitleManager* titleManager, TitleType type) const {
-    Title* liege = static_cast<Title*>(titleManager->GetBaronyByProvinceId(m_Id));
+Title* Province::GetProvinceLiegeTitle(TitleManager& titleManager, TitleType type) const {
+    Title* liege = static_cast<Title*>(titleManager.GetBaronyByProvinceId(m_Id));
 
     while (liege != nullptr) {
         if(liege->Is(type))
@@ -37,8 +37,8 @@ Title* Province::GetProvinceLiegeTitle(TitleManager* titleManager, TitleType typ
     return liege;
 }
 
-Title* Province::GetProvinceFocusedTitle(TitleManager* titleManager, TitleType type) const {
-    BaronyTitle* baronyTitle = titleManager->GetBaronyByProvinceId(m_Id);
+Title* Province::GetProvinceFocusedTitle(TitleManager& titleManager, TitleType type) const {
+    BaronyTitle* baronyTitle = titleManager.GetBaronyByProvinceId(m_Id);
     if (baronyTitle == nullptr)
         return nullptr;
     Title* title = static_cast<Title*>(baronyTitle);
@@ -54,7 +54,7 @@ Title* Province::GetProvinceFocusedTitle(TitleManager* titleManager, TitleType t
     return title;
 }
 
-float Province::CalculateWinterSeverityBias(ProvinceManager* provinceManager, bool override,float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const {
+float Province::CalculateWinterSeverityBias(ProvinceManager& provinceManager, bool override,float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const {
     // If no overrides and the climate is already initialized, then we use that value for the preview.
     if (!override && (m_ClimateType != ClimateType::NONE || !m_WinterSeverityBias.empty())) {
         if (!m_WinterSeverityBias.empty() && String::IsDigit(m_WinterSeverityBias[0]))
@@ -68,14 +68,14 @@ float Province::CalculateWinterSeverityBias(ProvinceManager* provinceManager, bo
 
     // Otherwise, if the province is safe to edit, then determine the winter severity
     // using the elevation and hemisphere.
-    sf::Color color = (m_ImagePosition.x < 0 || m_ImagePosition.x >= provinceManager->GetHeightmapImage().getSize().x || m_ImagePosition.y < 0 || m_ImagePosition.y >= provinceManager->GetHeightmapImage().getSize().y)
+    sf::Color color = (m_ImagePosition.x < 0 || m_ImagePosition.x >= provinceManager.GetHeightmapImage().getSize().x || m_ImagePosition.y < 0 || m_ImagePosition.y >= provinceManager.GetHeightmapImage().getSize().y)
         ? sf::Color::Black
-        : provinceManager->GetHeightmapImage().getPixel(sf::Vector2u(m_ImagePosition.x, m_ImagePosition.y));
+        : provinceManager.GetHeightmapImage().getPixel(sf::Vector2u(m_ImagePosition.x, m_ImagePosition.y));
     float elevation = std::min(1.f, color.r/255.f) * elevationStrength + elevationOffset;
 
     float hemisphere = std::min(
         1.f, 
-        (hemisphereStrength * abs(m_ImagePosition.y - (provinceManager->GetHeightmapImage().getSize().y / 2.f) + hemisphereOffset) - hemisphereSize) / provinceManager->GetHeightmapImage().getSize().y
+        (hemisphereStrength * abs(m_ImagePosition.y - (provinceManager.GetHeightmapImage().getSize().y / 2.f) + hemisphereOffset) - hemisphereSize) / provinceManager.GetHeightmapImage().getSize().y
     );
     
     float winterSeverityBias = elevation * elevationFactor + hemisphere * hemisphereFactor;

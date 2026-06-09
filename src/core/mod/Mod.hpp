@@ -48,8 +48,8 @@ public:
     //////////////////////////////////////////////////////
 
     #define DECLARE_MANAGER_GETTER(ManagerName) \
-        ManagerName##Manager* Get##ManagerName##Manager(); \
-        const ManagerName##Manager* Get##ManagerName##Manager() const;
+        ManagerName##Manager& Get##ManagerName##Manager(); \
+        const ManagerName##Manager& Get##ManagerName##Manager() const;
 
     DECLARE_MANAGER_GETTER(Title);
     DECLARE_MANAGER_GETTER(Province);

@@ -102,12 +102,12 @@ const BaronyTitle* TitleManager::GetBaronyByProvinceId(int provinceId) const {
     return it->second;
 }
 
-sf::Image TitleManager::GetTitleImage(ProvinceManager* provinceManager, TitleType type) {
+sf::Image TitleManager::GetTitleImage(ProvinceManager& provinceManager, TitleType type) {
     sf::Image image = Image::MapPixels(
-        provinceManager->GetProvincesImage(),
-        [=](auto& mappedColors){
-            for(const auto& [provinceColorId, province] : provinceManager->GetProvincesByColors()) {
-                Title* liege = province->GetProvinceFocusedTitle(this, type);
+        provinceManager.GetProvincesImage(),
+        [this, &provinceManager, type](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : provinceManager.GetProvincesByColors()) {
+                Title* liege = province->GetProvinceFocusedTitle(*this, type);
 
                 if(liege == nullptr) {
                     mappedColors[province->GetColor().toInteger()] = 0x505050ff;
@@ -1023,14 +1023,14 @@ void TitleManager::DeleteLocalization(bool exportTitlesLocalization, bool export
 
 ////////////////////////////////////////////////////
 
-void TitleManager::GenerateMissingBaronies(ProvinceManager* provinceManager) {
+void TitleManager::GenerateMissingBaronies(ProvinceManager& provinceManager) {
     int count = 0;
-    for(auto& [id, province] : provinceManager->GetProvincesByIds()) {
+    for(auto& [id, province] : provinceManager.GetProvincesByIds()) {
         if(!province->HasFlag(ProvinceFlags::LAND))
             continue;
         if(province->HasFlag(ProvinceFlags::IMPASSABLE))
             continue;
-        if (provinceManager->HasProvinceById(id))
+        if (provinceManager.HasProvinceById(id))
             continue;
         
         // Make sure to use a title name that isn't already taken.
