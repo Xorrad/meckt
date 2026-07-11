@@ -42,8 +42,14 @@ void App::OpenMod(UniquePtr<Mod> mod) {
 
     // Remove the mod from the recent mods list
     // and add it back at the top of the list.
-    Configuration::recentMods.erase(std::remove(Configuration::recentMods.begin(), Configuration::recentMods.end(), mod->GetDir()), Configuration::recentMods.end());
-    Configuration::recentMods.push_front(mod->GetDir());
+    Configuration::recentMods.erase(
+        std::remove(
+            Configuration::recentMods.begin(),
+            Configuration::recentMods.end(), mod->GetRootDirectory()
+        ),
+        Configuration::recentMods.end()
+    );
+    Configuration::recentMods.push_front(mod->GetRootDirectory());
 
     m_ActiveMod = std::move(mod);
     Logger::Get()->Clear();

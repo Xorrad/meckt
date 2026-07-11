@@ -26,9 +26,9 @@ public:
 
 protected:
     App& GetApp();
-    Mod& GetMod();
 
 protected:
+    Mod& m_Mod;
     std::string m_Name;
     Tabs m_Type;
     EditorMenu& m_Menu;

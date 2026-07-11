@@ -4,6 +4,7 @@
 #include "app/App.hpp"
 
 #include "ImGuiStyle.hpp"
+#include "imgui.h"
 #include <imgui/imgui.hpp>
 #include <nfd.h>
 
@@ -63,12 +64,15 @@ void HomeMenu::Render() {
     ImGui::PushFont(ImGui::notoSansNormalFont);
 
     ImGui::Dummy(ImVec2(0.0f, spacing));
+    ImGui::BeginDisabled();
     if (ImGui::TextButton("📝  New Mod...")) {
         m_App.OpenMenu(MakeUnique<NewModMenu>(m_App));
     }
     if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         ImGui::SetTooltip("Create a mod from scratch.");
+        ImGui::SetTooltip("Disabled for now due to a lack of up-to-date TC templates.");
     }
+    ImGui::EndDisabled();
 
     ImGui::Dummy(ImVec2(0.0f, spacing));
     if (ImGui::TextButton("📁  Open Folder...")) {

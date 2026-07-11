@@ -1,11 +1,11 @@
 #include "NewModMenu.hpp"
 
-#include "core/mod/Mod.hpp"
-#include "core/map/titles/Title.hpp"
-
 #include "app/App.hpp"
 #include "app/menu/HomeMenu.hpp"
 #include "app/menu/EditorMenu.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/titles/TitleManager.hpp"
 
 #include "ImGuiStyle.hpp"
 #include <imgui/imgui.hpp>
@@ -379,19 +379,19 @@ void NewModMenu::CreateMod() {
     }
 
     m_Mod = MakeUnique<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage(), m_WaterLevel);
-    m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){}, false);
+    m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){});
     
     // Generate the world provinces using the heightmap to determine the landmass.
     // TODO: intermediate preview of the generation?
     if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
         m_CreationState = CreationState::GENERATING_WORLD;
 
-        m_Mod->ClearProvinces();
-        m_Mod->GenerateWorld();
-        m_Mod->ExportDefaultMapFile();
-        m_Mod->ExportProvincesDefinition();
-        m_Mod->ExportProvincesTerrain();
-        m_Mod->ExportProvincesHistory();
+        // m_Mod->ClearProvinces();
+        // m_Mod->GenerateWorld();
+        // m_Mod->ExportDefaultMapFile();
+        // m_Mod->ExportProvincesDefinition();
+        // m_Mod->ExportProvincesTerrain();
+        // m_Mod->ExportProvincesHistory();
 
         this->SetupAtlantisTitles();
     }
@@ -400,10 +400,10 @@ void NewModMenu::CreateMod() {
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATING_PROVINCES;
 
-        m_Mod->ClearProvinces();
-        m_Mod->GenerateMissingProvinces();
-        m_Mod->ExportProvincesDefinition();
-        m_Mod->ExportProvincesHistory();
+        // m_Mod->ClearProvinces();
+        // m_Mod->GenerateMissingProvinces();
+        // m_Mod->ExportProvincesDefinition();
+        // m_Mod->ExportProvincesHistory();
         
         this->SetupAtlantisTitles();
     }
@@ -413,12 +413,12 @@ void NewModMenu::CreateMod() {
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATE_TERRAIN;
         
-        m_Mod->DetermineProvincesFlags();
-        m_Mod->ExportDefaultMapFile();
-        m_Mod->ExportProvincesTerrain();
+        // m_Mod->DetermineProvincesFlags();
+        // m_Mod->ExportDefaultMapFile();
+        // m_Mod->ExportProvincesTerrain();
 
         m_CreationState = CreationState::GENERATE_RIVERS;
-        m_Mod->GenerateRivers();
+        // m_Mod->GenerateRivers();
     }
     
     m_CreationState = CreationState::FINISHED;
@@ -426,9 +426,9 @@ void NewModMenu::CreateMod() {
 
 void NewModMenu::SetupAtlantisTitles() {
     std::function<UniquePtr<Title>(std::string)> ExtractTitleOwnership = [&](const std::string& titleName) {
-        auto it = m_Mod->GetTitles().find(titleName);
+        auto it = m_Mod->GetTitleManager().GetTitles().find(titleName);
         UniquePtr<Title> title = std::move(it->second);
-        m_Mod->GetTitles().erase(it);
+        m_Mod->GetTitleManager().GetTitles().erase(it);
         return title;
     };
 
@@ -446,14 +446,14 @@ void NewModMenu::SetupAtlantisTitles() {
     static_cast<BaronyTitle*>(barony.get())->SetProvinceId(1);
 
     // Delete any other titles.
-    m_Mod->ClearTitles();
-    m_Mod->AddTitle(std::move(empire));
-    m_Mod->AddTitle(std::move(kingdom));
-    m_Mod->AddTitle(std::move(duchy));
-    m_Mod->AddTitle(std::move(county));
+    // m_Mod->ClearTitles();
+    m_Mod->GetTitleManager().AddTitle(std::move(empire));
+    m_Mod->GetTitleManager().AddTitle(std::move(kingdom));
+    m_Mod->GetTitleManager().AddTitle(std::move(duchy));
+    m_Mod->GetTitleManager().AddTitle(std::move(county));
 
     // Save changes.
-    m_Mod->ExportTitles();
-    m_Mod->ExportTitlesHistory();
-    m_Mod->ExportTitlesLocalization();
+    m_Mod->GetTitleManager().ExportTitles();
+    m_Mod->GetTitleManager().ExportTitlesHistory();
+    m_Mod->GetTitleManager().ExportTitlesLocalization();
 }

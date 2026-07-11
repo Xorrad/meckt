@@ -1,10 +1,14 @@
 #include "Tab.hpp"
 #include "app/App.hpp"
-#include "app/mod/Mod.hpp"
 #include "app/menu/EditorMenu.hpp"
 
-Tab::Tab(std::string name, Tabs type, EditorMenu& menu, bool visible)
-: m_Name(name), m_Type(type), m_Menu(menu), m_Visible(visible) {}
+Tab::Tab(std::string name, Tabs type, EditorMenu& menu, bool visible) :
+    m_Name(name),
+    m_Type(type),
+    m_Menu(menu),
+    m_Visible(visible),
+    m_Mod(menu.GetApp().GetMod())
+{}
 
 std::string Tab::GetName() const {
     return m_Name;
@@ -34,8 +38,4 @@ void Tab::Render() {}
 
 App& Tab::GetApp() {
     return m_Menu.GetApp();
-}
-
-Mod& Tab::GetMod() {
-    return m_Menu.GetApp().GetMod();
 }

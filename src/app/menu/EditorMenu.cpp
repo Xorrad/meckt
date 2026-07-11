@@ -1,24 +1,27 @@
 #include "EditorMenu.hpp"
-#include "HomeMenu.hpp"
 #include "app/menu/tab/Tab.hpp"
 
 #include "app/App.hpp"
+
 #include "core/mod/Mod.hpp"
-#include "core/map/provinces/Province.hpp"
-#include "core/map/regions/Region.hpp"
-#include "core/map/titles/Title.hpp"
+#include "core/provinces/ProvinceManager.hpp"
+#include "core/cultures/CultureManager.hpp"
+#include "core/religions/ReligionManager.hpp"
+#include "core/regions/RegionManager.hpp"
+#include "core/titles/TitleManager.hpp"
 
 #include <imgui/imgui.hpp>
 #include "app/menu/ImGuiStyle.hpp"
 
-EditorMenu::EditorMenu(App& app)
-: Menu(app, "Editor"),
-m_MapMode(MapMode::PROVINCES),
-m_SelectionHandler(SelectionHandler(*this)),
-m_HoverText(Configuration::fonts.Get(Fonts::FIGTREE)),
-m_HoverTitleText(Configuration::fonts.Get(Fonts::FIGTREE)),
-m_DisplayBorders(true),
-m_ExitToMainMenu(false)
+EditorMenu::EditorMenu(App& app) :
+    Menu(app, "Editor"),
+    m_Mod(app.GetMod()),
+    m_MapMode(MapMode::PROVINCES),
+    m_SelectionHandler(SelectionHandler(*this)),
+    m_HoverText(Configuration::fonts.Get(Fonts::FIGTREE)),
+    m_HoverTitleText(Configuration::fonts.Get(Fonts::FIGTREE)),
+    m_DisplayBorders(true),
+    m_ExitToMainMenu(false)
 {
     // Update all the textures for the shader and then apply
     // the current map mode texture to the map sprite.
@@ -57,18 +60,8 @@ Province* EditorMenu::GetHoveredProvince() {
 
     if(!m_MapSprite->getGlobalBounds().contains(mousePosition))
         return nullptr;
-    
-    Mod& mod = m_App.GetMod();
-    sf::Vector2u mapMousePosition = sf::Vector2u(mousePosition);
 
-    sf::Color color = mod.GetProvinceImage().getPixel(mapMousePosition);
-    uint32_t colorId = color.toInteger();
-
-	auto it = mod.GetProvinces().find(colorId);
-	if (it == mod.GetProvinces().end())
-        return nullptr;
-        
-    return it->second.get();
+    return m_Mod.GetProvinceManager().GetProvinceByPixel(mousePosition.x, mousePosition.y);
 }
 
 MapMode EditorMenu::GetMapMode() const {
@@ -92,22 +85,29 @@ std::optional<sf::Sprite> EditorMenu::GetMapSprite() const {
 }
 
 void EditorMenu::UpdateHoveringText() {
-    Province* province = this->GetHoveredProvince();
+    Province* hoveredProvince = this->GetHoveredProvince();
     sf::Vector2i mousePosition = sf::Mouse::getPosition(m_App.GetWindow());
 
-    if(province == nullptr)
+    if(hoveredProvince == nullptr)
         goto Hide;
 
     // Detailed tooltip always showing the province and liege titles info
     // regardless of the current map mode.
     if (!Configuration::compactTooltip) {
-        std::string text = fmt::format("#{} - {}", province->GetId(), province->GetName());
+        std::string text = fmt::format("#{} - {}", hoveredProvince->GetId(), hoveredProvince->GetName());
         std::string hoveredTitleText = fmt::format("");
 
-        Title* barony = m_App.GetMod().GetProvinceLiegeTitle(province, TitleType::BARONY);
-        Title* hoveredTitle = m_App.GetMod().GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
-        Title* title = barony;
+        Title* hoveredBarony = hoveredProvince->GetProvinceLiegeTitle(
+            m_Mod.GetTitleManager(), 
+            TitleType::BARONY
+        );
 
+        Title* hoveredTitle = hoveredProvince->GetProvinceFocusedTitle(
+            m_Mod.GetTitleManager(), 
+            MapModeToTileType(m_MapMode)
+        );
+
+        Title* title = hoveredBarony;
         while(title != nullptr) {
             bool isMainTitle = (title == hoveredTitle && MapModeIsTitle(m_MapMode));
             hoveredTitleText += fmt::format("\n{}", (isMainTitle ? title->GetName() : ""));
@@ -135,17 +135,22 @@ void EditorMenu::UpdateHoveringText() {
     || m_MapMode == MapMode::TERRAIN
     || m_MapMode == MapMode::WINTER_SEVERITY
     || m_MapMode == MapMode::CULTURE
-    || m_MapMode == MapMode::RELIGION) {
-        m_HoverText.setString(fmt::format("#{} ({})", province->GetId(), province->GetName()));
+    || m_MapMode == MapMode::FAITH) {
+        m_HoverText.setString(fmt::format("#{} ({})", hoveredProvince->GetId(), hoveredProvince->GetName()));
         m_HoverTitleText.setString("");
         m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10});
-        m_HoverText.setFillColor(brightenColor(province->GetColor()));
+        m_HoverText.setFillColor(brightenColor(hoveredProvince->GetColor()));
         return;
     }
     else if(MapModeIsTitle(m_MapMode)) {
-        Title* title = m_App.GetMod().GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+        Title* title = hoveredProvince->GetProvinceFocusedTitle(
+            m_Mod.GetTitleManager(), 
+            MapModeToTileType(m_MapMode)
+        );
+
         if(title == nullptr)
             goto Hide;
+
         m_HoverText.setString(fmt::format("{}", title->GetName()));
         m_HoverTitleText.setString("");
         m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10});
@@ -237,32 +242,31 @@ void EditorMenu::RefreshCurrentMapMode(bool clearSelection, bool resetFocus) {
 void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
     // Update the pixels of the specified image (from scratch) and then
     // update the corresponding texture in the shader.
-    Mod& mod = m_App.GetMod();
     m_MapTextures.emplace(mode, MakeUnique<sf::Texture>());
     switch(mode) {
         case MapMode::PROVINCES:
             // TODO: update pixel colors in mod.
-            m_MapTextures[mode]->loadFromImage(mod.GetProvinceImage());
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetProvincesImage());
             Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", *m_MapTextures[mode]);
             Configuration::shaders.Get(Shaders::PROVINCES).setUniform("textureSize", sf::Vector2f(m_MapTextures[mode]->getSize()));
             break;
         case MapMode::HEIGHTMAP:
-            m_MapTextures[mode]->loadFromImage(mod.GetHeightmapImage());
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetHeightmapImage());
             break;
         case MapMode::RIVERS:
-            m_MapTextures[mode]->loadFromImage(mod.GetRiversImage());
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetRiversImage());
             break;
         case MapMode::TERRAIN:
-            m_MapTextures[mode]->loadFromImage(mod.GetTerrainImage());
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetTerrainImage());
             break;
         case MapMode::WINTER_SEVERITY:
-            m_MapTextures[mode]->loadFromImage(mod.GetWinterSeverityImage());
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetWinterSeverityBiasImage());
             break;
         case MapMode::CULTURE:
-            m_MapTextures[mode]->loadFromImage(mod.GetCultureImage());
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetCultureManager().GetCultureImage(m_Mod.GetProvinceManager(), m_Mod.GetTitleManager()));
             break;
-        case MapMode::RELIGION:
-            m_MapTextures[mode]->loadFromImage(mod.GetReligionImage());
+        case MapMode::FAITH:
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetReligionManager().GetFaithImage(m_Mod.GetProvinceManager(), m_Mod.GetTitleManager()));
             break;
         case MapMode::BARONY:
         case MapMode::COUNTY:
@@ -271,7 +275,7 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::EMPIRE:
         case MapMode::HEGEMONY: {
             TitleType type = MapModeToTileType(mode);
-            m_MapTextures[mode]->loadFromImage(mod.GetTitleImage(type));
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetTitleManager().GetTitleImage(m_Mod.GetProvinceManager(), type));
             Configuration::shaders.Get(Shaders::PROVINCES).setUniform(
                 String::ToLowercase(TitleTypeLabels[(int) type]) + "Texture",
                 *m_MapTextures[mode]
@@ -279,7 +283,7 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
 
             // Reset the selection focus for every titles of that tier or below.
             if(resetFocus) {
-                for(const auto& title : mod.GetTitlesByType()[type]) {
+                for(const auto& title : m_Mod.GetTitleManager().GetTitlesByType()[type]) {
                     title->SetSelectionFocus(true);
                 }
             }
@@ -377,17 +381,17 @@ void EditorMenu::Event(const sf::Event& event) {
             || m_MapMode == MapMode::TERRAIN
             || m_MapMode == MapMode::WINTER_SEVERITY
             || m_MapMode == MapMode::CULTURE
-            || m_MapMode == MapMode::RELIGION
+            || m_MapMode == MapMode::FAITH
             || MapModeIsTitle(m_MapMode)) {
-                Province* province = this->GetHoveredProvince();
-                if(province != nullptr) {
+                Province* hoveredProvince = this->GetHoveredProvince();
+                if(hoveredProvince != nullptr) {
                     if(MapModeIsTitle(m_MapMode)) {
-                        Title* title = m_App.GetMod().GetProvinceFocusedTitle(province, MapModeToTileType(m_MapMode));
+                        Title* title = hoveredProvince->GetProvinceFocusedTitle(m_Mod.GetTitleManager(), MapModeToTileType(m_MapMode));
                         if(title == nullptr)
                             return;
-                        m_SelectionHandler.OnClick(mouseButton->button, province, title);
+                        m_SelectionHandler.OnClick(mouseButton->button, hoveredProvince, title);
                     }
-                    m_SelectionHandler.OnClick(mouseButton->button, province);
+                    m_SelectionHandler.OnClick(mouseButton->button, hoveredProvince);
                 }
             }
 
@@ -418,7 +422,7 @@ void EditorMenu::Render() {
     || m_MapMode == MapMode::TERRAIN
     || m_MapMode == MapMode::WINTER_SEVERITY
     || m_MapMode == MapMode::CULTURE
-    || m_MapMode == MapMode::RELIGION
+    || m_MapMode == MapMode::FAITH
     || MapModeIsTitle(m_MapMode))
         window.draw(*m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
     else 
@@ -453,7 +457,7 @@ void EditorMenu::Render() {
 
 void EditorMenu::InitSelectionCallbacks() {
     m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, Province* province) {
-        if((m_MapMode != MapMode::PROVINCES && m_MapMode != MapMode::TERRAIN && m_MapMode != MapMode::WINTER_SEVERITY && m_MapMode != MapMode::CULTURE && m_MapMode != MapMode::RELIGION)
+        if((m_MapMode != MapMode::PROVINCES && m_MapMode != MapMode::TERRAIN && m_MapMode != MapMode::WINTER_SEVERITY && m_MapMode != MapMode::CULTURE && m_MapMode != MapMode::FAITH)
         || button != sf::Mouse::Button::Left)
             return SelectionCallbackResult::CONTINUE;
 
@@ -694,8 +698,6 @@ static int FilterTitleName(ImGuiInputTextCallbackData* data) {
 }
 
 void EditorMenu::RenderModals() {
-    Mod& mod = m_App.GetMod();
-
     // CREATE TITLE: modal begin
     ImVec2 size = ImGui::GetMainViewport()->Size;
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -711,7 +713,7 @@ void EditorMenu::RenderModals() {
 
         bool hasSelectedTitle = (m_SelectionHandler.GetTitles().size() > 0);
         bool hasSelectedProvince = (m_SelectionHandler.GetProvinces().size() > 0);
-        bool isNameTaken = mod.GetTitles().count(name) > 0;
+        bool isNameTaken = m_Mod.GetTitleManager().HasTitle(name);
 
         // If there is at least one title selected then use that title upper type ass
         // the default type for the new title (capping at the empire level).
@@ -802,7 +804,7 @@ void EditorMenu::RenderModals() {
             }
 
 			Title* titlePtr = title.get();
-            mod.AddTitle(std::move(title));
+            m_Mod.GetTitleManager().AddTitle(std::move(title));
 
             this->SwitchMapMode(TitleTypeToMapMode(type), true);
             this->RefreshCurrentMapMode();
@@ -829,7 +831,7 @@ void EditorMenu::RenderModals() {
         static std::string name;
         static bool generateModifiers;
 
-        bool isNameTaken = mod.GetRegions().count(name) > 0;
+        bool isNameTaken = m_Mod.GetRegionManager().HasRegion(name);
 
         static bool initialized = false;
         if(!initialized) {
@@ -876,7 +878,7 @@ void EditorMenu::RenderModals() {
 
             m_SelectionHandler.ClearSelection();
             m_SelectionHandler.Select(region.get());
-            mod.AddRegion(std::move(region));
+            m_Mod.GetRegionManager().AddRegion(std::move(region));
         }
         if(isNameTaken) ImGui::EndDisabled();
 
@@ -923,7 +925,7 @@ void EditorMenu::RenderModals() {
         if(ImGui::Button("Harmonize", ImVec2(120, 0)) && hasTitlesSelected) {
             ImGui::CloseCurrentPopup();
             initialized = false;
-            mod.HarmonizeTitlesColors(m_SelectionHandler.GetTitles(), color, hue/100.f, saturation/100.f);
+            m_Mod.GetTitleManager().HarmonizeTitlesColors(m_SelectionHandler.GetTitles(), color, hue/100.f, saturation/100.f);
             this->RefreshCurrentMapMode(true, false);
         }
         if(!hasTitlesSelected) ImGui::EndDisabled();
@@ -946,7 +948,7 @@ void EditorMenu::RenderModals() {
 
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            m_App.GetMod().GenerateMissingProvinces();
+            m_Mod.GetProvinceManager().GenerateMissingProvinces();
         }
 
         ImGui::SetItemDefaultFocus();
@@ -966,7 +968,7 @@ void EditorMenu::RenderModals() {
 
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            m_App.GetMod().GenerateMissingBaronies();
+            m_Mod.GetTitleManager().GenerateMissingBaronies(m_Mod.GetProvinceManager());
         }
 
         ImGui::SetItemDefaultFocus();
@@ -999,7 +1001,7 @@ void EditorMenu::RenderModals() {
 
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            m_App.GetMod().GenerateTitlesLocalization("english", generateNames, generateAdjectives, false);
+            m_Mod.GetTitleManager().GenerateTitlesLocalization("english", generateNames, generateAdjectives, false);
         }
 
         ImGui::SetItemDefaultFocus();
@@ -1033,13 +1035,23 @@ void EditorMenu::RenderModals() {
         static sf::Texture previewTexture;
         static std::optional<sf::Sprite> sprite;
 
-        const sf::Image& heightmapImage = m_App.GetMod().GetHeightmapImage();
-        const sf::Image& provinceImage = m_App.GetMod().GetProvinceImage();
+        const sf::Image& heightmapImage = m_Mod.GetProvinceManager().GetHeightmapImage();
+        const sf::Image& provinceImage = m_Mod.GetProvinceManager().GetProvincesImage();
 
         static const auto UpdatePreview = [&](){
             previewImage = Image::MapPixels(provinceImage, [&](auto& mappedColors){
-                for(const auto& [provinceColorId, province] : m_App.GetMod().GetProvinces()) {
-                    float winterSeverityBias = m_App.GetMod().CalculateWinterSeverityBias(province.get(), override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor);
+                for(const auto& [provinceColorId, province] : m_Mod.GetProvinceManager().GetProvincesByColors()) {
+                    float winterSeverityBias = province->CalculateWinterSeverityBias(
+                        m_Mod.GetProvinceManager(),
+                        override,
+                        elevationOffset,
+                        elevationStrength,
+                        elevationFactor,
+                        hemisphereOffset,
+                        hemisphereSize,
+                        hemisphereStrength,
+                        hemisphereFactor
+                    );
                     sf::Color color = sf::Color(winterSeverityBias * 255.f, winterSeverityBias * 255.f, winterSeverityBias * 255.f);
                     mappedColors[province->GetColor().toInteger()] = color.toInteger();
                 }
@@ -1143,7 +1155,19 @@ void EditorMenu::RenderModals() {
 
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            m_App.GetMod().GenerateProvincesClimate(override, elevationOffset, elevationStrength, elevationFactor, hemisphereOffset, hemisphereSize, hemisphereStrength, hemisphereFactor, mildWinterThreshold, normalWinterThreshold, severeWinterThreshold);
+            m_Mod.GetProvinceManager().GenerateProvincesClimate(
+                override,
+                elevationOffset,
+                elevationStrength,
+                elevationFactor,
+                hemisphereOffset,
+                hemisphereSize,
+                hemisphereStrength,
+                hemisphereFactor,
+                mildWinterThreshold,
+                normalWinterThreshold,
+                severeWinterThreshold
+            );
             this->UpdateTexture(MapMode::WINTER_SEVERITY);
         }
 
@@ -1232,14 +1256,12 @@ void EditorMenu::RenderModals() {
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "history/titles/");
         
-        std::string titlesLocalizationPath = m_App.GetMod().GetTitlesLocalizationFilePath();
-        titlesLocalizationPath = titlesLocalizationPath.substr(m_App.GetMod().GetDir().size());
+        std::string titlesLocalizationPath = m_Mod.GetTitleManager().GetTitlesLocalizationFileName();
         ImGui::Checkbox("titles localization  ", &titlesLocalization);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), titlesLocalizationPath.c_str());
         
-        std::string culturalNamesLocalizationPath = m_App.GetMod().GetCulturalNamesLocalizationFilePath();
-        culturalNamesLocalizationPath = culturalNamesLocalizationPath.substr(m_App.GetMod().GetDir().size());
+        std::string culturalNamesLocalizationPath = m_Mod.GetTitleManager().GetCulturalNamesLocalizationFileName();
         ImGui::Checkbox("cultural names localization  ", &culturalNamesLocalization);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), culturalNamesLocalizationPath.c_str());
@@ -1250,8 +1272,7 @@ void EditorMenu::RenderModals() {
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), geographicalRegionsLocalizationPath.c_str());
 
         if(ImGui::Button("Export", ImVec2(120, 0))) {
-            Mod& mod = m_App.GetMod();
-            mod.Export(
+            m_Mod.Export(
                 defaultMap,
                 provincesDefinition,
                 provincesTerrain,

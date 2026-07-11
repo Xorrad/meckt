@@ -41,6 +41,8 @@ public:
     void RenderModals();
 
 private:
+    Mod& m_Mod;
+
     MapMode m_MapMode;
     SelectionHandler m_SelectionHandler;
 

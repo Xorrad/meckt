@@ -133,6 +133,22 @@ public:
     const Province* GetProvinceById(int id) const;
 
     /**
+     * @brief Retrieves a province by its pixel position on the map.
+     * @param x The x-coordinate of the pixel.
+     * @param y The y-coordinate of the pixel.
+     * @return The pointer to the province if it exists, nullptr otherwise.
+     */
+    Province* GetProvinceByPixel(int x, int y);
+    
+    /**
+     * @brief Retrieves a province by its pixel position on the map.
+     * @param x The x-coordinate of the pixel.
+     * @param y The y-coordinate of the pixel.
+     * @return The pointer to the province if it exists, nullptr otherwise.
+     */
+    const Province* GetProvinceByPixel(int x, int y) const;
+
+    /**
      * @brief Retrieves the maximum province id.
      * @return The maximum province id if there are provinces, std::nullopt otherwise.
      */

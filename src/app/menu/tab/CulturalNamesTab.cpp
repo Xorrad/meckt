@@ -1,8 +1,9 @@
 #include "CulturalNamesTab.hpp"
 
-#include "core/mod/Mod.hpp"
-
 #include "app/menu/EditorMenu.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/titles/TitleManager.hpp"
 
 #include <imgui/imgui.hpp>
 
@@ -12,7 +13,7 @@ void CulturalNamesTab::Render() {
     if(!m_Visible)
         return;
 
-    Mod& mod = this->GetMod();
+    TitleManager& titleManager = m_Mod.GetTitleManager();
 
     // Generate a map of whether a cultural name is filtered by name or not.
     static std::string filter = "";
@@ -20,7 +21,7 @@ void CulturalNamesTab::Render() {
     if(ImGui::InputText("filter", &filter)) {
         filteredNames.clear();
 
-        for(const auto& [key, name] : mod.GetLocCulturalNames("english")) {
+        for(const auto& [key, name] : titleManager.GetLocCulturalNames("english")) {
             filteredNames[key] = (key.find(filter) != std::string::npos || name.find(filter) != std::string::npos);
         }
     }
@@ -28,9 +29,9 @@ void CulturalNamesTab::Render() {
     static std::string newCulturalName = "";
     const auto& AddNewCulturalName = [&]() {
         std::string key = "cn_" + newCulturalName;
-        if(mod.GetLocCulturalNames("english").count(key) > 0)
+        if(titleManager.HasLocCulturalName("english", key))
             return;
-        mod.SetLocCulturalName("english", key, " ");
+        titleManager.AddLocCulturalName("english", key, " ");
         newCulturalName = "";
     };
     if(ImGui::InputText("##key", &newCulturalName, ImGuiInputTextFlags_EnterReturnsTrue)) {
@@ -47,7 +48,7 @@ void CulturalNamesTab::Render() {
         ImGui::TableSetupColumn("Delete", ImGuiTableColumnFlags_WidthFixed, 20.0f);
         ImGui::TableHeadersRow();
 
-        std::map<std::string, std::string>& culturalNames = mod.GetLocCulturalNames("english");
+        std::map<std::string, std::string>& culturalNames = titleManager.GetLocCulturalNames("english");
         for(auto it = culturalNames.begin(); it != culturalNames.end(); ) {
             std::string key = it->first;
             std::string& name = it->second;

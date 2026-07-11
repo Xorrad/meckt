@@ -105,10 +105,12 @@ sf::Image ProvinceManager::GetWinterSeverityBiasImage() const {
 
                 if (!province->GetWinterSeverityBias().empty()) {
                     try {
-                        double winterSeverity = std::clamp(0.0, 1.0,
+                        double winterSeverity = std::clamp(
                             province->GetWinterSeverityBias().starts_with("@")
                                 ? String::ParseDouble(m_TerrainPropertiesVariables->Get(province->GetWinterSeverityBias())->As<std::string>("0.0"))
-                                : String::ParseDouble(province->GetWinterSeverityBias())
+                                : String::ParseDouble(province->GetWinterSeverityBias()),
+                            0.0,
+                            1.0
                         );
                         color = sf::Color(winterSeverity * 255, winterSeverity * 255, winterSeverity * 255, 255);
                     }
@@ -140,6 +142,26 @@ Province* ProvinceManager::GetProvinceById(int id) {
 const Province* ProvinceManager::GetProvinceById(int id) const {
     auto it = m_ProvincesByIds.find(id);
     return (it != m_ProvincesByIds.end()) ? it->second : nullptr;
+}
+
+Province* ProvinceManager::GetProvinceByPixel(int x, int y) {
+    if (x < 0 || y < 0 || x >= static_cast<int>(m_ProvincesImage.getSize().x) || y >= static_cast<int>(m_ProvincesImage.getSize().y))
+        return nullptr;
+
+    sf::Color color = m_ProvincesImage.getPixel(sf::Vector2u(x, y));
+    uint32_t colorId = color.toInteger();
+
+    return this->GetProvinceByColor(colorId);
+}
+
+const Province* ProvinceManager::GetProvinceByPixel(int x, int y) const {
+    if (x < 0 || y < 0 || x >= static_cast<int>(m_ProvincesImage.getSize().x) || y >= static_cast<int>(m_ProvincesImage.getSize().y))
+        return nullptr;
+
+    sf::Color color = m_ProvincesImage.getPixel(sf::Vector2u(x, y));
+    uint32_t colorId = color.toInteger();
+
+    return this->GetProvinceByColor(colorId);
 }
 
 std::optional<int> ProvinceManager::GetMaxProvinceId() const {

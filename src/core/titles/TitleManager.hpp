@@ -190,6 +190,18 @@ public:
      */
     std::string GetLocCulturalName(const std::string& lang, const std::string& key) const;
 
+    /**
+     * @brief Retrieves the relative file path of the titles localization file.
+     * @return The relative file path of the titles localization file.
+     */
+    std::string GetTitlesLocalizationFileName() const;
+    
+    /**
+     * @brief Retrieves the relative file path of the cultural names localization file.
+     * @return The relative file path of the cultural names localization file.
+     */
+    std::string GetCulturalNamesLocalizationFileName() const;
+
     //////////////////////////////////////////////////////
 
     /**
@@ -217,6 +229,13 @@ public:
      * @param newName The name the title will be renamed to.
      */
     void RenameTitle(const std::string& formerName, const std::string& newName);
+
+    /**
+     * @brief Changes the province ID of a barony title.
+     * @param barony The barony title whose province ID is to be changed.
+     * @param newProvinceId The new province ID.
+     */
+    void ChangeBaronyProvinceId(BaronyTitle* barony, int newProvinceId);
 
     /**
      * @brief Adds a new cultural name localization.

@@ -13,6 +13,8 @@ namespace ImGui {
     void SetupFonts();
     void SetupStyle();
 
+    ImFont* AddFont(const std::string& path, float size = 18.0f, const ImFontConfig* font_cfg = NULL, const ImWchar* glyph_ranges = NULL);
+
     bool ColorEdit3(const char* label, sf::Color* color, ImGuiColorEditFlags flags = 0);
     bool CheckBoxTristate(const char* label, int* v_tristate);
     bool TextButton(const char* label);

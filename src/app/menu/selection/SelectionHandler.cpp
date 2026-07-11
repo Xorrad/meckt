@@ -1,12 +1,12 @@
 #include "SelectionHandler.hpp"
 
-#include "core/mod/Mod.hpp"
-#include "core/map/provinces/Province.hpp"
-#include "core/map/regions/Region.hpp"
-#include "core/map/titles/Title.hpp"
-
 #include "app/App.hpp"
 #include "app/menu/EditorMenu.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/provinces/Province.hpp"
+#include "core/regions/Region.hpp"
+#include "core/titles/Title.hpp"
 
 SelectionHandler::SelectionHandler(EditorMenu& menu) :
     m_Menu(menu),

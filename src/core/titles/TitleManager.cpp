@@ -183,6 +183,14 @@ std::string TitleManager::GetLocCulturalName(const std::string& lang, const std:
     return it2->second;
 }
 
+std::string TitleManager::GetTitlesLocalizationFileName() const {
+    return m_TitlesLocalizationFileName;
+}
+
+std::string TitleManager::GetCulturalNamesLocalizationFileName() const {
+    return m_CulturalNamesLocalizationFileName;
+}
+
 //////////////////////////////////////////////////////
 
 void TitleManager::AddTitle(UniquePtr<Title> title) {
@@ -325,6 +333,21 @@ void TitleManager::RenameTitle(const std::string& formerName, const std::string&
 
     // 4. 
     // TODO: replace using regex every occurence of 'title:{former_name}' in every files.
+}
+
+void TitleManager::ChangeBaronyProvinceId(BaronyTitle* barony, int newProvinceId) {
+    if (barony == nullptr)
+        return;
+
+    // Remove the barony from the old province ID map
+    m_BaroniesByProvinceId.erase(barony->GetProvinceId());
+
+    // Update the barony's province ID
+    barony->SetProvinceId(newProvinceId);
+
+    // Add the barony to the new province ID map
+    if (newProvinceId != 0)
+        m_BaroniesByProvinceId[newProvinceId] = barony;
 }
 
 void TitleManager::AddLocCulturalName(const std::string& lang, const std::string& key, const std::string& name) {

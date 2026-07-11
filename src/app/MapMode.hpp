@@ -7,7 +7,7 @@ enum class MapMode {
     TERRAIN         = 3,
     WINTER_SEVERITY = 4,
     CULTURE         = 5,
-    RELIGION        = 6,
+    FAITH        = 6,
     BARONY          = 7,
     COUNTY          = 8,
     DUCHY           = 9,
@@ -20,7 +20,7 @@ const int MapModeTitleStartIndex = static_cast<int>(MapMode::BARONY);
 
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
-    "Terrain", "Winter Severity", "Culture", "Religion",
+    "Terrain", "Winter Severity", "Culture", "Faith",
     "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony"
 };
 

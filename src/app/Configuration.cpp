@@ -62,13 +62,13 @@ void Configuration::InitializeTextures() {
 }
 
 void Configuration::InitializeFonts() {
-    fonts.Load(Fonts::FIGTREE, Configuration::resourcesPath + "/fonts/Figtree-Medium.ttf");
-    fonts.Load(Fonts::NOTO_SANS, Configuration::resourcesPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf");
+    fonts.Load(Fonts::FIGTREE, Configuration::resourcesPath + "fonts/figtree_medium.ttf");
+    fonts.Load(Fonts::NOTO_SANS, Configuration::resourcesPath + "fonts/notosans.ttf");
 }
 
 void Configuration::InitializeShaders() {
-    shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "/shaders/provinces.vert", Configuration::resourcesPath + "/shaders/provinces.frag");
-    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, Configuration::resourcesPath + "/shaders/provinces.vert", Configuration::resourcesPath + "/shaders/heightmap_landmass.frag");
-    shaders.Load(Shaders::PROVINCES_LANDMASS, Configuration::resourcesPath + "/shaders/provinces.vert", Configuration::resourcesPath + "/shaders/provinces_landmass.frag");
-    // shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "/shaders/provinces.frag", sf::Shader::Fragment);
+    shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "shaders/provinces.vert", Configuration::resourcesPath + "shaders/provinces.frag");
+    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, Configuration::resourcesPath + "shaders/provinces.vert", Configuration::resourcesPath + "shaders/heightmap_landmass.frag");
+    shaders.Load(Shaders::PROVINCES_LANDMASS, Configuration::resourcesPath + "shaders/provinces.vert", Configuration::resourcesPath + "shaders/provinces_landmass.frag");
+    // shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "shaders/provinces.frag", sf::Shader::Fragment);
 }

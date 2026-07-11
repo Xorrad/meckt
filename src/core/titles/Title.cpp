@@ -261,7 +261,7 @@ void HighTitle::SetSelectionFocus(bool focus) {
     }
 }
 
-sf::Vector2i HighTitle::GetImagePosition(ProvinceManager* provinceManager) const {
+sf::Vector2i HighTitle::GetImagePosition(const ProvinceManager& provinceManager) const {
     if(m_DejureTitles.empty())
         return sf::Vector2i(0, 0);
     return m_DejureTitles.front()->GetImagePosition(provinceManager);
@@ -287,8 +287,8 @@ bool BaronyTitle::HasSelectionFocus() const {
     return true;
 }
 
-sf::Vector2i BaronyTitle::GetImagePosition(ProvinceManager* provinceManager) const {
-    if (Province* province = provinceManager->GetProvinceById(m_ProvinceId))
+sf::Vector2i BaronyTitle::GetImagePosition(const ProvinceManager& provinceManager) const {
+    if (const Province* province = provinceManager.GetProvinceById(m_ProvinceId))
         return province->GetImagePosition();
     return sf::Vector2i(0, 0);
 }
