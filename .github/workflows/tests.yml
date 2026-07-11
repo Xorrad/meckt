@@ -18,7 +18,7 @@ jobs:
     
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         submodules: true
@@ -38,7 +38,7 @@ jobs:
         
     - name: Run meckt-tests (Linux)
       if: runner.os == 'Linux'
-      run: ./build/bin/Release/meckt-tests
+      run: ./build/bin/meckt-tests
 
     - name: Run meckt-tests (Windows)
       if: runner.os == 'Windows'
