@@ -36,18 +36,20 @@ jobs:
     - name: Build Executable
       run: cmake --build ${{ github.workspace }}/build --target meckt-app --config Release --parallel
         
-    - name: Upload ZIP Artifact (Windows)
-      uses: actions/upload-artifact@v5
+    - name: Upload Artifact (Windows)
+      uses: actions/upload-artifact@v7
       if: runner.os == 'Windows'
       with:
         name: win-meckt-release
         path: ${{ github.workspace }}/build/bin/Release
         if-no-files-found: error
+        archive: false
 
-    - name: Upload ZIP Artifact (Linux)
-      uses: actions/upload-artifact@v5
+    - name: Upload Artifact (Linux)
+      uses: actions/upload-artifact@v7
       if: runner.os == 'Linux'
       with:
         name: linux-meckt-release
         path: ${{ github.workspace }}/build/bin/
         if-no-files-found: error
+        archive: false
