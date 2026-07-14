@@ -72,6 +72,7 @@ class Faith;
 #include "provinces/ProvinceFlags.hpp"
 #include "provinces/TerrainType.hpp"
 #include "titles/TitleType.hpp"
+#include "titles/Title.hpp"
 
 #include "mod/LoadingState.hpp"
 #include "mod/Paths.hpp"

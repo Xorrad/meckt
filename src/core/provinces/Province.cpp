@@ -24,6 +24,90 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_HarshWinterFactorOverride("")
 {}
 
+//////////////////////////////////////////////////////
+
+bool Province::HasFlag(ProvinceFlags flag) const {
+    return (bool) (m_Flags & flag);
+}
+
+//////////////////////////////////////////////////////
+
+int Province::GetId() const {
+    return m_Id;
+}
+
+sf::Color Province::GetColor() const {
+    return m_Color;
+}
+ 
+uint32_t Province::GetColorId() const {
+    return m_Color.toInteger();
+}
+
+std::string Province::GetName() const {
+    return m_Name;
+}
+
+ProvinceFlags Province::GetFlags() const {
+    return m_Flags;
+}
+
+std::string Province::GetHolding() const {
+    return m_Holding;
+}
+
+std::string Province::GetTerrain() const {
+    return m_Terrain;
+}
+
+std::string Province::GetCulture() const {
+    return m_Culture;
+}
+
+std::string Province::GetFaith() const {
+    return m_Faith;
+}
+
+ClimateType Province::GetClimateType() const {
+    return m_ClimateType;
+}
+
+std::string Province::GetWinterSeverityBias() const {
+    return m_WinterSeverityBias;
+}
+
+std::string Province::GetMildWinterFactorOverride() const {
+    return m_MildWinterFactorOverride;
+}
+
+std::string Province::GetNormalWinterFactorOverride() const {
+    return m_NormalWinterFactorOverride;
+}
+
+std::string Province::GetHarshWinterFactorOverride() const {
+    return m_HarshWinterFactorOverride;
+}
+
+std::string Province::GetOriginalHistoryFileName() const {
+    return m_OriginalHistoryFileName;
+}
+
+SharedPtr<Jomini::Object> Province::GetExtraHistoryData() const {
+    return m_ExtraHistoryData;
+}
+
+std::map<Jomini::Date, SharedPtr<Jomini::Object>>& Province::GetHistory() {
+    return m_History;
+}
+
+sf::Vector2i Province::GetImagePosition() const {
+    return m_ImagePosition;
+}
+
+size_t Province::GetImagePixelsCount() const {
+    return m_ImagePixelsCount;
+}
+
 Title* Province::GetProvinceLiegeTitle(TitleManager& titleManager, TitleType type) const {
     Title* liege = static_cast<Title*>(titleManager.GetBaronyByProvinceId(m_Id));
 
@@ -53,6 +137,97 @@ Title* Province::GetProvinceFocusedTitle(TitleManager& titleManager, TitleType t
 
     return title;
 }
+
+//////////////////////////////////////////////////////
+
+void Province::SetId(int id) {
+    m_Id = id;
+}
+
+void Province::SetColor(sf::Color color) {
+    m_Color = color;
+}
+
+void Province::SetName(std::string name) {
+    m_Name = name;
+}
+
+void Province::SetFlags(ProvinceFlags flags) {
+    m_Flags = flags;
+}
+
+void Province::SetFlag(ProvinceFlags flag, bool enabled) {
+    if(enabled) m_Flags |= flag;
+    else m_Flags &= (~flag);
+}
+
+void Province::SetHolding(std::string holding) {
+    m_Holding = holding;
+}
+
+void Province::SetTerrain(std::string terrain) {
+    m_Terrain = terrain;
+}
+
+void Province::SetCulture(std::string culture) {
+    m_Culture = culture;
+}
+
+void Province::SetFaith(std::string faith) {
+    m_Faith = faith;
+}
+
+void Province::SetClimateType(ClimateType type) {
+    m_ClimateType = type;
+}
+
+void Province::SetWinterSeverityBias(std::string bias) {
+    m_WinterSeverityBias = bias;
+}
+
+void Province::SetMildWinterFactorOverride(std::string factor) {
+    m_MildWinterFactorOverride = factor;
+}
+
+void Province::SetNormalWinterFactorOverride(std::string factor) {
+    m_NormalWinterFactorOverride = factor;
+}
+
+void Province::SetHarshWinterFactorOverride(std::string factor) {
+    m_HarshWinterFactorOverride = factor;
+}
+
+void Province::SetOriginalHistoryFileName(const std::string& fileName) {
+    m_OriginalHistoryFileName = fileName;
+}
+
+void Province::SetExtraHistoryData(SharedPtr<Jomini::Object> data) {
+    m_ExtraHistoryData = data;
+}
+
+void Province::SetImagePosition(sf::Vector2i pos) {
+    m_ImagePosition = pos;
+}
+
+void Province::SetImagePixelsCount(size_t count) {
+    m_ImagePixelsCount = count;
+}
+
+void Province::IncrementImagePixelsCount() {
+    m_ImagePixelsCount++;
+}
+
+//////////////////////////////////////////////////////
+
+void Province::AddHistory(Jomini::Date date, SharedPtr<Jomini::Object> data) {
+    m_History[date] = data;
+}
+
+void Province::RemoveHistory(Jomini::Date date) {
+    m_History.erase(date);
+}
+
+//////////////////////////////////////////////////////
 
 float Province::CalculateWinterSeverityBias(ProvinceManager& provinceManager, bool override,float elevationOffset, float elevationStrength, float elevationFactor, int hemisphereOffset, int hemisphereSize, float hemisphereStrength, float hemisphereFactor) const {
     // If no overrides and the climate is already initialized, then we use that value for the preview.
@@ -85,167 +260,4 @@ float Province::CalculateWinterSeverityBias(ProvinceManager& provinceManager, bo
     return winterSeverityBias;
 }
 
-int Province::GetId() const {
-    return m_Id;
-}
-
-void Province::SetId(int id) {
-    m_Id = id;
-}
-
-sf::Color Province::GetColor() const {
-    return m_Color;
-}
- 
-uint32_t Province::GetColorId() const {
-    return m_Color.toInteger();
-}
-
-void Province::SetColor(sf::Color color) {
-    m_Color = color;
-}
-
-std::string Province::GetName() const {
-    return m_Name;
-}
-
-void Province::SetName(std::string name) {
-    m_Name = name;
-}
-
-ProvinceFlags Province::GetFlags() const {
-    return m_Flags;
-}
-
-bool Province::HasFlag(ProvinceFlags flag) const {
-    return (bool) (m_Flags & flag);
-}
-
-void Province::SetFlags(ProvinceFlags flags) {
-    m_Flags = flags;
-}
-
-void Province::SetFlag(ProvinceFlags flag, bool enabled) {
-    if(enabled) m_Flags |= flag;
-    else m_Flags &= (~flag);
-}
-
-std::string Province::GetHolding() const {
-    return m_Holding;
-}
-
-void Province::SetHolding(std::string holding) {
-    m_Holding = holding;
-}
-
-std::string Province::GetTerrain() const {
-    return m_Terrain;
-}
-
-void Province::SetTerrain(std::string terrain) {
-    m_Terrain = terrain;
-}
-
-std::string Province::GetCulture() const {
-    return m_Culture;
-}
-
-void Province::SetCulture(std::string culture) {
-    m_Culture = culture;
-}
-
-std::string Province::GetFaith() const {
-    return m_Faith;
-}
-
-void Province::SetFaith(std::string faith) {
-    m_Faith = faith;
-}
-
-ClimateType Province::GetClimateType() const {
-    return m_ClimateType;
-}
-
-std::string Province::GetWinterSeverityBias() const {
-    return m_WinterSeverityBias;
-}
-
-std::string Province::GetMildWinterFactorOverride() const {
-    return m_MildWinterFactorOverride;
-}
-
-std::string Province::GetNormalWinterFactorOverride() const {
-    return m_NormalWinterFactorOverride;
-}
-
-std::string Province::GetHarshWinterFactorOverride() const {
-    return m_HarshWinterFactorOverride;
-}
-
-void Province::SetClimateType(ClimateType type) {
-    m_ClimateType = type;
-}
-
-void Province::SetWinterSeverityBias(std::string bias) {
-    m_WinterSeverityBias = bias;
-}
-
-void Province::SetMildWinterFactorOverride(std::string factor) {
-    m_MildWinterFactorOverride = factor;
-}
-
-void Province::SetNormalWinterFactorOverride(std::string factor) {
-    m_NormalWinterFactorOverride = factor;
-}
-
-void Province::SetHarshWinterFactorOverride(std::string factor) {
-    m_HarshWinterFactorOverride = factor;
-}
-
-std::string Province::GetOriginalHistoryFileName() const {
-    return m_OriginalHistoryFileName;
-}
-
-void Province::SetOriginalHistoryFileName(const std::string& fileName) {
-    m_OriginalHistoryFileName = fileName;
-}
-
-SharedPtr<Jomini::Object> Province::GetExtraHistoryData() const {
-    return m_ExtraHistoryData;
-}
-
-void Province::SetExtraHistoryData(SharedPtr<Jomini::Object> data) {
-    m_ExtraHistoryData = data;
-}
-
-std::map<Jomini::Date, SharedPtr<Jomini::Object>>& Province::GetHistory() {
-    return m_History;
-}
-
-void Province::AddHistory(Jomini::Date date, SharedPtr<Jomini::Object> data) {
-    m_History[date] = data;
-}
-
-void Province::RemoveHistory(Jomini::Date date) {
-    m_History.erase(date);
-}
-
-sf::Vector2i Province::GetImagePosition() const {
-    return m_ImagePosition;
-}
-
-size_t Province::GetImagePixelsCount() const {
-    return m_ImagePixelsCount;
-}
-
-void Province::SetImagePosition(sf::Vector2i pos) {
-    m_ImagePosition = pos;
-}
-
-void Province::SetImagePixelsCount(size_t count) {
-    m_ImagePixelsCount = count;
-}
-
-void Province::IncrementImagePixelsCount() {
-    m_ImagePixelsCount++;
-}
+//////////////////////////////////////////////////////

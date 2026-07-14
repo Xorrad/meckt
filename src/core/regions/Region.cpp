@@ -12,29 +12,7 @@ Region::Region(std::string name) :
     m_ShouldRememberCountiesOrder(false)
 {}
 
-std::string Region::GetName() const {
-    return m_Name;
-}
-
-std::span<KingdomTitle*> Region::GetKingdoms() {
-    return m_Kingdoms;
-}
-
-std::span<DuchyTitle*> Region::GetDuchies() {
-    return m_Duchies;
-}
-
-std::span<CountyTitle*> Region::GetCounties() {
-    return m_Counties;
-}
-
-std::span<Province*> Region::GetProvinces() {
-    return m_Provinces;
-}
-
-std::span<Region*> Region::GetRegions() {
-    return m_Regions;
-}
+//////////////////////////////////////////////////////
 
 bool Region::HasTitle(Title* title) const {
     if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::HEGEMONY))
@@ -63,6 +41,32 @@ bool Region::HasRegion(Region* region) const {
     return std::find(m_Regions.begin(), m_Regions.end(), region) != m_Regions.end();
 }
 
+//////////////////////////////////////////////////////
+
+std::string Region::GetName() const {
+    return m_Name;
+}
+
+std::span<KingdomTitle*> Region::GetKingdoms() {
+    return m_Kingdoms;
+}
+
+std::span<DuchyTitle*> Region::GetDuchies() {
+    return m_Duchies;
+}
+
+std::span<CountyTitle*> Region::GetCounties() {
+    return m_Counties;
+}
+
+std::span<Province*> Region::GetProvinces() {
+    return m_Provinces;
+}
+
+std::span<Region*> Region::GetRegions() {
+    return m_Regions;
+}
+
 bool Region::DoesGenerateModifiers() const {
     return m_GenerateModifiers;
 }
@@ -71,9 +75,21 @@ bool Region::ShouldRememberCountiesOrder() const {
     return m_ShouldRememberCountiesOrder;
 }
 
+//////////////////////////////////////////////////////
+
 void Region::SetName(std::string name) {
     m_Name = name;
 }
+
+void Region::SetGenerateModifiers(bool generateModifiers) {
+    m_GenerateModifiers = generateModifiers;
+}
+
+void Region::SetShouldRememberCountiesOrder(bool shouldRememberCountiesOrder) {
+    m_ShouldRememberCountiesOrder = shouldRememberCountiesOrder;
+}
+
+//////////////////////////////////////////////////////
 
 void Region::AddTitle(Title* title) {
     switch (title->GetType()) {
@@ -158,10 +174,4 @@ void Region::RemoveRegion(Region* region) {
     );
 }
 
-void Region::SetGenerateModifiers(bool generateModifiers) {
-    m_GenerateModifiers = generateModifiers;
-}
-
-void Region::SetShouldRememberCountiesOrder(bool shouldRememberCountiesOrder) {
-    m_ShouldRememberCountiesOrder = shouldRememberCountiesOrder;
-}
+//////////////////////////////////////////////////////

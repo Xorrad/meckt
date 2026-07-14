@@ -2,9 +2,12 @@
 
 Culture::Culture() {}
 
-Culture::Culture(const std::string& name, const sf::Color& color)
-: m_Name(name), m_Color(color)
+Culture::Culture(const std::string& name, const sf::Color& color) :
+    m_Name(name),
+    m_Color(color)
 {}
+
+//////////////////////////////////////////////////////
 
 std::string Culture::GetName() const {
     return m_Name;
@@ -13,6 +16,8 @@ std::string Culture::GetName() const {
 sf::Color Culture::GetColor() const {
     return m_Color;
 }
+
+//////////////////////////////////////////////////////
 
 void Culture::SetName(const std::string& name) {
     m_Name = name;
