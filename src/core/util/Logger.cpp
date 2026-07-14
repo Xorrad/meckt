@@ -1,5 +1,25 @@
 #include "Logger.hpp"
 
+std::string GetLogsFileName(const std::string& name) {
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", ltm);
+    std::string date = std::string(buffer);
+
+    std::string originalPath = "logs/" + name + "-" + date;
+    std::string path = originalPath;
+    int i = 1;
+    while (std::filesystem::exists(path + ".txt")) {
+        path = originalPath + "-" + std::to_string(i);
+        i++;
+    }
+    return path + ".txt";
+}
+
+const std::string LOGS_FILE = GetLogsFileName("logs");
+const std::string CRASH_FILE = GetLogsFileName("crash");
+
 Logger::Message::Message() : Message(time(0), "", 0, "", MessageType::INFO, "") {}
 
 Logger::Message::Message(std::string file, size_t line, std::string function, MessageType type, std::string text) :

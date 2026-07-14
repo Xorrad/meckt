@@ -4,13 +4,13 @@
 #include <filesystem>
 #include <fmt/core.h>
 
-#ifdef DEB
-#define LOGS_FILE "/usr/local/share/meckt/logs/logs.txt"
-#define CRASH_FILE "/usr/local/share/meckt/logs/crash.txt"
-#else
-#define LOGS_FILE "logs/logs.txt"
-#define CRASH_FILE "logs/crash.txt"
-#endif
+std::string GetLogsFileName(const std::string& name);
+
+const extern std::string LOGS_FILE;
+const extern std::string CRASH_FILE;
+
+// #define LOGS_FILE "logs/logs.txt"
+// #define CRASH_FILE "logs/crash.txt"
 
 #define TEST(n) std::cout << n << std::endl
 
