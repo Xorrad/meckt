@@ -12,6 +12,7 @@
 
 #include <imgui/imgui.hpp>
 #include "app/menu/ImGuiStyle.hpp"
+#include "imgui.h"
 
 EditorMenu::EditorMenu(App& app) :
     Menu(app, "Editor"),
@@ -35,7 +36,7 @@ EditorMenu::EditorMenu(App& app) :
     m_Zoom = 1.f;
     m_TotalZoom = 1.f;
 
-    m_HoverText.setCharacterSize(12);
+    m_HoverText.setCharacterSize(12 * Configuration::uiScale);
     m_HoverText.setString("");
     m_HoverText.setFillColor(sf::Color::Black);
     m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
@@ -116,16 +117,18 @@ void EditorMenu::UpdateHoveringText() {
         }
 
         m_HoverText.setString(text);
-        m_HoverText.setPosition({(float) mousePosition.x + 12, (float) mousePosition.y - 8});
+        m_HoverText.setPosition({(float) mousePosition.x + 12*Configuration::uiScale, (float) mousePosition.y - 8*Configuration::uiScale});
         m_HoverText.setFillColor(sf::Color::Black);
-        
+        m_HoverText.setCharacterSize(12 * Configuration::uiScale);
+
         m_HoverTitleText.setString(hoveredTitleText);
         m_HoverTitleText.setStyle(sf::Text::Bold);
-        m_HoverTitleText.setPosition({(float) mousePosition.x + 12, (float) mousePosition.y - 8});
+        m_HoverTitleText.setPosition({(float) mousePosition.x + 12*Configuration::uiScale, (float) mousePosition.y - 8*Configuration::uiScale});
         m_HoverTitleText.setFillColor(sf::Color::Black);
+        m_HoverTitleText.setCharacterSize(12 * Configuration::uiScale);
 
-        m_HoverShape.setPosition({(float) mousePosition.x + 10, (float) mousePosition.y - 10});
-        m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().size.x + 4, (float) m_HoverText.getGlobalBounds().size.y + 8});
+        m_HoverShape.setPosition({(float) mousePosition.x + 10*Configuration::uiScale, (float) mousePosition.y - 10*Configuration::uiScale});
+        m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().size.x + 4*Configuration::uiScale, (float) m_HoverText.getGlobalBounds().size.y + 8*Configuration::uiScale});
         return;
     }
 
@@ -138,8 +141,9 @@ void EditorMenu::UpdateHoveringText() {
     || m_MapMode == MapMode::FAITH) {
         m_HoverText.setString(fmt::format("#{} ({})", hoveredProvince->GetId(), hoveredProvince->GetName()));
         m_HoverTitleText.setString("");
-        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10});
+        m_HoverText.setPosition({(float) mousePosition.x + 5*Configuration::uiScale, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10*Configuration::uiScale});
         m_HoverText.setFillColor(brightenColor(hoveredProvince->GetColor()));
+        m_HoverText.setCharacterSize(12 * Configuration::uiScale);
         return;
     }
     else if(MapModeIsTitle(m_MapMode)) {
@@ -153,8 +157,9 @@ void EditorMenu::UpdateHoveringText() {
 
         m_HoverText.setString(fmt::format("{}", title->GetName()));
         m_HoverTitleText.setString("");
-        m_HoverText.setPosition({(float) mousePosition.x + 5, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10});
+        m_HoverText.setPosition({(float) mousePosition.x + 5*Configuration::uiScale, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10*Configuration::uiScale});
         m_HoverText.setFillColor(brightenColor(title->GetColor()));
+        m_HoverText.setCharacterSize(12 * Configuration::uiScale);
         return;
     }
 
@@ -632,6 +637,16 @@ void EditorMenu::RenderMenuBar() {
                 this->UpdateTextures();
                 this->SwitchMapMode(m_MapMode, false);
             }
+            
+            ImGui::Separator();
+
+            ImGui::PushItemWidth(ImGui::CalcItemWidth() * 0.5f);
+            if (ImGui::DragFloat("UI Scale", &Configuration::uiScale, 0.02f, 0.1f, 5.0f)) {
+                ImGuiStyle& style = ImGui::GetStyle();
+                style.FontScaleMain = Configuration::uiScale;
+                Configuration::Save();
+            }
+            ImGui::PopItemWidth();
 
             ImGui::EndMenu();
         }

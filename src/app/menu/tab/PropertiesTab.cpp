@@ -25,11 +25,12 @@ PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     m_DisplayRegionsProvinces(true),
     m_DisplayRegionsRegions(true)
 {
-    m_SelectingTitleText.setCharacterSize(24);
+    m_SelectingTitleText.setCharacterSize(24 * Configuration::uiScale);
     m_SelectingTitleText.setString("Click on a title.");
     m_SelectingTitleText.setFillColor(sf::Color::Red);
     m_SelectingTitleText.setFont(Configuration::fonts.Get(Fonts::NOTO_SANS));
     m_SelectingTitleText.setPosition({10, 20});
+    m_SelectingTitleText.setScale({ Configuration::uiScale, Configuration::uiScale });
 
     m_Clock.restart();
 }
@@ -74,7 +75,8 @@ void PropertiesTab::Render() {
             m_SelectingTitleText.setFillColor(sf::Color(red, 0, 0, 255));
         }
 
-        m_SelectingTitleText.setPosition({node->Pos.x + 10, node->Pos.y + 10});
+        m_SelectingTitleText.setCharacterSize(24 * Configuration::uiScale);
+        m_SelectingTitleText.setPosition({node->Pos.x + 10*Configuration::uiScale, node->Pos.y + 10*Configuration::uiScale});
         m_Menu.GetApp().GetWindow().draw(m_SelectingTitleText);
     }
 
@@ -140,7 +142,7 @@ void PropertiesTab::RenderJointProvinces() {
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 57, 106, 255));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32(2, 45, 86, 255));
     if (ImGui::CollapsingHeader("global", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::BeginChild("##joint-provinces", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+        ImGui::BeginChild("##joint-provinces", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
         ImGui::PushID("joint-provinces");
 
         // PROVINCE: terrain type (combobox)
@@ -224,7 +226,7 @@ void PropertiesTab::RenderJointProvinces() {
         if (ImGui::CollapsingHeader("climate")) {
             m_DisplayClimate = true;
             
-            if (ImGui::BeginChild("climate", ImVec2(0, 175), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+            if (ImGui::BeginChild("climate", ImVec2(0, 175), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                 ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate type").x - 10);
                 Components::ClimateTypeCombo(
@@ -305,7 +307,7 @@ void PropertiesTab::RenderProvinces() {
             Province* province = provinces[index];
                 
             if (ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::BeginChild(fmt::format("##province-{}", province->GetId()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+                ImGui::BeginChild(fmt::format("##province-{}", province->GetId()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
                 ImGui::PushID(province->GetId());                        
 
                 // PROVINCE: id (field)
@@ -410,7 +412,7 @@ void PropertiesTab::RenderProvinces() {
                 if (ImGui::CollapsingHeader("history")) {
                     m_DisplayHistory = true;
 
-                    if (ImGui::BeginChild((province->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((province->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         static std::string date = "";
                         static bool isDateValid = true;
@@ -514,7 +516,7 @@ void PropertiesTab::RenderProvinces() {
                 if (ImGui::CollapsingHeader("climate")) {
                     m_DisplayClimate = true;
                 
-                    if (ImGui::BeginChild((province->GetName() + "-climate").c_str(), ImVec2(0, 175), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((province->GetName() + "-climate").c_str(), ImVec2(0, 175), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate").x - 10);
                         if (ImGui::BeginCombo("climate", ClimateTypeLabels.at(province->GetClimateType()))) {
@@ -609,7 +611,7 @@ void PropertiesTab::RenderTitles() {
             Title* title = titles[index];
 
             if (ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::BeginChild(fmt::format("##title-{}", title->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+                ImGui::BeginChild(fmt::format("##title-{}", title->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
                 ImGui::PushID(title->GetName().c_str());
 
                 // TITLE: name/tag (field)
@@ -664,7 +666,7 @@ void PropertiesTab::RenderTitles() {
                 if (ImGui::CollapsingHeader("cultural names")) {
                     m_DisplayCulturalNames = true;
 
-                    if (ImGui::BeginChild((title->GetName() + "-cultural-names").c_str(), ImVec2(0, 100), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((title->GetName() + "-cultural-names").c_str(), ImVec2(0, 100), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         static std::string newCulture = "";
 
@@ -713,7 +715,7 @@ void PropertiesTab::RenderTitles() {
                 if (ImGui::CollapsingHeader("history")) {
                     m_DisplayHistory = true;
 
-                    if (ImGui::BeginChild((title->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((title->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         static std::string date = "";
                         static bool isDateValid = true;
@@ -819,7 +821,7 @@ void PropertiesTab::RenderTitles() {
                     int provinceId = barony->GetProvinceId();
                     if (ImGui::InputInt("province id", &provinceId)) {
                         if (!m_Mod.GetProvinceManager().HasProvinceById(provinceId)) {
-                            ImGui::PushFont(ImGui::notoSansNormalFont);
+                            ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
                             ImGui::Text("⚠️");
                             if (ImGui::IsItemHovered())
@@ -866,7 +868,7 @@ void PropertiesTab::RenderTitles() {
                     if (ImGui::CollapsingHeader("dejure titles")) {
                         m_DisplayDejureTitles = true;
 
-                        ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_None);
+                        ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_None);
 
                         if (ImGui::BeginMenuBar()) {
                             if (ImGui::BeginMenu("dejure titles")) {
@@ -1048,7 +1050,7 @@ void PropertiesTab::RenderRegions() {
     for (Region* region : regions) {
                 
         if (ImGui::CollapsingHeader(region->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::BeginChild(fmt::format("##region-{}", region->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+            ImGui::BeginChild(fmt::format("##region-{}", region->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
             ImGui::PushID(region->GetName().c_str());
 
             // REGION: name/tag (field)
@@ -1078,7 +1080,7 @@ void PropertiesTab::RenderRegions() {
             if (ImGui::CollapsingHeader("titles")) {
                 m_DisplayRegionsTitles = true;
 
-                ImGui::BeginChild("titles", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+                ImGui::BeginChild("titles", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
                 const auto DisplayTitles = [&](auto titles) {
                     for (const auto& title : titles) {
@@ -1132,7 +1134,7 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
-                ImGui::PushFont(ImGui::notoSansNormalFont);
+                ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                 if (m_SelectingTitle) ImGui::BeginDisabled();
                 if (ImGui::SmallButton("📌") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
@@ -1175,7 +1177,7 @@ void PropertiesTab::RenderRegions() {
             if (ImGui::CollapsingHeader("provinces")) {
                 m_DisplayRegionsProvinces = true;
 
-                ImGui::BeginChild("provinces", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+                ImGui::BeginChild("provinces", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
                 std::vector<Province*> provinces = std::vector<Province*>(region->GetProvinces().begin(), region->GetProvinces().end());
                 for (Province* province : provinces) {
@@ -1219,7 +1221,7 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
-                ImGui::PushFont(ImGui::notoSansNormalFont);
+                ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                 if (m_SelectingProvince) ImGui::BeginDisabled();
                 if (ImGui::SmallButton("📌") && !m_SelectingProvince) {
                     m_SelectingProvince = true;
@@ -1256,7 +1258,7 @@ void PropertiesTab::RenderRegions() {
             if (ImGui::CollapsingHeader("regions")) {
                 m_DisplayRegionsRegions = true;
 
-                ImGui::BeginChild("regions", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+                ImGui::BeginChild("regions", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
                 std::vector<Region*> regions = std::vector<Region*>(region->GetRegions().begin(), region->GetRegions().end());
                 for (Region* subRegion : regions) {
@@ -1266,7 +1268,7 @@ void PropertiesTab::RenderRegions() {
 
                     if (subRegion->HasRegion(region)) {
                         ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-50);
-                        ImGui::PushFont(ImGui::notoSansNormalFont);
+                        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
                         ImGui::Text("⚠️");
                         if (ImGui::IsItemHovered())

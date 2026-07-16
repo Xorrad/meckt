@@ -4,6 +4,10 @@
 #define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
 #include <imgui/imgui.hpp>
 
+const float FONT_SIZE_SMALL = 20.0f;
+const float FONT_SIZE_MEDIUM = 30.0f;
+const float FONT_SIZE_LARGE = 72.0f;
+
 namespace ImGui {
     extern ImFont* notoSansNormalFont;
     extern ImFont* notoSansMediumFont;

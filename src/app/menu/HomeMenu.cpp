@@ -43,12 +43,12 @@ void HomeMenu::Render() {
     ImGui::SetCursorPos(ImVec2(margin, marginTop));
 
     // Title.
-    ImGui::PushFont(ImGui::notoSansLargeFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_LARGE);
     ImGui::TextColored(ImVec4(0.26f, 0.59f, 0.98f, 1.00f), "meckt");
     ImGui::PopFont();
 
     // Version and credits.
-    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
     ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), fmt::format("v{} - {}", Configuration::buildVersion, Configuration::buildCredits).c_str());
     ImGui::PopFont();
 
@@ -57,11 +57,11 @@ void HomeMenu::Render() {
     ImGui::Dummy(ImVec2(0.0f, spacing));
 
     // Start section (new project, open directory...).
-    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
     ImGui::Text("Start");
     ImGui::PopFont();
 
-    ImGui::PushFont(ImGui::notoSansNormalFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
 
     ImGui::Dummy(ImVec2(0.0f, spacing));
     ImGui::BeginDisabled();
@@ -99,11 +99,11 @@ void HomeMenu::Render() {
     ImGui::Dummy(ImVec2(0.0f, spacing));
 
     // Recent section (last opened mod directories).
-    ImGui::PushFont(ImGui::notoSansMediumFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
     ImGui::Text("Recent");
     ImGui::PopFont();
 
-    ImGui::PushFont(ImGui::notoSansNormalFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
     int i = 0;
     for (auto dir : Configuration::recentMods) {
         if (i == 5) break;
@@ -128,7 +128,7 @@ void HomeMenu::Render() {
     ImGui::NewLine();
 
     // Other section.
-    ImGui::PushFont(ImGui::notoSansNormalFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
     if (ImGui::TextButton("🐛 Report an issue")) {
         std::string command;
 #ifdef _WIN32

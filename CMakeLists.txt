@@ -59,7 +59,7 @@ endif()
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.91.9-docking
+    GIT_TAG v1.92.8-docking
     GIT_SHALLOW ON
 )
 FetchContent_MakeAvailable(imgui)
@@ -85,8 +85,8 @@ set_target_properties(imgui PROPERTIES FOLDER "vendor")
 ###############################################
 FetchContent_Declare(
     imgui-sfml
-    GIT_REPOSITORY https://github.com/SFML/imgui-sfml.git
-    GIT_TAG v3.0
+    GIT_REPOSITORY https://github.com/lapinozz/imgui-sfml.git
+    GIT_TAG imgui-1.92
     GIT_SHALLOW ON
     # Overwrite the CMakeLists.txt with an empty one.
     PATCH_COMMAND "${CMAKE_COMMAND}" -E echo "" > CMakeLists.txt

@@ -7,6 +7,8 @@ void Configuration::Initialize() {
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
     windowResolution = { desktopMode.size.x, desktopMode.size.y };
 
+    Configuration::uiScale = std::max(desktopMode.size.x / 1920.f, desktopMode.size.y / 1080.f);
+
 #ifdef DEBUG
     buildVersion = buildVersion + " (debug)";
 #endif
@@ -43,6 +45,7 @@ void Configuration::Load() {
 
     Configuration::recentMods = data.value("recent_mods", std::list<std::string>{});
     Configuration::compactTooltip = data.value("compact_tooltip", false);
+    Configuration::uiScale = data.value("ui_scale", Configuration::uiScale);
 }
 
 void Configuration::Save() {
@@ -50,6 +53,7 @@ void Configuration::Save() {
     nlohmann::json json;
     json["recent_mods"] = Configuration::recentMods;
     json["compact_tooltip"] = Configuration::compactTooltip;
+    json["ui_scale"] = Configuration::uiScale;
 
     // Dump that json object into the settings file.
     std::ofstream file(Configuration::settingsFile, std::ios::out);

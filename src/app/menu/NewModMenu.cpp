@@ -64,7 +64,7 @@ void NewModMenu::Render() {
     ImGui::SetCursorPos(ImVec2(margin, marginTop));
 
     // Menu Title.
-    ImGui::PushFont(ImGui::notoSansLargeFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_LARGE);
     ImGui::TextColored(ImVec4(0.26f, 0.59f, 0.98f, 1.00f), "Create a new mod");
     ImGui::PopFont();
 
@@ -78,11 +78,11 @@ void NewModMenu::Render() {
         bool canCreate = isDirEmpty && hasProvincesImage;
 
         // Configuration section.
-        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
         ImGui::Text("Configuration");
         ImGui::PopFont();
 
-        ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
 
         ImGui::Dummy(ImVec2(0.0f, spacing));
 
@@ -174,7 +174,7 @@ void NewModMenu::Render() {
         ImGui::Dummy(ImVec2(0.0f, spacing));
 
         // Preview section (display the expected maps).
-        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
         ImGui::Text("Preview");
         ImGui::PopFont();
 
@@ -196,7 +196,7 @@ void NewModMenu::Render() {
         ImGui::Separator();
         ImGui::NewLine();
 
-        ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
 
         if (!isDirEmpty) {
             ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The mod directory is not empty!");
@@ -223,11 +223,11 @@ void NewModMenu::Render() {
     }
     else {
         // Configuration section.
-        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
         ImGui::Text("Creating project...");
         ImGui::PopFont();
 
-        ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
         ImGui::Dummy(ImVec2(0.0f, spacing));
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImGui::GetColorU32(ImGuiCol_Button));
         ImGui::ProgressBar(((float) m_CreationState)/(CreationStateLabels.size()-1), ImVec2(0.0f, 0.0f), CreationStateLabels.at(m_CreationState).c_str());

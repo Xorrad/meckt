@@ -1,8 +1,8 @@
 ﻿#include "ImGuiStyle.hpp"
 
 ImFont* ImGui::notoSansNormalFont = nullptr;
-ImFont* ImGui::notoSansMediumFont = nullptr;
-ImFont* ImGui::notoSansLargeFont = nullptr;
+// ImFont* ImGui::notoSansMediumFont = nullptr;
+// ImFont* ImGui::notoSansLargeFont = nullptr;
 
 void ImGui::SetupSettings() {
     ImGuiIO& io = ImGui::GetIO();
@@ -51,17 +51,15 @@ void ImGui::SetupFonts() {
 
 
     // Load NotoSans in different size for the main menu.
-    notoSansMediumFont = ImGui::AddFont((Configuration::resourcesPath + "/fonts/notosans.ttf").c_str(), 30.0f);
-    notoSansLargeFont = ImGui::AddFont((Configuration::resourcesPath + "/fonts/notosans.ttf").c_str(), 72.0f);
-
-    if(!ImGui::SFML::UpdateFontTexture())
-        LOG_ERROR("Failed to extend default font with complementary fonts.");
+    // notoSansMediumFont = ImGui::AddFont((Configuration::resourcesPath + "/fonts/notosans.ttf").c_str(), 30.0f);
+    // notoSansLargeFont = ImGui::AddFont((Configuration::resourcesPath + "/fonts/notosans.ttf").c_str(), 72.0f);
 }
 
 void ImGui::SetupStyle() {
     ImGuiStyle& style = ImGui::GetStyle();
     
     style.Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+    style.FontScaleMain = Configuration::uiScale;
 }
 
 ImFont* ImGui::AddFont(const std::string& path, float size, const ImFontConfig* font_cfg, const ImWchar* glyph_ranges) {
@@ -69,8 +67,6 @@ ImFont* ImGui::AddFont(const std::string& path, float size, const ImFontConfig* 
         // Standard disk loading.
         ImGuiIO& io = ImGui::GetIO();
         ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, font_cfg, glyph_ranges);
-        if(!ImGui::SFML::UpdateFontTexture())
-            LOG_ERROR("Failed to add font.");
         return font;
     #else
         // Embedded loading via CMRC.
@@ -80,8 +76,6 @@ ImFont* ImGui::AddFont(const std::string& path, float size, const ImFontConfig* 
         
         ImGuiIO& io = ImGui::GetIO();
         ImFont* font = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), size, font_cfg, glyph_ranges);
-        if(!ImGui::SFML::UpdateFontTexture())
-            LOG_ERROR("Failed to add font.");
         return font;
     #endif
 }
