@@ -46,6 +46,17 @@ std::string Http::Get(const std::string& url, const std::string& filePath) {
     if (!hSession)
         throw std::runtime_error("Failed to open WinHTTP session.");
 
+    if (!WinHttpSetTimeouts(
+        hSession,
+        250, // Resolve timeout
+        250, // Connect timeout
+        250, // Send timeout
+        250  // Receive timeout
+    )) {
+        WinHttpCloseHandle(hSession);
+        throw std::runtime_error("Failed to set WinHTTP timeouts.");
+    }
+
     HINTERNET hConnect = WinHttpConnect(hSession, host.c_str(), port, 0);
     if (!hConnect) {
         WinHttpCloseHandle(hSession);
@@ -110,6 +121,7 @@ std::string Http::Get(const std::string& url, const std::string& filePath) {
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "meckt");
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 250L);
     
     if (filePath.empty()) {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, Http::Impl::WriteCallback);
