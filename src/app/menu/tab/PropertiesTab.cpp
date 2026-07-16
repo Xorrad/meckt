@@ -928,19 +928,31 @@ void PropertiesTab::RenderTitles() {
                         // HIGHTITLE: add new dejure title (button)
                         if (ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
                             TitleType dejureType = static_cast<TitleType>(static_cast<int>(highTitle->GetType()) - 1);
+                            MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
                             m_SelectingTitle = true;
                             m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
                             m_Menu.GetSelectionHandler().AddCallback(
-                                [this, highTitle, dejureType](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
+                                [this, highTitle, dejureType, liegeMapMode](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
                                     if (button != sf::Mouse::Button::Left)
-                                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
+                                        goto StopSelecting;
+
                                     if (!clickedTitle->Is(dejureType))
                                         return SelectionCallbackResult::INTERRUPT;
+
+                                    // Add the clicked title as a dejure vassals,
+                                    // and then update the textures for all map modes above the clicked title type.
                                     highTitle->AddDejureTitle(clickedTitle);
-                                    MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
                                     for (int i = static_cast<int>(liegeMapMode); i <= static_cast<int>(MapMode::HEGEMONY); i++) {
                                         m_Menu.UpdateTexture(static_cast<MapMode>(i), false);
 									}
+
+                                    // Keep selecting if the user is holding the left shift key, otherwise stop selecting.
+                                    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
+                                        m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
+                                        return SelectionCallbackResult::INTERRUPT;
+                                    }
+
+                                    StopSelecting:
                                     m_Menu.SwitchMapMode(liegeMapMode, false);
                                     m_SelectingTitle = false;
                                     return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
