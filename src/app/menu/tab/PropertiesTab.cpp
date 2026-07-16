@@ -927,19 +927,19 @@ void PropertiesTab::RenderTitles() {
 
                         // HIGHTITLE: add new dejure title (button)
                         if (ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
-                            TitleType dejureType = (TitleType)(((int)highTitle->GetType()) - 1);
+                            TitleType dejureType = static_cast<TitleType>(static_cast<int>(highTitle->GetType()) - 1);
                             m_SelectingTitle = true;
                             m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
                             m_Menu.GetSelectionHandler().AddCallback(
                                 [this, highTitle, dejureType](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
                                     if (button != sf::Mouse::Button::Left)
-                                        return SelectionCallbackResult::INTERRUPT;
+                                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                                     if (!clickedTitle->Is(dejureType))
                                         return SelectionCallbackResult::INTERRUPT;
                                     highTitle->AddDejureTitle(clickedTitle);
                                     MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                                    for (int i = (int) liegeMapMode; i <= (int) MapMode::HEGEMONY; i++) {
-                                        m_Menu.UpdateTexture((MapMode)i, false);
+                                    for (int i = static_cast<int>(liegeMapMode); i <= static_cast<int>(MapMode::HEGEMONY); i++) {
+                                        m_Menu.UpdateTexture(static_cast<MapMode>(i), false);
 									}
                                     m_Menu.SwitchMapMode(liegeMapMode, false);
                                     m_SelectingTitle = false;

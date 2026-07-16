@@ -129,16 +129,19 @@ void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province) {
         --it;
 
         SelectionCallbackResult res = (*it)(button, province);
-
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
-            it = m_ProvinceCallbacks.erase(it);
-            continue;
-        }
+        bool shouldInterrupt = SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT);
 
         if (SelectionCallbackHasFlag(res, SelectionCallbackResult::UPDATE_MAP))
             updateMap = true;
 
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT))
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
+            it = m_ProvinceCallbacks.erase(it);
+            if (shouldInterrupt)
+                break;
+            continue;
+        }
+
+        if (shouldInterrupt)
             break;
     }
 
@@ -153,16 +156,19 @@ void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province, Tit
         --it;
 
         SelectionCallbackResult res = (*it)(button, province, title);
-
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
-            it = m_TitleCallbacks.erase(it);
-            continue;
-        }
+        bool shouldInterrupt = SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT);
 
         if (SelectionCallbackHasFlag(res, SelectionCallbackResult::UPDATE_MAP))
             updateMap = true;
 
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT))
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
+            it = m_TitleCallbacks.erase(it);
+            if (shouldInterrupt)
+                break;
+            continue;
+        }
+
+        if (shouldInterrupt)
             break;
     }
 
