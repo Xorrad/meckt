@@ -614,6 +614,19 @@ void ProvinceManager::LoadDefaultMapFile() {
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::SEA, true);
         m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::IMPASSABLE, true);
     }
+
+    // Every province that are not definied as a sea, river or lake will be auto-assigned as a LAND province.
+    for (auto& [_, province] : m_ProvincesByColors) {
+        if (province->HasFlag(ProvinceFlags::SEA)
+            || province->HasFlag(ProvinceFlags::RIVER)
+            || province->HasFlag(ProvinceFlags::LAKE
+        )) {
+            province->SetFlag(ProvinceFlags::LAND, false);
+        }
+        else {
+            province->SetFlag(ProvinceFlags::LAND, true);
+        }
+    }
 }
 
 void ProvinceManager::LoadProvincesTerrain() {
@@ -657,8 +670,8 @@ void ProvinceManager::LoadProvincesTerrain() {
 
         // If the province id has been assigned several terrain type then we only pick the first one.
         if(!value->Is(Jomini::Type::SCALAR)) {
-            terrain = value->AsArray<std::string>().front();
             LOG_WARNING("Province assigned several terrain types: '{}'", provinceId);
+            terrain = value->AsArray<std::string>().front();
         }
         else {
             terrain = value->As<std::string>();
@@ -674,9 +687,6 @@ void ProvinceManager::LoadProvincesTerrain() {
         }
 
         m_ProvincesByIds[provinceId]->SetTerrain(terrain);
-
-        if(!m_ProvincesByIds[provinceId]->HasFlag(ProvinceFlags::SEA))
-            m_ProvincesByIds[provinceId]->SetFlag(ProvinceFlags::LAND, true);
     }
 }
 

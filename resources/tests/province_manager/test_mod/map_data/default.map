@@ -15,29 +15,29 @@ seasons = "seasons.txt"
 #############
 # SEA ZONES
 #############
-sea_zones = RANGE { 1 3 }
+sea_zones = RANGE { 1 2 }
 sea_zones = LIST { 5 }
 
 ###############
 # MAJOR RIVERS
 ###############
 river_provinces = LIST { 5 }
-river_provinces = RANGE { 1 3 }
+river_provinces = RANGE { 1 2 }
 
 ########
 # LAKES
 ########
 lakes = LIST { 5 1 2 }
-lakes = RANGE { 1 3 }
+lakes = RANGE { 1 2 }
 
 #####################
 # IMPASSABLE TERRAIN
 #####################
-impassable_mountains = LIST { 5 }
-impassable_mountains = RANGE { 1 3 }
+impassable_mountains = LIST { 8 }
+impassable_mountains = RANGE { 6 7 }
 
 #####################
 # IMPASSABLE SEA ZONES
 #####################
 impassable_seas = LIST { 5 }
-impassable_seas = RANGE { 1 3 }
+impassable_seas = RANGE { 1 2 }

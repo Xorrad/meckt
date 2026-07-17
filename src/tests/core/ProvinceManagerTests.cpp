@@ -417,14 +417,17 @@ TEST_CASE("[ProvinceManager] LoadProvincesDefinition") {
             {2, sf::Color(2, 2, 2), "TEST2"},
             {3, sf::Color(3, 3, 3), "TEST3"},
             {4, sf::Color(4, 4, 4), "TEST4"},
-            {5, sf::Color(5, 5, 5), "TEST5"}
+            {5, sf::Color(5, 5, 5), "TEST5"},
+            {6, sf::Color(6, 6, 6), "TEST6"},
+            {7, sf::Color(7, 7, 7), "TEST7"},
+            {8, sf::Color(8, 8, 8), "TEST8"}
         };
 
         // Load the provinces.
         REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
 
         // Check that the loaded provinces match the expected data.
-        CHECK_EQ(manager.CountProvinces(), 5);
+        CHECK_EQ(manager.CountProvinces(), 8);
 
         for (const auto& expected : expectedProvinces) {
             const Province* province = manager.GetProvinceById(expected.id);
@@ -482,7 +485,7 @@ SUBCASE("Throws exception if there is no default map file") {
     REQUIRE_NOTHROW(manager.LoadDefaultMapFile());
 
     SUBCASE("Check sea zones") {
-        std::vector<int> seaZoneProvinceIds = {1, 2, 3, 5};
+        std::vector<int> seaZoneProvinceIds = {1, 2, 5};
 
         for (int provinceId : seaZoneProvinceIds) {
             REQUIRE(manager.HasProvinceById(provinceId));
@@ -491,7 +494,7 @@ SUBCASE("Throws exception if there is no default map file") {
     }
     
     SUBCASE("Check rivers") {
-        std::vector<int> riverProvinceIds = {1, 2, 3, 5};
+        std::vector<int> riverProvinceIds = {1, 2, 5};
 
         for (int provinceId : riverProvinceIds) {
             REQUIRE(manager.HasProvinceById(provinceId));
@@ -500,7 +503,7 @@ SUBCASE("Throws exception if there is no default map file") {
     }
     
     SUBCASE("Check lakes") {
-        std::vector<int> lakeProvinceIds = {1, 2, 3, 5};
+        std::vector<int> lakeProvinceIds = {1, 2, 5};
 
         for (int provinceId : lakeProvinceIds) {
             REQUIRE(manager.HasProvinceById(provinceId));
@@ -509,7 +512,7 @@ SUBCASE("Throws exception if there is no default map file") {
     }
     
     SUBCASE("Check impassable mountains") {
-        std::vector<int> mountainProvinceIds = {1, 2, 3, 5};
+        std::vector<int> mountainProvinceIds = {6, 7, 8};
 
         for (int provinceId : mountainProvinceIds) {
             REQUIRE(manager.HasProvinceById(provinceId));
@@ -519,7 +522,7 @@ SUBCASE("Throws exception if there is no default map file") {
     }
     
     SUBCASE("Check impassable seas") {
-        std::vector<int> seaProvinceIds = {1, 2, 3, 5};
+        std::vector<int> seaProvinceIds = {1, 2, 5};
 
         for (int provinceId : seaProvinceIds) {
             REQUIRE(manager.HasProvinceById(provinceId));
@@ -528,12 +531,12 @@ SUBCASE("Throws exception if there is no default map file") {
         }
     }
 
-    SUBCASE("Check that other provinces have no flags") {
-        std::vector<int> otherProvinceIds = {4};
+    SUBCASE("Check that other provinces have LAND flag by default") {
+        std::vector<int> otherProvinceIds = {3, 4};
 
         for (int provinceId : otherProvinceIds) {
             REQUIRE(manager.HasProvinceById(provinceId));
-            CHECK(manager.GetProvinceById(provinceId)->GetFlags() == ProvinceFlags::NONE);
+            CHECK(manager.GetProvinceById(provinceId)->HasFlag(ProvinceFlags::LAND));
         }
     }
 }
@@ -813,9 +816,12 @@ TEST_CASE("[ProvinceManager] ExportDefaultMapFile") {
     const std::vector<ProvinceFlagTestData> testData = {
         {1, ProvinceFlags::LAND | ProvinceFlags::IMPASSABLE},
         {2, ProvinceFlags::RIVER | ProvinceFlags::LAKE},
-        {3, ProvinceFlags::LAND | ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE | ProvinceFlags::IMPASSABLE},
-        {4, ProvinceFlags::NONE},
-        {5, ProvinceFlags::NONE}
+        {3, ProvinceFlags::LAND},
+        {4, ProvinceFlags::LAND},
+        {5, ProvinceFlags::LAND},
+        {6, ProvinceFlags::LAND | ProvinceFlags::IMPASSABLE},
+        {7, ProvinceFlags::LAND | ProvinceFlags::IMPASSABLE},
+        {8, ProvinceFlags::LAND | ProvinceFlags::IMPASSABLE}
     };
     
     for (const auto& data : testData) {

@@ -11,6 +11,7 @@
 
 #include "imgui/imgui.hpp"
 #include "app/menu/ImGuiStyle.hpp"
+#include "provinces/ProvinceFlags.hpp"
 
 PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
@@ -112,11 +113,11 @@ void PropertiesTab::RenderJointProvinces() {
     std::string harshWinterFactorOverride = firstProvince->GetHarshWinterFactorOverride();
 
     int isCoastal = firstProvince->HasFlag(ProvinceFlags::COASTAL);
-    int isLake = firstProvince->HasFlag(ProvinceFlags::LAKE);
     int isIsland = firstProvince->HasFlag(ProvinceFlags::ISLAND);
     int isLand = firstProvince->HasFlag(ProvinceFlags::LAND);
     int isSea = firstProvince->HasFlag(ProvinceFlags::SEA);
     int isRiver = firstProvince->HasFlag(ProvinceFlags::RIVER);
+    int isLake = firstProvince->HasFlag(ProvinceFlags::LAKE);
     int isImpassable = firstProvince->HasFlag(ProvinceFlags::IMPASSABLE);
 
     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
@@ -130,11 +131,11 @@ void PropertiesTab::RenderJointProvinces() {
         if (province->GetNormalWinterFactorOverride() != normalWinterFactorOverride) normalWinterFactorOverride = "*****";
         if (province->GetHarshWinterFactorOverride() != harshWinterFactorOverride) harshWinterFactorOverride = "*****";
         if (province->HasFlag(ProvinceFlags::COASTAL) != isCoastal) isCoastal = -1;
-        if (province->HasFlag(ProvinceFlags::LAKE) != isLake) isLake = -1;
         if (province->HasFlag(ProvinceFlags::ISLAND) != isIsland) isIsland = -1;
         if (province->HasFlag(ProvinceFlags::LAND) != isLand) isLand = -1;
         if (province->HasFlag(ProvinceFlags::SEA) != isSea) isSea = -1;
         if (province->HasFlag(ProvinceFlags::RIVER) != isRiver) isRiver = -1;
+        if (province->HasFlag(ProvinceFlags::LAKE) != isLake) isLake = -1;
         if (province->HasFlag(ProvinceFlags::IMPASSABLE) != isImpassable) isImpassable = -1;
     }
 
@@ -163,30 +164,49 @@ void PropertiesTab::RenderJointProvinces() {
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) { \
                 province->SetFlag(ProvinceFlags::flag, var); \
             }
+        #define UPDATE_FLAG_SEA_RIVER_LAKE(flag, var, isSea, isRiver, isLake) \
+            for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) { \
+                province->SetFlag(ProvinceFlags::flag, var); \
+                province->SetFlag(ProvinceFlags::LAND, !(isSea || isRiver || isLake)); \
+            }
 
         if (ImGui::BeginTable("province flags", 2)) {
+            
+            // Coastal - Island
+
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::BeginDisabled();
             if (ImGui::CheckBoxTristate("Coastal", &isCoastal)) UPDATE_FLAG(COASTAL, isCoastal);
             ImGui::EndDisabled();
+            
             ImGui::TableSetColumnIndex(1);
-            if (ImGui::CheckBoxTristate("Lake", &isLake)) UPDATE_FLAG(LAKE, isLake);
+            ImGui::BeginDisabled();
+            if (ImGui::CheckBoxTristate("Island", &isIsland)) UPDATE_FLAG(ISLAND, isIsland);
+            ImGui::EndDisabled();
+
+            // Land - Sea
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::BeginDisabled();
-            if (ImGui::CheckBoxTristate("Island", &isIsland)) UPDATE_FLAG(ISLAND, isIsland);
-            ImGui::EndDisabled();
-            ImGui::TableSetColumnIndex(1);
             if (ImGui::CheckBoxTristate("Land", &isLand)) UPDATE_FLAG(LAND, isLand);
-            
+            ImGui::EndDisabled();
+
+            ImGui::TableSetColumnIndex(1);
+            if (ImGui::CheckBoxTristate("Sea", &isSea)) UPDATE_FLAG_SEA_RIVER_LAKE(SEA, isSea, isSea, isRiver, isLake);
+
+            // River - Lake
+
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            if (ImGui::CheckBoxTristate("Sea", &isSea)) UPDATE_FLAG(SEA, isSea);
-            ImGui::TableSetColumnIndex(1);
-            if (ImGui::CheckBoxTristate("River", &isRiver)) UPDATE_FLAG(RIVER, isRiver);
+            if (ImGui::CheckBoxTristate("River", &isRiver)) UPDATE_FLAG_SEA_RIVER_LAKE(RIVER, isRiver, isSea, isRiver, isLake);
             
+            ImGui::TableSetColumnIndex(1);
+            if (ImGui::CheckBoxTristate("Lake", &isLake)) UPDATE_FLAG_SEA_RIVER_LAKE(LAKE, isLake, isSea, isRiver, isLake);
+
+            // Impassable
+
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             if (ImGui::CheckBoxTristate("Impassable", &isImpassable)) UPDATE_FLAG(IMPASSABLE, isImpassable);
@@ -345,37 +365,58 @@ void PropertiesTab::RenderProvinces() {
             
                 // PROVINCE: flags (checkbox)
                 bool isCoastal = province->HasFlag(ProvinceFlags::COASTAL);
-                bool isLake = province->HasFlag(ProvinceFlags::LAKE);
                 bool isIsland = province->HasFlag(ProvinceFlags::ISLAND);
                 bool isLand = province->HasFlag(ProvinceFlags::LAND);
                 bool isSea = province->HasFlag(ProvinceFlags::SEA);
                 bool isRiver = province->HasFlag(ProvinceFlags::RIVER);
+                bool isLake = province->HasFlag(ProvinceFlags::LAKE);
                 bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
 
                 if (ImGui::BeginTable("province flags", 2)) {
-                    ImGui::TableNextRow();
-                
+                    
+                    // Coastal - Island
+
+                    ImGui::TableNextRow();                
                     ImGui::TableSetColumnIndex(0);
                     ImGui::BeginDisabled();
                     if (ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
                     ImGui::EndDisabled();
+
                     ImGui::TableSetColumnIndex(1);
-                    if (ImGui::Checkbox("Lake", &isLake)) province->SetFlag(ProvinceFlags::LAKE, isLake);
+                    ImGui::BeginDisabled();
+                    if (ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
+                    ImGui::EndDisabled();
+                    
+                    // Land - Sea
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     ImGui::BeginDisabled();
-                    if (ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
+                    ImGui::Checkbox("Land", &isLand);
                     ImGui::EndDisabled();
+                    
                     ImGui::TableSetColumnIndex(1);
-                    if (ImGui::Checkbox("Land", &isLand)) province->SetFlag(ProvinceFlags::LAND, isLand);
-                
+                    if (ImGui::Checkbox("Sea", &isSea)) {
+                        province->SetFlag(ProvinceFlags::SEA, isSea);
+                        province->SetFlag(ProvinceFlags::LAND, !(province->HasFlag(ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE)));
+                    }
+
+                    // River - Lake
+
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    if (ImGui::Checkbox("Sea", &isSea)) province->SetFlag(ProvinceFlags::SEA, isSea);
+                    if (ImGui::Checkbox("River", &isRiver)) {
+                        province->SetFlag(ProvinceFlags::RIVER, isRiver);
+                        province->SetFlag(ProvinceFlags::LAND, !(province->HasFlag(ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE)));
+                    }
                     ImGui::TableSetColumnIndex(1);
-                    if (ImGui::Checkbox("River", &isRiver)) province->SetFlag(ProvinceFlags::RIVER, isRiver);
-                
+                    if (ImGui::Checkbox("Lake", &isLake)) {
+                        province->SetFlag(ProvinceFlags::LAKE, isLake);
+                        province->SetFlag(ProvinceFlags::LAND, !(province->HasFlag(ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE)));
+                    }
+
+                    // Impassable
+
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     if (ImGui::Checkbox("Impassable", &isImpassable)) province->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
