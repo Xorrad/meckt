@@ -90,6 +90,7 @@ void TitlesTab::Render() {
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(m_Mod.GetProvinceManager());
                     m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                    m_Menu.UpdateCameraBounds();
                 }
 
                 ImGui::TableNextColumn();
@@ -123,6 +124,7 @@ void TitlesTab::Render() {
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = title->GetImagePosition(m_Mod.GetProvinceManager());
                     m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                    m_Menu.UpdateCameraBounds();
                 }
 
                 ImGui::TableNextColumn();

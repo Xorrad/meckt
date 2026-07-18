@@ -125,6 +125,7 @@ void ProvincesTab::Render() {
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = province->GetImagePosition();
                     m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                    m_Menu.UpdateCameraBounds();
                 }
 
                 ImGui::Text(province->GetName().c_str());
