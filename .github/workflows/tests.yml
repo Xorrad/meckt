@@ -1,11 +1,11 @@
 ﻿name: Run Tests
 
 on:
-  push:
-    branches: [ "master", "tests" ]
-  pull_request:
-    branches: [ "master", "tests" ]
   workflow_dispatch:
+  push:
+    branches: [ master, tests ]
+  pull_request:
+    branches: [ master, tests ]
 
 jobs:
   tests:
@@ -17,8 +17,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v5
+    - name: Checkout main repo
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
         submodules: true

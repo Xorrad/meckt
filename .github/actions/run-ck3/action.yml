@@ -1,0 +1,42 @@
+name: Run CK3
+description: Try running a Crusader Kings 3 instance using no graphics.
+
+inputs:
+  artifact-name:
+    description: 'Name for the uploaded artifact'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Run CK3
+      shell: bash
+      run: |
+        docker run --rm \
+          -e PYTHONUNBUFFERED=1 \
+          -m 10g \
+          -v "${{ github.workspace }}:/workspace" \
+          -v "${{ github.workspace }}/ck3-user-data:/root/.local/share/Paradox Interactive/Crusader Kings III" \
+          -w /workspace \
+          ck3 \
+        python -u /workspace/src/tests/workflows/monitor.py
+    
+    - name: Summary
+      if: always()
+      shell: bash
+      run: |
+        python -u src/tests/workflows/result.py
+        cp "ck3-user-data/logs/error.log" ./error.log 2>/dev/null
+        cp "ck3-user-data/logs/dedicated_server.log" ./dedicated_server.log 2>/dev/null
+        cp -r "ck3-user-data/crashes" ./crashes
+
+    - name: Upload logs and crash dumps
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          error.log
+          dedicated_server.log
+          crashes/
+        if-no-files-found: warn

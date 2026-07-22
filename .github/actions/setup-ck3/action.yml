@@ -1,0 +1,38 @@
+name: Setup CK3
+description: Setup a runtime environment for Crusader Kings 3.
+
+inputs:
+  token:
+    description: 'A Github PAT'
+    required: true
+  mod:
+    description: Mod name.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout images repo
+      uses: actions/checkout@v7
+      with:
+        repository: Xorrad/meckt-lfs
+        token: ${{ inputs.token }}
+        lfs: false
+        path: meckt-lfs
+
+    - name: Pull LFS files
+      shell: bash
+      working-directory: meckt-lfs
+      run: |
+        git lfs install --local
+
+        INCLUDE="ck3.tar.gz"
+        if [ "${{ inputs.mod }}" != "vanilla" ]; then
+          INCLUDE="$INCLUDE,${{ inputs.mod }}.tar.gz"
+        fi
+
+        git lfs pull --include="$INCLUDE"
+
+    - name: Initialize Docker
+      shell: bash
+      run: docker load < meckt-lfs/ck3.tar.gz
