@@ -3,7 +3,11 @@
 #define DOCTEST_CONFIG_IMPLEMENT
 #include "doctest/doctest.hpp"
 
+#include "core/util/SignalHandler.hpp"
 #include "core/mod/Mod.hpp"
+
+SignalHandler SIGNAL_HANDLER;
+
 int ImportExportMod(const std::string& modPath);
 
 int main(int argc, char** argv) {
