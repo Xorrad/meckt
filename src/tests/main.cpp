@@ -30,55 +30,39 @@ int ImportExportMod(const std::string& modPath) {
     {
         Mod mod(modPath);
 
-        try {
-            bool failed = false;
-            mod.Load(
-                [&]() { },
-                [&](LoadingState state) { },
-                [&](const std::string& error) { failed = true; }
-            );
+        bool failed = false;
 
-            if (failed) {
-                std::cout << "ERROR: Failed to import the mod" << std::endl;
-                return 1;
-            }
-        }
-        catch (std::exception& e) {
-            std::cout << "ERROR: Failed to import the mod" << "\n";
-            std::cout << e.what() << std::endl;
+        LOG_INFO("\n\n---------------------------------------------- LOADING ----------------------------------------------\n");
+        mod.Load(
+            [&]() { },
+            [&](LoadingState state) { },
+            [&](const std::string& error) { failed = true; }
+        );
+
+        if (failed) {
+            std::cout << "ERROR: Failed to import the mod" << std::endl;
             return 1;
         }
 
-        try {
-            mod.Export();
-        }
-        catch (std::exception& e) {
-            std::cout << "ERROR: Failed to export the mod" << "\n";
-            std::cout << e.what() << std::endl;
-            return 1;
-        }
+        LOG_INFO("\n\n---------------------------------------------- EXPORTING ----------------------------------------------\n");
+        mod.Export();
     }
 
     // Check that the mod can be imported again without crash.
     {
         Mod mod(modPath);
 
-        try {
-            bool failed = false;
-            mod.Load(
-                [&]() { },
-                [&](LoadingState state) { },
-                [&](const std::string& error) { failed = true; }
-            );
+        bool failed = false;
 
-            if (failed) {
-                std::cout << "ERROR: Failed to re-import the mod" << std::endl;
-                return 1;
-            }
-        }
-        catch (std::exception& e) {
-            std::cout << "ERROR: Failed to re-import the mod" << "\n";
-            std::cout << e.what() << std::endl;
+        LOG_INFO("\n\n---------------------------------------------- RELOADING ----------------------------------------------\n");
+        mod.Load(
+            [&]() { },
+            [&](LoadingState state) { },
+            [&](const std::string& error) { failed = true; }
+        );
+
+        if (failed) {
+            std::cout << "ERROR: Failed to re-import the mod" << std::endl;
             return 1;
         }
     }
