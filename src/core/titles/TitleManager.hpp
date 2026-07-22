@@ -251,7 +251,7 @@ public:
     /**
      * @brief Loads all the titles defined in the mod's common/landed_titles directory.
      */
-    void LoadTitles();
+    void LoadTitles(const ProvinceManager& provinceManager);
 
     /**
      * @brief Recursively parses titles from a jomini data object.
@@ -259,7 +259,7 @@ public:
      * @param data The data of the titles to parse.
      * @return A list of non-owning pointers to the titles defined in the data.
      */
-    std::vector<Title*> LoadTitlesFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
+    std::vector<Title*> LoadTitlesFile(const ProvinceManager& provinceManager, const std::string& fileName, SharedPtr<Jomini::Object> data);
 
     /**
      * @brief Parses a title from a jomini data object.
@@ -268,7 +268,7 @@ public:
      * @param data The data of the title to parse.
      * @return A non-owning pointer to the parsed title.
      */
-    UniquePtr<Title> ParseTitle(const std::string& fileName, const std::string& name, SharedPtr<Jomini::Object> data);
+    UniquePtr<Title> ParseTitle(const ProvinceManager& provinceManager, const std::string& fileName, const std::string& name, SharedPtr<Jomini::Object> data);
 
     /**
      * @brief Initializes the capital title class members for high titles (duchy, kingdom, empire, hegemony).

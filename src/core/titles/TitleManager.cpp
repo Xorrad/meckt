@@ -213,7 +213,7 @@ void TitleManager::AddTitle(UniquePtr<Title> title) {
     // Add barony title to map of baronies.
     if(title->Is(TitleType::BARONY)) {
         BaronyTitle* barony = static_cast<BaronyTitle*>(title.get());
-        if (barony->GetProvinceId() != 0)
+        if (barony->GetProvinceId() != 0 && !m_BaroniesByProvinceId.contains(barony->GetProvinceId()))
             m_BaroniesByProvinceId[barony->GetProvinceId()] = barony;
     }
 
@@ -248,7 +248,7 @@ void TitleManager::RemoveTitle(const std::string& name) {
     // Remove barony from map of baronies.
     if(title->Is(TitleType::BARONY)) {
         const BaronyTitle* barony = static_cast<const BaronyTitle*>(title);
-        if (barony->GetProvinceId() != 0)
+        if (barony->GetProvinceId() != 0 && m_BaroniesByProvinceId[barony->GetProvinceId()] == barony)
             m_BaroniesByProvinceId.erase(barony->GetProvinceId());
     }
     
@@ -356,7 +356,7 @@ void TitleManager::AddLocCulturalName(const std::string& lang, const std::string
 
 //////////////////////////////////////////////////////
 
-void TitleManager::LoadTitles() {
+void TitleManager::LoadTitles(const ProvinceManager& provinceManager) {
     // Remove any title and variable that might have been loaded beforehand.
     m_Titles.clear();
     m_TitlesByType.clear();
@@ -376,7 +376,7 @@ void TitleManager::LoadTitles() {
         try {
             SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
             std::string fileName = m_Mod.GetRelativePath(Paths::COMMON_LANDED_TITLES, filePath);
-            std::ignore = this->LoadTitlesFile(fileName, data);
+            std::ignore = this->LoadTitlesFile(provinceManager, fileName, data);
         }
         catch (std::exception& e) {
             LOG_ERROR("Failed to parse title definition file '{}': {}", filePath, e.what());
@@ -391,7 +391,7 @@ void TitleManager::LoadTitles() {
         LOG_INFO("Loaded {} {} titles", m_TitlesByType[static_cast<TitleType>(i)].size(), TitleTypeLabels[i]);
 }
 
-std::vector<Title*> TitleManager::LoadTitlesFile(const std::string& fileName, SharedPtr<Jomini::Object> data) {
+std::vector<Title*> TitleManager::LoadTitlesFile(const ProvinceManager& provinceManager, const std::string& fileName, SharedPtr<Jomini::Object> data) {
     std::vector<Title*> titles;
     titles.reserve(5);
 
@@ -412,8 +412,13 @@ std::vector<Title*> TitleManager::LoadTitlesFile(const std::string& fileName, Sh
         if (!IsValidTitleName(key))
             continue;
 
+        if (this->HasTitle(key)) {
+            LOG_ERROR("Title '{}' has multiple definitions in file '{}'", key, fileName);
+            continue;
+        }
+
         try {
-            UniquePtr<Title> title = this->ParseTitle(fileName, key, value);
+            UniquePtr<Title> title = this->ParseTitle(provinceManager, fileName, key, value);
             titles.push_back(title.get());
             this->AddTitle(std::move(title));
         }
@@ -425,7 +430,7 @@ std::vector<Title*> TitleManager::LoadTitlesFile(const std::string& fileName, Sh
     return titles;
 }
 
-UniquePtr<Title> TitleManager::ParseTitle(const std::string& fileName, const std::string& name, SharedPtr<Jomini::Object> data) {
+UniquePtr<Title> TitleManager::ParseTitle(const ProvinceManager& provinceManager, const std::string& fileName, const std::string& name, SharedPtr<Jomini::Object> data) {
     
     // TODO: make this function a proper one since it will be reused for provinces, cultures, religions...
     const auto GetProperty = [&]<typename T>(const std::string& propertyName, T defaultValue, bool required) -> T {
@@ -507,12 +512,11 @@ UniquePtr<Title> TitleManager::ParseTitle(const std::string& fileName, const std
         BaronyTitle* barony = static_cast<BaronyTitle*>(title.get());
         barony->SetProvinceId(provinceId);
 
-        // TODO: Reimplement this alert using the refactored provinces manager.
-        // if(m_ProvincesByIds.contains(provinceId))
-        //     LOG_ERROR("Title '{}' has an unknown province id '{}'", name, provinceId);
+        if(!provinceManager.HasProvinceById(provinceId))
+            LOG_ERROR("Title '{}' assigned province '{}' doesn't exist", name, provinceId);
         if(m_BaroniesByProvinceId.contains(provinceId)) {
-            LOG_ERROR("Title '{}' assigned province '{}' is already assigned to barony '{}'", name, provinceId, m_BaroniesByProvinceId[provinceId]->GetName());
-            barony->SetProvinceId(0);
+            LOG_ERROR("Province '{}' has been assigned to multiple baronies: '{}' and '{}'; in file '{}'", provinceId, name, m_BaroniesByProvinceId[provinceId]->GetName(), fileName);
+            // barony->SetProvinceId(0);
         }
     }
     // Otherwise, if the title is a "high title", parse its vassal titles.
@@ -520,7 +524,7 @@ UniquePtr<Title> TitleManager::ParseTitle(const std::string& fileName, const std
         HighTitle* highTitle = static_cast<HighTitle*>(title.get());
 
         // Recursively parse the vassal titles.
-        std::vector<Title*> dejureTitles = this->LoadTitlesFile(fileName, data);
+        std::vector<Title*> dejureTitles = this->LoadTitlesFile(provinceManager, fileName, data);
 
         if(landless && !dejureTitles.empty())
             LOG_WARNING("Title '{}' has dejure titles even though it is landless", name);

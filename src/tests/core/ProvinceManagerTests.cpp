@@ -978,7 +978,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
         REQUIRE_NOTHROW(manager.LoadHoldingTypes());
         REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
         REQUIRE_NOTHROW(manager.LoadProvincesHistory());
-        REQUIRE_NOTHROW(titleManager.LoadTitles());
+        REQUIRE_NOTHROW(titleManager.LoadTitles(manager));
         
         manager.GetProvinceById(1)->SetCulture("modified_culture");
         manager.GetProvinceById(1)->SetFaith("modified_religion");

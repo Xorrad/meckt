@@ -169,7 +169,7 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
     TitleManager titleManager(mod);
 
     REQUIRE_NOTHROW(provinceManager.LoadProvincesDefinition());
-    REQUIRE_NOTHROW(titleManager.LoadTitles());
+    REQUIRE_NOTHROW(titleManager.LoadTitles(provinceManager));
     REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(provinceManager, titleManager));
 
     struct RegionTestData {
@@ -235,7 +235,7 @@ TEST_CASE("[RegionManager] ExportGeographicalRegions") {
     TitleManager titleManager(mod);
 
     REQUIRE_NOTHROW(provinceManager.LoadProvincesDefinition());
-    REQUIRE_NOTHROW(titleManager.LoadTitles());
+    REQUIRE_NOTHROW(titleManager.LoadTitles(provinceManager));
     REQUIRE_NOTHROW(regionManager.LoadGeographicalRegions(provinceManager, titleManager));
 
     regionManager.GetRegion("region1")->AddDuchy(titleManager.GetTitleAs<DuchyTitle>("d_test2"));

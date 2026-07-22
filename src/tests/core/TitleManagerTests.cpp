@@ -2,6 +2,7 @@
 
 #include "mod/Mod.hpp"
 #include "titles/TitleManager.hpp"
+#include "provinces/ProvinceManager.hpp"
 #include "util/Yaml.hpp"
 
 TEST_SUITE("[TitleManager]") {
@@ -353,11 +354,12 @@ TEST_CASE("[TitleManager] LoadTitles") {
     Mod mod("resources/tests/title_manager/test_mod");
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
+    ProvinceManager provinceManager(mod);
     TitleManager manager(mod);
     REQUIRE(manager.CountTitles() == 0);
 
     // 2. Load the titles from the mod directory.
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
 
     // 3. Asserts
 
@@ -543,8 +545,9 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
     Mod mod("resources/tests/title_manager/test_mod");
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
+    ProvinceManager provinceManager(mod);
     TitleManager manager(mod);
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
 
     // 2. Load the titles history.
     REQUIRE_NOTHROW(manager.LoadTitlesHistory());
@@ -627,8 +630,9 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
     Mod mod("resources/tests/title_manager/test_mod");
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
+    ProvinceManager provinceManager(mod);
     TitleManager manager(mod);
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
 
     // 2. Load the titles localization.
     REQUIRE_NOTHROW(manager.LoadLocalization());
@@ -722,11 +726,12 @@ TEST_CASE("[TitleManager] ExportTitles") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
+    ProvinceManager provinceManager(mod);
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
-        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
 
         // Edit some titles.
         manager.RenameTitle("b_test1", "b_modified1");
@@ -742,7 +747,7 @@ TEST_CASE("[TitleManager] ExportTitles") {
 
     // Reload the titles.
     TitleManager manager(mod);
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
 
     // 3. Asserts
 
@@ -838,11 +843,12 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
+    ProvinceManager provinceManager(mod);
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
-        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
         REQUIRE_NOTHROW(manager.LoadTitlesHistory());
 
         // Edit some titles history.
@@ -862,7 +868,7 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
 
     // Reload the titles.
     TitleManager manager(mod);
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
     REQUIRE_NOTHROW(manager.LoadTitlesHistory());
 
     // 3. Asserts
@@ -930,11 +936,12 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
+    ProvinceManager provinceManager(mod);
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
-        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
         REQUIRE_NOTHROW(manager.LoadLocalization());
 
         // Edit some titles localization.
@@ -951,7 +958,7 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
 
     // Reload the titles.
     TitleManager manager(mod);
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
     REQUIRE_NOTHROW(manager.LoadLocalization());
 
     // 3. Asserts
@@ -1028,11 +1035,12 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
+    ProvinceManager provinceManager(mod);
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
-        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
         REQUIRE_NOTHROW(manager.LoadLocalization());
 
         // Add new cultural names localization.
@@ -1051,7 +1059,7 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
 
     // Reload the titles.
     TitleManager manager(mod);
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
     REQUIRE_NOTHROW(manager.LoadLocalization());
 
     // 3. Asserts
@@ -1098,11 +1106,12 @@ TEST_CASE("[TitleManager] DeleteLocalization") {
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
+    ProvinceManager provinceManager(mod);
     REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
 
     {
         TitleManager manager(mod);
-        REQUIRE_NOTHROW(manager.LoadTitles());
+        REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
         REQUIRE_NOTHROW(manager.LoadLocalization());
         
         // Copy the original mod localization files to the temp export directory.
@@ -1117,7 +1126,7 @@ TEST_CASE("[TitleManager] DeleteLocalization") {
 
     // Reload the titles.
     TitleManager manager(mod);
-    REQUIRE_NOTHROW(manager.LoadTitles());
+    REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
     REQUIRE_NOTHROW(manager.LoadLocalization());
 
     // 3. Asserts
