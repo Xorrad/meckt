@@ -417,6 +417,17 @@ std::vector<Title*> TitleManager::LoadTitlesFile(const ProvinceManager& province
             continue;
         }
 
+        // Ignore scalar values in the landed titles files.
+        if (value->Is(Jomini::Type::SCALAR))
+            continue;
+
+        // Check if there wasn't a duplicate of the title definition in the same file.
+        // And if so, keep only the first definition.
+        if (!value->Is(Jomini::Type::OBJECT)) {
+            LOG_ERROR("Title '{}' has multiple definitions in file '{}'", key, fileName);
+            value = data->GetFirst(key);
+        }
+
         try {
             UniquePtr<Title> title = this->ParseTitle(provinceManager, fileName, key, value);
             titles.push_back(title.get());
