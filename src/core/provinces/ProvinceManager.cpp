@@ -647,6 +647,10 @@ void ProvinceManager::LoadProvincesTerrain() {
     m_DefaultSeaTerrain = result->Get("default_sea")->As<std::string>("sea");
     m_DefaultCoastalSeaTerrain = result->Get("default_coastal_sea")->As<std::string>("sea");
 
+    result->Remove("default_land");
+    result->Remove("default_sea");
+    result->Remove("default_coastal_sea");
+
     // Set default terrain for all provinces (especially for those without any in files).
     for(const auto& [colorId, province] : m_ProvincesByColors) {
         std::string defaultTerrain = m_DefaultLandTerrain;
