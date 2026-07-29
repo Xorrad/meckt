@@ -403,7 +403,8 @@ void ProvinceManager::LoadTerrainTypes() {
         TerrainType("wetlands", sf::Color(75, 200, 200)),
         TerrainType("steppe", sf::Color(200, 100, 25)),
         TerrainType("floodplains", sf::Color(200, 50, 100)),
-        TerrainType("drylands", sf::Color(220, 45, 120))
+        TerrainType("drylands", sf::Color(220, 45, 120)),
+        TerrainType("terraced_hills", sf::Color(225, 35, 40))
     };
 
     for(auto type : vanillaTypes) {

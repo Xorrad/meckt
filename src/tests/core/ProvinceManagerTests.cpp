@@ -353,7 +353,8 @@ TEST_CASE("[ProvinceManager] LoadTerrainTypes") {
             "wetlands",
             "steppe",
             "floodplains",
-            "drylands"
+            "drylands",
+            "terraced_hills"
         };
         for (const std::string& type : vanillaTypes) {
             CHECK(manager.HasTerrainType(type));
