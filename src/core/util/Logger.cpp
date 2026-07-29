@@ -90,7 +90,7 @@ sf::Color Logger::Message::GetColor() const {
 
 Logger::Logger::Logger(std::string filePath) {
     std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
-    m_OutputFile.open(filePath, std::ios::out);
+    m_OutputFile.open(filePath, std::ios::binary);
 }
 
 Logger::Logger::~Logger() {
@@ -119,7 +119,7 @@ void Logger::Logger::Clear() {
     m_OutputFile.close();
     std::filesystem::remove(LOGS_FILE);
     std::filesystem::remove(CRASH_FILE);
-    m_OutputFile.open(LOGS_FILE, std::ios::out);
+    m_OutputFile.open(LOGS_FILE, std::ios::binary);
     m_Messages.clear();
 }
 

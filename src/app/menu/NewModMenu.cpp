@@ -333,7 +333,7 @@ void NewModMenu::CreateMod() {
 
     SharedPtr<Jomini::Object> descriptorData = Jomini::ParseFile((modPath / "descriptor.mod").string());
     descriptorData->Put("name", "\"" + m_ModName + "\"");
-    std::ofstream descriptorFile(modPath / "descriptor.mod", std::ios::out);
+    std::ofstream descriptorFile(modPath / "descriptor.mod", std::ios::binary);
     descriptorFile << descriptorData->Serialize();
     descriptorFile.close();
 
@@ -342,7 +342,7 @@ void NewModMenu::CreateMod() {
     std::replace(modFileName.begin(), modFileName.end(), ' ', '_');
     std::replace(modFileName.begin(), modFileName.end(), '\'', '_');
     descriptorData->Put("path", "\"" + modPath.string() + "\"");
-    descriptorFile.open(modPath / std::string(modFileName + ".mod"), std::ios::out);
+    descriptorFile.open(modPath / std::string(modFileName + ".mod"), std::ios::binary);
     descriptorFile << descriptorData->Serialize();
     descriptorFile.close();
 
@@ -351,7 +351,7 @@ void NewModMenu::CreateMod() {
         std::filesystem::create_directories((modPath / "common" / "defines").string().c_str());
 
         // Replace the vanilla water level with what the user specified.
-        std::ofstream outFile((modPath / "common" / "defines" / "01_defines.txt").string(), std::ios::out);
+        std::ofstream outFile((modPath / "common" / "defines" / "01_defines.txt").string(), std::ios::binary);
         outFile << "NJominiMap = {\n";
         outFile << "\tWATERLEVEL = " << std::fixed << std::setprecision(2) << m_WaterLevel << "\n";
         outFile << "}";

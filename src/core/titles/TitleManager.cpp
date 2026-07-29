@@ -743,8 +743,13 @@ void TitleManager::LoadLocalization() {
             }
 
             auto it = m_Titles.find(titleId);
-            if(it == m_Titles.end())
+
+            // If there are no title with that name, then we assume that it's a cultural name.
+            if(it == m_Titles.end()) {
+                this->AddLocCulturalName("english", key, value);
+                countCulturalNames++;
                 continue;
+            }
 
             switch(locType) {
                 case NAME:
@@ -799,7 +804,7 @@ void TitleManager::ExportTitles() {
         if(fileName.empty())
             fileName = "01_landed_titles.txt";
         if(files.count(fileName) == 0) {
-            files[fileName] = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::out);
+            files[fileName] = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::binary);
             File::EncodeToUTF8BOM(files[fileName]);
 
             // Export original script variables.
@@ -818,7 +823,7 @@ void TitleManager::ExportTitles() {
 
     // Create empty files for the vanilla overrides.
     for (const auto& [fileName, fileContent] : m_VanillaOverrideTitleFiles) {
-        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::out);
+        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::binary);
         // File::EncodeToUTF8BOM(file); // Encoding bytes are present alongside the file content.
         fmt::print(file, "{}", fileContent);
     }
@@ -930,7 +935,7 @@ void TitleManager::ExportTitlesHistory() {
             fileName = GetTitleFileName(title.get()) + ".txt";
         if(files.count(fileName) == 0) {
             std::string filePath = m_Mod.GetAbsolutePath(Paths::HISTORY_TITLES, fileName);
-            files[fileName] = std::ofstream(filePath, std::ios::out);
+            files[fileName] = std::ofstream(filePath, std::ios::binary);
             File::EncodeToUTF8BOM(files[fileName]);
 
             // Export original script variables.
@@ -969,7 +974,7 @@ void TitleManager::ExportLocalization(bool exportTitlesLocalization, bool export
 void TitleManager::ExportTitlesLocalization() {
     std::string filePath = m_Mod.GetAbsolutePath("", m_TitlesLocalizationFileName);
     std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
-    std::ofstream file(filePath, std::ios::out);
+    std::ofstream file(filePath, std::ios::binary);
     File::EncodeToUTF8BOM(file);
 
     fmt::println(file, "l_english:");
@@ -991,7 +996,7 @@ void TitleManager::ExportTitlesLocalization() {
 void TitleManager::ExportCulturalNamesLocalization() {
     std::string filePath = m_Mod.GetAbsolutePath("", m_CulturalNamesLocalizationFileName);
     std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
-    std::ofstream file(filePath, std::ios::out);
+    std::ofstream file(filePath, std::ios::binary);
     File::EncodeToUTF8BOM(file);
 
     fmt::println(file, "l_english:");

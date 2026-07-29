@@ -39,6 +39,10 @@ const std::map<std::string, UniquePtr<Region>>& RegionManager::GetRegions() cons
     return m_Regions;
 }
 
+const std::map<std::string, std::string>& RegionManager::GetVanillaOverrideFiles() const {
+    return m_VanillaOverrideFiles;
+}
+
 //////////////////////////////////////////////////////
 
 void RegionManager::AddRegion(UniquePtr<Region> region) {
@@ -94,6 +98,13 @@ void RegionManager::LoadGeographicalRegions(ProvinceManager& provinceManager, Ti
         try {
             SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
             std::string fileName = m_Mod.GetRelativePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, filePath);
+
+            if (data->GetMap().empty()) {
+                std::ifstream overrideFile = std::ifstream(filePath, std::ios::binary);
+                m_VanillaOverrideFiles[fileName] = File::ReadString(overrideFile);
+                continue;
+            }
+
             this->LoadGeographicalRegionFile(fileName, data, provinceManager, titleManager);
         }
         catch (std::exception& e) {
@@ -126,12 +137,13 @@ void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, Shar
         bool shouldRememberCountiesOrder = regionData->GetFirst("should_remember_counties_order")->As<bool>(false);
         
         if (!m_Regions.contains(regionName)) {
-            this->AddRegion(MakeUnique<Region>(regionName));
+            this->AddRegion(MakeUnique<Region>(regionName, ""));
         }
 
         Region* region = m_Regions[regionName].get();
         region->SetGenerateModifiers(generateModifiers);
         region->SetShouldRememberCountiesOrder(shouldRememberCountiesOrder);
+        region->SetFileName(fileName);
 
         // Add kingdom, duchy and county titles.
         const auto AddTitles = [&](auto titles) {
@@ -173,15 +185,7 @@ void RegionManager::LoadGeographicalRegionFile(const std::string& fileName, Shar
 }
 
 void RegionManager::ExportGeographicalRegions() {
-
-    // Create the directories and files.
-    std::string dir = m_Mod.GetDirectory( Paths::MAP_DATA_GEOGRAPHICAL_REGIONS );
-    std::filesystem::remove_all(dir);
-    std::filesystem::create_directories(dir);
-    std::ofstream file(dir + "/geographical_region.txt", std::ios::out);
-    if (!file) throw std::runtime_error(fmt::format("RegionManager::ExportGeographicalRegions: Failed to open file for writing at '{}'", dir + "/geographical_region.txt"));
-    File::EncodeToUTF8BOM(file);
-
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // Determine geographical regions order based on their dependencies.
     // We use a topological sort to solve that problem.
     std::vector<Region*> regions;
@@ -230,56 +234,92 @@ void RegionManager::ExportGeographicalRegions() {
             sortedRegions.push_back(region.get());
         }
     }
+    /////////////////////////////////////////////////////////////////////////////////////////
+    
+    // Create the directories and files.
+    std::string dir = m_Mod.GetDirectory( Paths::MAP_DATA_GEOGRAPHICAL_REGIONS );
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
 
-    // Initialize the object for the geographical regions that will be serialized into the file.
-    SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+    std::map<std::string, std::ofstream> files;
 
-    for (auto region : sortedRegions) {
-        SharedPtr<Jomini::Object> regionObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
-
-        if (region->DoesGenerateModifiers())
-            regionObject->Put("generate_modifiers", region->DoesGenerateModifiers());
-            
-        if (region->ShouldRememberCountiesOrder())
-            regionObject->Put("should_remember_counties_order", region->ShouldRememberCountiesOrder());
-
-        if (!region->GetKingdoms().empty()) {
-            std::vector<std::string> titles = std::vector<std::string>(region->GetKingdoms().size());
-            for (auto title : region->GetKingdoms())
-                titles.push_back(title->GetName());
-            regionObject->Put("kingdoms", titles);
+    for(Region* region : sortedRegions) {
+        // Determine the region's file name.
+        if(region->GetFileName().empty())
+            region->ResetFileName();
+        std::string fileName = region->GetFileName();
+        
+        // Initialize the region's file.
+        if(files.count(fileName) == 0) {
+            files[fileName] = std::ofstream(m_Mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, fileName), std::ios::binary);
+            if (!files[fileName].is_open()) {
+                LOG_ERROR("RegionManager::ExportGeographicalRegions: Failed to open file '{}' for writing", dir + "/geographical_region.txt");
+                continue;
+            }
+            File::EncodeToUTF8BOM(files[fileName]);
         }
 
-        if (!region->GetDuchies().empty()) {
-            std::vector<std::string> titles = std::vector<std::string>(region->GetDuchies().size());
-            for (auto title : region->GetDuchies())
-                titles.push_back(title->GetName());
-            regionObject->Put("duchies", titles);
-        }
-
-        if (!region->GetCounties().empty()) {
-            std::vector<std::string> titles = std::vector<std::string>(region->GetCounties().size());
-            for (auto title : region->GetCounties())
-                titles.push_back(title->GetName());
-            regionObject->Put("counties", titles);
-        }
-
-        if (!region->GetProvinces().empty()) {
-            std::vector<std::string> provinces = std::vector<std::string>(region->GetProvinces().size());
-            for (auto province : region->GetProvinces())
-                provinces.push_back(std::to_string(province->GetId()));
-            regionObject->Put("provinces", provinces);
-        }
-
-        if (!region->GetRegions().empty()) {
-            std::vector<std::string> subRegions = std::vector<std::string>(region->GetRegions().size());
-            for (auto subRegion : region->GetRegions())
-                subRegions.push_back(subRegion->GetName());
-            regionObject->Put("regions", subRegions);
-        }
-
-        object->Put(region->GetName(), regionObject);
+        std::ofstream& file = files[fileName];
+        this->ExportGeographicalRegion(region, file);
     }
+
+    for(auto& [key, file] : files)
+        file.close();
+
+    // Create empty files for the vanilla overrides.
+    for (const auto& [fileName, fileContent] : m_VanillaOverrideFiles) {
+        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, fileName), std::ios::binary);
+        // File::EncodeToUTF8BOM(file); // Encoding bytes are present alongside the file content.
+        fmt::print(file, "{}", fileContent);
+    }
+}
+
+void RegionManager::ExportGeographicalRegion(Region* region, std::ofstream& file) {
+    SharedPtr<Jomini::Object> regionObject = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+
+    if (region->DoesGenerateModifiers())
+        regionObject->Put("generate_modifiers", region->DoesGenerateModifiers());
+        
+    if (region->ShouldRememberCountiesOrder())
+        regionObject->Put("should_remember_counties_order", region->ShouldRememberCountiesOrder());
+
+    if (!region->GetKingdoms().empty()) {
+        std::vector<std::string> titles = std::vector<std::string>(region->GetKingdoms().size());
+        for (auto title : region->GetKingdoms())
+            titles.push_back(title->GetName());
+        regionObject->Put("kingdoms", titles);
+    }
+
+    if (!region->GetDuchies().empty()) {
+        std::vector<std::string> titles = std::vector<std::string>(region->GetDuchies().size());
+        for (auto title : region->GetDuchies())
+            titles.push_back(title->GetName());
+        regionObject->Put("duchies", titles);
+    }
+
+    if (!region->GetCounties().empty()) {
+        std::vector<std::string> titles = std::vector<std::string>(region->GetCounties().size());
+        for (auto title : region->GetCounties())
+            titles.push_back(title->GetName());
+        regionObject->Put("counties", titles);
+    }
+
+    if (!region->GetProvinces().empty()) {
+        std::vector<std::string> provinces = std::vector<std::string>(region->GetProvinces().size());
+        for (auto province : region->GetProvinces())
+            provinces.push_back(std::to_string(province->GetId()));
+        regionObject->Put("provinces", provinces);
+    }
+
+    if (!region->GetRegions().empty()) {
+        std::vector<std::string> subRegions = std::vector<std::string>(region->GetRegions().size());
+        for (auto subRegion : region->GetRegions())
+            subRegions.push_back(subRegion->GetName());
+        regionObject->Put("regions", subRegions);
+    }
+
+    SharedPtr<Jomini::Object> object = MakeShared<Jomini::Object>(Jomini::ObjectMap{});
+    object->Put(region->GetName(), regionObject);
 
     fmt::println(file, "{}\n", object->Serialize());
 }

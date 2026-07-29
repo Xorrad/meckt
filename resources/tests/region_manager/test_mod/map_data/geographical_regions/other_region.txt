@@ -1,0 +1,5 @@
+﻿region10 = {
+	counties = {
+		c_test1
+	}
+}

@@ -1111,6 +1111,12 @@ void PropertiesTab::RenderRegions() {
             if (ImGui::InputTextCommitOnEnter("name", &formerName)) {
                 m_Mod.GetRegionManager().RenameRegion(region->GetName(), formerName);
             }
+            
+            // REGION: file name (field)
+            std::string formerFileName = region->GetFileName();
+            if (ImGui::InputTextCommitOnEnter("file name", &formerFileName)) {
+                region->SetFileName(formerFileName);
+            }
 
             // REGION: generate modifiers (checkbox)
             bool generateModifiers = region->DoesGenerateModifiers();

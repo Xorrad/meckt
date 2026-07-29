@@ -122,7 +122,7 @@ public:
 
     Logger::Get()->Close();
 
-    std::ofstream file(CRASH_FILE, std::ios::out);
+    std::ofstream file(CRASH_FILE, std::ios::binary);
     if(file.good()) {
         backward::Printer printer;
         printer.address = true;
@@ -332,7 +332,7 @@ private:
 
     Logger::Get()->Close();
 
-    std::ofstream file(CRASH_FILE, std::ios::out);
+    std::ofstream file(CRASH_FILE, std::ios::binary);
     if(file.good()) {
         backward::Printer printer;
         printer.address = true;

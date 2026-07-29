@@ -978,7 +978,7 @@ void ProvinceManager::ExportProvincesDefinition() {
     std::filesystem::path fileDir = std::filesystem::path(filePath).parent_path();
     if (!std::filesystem::exists(fileDir)) std::filesystem::create_directories(fileDir);
 
-    std::ofstream file(filePath, std::ios::out);
+    std::ofstream file(filePath, std::ios::binary);
     if (!file) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesDefinition: Failed to open file for writing at '{}'", filePath));
 
     // The format of definition.csv is as following:
@@ -1044,7 +1044,7 @@ void ProvinceManager::ExportDefaultMapFile() {
         }
     }
 
-    std::ofstream file(filePath, std::ios::out);
+    std::ofstream file(filePath, std::ios::binary);
     if (!file) throw std::runtime_error(fmt::format("ProvinceManager::ExportDefaultMapFile: Failed to open file for writing at '{}'", filePath));
 
     #define PRINT_DATA(key, def) fmt::println(file, "{} = {}", key, data->Get(key)->As<std::string>(def)); data->Remove(key)
@@ -1084,7 +1084,7 @@ void ProvinceManager::ExportProvincesTerrain() {
     std::filesystem::path fileDir = std::filesystem::path(filePath).parent_path();
     if (!std::filesystem::exists(fileDir)) std::filesystem::create_directories(fileDir);
 
-    std::ofstream file(filePath, std::ios::out);
+    std::ofstream file(filePath, std::ios::binary);
     if (!file) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesTerrain: Failed to open file for writing at '{}'", filePath));
     File::EncodeToUTF8BOM(file);
 
@@ -1108,7 +1108,7 @@ void ProvinceManager::ExportProvincesTerrain() {
 
     // Create empty files for the vanilla overrides.
     for (const auto& [fileName, fileContent] : m_VanillaOverrideProvinceTerrainFiles) {
-        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN, fileName), std::ios::out);
+        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN, fileName), std::ios::binary);
         // File::EncodeToUTF8BOM(file); // Encoding bytes are present alongside the file content.
         fmt::print(file, "{}", fileContent);
     }
@@ -1124,10 +1124,10 @@ void ProvinceManager::ExportProvincesClimate() {
     std::filesystem::path propertiesFileDir = std::filesystem::path(propertiesFilePath).parent_path();
     if (!std::filesystem::exists(propertiesFileDir)) std::filesystem::create_directories(propertiesFileDir);
 
-    std::ofstream climateFile(climateFilePath, std::ios::out);
+    std::ofstream climateFile(climateFilePath, std::ios::binary);
     if (!climateFile) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesClimate: Failed to open file for writing at '{}'", climateFilePath));
     
-    std::ofstream propertiesFile(propertiesFilePath, std::ios::out);
+    std::ofstream propertiesFile(propertiesFilePath, std::ios::binary);
     if (!propertiesFile) throw std::runtime_error(fmt::format("ProvinceManager::ExportProvincesClimate: Failed to open file for writing at '{}'", propertiesFilePath));
     File::EncodeToUTF8BOM(propertiesFile);
 
@@ -1250,7 +1250,7 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
         // Open the file if it is not already open, and write the original script variables if there are any.
         if(!files.contains(fileName)) {
             files[fileName] = FileData{};
-            files[fileName].file = std::ofstream(filePath, std::ios::out);
+            files[fileName].file = std::ofstream(filePath, std::ios::binary);
             if (!files[fileName].file) {
                 LOG_ERROR("Failed to open file for writing '{}' for province '{}'", filePath, provinceId);
                 continue;

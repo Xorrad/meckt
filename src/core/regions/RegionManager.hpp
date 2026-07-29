@@ -50,6 +50,12 @@ public:
      */
     const std::map<std::string, UniquePtr<Region>>& GetRegions() const;
 
+    /**
+     * @brief Retrieves the list of vanilla override files.
+     * @return A list of relative file paths.
+     */
+    const std::map<std::string, std::string>& GetVanillaOverrideFiles() const;
+
     //////////////////////////////////////////////////////
     
     /**
@@ -104,8 +110,18 @@ public:
      */
     void ExportGeographicalRegions();
     
+    /**
+     * @brief Exports all geographical regions.
+     * @param region The region to export.
+     * @param file The file to export to.
+     */
+    void ExportGeographicalRegion(Region* region, std::ofstream& file);
+    
 private:
     Mod& m_Mod;
 
     std::map<std::string, UniquePtr<Region>> m_Regions;
+
+    // List of empty files in map_data/geographical_regions that override vanilla files.
+    std::map<std::string, std::string> m_VanillaOverrideFiles;
 };

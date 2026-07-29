@@ -1,0 +1,12 @@
+﻿# Vanilla Overrides
+
+#tgp_ba_region = {
+#	kingdoms = {
+#		k_dongchuan k_xingyuan
+#	}
+#}
+#tgp_bao_region = {
+#	kingdoms = {
+#		k_khotan
+#	}
+#}

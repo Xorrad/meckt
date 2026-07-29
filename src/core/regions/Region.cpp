@@ -2,7 +2,14 @@
 #include "titles/Title.hpp"
 
 Region::Region(std::string name) :
+    Region(name, "")
+{
+    this->ResetFileName();
+}
+
+Region::Region(std::string name, std::string fileName) :
     m_Name(name),
+    m_FileName(fileName),
     m_Kingdoms({}),
     m_Duchies({}),
     m_Counties({}),
@@ -47,6 +54,10 @@ std::string Region::GetName() const {
     return m_Name;
 }
 
+std::string Region::GetFileName() const {
+    return m_FileName;
+}
+
 std::span<KingdomTitle*> Region::GetKingdoms() {
     return m_Kingdoms;
 }
@@ -81,12 +92,34 @@ void Region::SetName(std::string name) {
     m_Name = name;
 }
 
+void Region::SetFileName(std::string fileName) {
+    m_FileName = fileName;
+}
+
 void Region::SetGenerateModifiers(bool generateModifiers) {
     m_GenerateModifiers = generateModifiers;
 }
 
 void Region::SetShouldRememberCountiesOrder(bool shouldRememberCountiesOrder) {
     m_ShouldRememberCountiesOrder = shouldRememberCountiesOrder;
+}
+
+void Region::ResetFileName() {
+    if ( m_Name == "global_flood_region"
+        || m_Name.find("river_region") != std::string::npos
+        || m_Name.find("earthquake_region") != std::string::npos
+        || m_Name.find("tornado_region") != std::string::npos
+        || m_Name.find("hurricane_region") != std::string::npos
+        || m_Name.find("watershed_region") != std::string::npos
+    ) {
+        m_FileName = "10_natural_disaster_regions.txt";
+    }
+    else if (m_Name.starts_with("tgp_")) {
+        m_FileName = "tgp_chinesenaming_regions.txt";
+    }
+    else {
+        m_FileName = "geographical_region.txt";
+    }
 }
 
 //////////////////////////////////////////////////////

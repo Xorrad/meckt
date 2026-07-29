@@ -8,6 +8,13 @@ public:
      * @param name The name of the region.
      */
     Region(std::string name);
+    
+    /**
+     * @brief Constructs a new Region with the specified name.
+     * @param name The name of the region.
+     * @param fileName The file name of the region.
+     */
+    Region(std::string name, std::string fileName);
 
     //////////////////////////////////////////////////////
 
@@ -39,6 +46,12 @@ public:
      * @return The name of the region.
      */
     std::string GetName() const;
+    
+    /**
+     * @brief Gets the file name of the region.
+     * @return The file name of the region.
+     */
+    std::string GetFileName() const;
 
     /**
      * @brief Gets the kingdoms in the region.
@@ -89,6 +102,12 @@ public:
      * @param name The name to set.
      */
     void SetName(std::string name);
+    
+    /**
+     * @brief Sets the file name of the region.
+     * @param name The name to set.
+     */
+    void SetFileName(std::string fileName);
 
     /**
      * @brief Sets whether the region generates modifiers.
@@ -101,6 +120,11 @@ public:
      * @param shouldRememberCountiesOrder True if the region should remember the order of its counties, false otherwise.
      */
     void SetShouldRememberCountiesOrder(bool shouldRememberCountiesOrder);
+
+    /**
+     * @brief Assigns the vanilla file name to the region: `geographical_region.txt` or `10_natural_disaster_regions.txt` depending on the region's name.
+     */
+    void ResetFileName();
 
     //////////////////////////////////////////////////////
 
@@ -186,6 +210,7 @@ public:
 
 private:
     std::string m_Name;
+    std::string m_FileName;
     
     std::vector<KingdomTitle*> m_Kingdoms;
     std::vector<DuchyTitle*> m_Duchies;

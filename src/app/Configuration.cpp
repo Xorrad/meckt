@@ -56,7 +56,7 @@ void Configuration::Save() {
     json["ui_scale"] = Configuration::uiScale;
 
     // Dump that json object into the settings file.
-    std::ofstream file(Configuration::settingsFile, std::ios::out);
+    std::ofstream file(Configuration::settingsFile, std::ios::binary);
     file << json.dump(1, '\t');
     file.close();
 }

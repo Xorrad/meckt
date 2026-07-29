@@ -180,11 +180,13 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
         std::vector<int> provinces;
         bool doesGenerateModifiers;
         bool shouldRememberCountiesOrder;
+        std::string_view fileName;
     };
     const std::map<std::string, RegionTestData> expectedRegions {
-        { "region1", { {},          {"k_test"},    {"d_test1"},  {"c_test1", "c_test2"}, {1, 2}, true, true } },
-        { "region2", { {"region1"}, {},            {},           {"c_test1"},            {},     false, false } },
-        { "region3", { {"region1"}, {},            {},           {},                     {},     false, false } }
+        { "region1", { {},          {"k_test"},    {"d_test1"},  {"c_test1", "c_test2"}, {1, 2}, true, true, "geographical_region.txt" } },
+        { "region2", { {"region1"}, {},            {},           {"c_test1"},            {},     false, false, "geographical_region.txt" } },
+        { "region3", { {"region1"}, {},            {},           {},                     {},     false, false, "geographical_region.txt" } },
+        { "region10", { {},         {},            {},           {"c_test1"},            {},     false, false, "other_region.txt" } }
     };
 
     CHECK(regionManager.CountRegions() == expectedRegions.size());
@@ -223,6 +225,28 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
         CHECK(region->DoesGenerateModifiers() == data.doesGenerateModifiers);
         CHECK(region->ShouldRememberCountiesOrder() == data.shouldRememberCountiesOrder);
     }
+
+    // Check that the vanilla override files have been stored.
+    SUBCASE("vanilla overrides") {
+        const std::string expectedExportedData =
+            "﻿# Vanilla Overrides\r\n"
+            "\r\n"
+            "#tgp_ba_region = {\r\n"
+            "#\tkingdoms = {\r\n"
+            "#\t\tk_dongchuan k_xingyuan\r\n"
+            "#\t}\r\n"
+            "#}\r\n"
+            "#tgp_bao_region = {\r\n"
+            "#\tkingdoms = {\r\n"
+            "#\t\tk_khotan\r\n"
+            "#\t}\r\n"
+            "#}";
+
+        REQUIRE(regionManager.GetVanillaOverrideFiles().size() == 1);
+        
+        REQUIRE(regionManager.GetVanillaOverrideFiles().contains("tgp_chinesenaming_regions.txt"));
+        CHECK(regionManager.GetVanillaOverrideFiles().at("tgp_chinesenaming_regions.txt") == expectedExportedData);
+    }
 }
  
 TEST_CASE("[RegionManager] ExportGeographicalRegions") {
@@ -253,10 +277,12 @@ TEST_CASE("[RegionManager] ExportGeographicalRegions") {
 	counties = {  c_test1 }
 	provinces = {    1 2 3 }
 }
+
 region2 = {
 	counties = {  c_test1 }
 	regions = {  region1 }
 }
+
 region3 = {
 	regions = {  region1 }
 }
@@ -267,6 +293,38 @@ region3 = {
         REQUIRE(exportedFile.is_open());
         std::string exportedData = File::ReadString(exportedFile);
         CHECK(exportedData == expectedExportedData);
+    }
+
+    SUBCASE("Check that the exported content match of the other files") {
+        const std::string expectedExportedData = R"(﻿region10 = {
+	counties = {  c_test1 }
+}
+
+)";
+
+        std::ifstream exportedFile(mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, "other_region.txt"));
+        REQUIRE(exportedFile.is_open());
+        std::string exportedData = File::ReadString(exportedFile);
+        CHECK(exportedData == expectedExportedData);
+    }
+
+    SUBCASE("vanilla overrides") {
+        const std::string expectedExportedData = R"(﻿# Vanilla Overrides
+
+#tgp_ba_region = {
+#	kingdoms = {
+#		k_dongchuan k_xingyuan
+#	}
+#}
+#tgp_bao_region = {
+#	kingdoms = {
+#		k_khotan
+#	}
+#})";
+
+        std::ifstream exportedFile(mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, "tgp_chinesenaming_regions.txt"));
+        REQUIRE(exportedFile.is_open());
+        CHECK(File::ReadString(exportedFile) == expectedExportedData);
     }
 
     SUBCASE("UTF-8 BOM encoding") {
