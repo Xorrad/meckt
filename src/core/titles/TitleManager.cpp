@@ -725,7 +725,8 @@ void TitleManager::LoadLocalization() {
                 && !key.starts_with("c_")
                 && !key.starts_with("d_")
                 && !key.starts_with("k_")
-                && !key.starts_with("e_"))
+                && !key.starts_with("e_")
+                && !key.starts_with("h_"))
                 continue;
             
             std::string titleId = key;
@@ -1055,7 +1056,8 @@ void TitleManager::DeleteLocalization(bool exportTitlesLocalization, bool export
             && !key.starts_with("c_")
             && !key.starts_with("d_")
             && !key.starts_with("k_")
-            && !key.starts_with("e_"))) {
+            && !key.starts_with("e_")
+            && !key.starts_with("h_"))) {
                 fmt::println(tmpFile, "{}", line);
                 continue;
             }
@@ -1069,9 +1071,10 @@ void TitleManager::DeleteLocalization(bool exportTitlesLocalization, bool export
                 titleId = key.substr(0, key.size()-8);
             }
             
-            // If there isn't any titles by that name, then we keep it.
+            // If there isn't any titles by that name, then we assumes it's a cultural name.
             if(!m_Titles.contains(titleId)) {
-                fmt::println(tmpFile, "{}", line);
+                if (!exportCulturalNamesLocalization)
+                    fmt::println(tmpFile, "{}", line);
                 continue;
             }
         }
