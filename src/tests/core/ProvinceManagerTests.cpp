@@ -548,13 +548,6 @@ TEST_CASE("[ProvinceManager] LoadProvincesTerrain") {
 
         REQUIRE_NOTHROW(manager.LoadProvincesTerrain());
     }
-    
-    SUBCASE("Throws exception if the province terrain file is invalid") {
-        Mod mod("resources/tests/province_manager/test_mod_invalid_province_terrain");
-        ProvinceManager manager(mod);
-
-        REQUIRE_THROWS_AS(manager.LoadProvincesTerrain(), std::exception);
-    }
 
     Mod mod("resources/tests/province_manager/test_mod");
     ProvinceManager manager(mod);
@@ -589,6 +582,21 @@ TEST_CASE("[ProvinceManager] LoadProvincesTerrain") {
             CHECK_EQ(manager.GetProvinceById(data.id)->GetTerrain(), data.expectedTerrain);
         }
     }
+
+    SUBCASE("main file name") {
+        CHECK(manager.GetProvinceTerrainFileName() == "terrain.txt");
+    }
+
+    // Check that the vanilla override files have been stored.
+    SUBCASE("vanilla overrides") {
+        REQUIRE(manager.GetVanillaOverrideProvinceTerrainFiles().size() == 2);
+
+        REQUIRE(manager.GetVanillaOverrideProvinceTerrainFiles().contains("00_province_terrain.txt"));
+        CHECK(manager.GetVanillaOverrideProvinceTerrainFiles().at("00_province_terrain.txt") == "\xEF\xBB\xBF");
+        
+        REQUIRE(manager.GetVanillaOverrideProvinceTerrainFiles().contains("01_province_properties.txt"));
+        CHECK(manager.GetVanillaOverrideProvinceTerrainFiles().at("01_province_properties.txt") == "\xEF\xBB\xBF# Vanilla Overrides");
+    }
 }
 
 TEST_CASE("[ProvinceManager] LoadProvincesClimate") {
@@ -597,20 +605,6 @@ TEST_CASE("[ProvinceManager] LoadProvincesClimate") {
         ProvinceManager manager(mod);
 
         REQUIRE_NOTHROW(manager.LoadProvincesClimate());
-    }
-    
-    SUBCASE("Throws exception if the province properties file is invalid") {
-        Mod mod("resources/tests/province_manager/test_mod_invalid_province_properties");
-        ProvinceManager manager(mod);
-
-        REQUIRE_THROWS_AS(manager.LoadProvincesClimate(), std::exception);
-    }
-    
-    SUBCASE("Throws exception if the climate file is invalid") {
-        Mod mod("resources/tests/province_manager/test_mod_invalid_climate");
-        ProvinceManager manager(mod);
-
-        REQUIRE_THROWS_AS(manager.LoadProvincesClimate(), std::exception);
     }
 
     Mod mod("resources/tests/province_manager/test_mod");
@@ -666,13 +660,17 @@ TEST_CASE("[ProvinceManager] LoadProvincesClimate") {
     }
 
     SUBCASE("Check that the properties file variables are saved") {
-        REQUIRE(manager.GetTerrainPropertiesVariables()->Is(Jomini::Type::OBJECT));
+        REQUIRE(manager.GetProvinceTerrainPropertiesVariables()->Is(Jomini::Type::OBJECT));
         
-        REQUIRE(manager.GetTerrainPropertiesVariables()->Contains("@azerbaijan_mountains"));
-        CHECK(manager.GetTerrainPropertiesVariables()->Get("@azerbaijan_mountains")->As<std::string>() == "0.40");
+        REQUIRE(manager.GetProvinceTerrainPropertiesVariables()->Contains("@azerbaijan_mountains"));
+        CHECK(manager.GetProvinceTerrainPropertiesVariables()->Get("@azerbaijan_mountains")->As<std::string>() == "0.40");
         
-        REQUIRE(manager.GetTerrainPropertiesVariables()->Contains("@the_alps"));
-        CHECK(manager.GetTerrainPropertiesVariables()->Get("@the_alps")->As<std::string>() == "0.80");
+        REQUIRE(manager.GetProvinceTerrainPropertiesVariables()->Contains("@the_alps"));
+        CHECK(manager.GetProvinceTerrainPropertiesVariables()->Get("@the_alps")->As<std::string>() == "0.80");
+    }
+
+    SUBCASE("main file name") {
+        CHECK(manager.GetProvinceTerrainPropertiesFileName() == "winter.txt");
     }
 }
 
@@ -868,21 +866,40 @@ TEST_CASE("[ProvinceManager] ExportProvincesTerrain") {
     REQUIRE_NOTHROW(manager.LoadProvincesTerrain());
     
     // 3. Asserts
-    struct ProvinceTerrainTestData {
-        int id;
-        std::string terrain;
-    };
-    const std::vector<ProvinceTerrainTestData> testData = {
-        {1, "hills"},
-        {2, "mountains"},
-        {3, "taiga"},
-        {4, "plains"},
-        {5, "plains"}
-    };
-    
-    for (const auto& data : testData) {
-        REQUIRE(manager.HasProvinceById(data.id));
-        CHECK_EQ(manager.GetProvinceById(data.id)->GetTerrain(), data.terrain);
+    SUBCASE("terrains") {
+        struct ProvinceTerrainTestData {
+            int id;
+            std::string terrain;
+        };
+        const std::vector<ProvinceTerrainTestData> testData = {
+            {1, "hills"},
+            {2, "mountains"},
+            {3, "taiga"},
+            {4, "plains"},
+            {5, "plains"}
+        };
+        
+        for (const auto& data : testData) {
+            REQUIRE(manager.HasProvinceById(data.id));
+            CHECK_EQ(manager.GetProvinceById(data.id)->GetTerrain(), data.terrain);
+        }
+    }
+
+    SUBCASE("main file name") {
+        CHECK(manager.GetProvinceTerrainFileName() == "terrain.txt");
+    }
+
+    // Check that the vanilla override files have been stored.
+    SUBCASE("vanilla overrides") {
+        REQUIRE(manager.GetVanillaOverrideProvinceTerrainFiles().size() == 2);
+
+        REQUIRE(manager.GetVanillaOverrideProvinceTerrainFiles().contains("00_province_terrain.txt"));
+        CHECK(manager.GetVanillaOverrideProvinceTerrainFiles().at("00_province_terrain.txt") == "\xEF\xBB\xBF");
+        CHECK(std::filesystem::exists("resources/tests/province_manager/test_mod_modified/common/province_terrain/00_province_terrain.txt"));
+        
+        REQUIRE(manager.GetVanillaOverrideProvinceTerrainFiles().contains("01_province_properties.txt"));
+        CHECK(manager.GetVanillaOverrideProvinceTerrainFiles().at("01_province_properties.txt") == "\xEF\xBB\xBF# Vanilla Overrides");
+        CHECK(std::filesystem::exists("resources/tests/province_manager/test_mod_modified/common/province_terrain/01_province_properties.txt"));
     }
 }
 
@@ -953,13 +970,17 @@ TEST_CASE("[ProvinceManager] ExportProvincesClimate") {
     }
 
     SUBCASE("Check that the properties file variables are saved") {
-        REQUIRE(manager.GetTerrainPropertiesVariables()->Is(Jomini::Type::OBJECT));
+        REQUIRE(manager.GetProvinceTerrainPropertiesVariables()->Is(Jomini::Type::OBJECT));
         
-        REQUIRE(manager.GetTerrainPropertiesVariables()->Contains("@azerbaijan_mountains"));
-        CHECK(manager.GetTerrainPropertiesVariables()->Get("@azerbaijan_mountains")->As<std::string>() == "0.40");
+        REQUIRE(manager.GetProvinceTerrainPropertiesVariables()->Contains("@azerbaijan_mountains"));
+        CHECK(manager.GetProvinceTerrainPropertiesVariables()->Get("@azerbaijan_mountains")->As<std::string>() == "0.40");
         
-        REQUIRE(manager.GetTerrainPropertiesVariables()->Contains("@the_alps"));
-        CHECK(manager.GetTerrainPropertiesVariables()->Get("@the_alps")->As<std::string>() == "0.80");
+        REQUIRE(manager.GetProvinceTerrainPropertiesVariables()->Contains("@the_alps"));
+        CHECK(manager.GetProvinceTerrainPropertiesVariables()->Get("@the_alps")->As<std::string>() == "0.80");
+    }
+
+    SUBCASE("main file name") {
+        CHECK(manager.GetProvinceTerrainPropertiesFileName() == "winter.txt");
     }
 }
 

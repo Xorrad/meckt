@@ -221,22 +221,40 @@ public:
     const std::string& GetDefaultCoastalSeaTerrain() const;
 
     /**
+     * @brief Retrieves the file name of the province terrain types (e.g common/province_terrain/00_province_terrain.txt)
+     * @return The file name.
+     */
+    const std::string& GetProvinceTerrainFileName() const;
+    
+    /**
+     * @brief Retrieves the file name of the province terrain types (e.g common/provinces_terrain/01_province_properties.txt)
+     * @return The file name.
+     */
+    const std::string& GetProvinceTerrainPropertiesFileName() const;
+
+    /**
      * @brief Retrieves the constants that were in the original provinces history files.
      * @return A map of constants.
      */
     const std::map<std::string, SharedPtr<Jomini::Object>>& GetProvincesHistoryVariables() const;
 
     /**
-     * @brief Retrieves the constants defined in the terrain properties file (common/terrain_types/01_province_properties.txt).
+     * @brief Retrieves the constants defined in the terrain properties file (common/provinces_terrain/01_province_properties.txt).
      * @return The terrain properties variables.
      */
-    const SharedPtr<Jomini::Object>& GetTerrainPropertiesVariables() const;
+    const SharedPtr<Jomini::Object>& GetProvinceTerrainPropertiesVariables() const;
     
     /**
      * @brief Retrieves the constants defined in the terrain types file (common/terrain_types/00_terrains.txt).
      * @return The terrain types variables.
      */
     const SharedPtr<Jomini::Object>& GetTerrainTypesVariables() const;
+
+    /**
+     * @brief Retrieves the list of vanilla override files in common/province_terrain
+     * @return A list of relative file paths.
+     */
+    const std::map<std::string, std::string>& GetVanillaOverrideProvinceTerrainFiles() const;
 
     //////////////////////////////////////////////////////
 
@@ -324,17 +342,25 @@ public:
     void LoadDefaultMapFile();
 
     /**
-     * @brief Loads provinces terrain from the province terrain file (common/terrain_types/00_province_terrain.txt).
-     * @throws std::runtime_error if the province terrain file is invalid.
+     * @brief Loads provinces terrain from all the files in common/province_terrain/.
      */
     void LoadProvincesTerrain();
+    
+    /**
+     * @brief Loads provinces terrain from the a specified file (e.g common/province_terrain/00_province_terrain.txt).
+     */
+    void LoadProvincesTerrainFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
 
     /**
-     * @brief Loads provinces climate from the province properties file (common/terrain_types/01_province_properties.txt)
+     * @brief Loads provinces climate from the province properties file (common/province_terrain/01_province_properties.txt)
      *        and from the climate file (map_data/climate.txt).
-     * @throws std::runtime_error if the province properties file or the climate file is invalid.
      */
     void LoadProvincesClimate();
+
+    /**
+     * @brief Loads provinces terrain from the a specified file (e.g common/province_terrain/01_province_properties.txt).
+     */
+    void LoadProvincesTerrainPropertiesFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
 
     /**
      * @brief Loads provinces history from the history files.
@@ -421,9 +447,14 @@ private:
     std::string m_DefaultLandTerrain;
     std::string m_DefaultSeaTerrain;
     std::string m_DefaultCoastalSeaTerrain;
+    std::string m_ProvinceTerrainFileName; // common/provinces_terrain/00_province_terrain.txt
+    std::string m_ProvinceTerrainPropertiesFileName; // common/provinces_terrain/01_province_properties.txt
 
     // Map variables with their respective filename.
     std::map<std::string, SharedPtr<Jomini::Object>> m_ProvincesHistoryVariables; // history/provinces/
-    SharedPtr<Jomini::Object> m_TerrainPropertiesVariables; // common/provinces_terrain/01_province_properties.txt
+    SharedPtr<Jomini::Object> m_ProvinceTerrainPropertiesVariables; // common/provinces_terrain/01_province_properties.txt
     SharedPtr<Jomini::Object> m_TerrainTypesVariables; // common/terrain_types/00_terrains.txt
+
+    // List of empty files in common/province_terrain that override vanilla files.
+    std::map<std::string, std::string> m_VanillaOverrideProvinceTerrainFiles;
 };

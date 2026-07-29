@@ -10,8 +10,10 @@ ProvinceManager::ProvinceManager(Mod& mod) :
     m_ProvincesImage(sf::Image()),
     m_HeightmapImage(sf::Image()),
     m_RiversImage(sf::Image()),
+    m_ProvinceTerrainFileName("00_province_terrain.txt"),
+    m_ProvinceTerrainPropertiesFileName("01_province_properties.txt"),
     m_ProvincesHistoryVariables({}),
-    m_TerrainPropertiesVariables(MakeShared<Jomini::Object>(Jomini::Type::OBJECT)),
+    m_ProvinceTerrainPropertiesVariables(MakeShared<Jomini::Object>(Jomini::Type::OBJECT)),
     m_TerrainTypesVariables(MakeShared<Jomini::Object>(Jomini::Type::OBJECT))
 {
 }
@@ -107,7 +109,7 @@ sf::Image ProvinceManager::GetWinterSeverityBiasImage() const {
                     try {
                         double winterSeverity = std::clamp(
                             province->GetWinterSeverityBias().starts_with("@")
-                                ? String::ParseDouble(m_TerrainPropertiesVariables->Get(province->GetWinterSeverityBias())->As<std::string>("0.0"))
+                                ? String::ParseDouble(m_ProvinceTerrainPropertiesVariables->Get(province->GetWinterSeverityBias())->As<std::string>("0.0"))
                                 : String::ParseDouble(province->GetWinterSeverityBias()),
                             0.0,
                             1.0
@@ -212,16 +214,28 @@ const std::string& ProvinceManager::GetDefaultCoastalSeaTerrain() const {
     return m_DefaultCoastalSeaTerrain;
 }
 
+const std::string& ProvinceManager::GetProvinceTerrainFileName() const {
+    return m_ProvinceTerrainFileName;
+}
+
+const std::string& ProvinceManager::GetProvinceTerrainPropertiesFileName() const {
+    return m_ProvinceTerrainPropertiesFileName;
+}
+
 const std::map<std::string, SharedPtr<Jomini::Object>>& ProvinceManager::GetProvincesHistoryVariables() const {
     return m_ProvincesHistoryVariables;
 }
 
-const SharedPtr<Jomini::Object>& ProvinceManager::GetTerrainPropertiesVariables() const {
-    return m_TerrainPropertiesVariables;
+const SharedPtr<Jomini::Object>& ProvinceManager::GetProvinceTerrainPropertiesVariables() const {
+    return m_ProvinceTerrainPropertiesVariables;
 }
 
 const SharedPtr<Jomini::Object>& ProvinceManager::GetTerrainTypesVariables() const {
     return m_TerrainTypesVariables;
+}
+
+const std::map<std::string, std::string>& ProvinceManager::GetVanillaOverrideProvinceTerrainFiles() const {
+    return m_VanillaOverrideProvinceTerrainFiles;
 }
 
 //////////////////////////////////////////////////////
@@ -630,26 +644,45 @@ void ProvinceManager::LoadDefaultMapFile() {
 }
 
 void ProvinceManager::LoadProvincesTerrain() {
-    std::string filePath = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN);
+    m_VanillaOverrideProvinceTerrainFiles.clear();
 
-    if (!std::filesystem::exists(filePath))
-        return;
+    std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::COMMON_PROVINCE_TERRAIN) );
 
-    SharedPtr<Jomini::Object> result = nullptr;
-    try {
-        result = Jomini::ParseFile(filePath);
+    for(const auto& filePath : filesPath) {
+        if(!filePath.ends_with(".txt"))
+            continue;
+
+        try {
+            SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
+            std::string fileName = m_Mod.GetRelativePath(Paths::COMMON_PROVINCE_TERRAIN, filePath);
+
+            if (data->GetMap().empty()) {
+                std::ifstream overrideFile = std::ifstream(filePath, std::ios::binary);
+                m_VanillaOverrideProvinceTerrainFiles[fileName] = File::ReadString(overrideFile);
+                continue;
+            }
+
+            // Check if that file is a province terrain type file, and not a climate one.
+            if (!data->Contains("default_land"))
+                return;
+
+            this->LoadProvincesTerrainFile(fileName, data);
+        }
+        catch (std::exception& e) {
+            LOG_ERROR("ProvinceManager::LoadProvincesTerrain: Failed to parse province terrain file '{}': {}", filePath, e.what());
+        }
     }
-    catch (std::exception& e) {
-        throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesTerrain: Failed to parse province terrain file at '{}': {}", filePath, e.what()));
-    }
+}
 
-    m_DefaultLandTerrain = result->Get("default_land")->As<std::string>("plains");
-    m_DefaultSeaTerrain = result->Get("default_sea")->As<std::string>("sea");
-    m_DefaultCoastalSeaTerrain = result->Get("default_coastal_sea")->As<std::string>("sea");
+void ProvinceManager::LoadProvincesTerrainFile(const std::string& fileName, SharedPtr<Jomini::Object> data) {
+    m_ProvinceTerrainFileName = fileName;
+    m_DefaultLandTerrain = data->Get("default_land")->As<std::string>("plains");
+    m_DefaultSeaTerrain = data->Get("default_sea")->As<std::string>("sea");
+    m_DefaultCoastalSeaTerrain = data->Get("default_coastal_sea")->As<std::string>("sea");
 
-    result->Remove("default_land");
-    result->Remove("default_sea");
-    result->Remove("default_coastal_sea");
+    data->Remove("default_land");
+    data->Remove("default_sea");
+    data->Remove("default_coastal_sea");
 
     // Set default terrain for all provinces (especially for those without any in files).
     for(const auto& [colorId, province] : m_ProvincesByColors) {
@@ -659,7 +692,7 @@ void ProvinceManager::LoadProvincesTerrain() {
         province->SetTerrain(defaultTerrain);
     }
 
-    for(const auto& [key, pair] : result->GetMap()) {
+    for(const auto& [key, pair] : data->GetMap()) {
         const auto& [op, value] = pair;
         int provinceId = 0;
         std::string terrain = "";
@@ -668,7 +701,7 @@ void ProvinceManager::LoadProvincesTerrain() {
             provinceId = String::ParseInt(key);
         }
         catch (const std::exception& e) {
-            LOG_WARNING("Invalid province id '{}' in '{}': {}", key, filePath, e.what());
+            LOG_WARNING("Invalid province id '{}' in '{}': {}", key, fileName, e.what());
             continue;
         }
 
@@ -704,7 +737,7 @@ void ProvinceManager::LoadProvincesClimate() {
             result = Jomini::ParseFile(climateFile);
         }
         catch(const std::exception& e) {
-            throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesClimate: Failed to parse climate file at '{}':\n{}", climateFile, e.what()));
+            throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesClimate: Failed to parse climate file '{}':\n{}", climateFile, e.what()));
         }
 
         const auto LoadClimateProvinces = [&](ClimateType type, std::string_view name) {
@@ -734,76 +767,92 @@ void ProvinceManager::LoadProvincesClimate() {
     /////////////////////////////////////////////////////////////////////////////////
 
     // Load province winter properties such as severity or factor override.
-    std::string propertiesFile = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_PROPERTIES);
+     std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::COMMON_PROVINCE_TERRAIN) );
 
-    if (std::filesystem::exists(propertiesFile)) {
-        m_TerrainPropertiesVariables = MakeShared<Jomini::Object>(Jomini::Type::OBJECT);
+    for(const auto& filePath : filesPath) {
+        if(!filePath.ends_with(".txt"))
+            continue;
 
-        SharedPtr<Jomini::Object> result = nullptr;
         try {
-            result = Jomini::ParseFile(propertiesFile);
+            SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
+            std::string fileName = m_Mod.GetRelativePath(Paths::COMMON_PROVINCE_TERRAIN, filePath);
+
+            if (data->GetMap().empty()) {
+                std::ifstream overrideFile = std::ifstream(filePath, std::ios::binary);
+                m_VanillaOverrideProvinceTerrainFiles[fileName] = File::ReadString(overrideFile);
+                continue;
+            }
+
+            // Check if that file is a province terrain type file, and not a climate one.
+            if (data->Contains("default_land"))
+                continue;
+
+            this->LoadProvincesTerrainPropertiesFile(fileName, data);
         }
-        catch(const std::exception& e) {
-            throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesClimate: Failed to parse properties file at '{}':\n{}", propertiesFile, e.what()));
+        catch (std::exception& e) {
+            LOG_ERROR("ProvinceManager::LoadProvincesClimate: Failed to parse properties file '{}':\n{}", filePath, e.what());
+        }
+    }   
+}
+
+void ProvinceManager::LoadProvincesTerrainPropertiesFile(const std::string& fileName, SharedPtr<Jomini::Object> data) {
+    m_ProvinceTerrainPropertiesFileName = fileName;
+
+    for(const auto& [key, pair] : data->GetMap()) {
+        // Save and ignore variables to only keep province ids.
+        if (key.starts_with("@")) {
+            m_ProvinceTerrainPropertiesVariables->Put(key, pair.second);
+            continue;
         }
 
-        for(const auto& [key, pair] : result->GetMap()) {
-            // Save and ignore variables to only keep province ids.
-            if (key.starts_with("@")) {
-                m_TerrainPropertiesVariables->Put(key, pair.second);
+        const auto& [op, value] = pair;
+        int provinceId = String::ParseInt(key);
+
+        if (m_ProvincesByIds.count(provinceId) == 0) {
+            LOG_WARNING("Climate properties assigned to undefined province '{}' in '{}'", provinceId, fileName);
+            continue;
+        }
+
+        if (!value->Is(Jomini::Type::OBJECT)) {
+            LOG_ERROR("Invalid climate properties for province '{}' in '{}'", provinceId, fileName);
+            continue;
+        }
+
+        if (value->Contains("winter_severity_bias")) {
+            const auto winterSeverityBias = value->Get("winter_severity_bias");
+            if (!winterSeverityBias->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'winter_severity_bias' value for province '{}' in '{}'", provinceId, fileName);
                 continue;
             }
-
-            const auto& [op, value] = pair;
-            int provinceId = String::ParseInt(key);
-
-            if (m_ProvincesByIds.count(provinceId) == 0) {
-                LOG_WARNING("Climate properties assigned to undefined province '{}' in '{}'", provinceId, propertiesFile);
+            m_ProvincesByIds[provinceId]->SetWinterSeverityBias(winterSeverityBias->As<std::string>());
+        }
+        
+        if (value->Contains("mild_winter_factor_override")) {
+            const auto factor = value->Get("mild_winter_factor_override");
+            if (!factor->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'mild_winter_factor_override' value for province '{}' in '{}'", provinceId, fileName);
                 continue;
             }
-
-            if (!value->Is(Jomini::Type::OBJECT)) {
-                LOG_ERROR("Invalid climate properties for province '{}' in '{}'", provinceId, propertiesFile);
+            m_ProvincesByIds[provinceId]->SetMildWinterFactorOverride(factor->As<std::string>());
+        }
+        if (value->Contains("normal_winter_factor_override")) {
+            const auto factor = value->Get("normal_winter_factor_override");
+            if (!factor->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'normal_winter_factor_override' value for province '{}' in '{}'", provinceId, fileName);
                 continue;
             }
-
-            if (value->Contains("winter_severity_bias")) {
-                const auto winterSeverityBias = value->Get("winter_severity_bias");
-                if (!winterSeverityBias->Is(Jomini::Type::SCALAR)) {
-                    LOG_ERROR("Invalid 'winter_severity_bias' value for province '{}'", provinceId);
-                    continue;
-                }
-                m_ProvincesByIds[provinceId]->SetWinterSeverityBias(winterSeverityBias->As<std::string>());
+            m_ProvincesByIds[provinceId]->SetNormalWinterFactorOverride(factor->As<std::string>());
+        }
+        if (value->Contains("harsh_winter_factor_override")) {
+            const auto factor = value->Get("harsh_winter_factor_override");
+            if (!factor->Is(Jomini::Type::SCALAR)) {
+                LOG_ERROR("Invalid 'harsh_winter_factor_override' value for province '{}' in '{}'", provinceId, fileName);
+                continue;
             }
-            
-            if (value->Contains("mild_winter_factor_override")) {
-                const auto factor = value->Get("mild_winter_factor_override");
-                if (!factor->Is(Jomini::Type::SCALAR)) {
-                    LOG_ERROR("Invalid 'mild_winter_factor_override' value for province '{}'", provinceId);
-                    continue;
-                }
-                m_ProvincesByIds[provinceId]->SetMildWinterFactorOverride(factor->As<std::string>());
-            }
-            if (value->Contains("normal_winter_factor_override")) {
-                const auto factor = value->Get("normal_winter_factor_override");
-                if (!factor->Is(Jomini::Type::SCALAR)) {
-                    LOG_ERROR("Invalid 'normal_winter_factor_override' value for province '{}'", provinceId);
-                    continue;
-                }
-                m_ProvincesByIds[provinceId]->SetNormalWinterFactorOverride(factor->As<std::string>());
-            }
-            if (value->Contains("harsh_winter_factor_override")) {
-                const auto factor = value->Get("harsh_winter_factor_override");
-                if (!factor->Is(Jomini::Type::SCALAR)) {
-                    LOG_ERROR("Invalid 'harsh_winter_factor_override' value for province '{}'", provinceId);
-                    continue;
-                }
-                m_ProvincesByIds[provinceId]->SetHarshWinterFactorOverride(factor->As<std::string>());
-            }
+            m_ProvincesByIds[provinceId]->SetHarshWinterFactorOverride(factor->As<std::string>());
         }
     }
 }
-
 
 void ProvinceManager::LoadProvincesHistory() {
     std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::HISTORY_PROVINCES) );
@@ -1028,7 +1077,7 @@ void ProvinceManager::ExportDefaultMapFile() {
 }
 
 void ProvinceManager::ExportProvincesTerrain() {
-    std::string filePath = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN);
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN, m_ProvinceTerrainFileName);
     
     // Create the directory if it does not exist.
     std::filesystem::path fileDir = std::filesystem::path(filePath).parent_path();
@@ -1055,11 +1104,18 @@ void ProvinceManager::ExportProvincesTerrain() {
             province->GetTerrain()
         );
     }
+
+    // Create empty files for the vanilla overrides.
+    for (const auto& [fileName, fileContent] : m_VanillaOverrideProvinceTerrainFiles) {
+        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN, fileName), std::ios::out);
+        // File::EncodeToUTF8BOM(file); // Encoding bytes are present alongside the file content.
+        fmt::print(file, "{}", fileContent);
+    }
 }
 
 void ProvinceManager::ExportProvincesClimate() {
     std::string climateFilePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_CLIMATE);
-    std::string propertiesFilePath = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_PROPERTIES);
+    std::string propertiesFilePath = m_Mod.GetAbsolutePath(Paths::COMMON_PROVINCE_TERRAIN, m_ProvinceTerrainPropertiesFileName);
     
     // Create the directories if they do not exist.
     std::filesystem::path climateFileDir = std::filesystem::path(climateFilePath).parent_path();
@@ -1084,7 +1140,7 @@ void ProvinceManager::ExportProvincesClimate() {
     SharedPtr<Jomini::Object> severeWinterObject = climateObject->Get("severe_winter");
 
     // Write variables that were in the properties file before loading the mod.
-    fmt::println(propertiesFile, "{}\n", m_TerrainPropertiesVariables->Serialize());
+    fmt::println(propertiesFile, "{}\n", m_ProvinceTerrainPropertiesVariables->Serialize());
 
     for (auto& [id, province] : m_ProvincesByIds) {
         // Insert the province id to its corresponding climate type.
