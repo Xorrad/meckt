@@ -202,6 +202,12 @@ public:
      */
     std::string GetCulturalNamesLocalizationFileName() const;
 
+    /**
+     * @brief Retrieves the list of vanilla override files in common/landed_title
+     * @return A list of relative file paths.
+     */
+    const std::map<std::string, std::string>& GetVanillaOverrideTitleFiles() const;
+
     //////////////////////////////////////////////////////
 
     /**
@@ -385,4 +391,7 @@ private:
     // Relative file paths of the localization file that will be used for export.
     std::string m_TitlesLocalizationFileName;
     std::string m_CulturalNamesLocalizationFileName;
+
+    // List of empty files in common/landed_title that override vanilla files.
+    std::map<std::string, std::string> m_VanillaOverrideTitleFiles;
 };

@@ -191,6 +191,10 @@ std::string TitleManager::GetCulturalNamesLocalizationFileName() const {
     return m_CulturalNamesLocalizationFileName;
 }
 
+const std::map<std::string, std::string>& TitleManager::GetVanillaOverrideTitleFiles() const {
+    return m_VanillaOverrideTitleFiles;
+}
+
 //////////////////////////////////////////////////////
 
 void TitleManager::AddTitle(UniquePtr<Title> title) {
@@ -363,6 +367,7 @@ void TitleManager::LoadTitles(const ProvinceManager& provinceManager) {
     m_BaroniesByProvinceId.clear();
     m_TitlesVariables.clear();
     m_TitlesHistoryVariables.clear();
+    m_VanillaOverrideTitleFiles.clear();
 
     std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::COMMON_LANDED_TITLES) );
 
@@ -376,6 +381,13 @@ void TitleManager::LoadTitles(const ProvinceManager& provinceManager) {
         try {
             SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
             std::string fileName = m_Mod.GetRelativePath(Paths::COMMON_LANDED_TITLES, filePath);
+
+            if (data->GetMap().empty()) {
+                std::ifstream overrideFile = std::ifstream(filePath, std::ios::binary);
+                m_VanillaOverrideTitleFiles[fileName] = File::ReadString(overrideFile);
+                continue;
+            }
+
             std::ignore = this->LoadTitlesFile(provinceManager, fileName, data);
         }
         catch (std::exception& e) {
@@ -803,6 +815,13 @@ void TitleManager::ExportTitles() {
 
     for(auto& [key, file] : files)
         file.close();
+
+    // Create empty files for the vanilla overrides.
+    for (const auto& [fileName, fileContent] : m_VanillaOverrideTitleFiles) {
+        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::out);
+        // File::EncodeToUTF8BOM(file); // Encoding bytes are present alongside the file content.
+        fmt::print(file, "{}", fileContent);
+    }
 }
 
 void TitleManager::ExportTitle(Title* title, std::ofstream& file, int depth) {

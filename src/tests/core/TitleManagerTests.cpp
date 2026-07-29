@@ -380,6 +380,17 @@ TEST_CASE("[TitleManager] LoadTitles") {
         REQUIRE(variables->Contains("@never_primary_score"));
         CHECK(variables->Get("@never_primary_score")->As<std::string>() == "-1000");
     }
+    
+    // Check that the vanilla override files have been stored.
+    SUBCASE("vanilla overrides") {
+        REQUIRE(manager.GetVanillaOverrideTitleFiles().size() == 2);
+
+        REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("01_japan.txt"));
+        CHECK(manager.GetVanillaOverrideTitleFiles().at("01_japan.txt") == "\xEF\xBB\xBF");
+        
+        REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("02_china.txt"));
+        CHECK(manager.GetVanillaOverrideTitleFiles().at("02_china.txt") == "\xEF\xBB\xBF# Vanilla Overrides");
+    }
 
     // Check that every title has been successfully parsed and added.
     SUBCASE("titles existence") {
@@ -818,6 +829,37 @@ TEST_CASE("[TitleManager] ExportTitles") {
         CHECK_EQ(manager.GetTitleAs<HighTitle>("k_modified")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_modified1"));
         CHECK_EQ(manager.GetTitleAs<HighTitle>("e_modified")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_modified1"));
         CHECK_EQ(manager.GetTitleAs<HighTitle>("k_papal_state")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_test2"));
+    }
+
+    // Check that the variables have been stored.
+    SUBCASE("variables") {
+        std::string fileName = "00_landed_titles.txt";
+        REQUIRE(manager.GetTitlesVariables().contains(fileName));
+        const SharedPtr<Jomini::Object>& variables = manager.GetTitlesVariables().at(fileName);
+        REQUIRE(variables->Contains("@correct_culture_primary_score"));
+        CHECK(variables->Get("@correct_culture_primary_score")->As<std::string>() == "100");
+
+        REQUIRE(variables->Contains("@better_than_the_alternatives_score"));
+        CHECK(variables->Get("@better_than_the_alternatives_score")->As<std::string>() == "50");
+
+        REQUIRE(variables->Contains("@always_primary_score"));
+        CHECK(variables->Get("@always_primary_score")->As<std::string>() == "1000");
+
+        REQUIRE(variables->Contains("@never_primary_score"));
+        CHECK(variables->Get("@never_primary_score")->As<std::string>() == "-1000");
+    }
+    
+    // Check that the vanilla override files have been stored.
+    SUBCASE("vanilla overrides") {
+        REQUIRE(manager.GetVanillaOverrideTitleFiles().size() == 2);
+
+        REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("01_japan.txt"));
+        CHECK(manager.GetVanillaOverrideTitleFiles().at("01_japan.txt") == "\xEF\xBB\xBF");
+        CHECK(std::filesystem::exists("resources/tests/title_manager/test_mod_modified/common/landed_titles/01_japan.txt"));
+        
+        REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("02_china.txt"));
+        CHECK(manager.GetVanillaOverrideTitleFiles().at("02_china.txt") == "\xEF\xBB\xBF# Vanilla Overrides");
+        CHECK(std::filesystem::exists("resources/tests/title_manager/test_mod_modified/common/landed_titles/02_china.txt"));
     }
 
     SUBCASE("UTF-8 BOM encoding") {
