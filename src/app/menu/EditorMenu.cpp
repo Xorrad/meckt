@@ -148,6 +148,7 @@ void EditorMenu::UpdateHoveringText() {
     // depending on the current map mode.
     if(m_MapMode == MapMode::PROVINCES
     || m_MapMode == MapMode::TERRAIN
+    || m_MapMode == MapMode::CLIMATE
     || m_MapMode == MapMode::WINTER_SEVERITY
     || m_MapMode == MapMode::CULTURE
     || m_MapMode == MapMode::FAITH) {
@@ -276,6 +277,9 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::TERRAIN:
             m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetTerrainImage());
             break;
+        case MapMode::CLIMATE:
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetClimateImage());
+            break;
         case MapMode::WINTER_SEVERITY:
             m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetWinterSeverityBiasImage());
             break;
@@ -396,6 +400,7 @@ void EditorMenu::Event(const sf::Event& event) {
 
             if(m_MapMode == MapMode::PROVINCES
             || m_MapMode == MapMode::TERRAIN
+            || m_MapMode == MapMode::CLIMATE
             || m_MapMode == MapMode::WINTER_SEVERITY
             || m_MapMode == MapMode::CULTURE
             || m_MapMode == MapMode::FAITH
@@ -437,6 +442,7 @@ void EditorMenu::Render() {
 
     if(m_MapMode == MapMode::PROVINCES
     || m_MapMode == MapMode::TERRAIN
+    || m_MapMode == MapMode::CLIMATE
     || m_MapMode == MapMode::WINTER_SEVERITY
     || m_MapMode == MapMode::CULTURE
     || m_MapMode == MapMode::FAITH
@@ -546,7 +552,6 @@ void EditorMenu::InitTabs() {
     m_Tabs[Tabs::PROVINCES] = MakeUnique<ProvincesTab>(*this, true);
     m_Tabs[Tabs::REGIONS] = MakeUnique<RegionsTab>(*this, true);
     m_Tabs[Tabs::LOG] = MakeUnique<LogTab>(*this, true);
-    m_Tabs[Tabs::CULTURAL_NAMES] = MakeUnique<CulturalNamesTab>(*this, true);
     m_Tabs[Tabs::CULTURAL_NAMES] = MakeUnique<CulturalNamesTab>(*this, true);
 }
 

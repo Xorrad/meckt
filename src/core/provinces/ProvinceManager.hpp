@@ -97,6 +97,15 @@ public:
     sf::Image GetTerrainImage() const;
 
     /**
+     * @brief Generates the climate image.
+     *        Each province's color is replaced by a shade of gray corresponding to its climate type.
+     *        The whiter, the more severe the winter.
+     * @note  This function can be expensive: to be used with sparingly.
+     * @return The generated climate image.
+     */
+    sf::Image GetClimateImage() const;
+
+    /**
      * @brief Generates the winter severity bias image.
      *        Each province's color is replaced by a shade of gray corresponding to its winter severity.
      * @note  This function can be expensive: to be used with sparingly.

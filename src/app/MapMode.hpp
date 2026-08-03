@@ -5,22 +5,23 @@ enum class MapMode {
     HEIGHTMAP       = 1,
     RIVERS          = 2,
     TERRAIN         = 3,
-    WINTER_SEVERITY = 4,
-    CULTURE         = 5,
-    FAITH        = 6,
-    BARONY          = 7,
-    COUNTY          = 8,
-    DUCHY           = 9,
-    KINGDOM         = 10,
-    EMPIRE          = 11,
-    HEGEMONY        = 12,
-    COUNT           = 13,
+    CLIMATE         = 4,
+    WINTER_SEVERITY = 5,
+    CULTURE         = 6,
+    FAITH           = 7,
+    BARONY          = 8,
+    COUNTY          = 9,
+    DUCHY           = 10,
+    KINGDOM         = 11,
+    EMPIRE          = 12,
+    HEGEMONY        = 13,
+    COUNT           = 14,
 };
 const int MapModeTitleStartIndex = static_cast<int>(MapMode::BARONY);
 
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
-    "Terrain", "Winter Severity", "Culture", "Faith",
+    "Terrain", "Climate", "Winter Severity", "Culture", "Faith",
     "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony"
 };
 

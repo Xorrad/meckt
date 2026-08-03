@@ -93,6 +93,18 @@ sf::Image ProvinceManager::GetTerrainImage() const {
     return image;
 }
 
+sf::Image ProvinceManager::GetClimateImage() const {
+    sf::Image image = Image::MapPixels(
+        m_ProvincesImage,
+        [&](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : m_ProvincesByColors) {
+                mappedColors[province->GetColor().toInteger()] = ClimateTypeColors.at(province->GetClimateType()).toInteger();
+            }    
+        }
+    );
+    return image;
+}
+
 sf::Image ProvinceManager::GetWinterSeverityBiasImage() const {
     // - Map provinces colors to their winter severity bias.
     // - Copy province image.

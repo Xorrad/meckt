@@ -24,15 +24,16 @@ const int MAPMODE_PROVINCES = 0;
 const int MAPMODE_HEIGHTMAP = 1;
 const int MAPMODE_RIVERS = 2;
 const int MAPMODE_TERRAIN = 3;
-const int MAPMODE_WINTER_SEVERITY = 4;
-const int MAPMODE_CULTURE = 5;
-const int MAPMODE_RELIGION = 6;
-const int MAPMODE_BARONY = 7;
-const int MAPMODE_COUNTY = 8;
-const int MAPMODE_DUCHY = 9;
-const int MAPMODE_KINGDOM = 10;
-const int MAPMODE_EMPIRE = 11;
-const int MAPMODE_HEGEMONY = 12;
+const int MAPMODE_CLIMATE = 4;
+const int MAPMODE_WINTER_SEVERITY = 5;
+const int MAPMODE_CULTURE = 6;
+const int MAPMODE_RELIGION = 7;
+const int MAPMODE_BARONY = 8;
+const int MAPMODE_COUNTY = 9;
+const int MAPMODE_DUCHY = 10;
+const int MAPMODE_KINGDOM = 11;
+const int MAPMODE_EMPIRE = 12;
+const int MAPMODE_HEGEMONY = 13;
 
 // The last (4th) element of the array is used to distinguish the type defined above.
 uniform vec4 selectedEntities[1000];
@@ -106,7 +107,7 @@ void main() {
         bool isSelected = IsSelected(i, GetEntityColor(i));
         if(isSelected) {
             float v = abs(sin(2.0*time)+3.0)/6.0;
-            if (mapMode == MAPMODE_WINTER_SEVERITY) color = vec4(v, 0.0, 0.0, 1.0);
+            if (mapMode == MAPMODE_CLIMATE || mapMode == MAPMODE_WINTER_SEVERITY) color = vec4(v, 0.0, 0.0, 1.0);
             else color = vec4(v, v, v, 1.0);
             break;
         }
