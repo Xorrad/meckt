@@ -45,6 +45,22 @@ TEST_CASE("[ProvinceManager] HasProvinceById") {
     CHECK_FALSE(manager.HasProvinceById(2));
 }
 
+TEST_CASE("[ProvinceManager] HasAdjacency") {
+    Mod mod("");
+    ProvinceManager manager(mod);
+    
+    CHECK_FALSE(manager.HasAdjacency(1, 2));
+    
+    manager.AddAdjacency(MakeUnique<Adjacency>(1, 2, "sea", 3, sf::Vector2u(0, 0), sf::Vector2u(0, 0), ""));
+
+    CHECK(manager.HasAdjacency(1, 2));
+    CHECK(manager.HasAdjacency(2, 1));
+    CHECK_FALSE(manager.HasAdjacency(1, 3));
+    CHECK_FALSE(manager.HasAdjacency(3, 1));
+    CHECK_FALSE(manager.HasAdjacency(2, 3));
+    CHECK_FALSE(manager.HasAdjacency(3, 2));
+}
+
 TEST_CASE("[ProvinceManager] HasHoldingType") {
     Mod mod("");
     ProvinceManager manager(mod);
@@ -107,6 +123,28 @@ TEST_CASE("[ProvinceManager] GetProvinceById") {
     CHECK_EQ(constProvince->GetName(), "1");
 }
 
+TEST_CASE("[ProvinceManager] GetAdjacencyByIds") {
+    Mod mod("");
+    ProvinceManager manager(mod);
+
+    CHECK(manager.GetAdjacencyByIds(1, 2) == nullptr);
+    CHECK(manager.GetAdjacencyByIds(2, 1) == nullptr);
+    CHECK(std::as_const(manager).GetAdjacencyByIds(1, 2) == nullptr);
+    CHECK(std::as_const(manager).GetAdjacencyByIds(2, 1) == nullptr);
+
+    manager.AddAdjacency(MakeUnique<Adjacency>(1, 2, "sea", 3, sf::Vector2u(0, 0), sf::Vector2u(0, 0), "crossing 1"));
+
+    Adjacency* adjacency = manager.GetAdjacencyByIds(1, 2);
+    REQUIRE(adjacency != nullptr);
+    CHECK_EQ(adjacency->GetComment(), "crossing 1");
+    CHECK_EQ(manager.GetAdjacencyByIds(1, 2), manager.GetAdjacencyByIds(2, 1));
+
+    const Adjacency* constAdjacency = std::as_const(manager).GetAdjacencyByIds(1, 2);
+    REQUIRE(constAdjacency != nullptr);
+    CHECK_EQ(constAdjacency->GetComment(), "crossing 1");
+    CHECK_EQ(std::as_const(manager).GetAdjacencyByIds(1, 2), std::as_const(manager).GetAdjacencyByIds(2, 1));
+}
+
 //////////////////////////////////////////////////////
 
 TEST_CASE("[ProvinceManager] AddProvince") {
@@ -145,6 +183,23 @@ TEST_CASE("[ProvinceManager] AddProvince") {
         CHECK(manager.GetProvincesByIds().contains(1));
         CHECK(manager.GetProvinceById(1)->GetColor() == sf::Color::Green);
         CHECK(manager.GetProvinceById(1)->GetName() == "2");
+    }
+}
+
+TEST_CASE("[ProvinceManager] AddAdjacency") {
+    Mod mod("");
+    ProvinceManager manager(mod);
+
+    SUBCASE("No crashes on adding a nullptr adjacency") {
+        REQUIRE_NOTHROW(manager.AddAdjacency(nullptr));
+        CHECK(manager.GetAdjacencies().size() == 0);
+    }
+
+    SUBCASE("Add a new adjacency") {
+        manager.AddAdjacency(MakeUnique<Adjacency>(1, 2, "sea", 3, sf::Vector2u(0, 0), sf::Vector2u(0, 0), ""));
+        CHECK(manager.GetAdjacencies().size() == 1);
+        CHECK(manager.HasAdjacency(1, 2));
+        CHECK(manager.HasAdjacency(2, 1));
     }
 }
 
@@ -213,6 +268,37 @@ TEST_CASE("[ProvinceManager] RemoveProvince") {
 
     SUBCASE("Assigned baronies are correctly unassigned") {
         // TODO: check that assigned barony title of the former province is unassigned.
+    }
+}
+
+TEST_CASE("[ProvinceManager] RemoveAdjacency") {
+    Mod mod("");
+    ProvinceManager manager(mod);
+
+    SUBCASE("No crashes on removing a nullptr") {
+        REQUIRE_NOTHROW(manager.RemoveAdjacency(nullptr));
+    }
+    
+    SUBCASE("No crashes on removing a non-existing adjacency") {
+        UniquePtr<Adjacency> adjacency = MakeUnique<Adjacency>(1, 2, "sea", 3, sf::Vector2u(0, 0), sf::Vector2u(0, 0), "");
+        REQUIRE_NOTHROW(manager.RemoveAdjacency(adjacency.get()));
+        REQUIRE_NOTHROW(manager.RemoveAdjacency(1, 2));
+    }
+
+    SUBCASE("Remove an adjacency") {
+        manager.AddAdjacency(MakeUnique<Adjacency>(1, 2, "sea", 3, sf::Vector2u(0, 0), sf::Vector2u(0, 0), ""));
+        manager.RemoveAdjacency(manager.GetAdjacencyByIds(1, 2));
+        CHECK_FALSE(manager.HasAdjacency(1, 2));
+
+        manager.AddAdjacency(MakeUnique<Adjacency>(1, 2, "sea", 3, sf::Vector2u(0, 0), sf::Vector2u(0, 0), ""));
+        manager.RemoveAdjacency(1, 2);
+        CHECK_FALSE(manager.HasAdjacency(1, 2));
+        CHECK_FALSE(manager.HasAdjacency(2, 1));
+        
+        manager.AddAdjacency(MakeUnique<Adjacency>(1, 2, "sea", 3, sf::Vector2u(0, 0), sf::Vector2u(0, 0), ""));
+        manager.RemoveAdjacency(2, 1);
+        CHECK_FALSE(manager.HasAdjacency(1, 2));
+        CHECK_FALSE(manager.HasAdjacency(2, 1));
     }
 }
 
@@ -734,6 +820,55 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
     }
 }
 
+TEST_CASE("[ProvinceManager] LoadAdjacencies") {
+    SUBCASE("No exception if there are no adjacencies file") {
+        Mod mod("resources/tests/province_manager/test_mod_no_definitions");
+        ProvinceManager manager(mod);
+        TitleManager titleManager(mod);
+
+        REQUIRE_NOTHROW(manager.LoadAdjacencies(titleManager));
+    }
+
+    Mod mod("resources/tests/province_manager/test_mod");
+    ProvinceManager manager(mod);
+    TitleManager titleManager(mod);
+
+    // Load the provinces.
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadAdjacencies(titleManager));
+
+    SUBCASE("Check that adjacencies have the correct data") {
+        struct AdjacencyTestData {
+            std::pair<int, int> id;
+            int fromId;
+            int toId;
+            std::string type;
+            int throughId;
+            sf::Vector2u start;
+            sf::Vector2u stop;
+            std::string comment;
+        };
+        const std::vector<AdjacencyTestData> testData = {
+            {std::make_pair(1, 2), 1, 2, "sea", 1019, sf::Vector2u(655, 3608), sf::Vector2u(668, 3617), "Crossing 1"},
+            {std::make_pair(1, 5), 5, 1, "river_large", 699, sf::Vector2u(669, 3577), sf::Vector2u(698, 3584), "Crossing 2"}
+        };
+
+        for (const auto& data : testData) {
+            REQUIRE(manager.HasAdjacency(data.fromId, data.toId));
+            Adjacency* adjacency = manager.GetAdjacencyByIds(data.fromId, data.toId);
+            REQUIRE(adjacency != nullptr);
+            CHECK_EQ(adjacency->GetId(), data.id);
+            CHECK_EQ(adjacency->GetFromId(), data.fromId);
+            CHECK_EQ(adjacency->GetToId(), data.toId);
+            CHECK_EQ(adjacency->GetType(), data.type);
+            CHECK_EQ(adjacency->GetThroughId(), data.throughId);
+            CHECK_EQ(adjacency->GetStart(), data.start);
+            CHECK_EQ(adjacency->GetStop(), data.stop);
+            CHECK_EQ(adjacency->GetComment(), data.comment);
+        }
+    }
+}
+
 //////////////////////////////////////////////////////
 
 TEST_CASE("[ProvinceManager] ExportProvincesDefinition") {
@@ -1067,6 +1202,68 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
 
         REQUIRE(manager.GetProvincesHistoryVariables().at(filePath)->Contains("@test"));
         CHECK(manager.GetProvincesHistoryVariables().at(filePath)->Get("@test")->As<std::string>() == "1.0");
+    }
+}
+
+TEST_CASE("[ProvinceManager] ExportAdjacencies") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    std::filesystem::remove_all("resources/tests/province_manager/test_mod_modified");
+
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/province_manager/test_mod");
+    TitleManager titleManager(mod);
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
+
+    {
+        ProvinceManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+        REQUIRE_NOTHROW(manager.LoadAdjacencies(titleManager));
+
+        // Edit some adjacencies.
+        manager.GetAdjacencyByIds(1, 2)->SetThroughId(10); 
+        manager.GetAdjacencyByIds(1, 2)->SetComment("CROSSING MODIFIED");
+
+        manager.AddAdjacency(MakeUnique<Adjacency>(100, 22, "river_large", 999, sf::Vector2u(11, 67), sf::Vector2u(50, 41), "NEW ADJACENCY !!!!"));
+
+        // 2. Export the adjacencies.
+        mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportAdjacencies());
+    }
+
+    // Reload the adjacencies definition.
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadAdjacencies(titleManager));
+
+    // 3. Asserts
+    struct AdjacencyTestData {
+        std::pair<int, int> id;
+        int fromId;
+        int toId;
+        std::string type;
+        int throughId;
+        sf::Vector2u start;
+        sf::Vector2u stop;
+        std::string comment;
+    };
+    const std::vector<AdjacencyTestData> testData = {
+        {std::make_pair(1, 2), 1, 2, "sea", 10, sf::Vector2u(655, 3608), sf::Vector2u(668, 3617), "CROSSING MODIFIED"},
+        {std::make_pair(1, 5), 5, 1, "river_large", 699, sf::Vector2u(669, 3577), sf::Vector2u(698, 3584), "Crossing 2"},
+        {std::make_pair(22, 100), 100, 22, "river_large", 999, sf::Vector2u(11, 67), sf::Vector2u(50, 41), "NEW ADJACENCY !!!!"}
+    };
+
+    for (const auto& data : testData) {
+        REQUIRE(manager.HasAdjacency(data.fromId, data.toId));
+        Adjacency* adjacency = manager.GetAdjacencyByIds(data.fromId, data.toId);
+        REQUIRE(adjacency != nullptr);
+        CHECK_EQ(adjacency->GetId(), data.id);
+        CHECK_EQ(adjacency->GetFromId(), data.fromId);
+        CHECK_EQ(adjacency->GetToId(), data.toId);
+        CHECK_EQ(adjacency->GetType(), data.type);
+        CHECK_EQ(adjacency->GetThroughId(), data.throughId);
+        CHECK_EQ(adjacency->GetStart(), data.start);
+        CHECK_EQ(adjacency->GetStop(), data.stop);
+        CHECK_EQ(adjacency->GetComment(), data.comment);
     }
 }
 

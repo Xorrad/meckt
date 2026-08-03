@@ -30,6 +30,13 @@ bool ProvinceManager::HasProvinceById(int id) const {
     return m_ProvincesByIds.contains(id);
 }
 
+bool ProvinceManager::HasAdjacency(int fromId, int toId) const {
+    return m_Adjacencies.contains(std::make_pair(
+        std::min(fromId, toId),
+        std::max(fromId, toId)
+    ));
+}
+
 bool ProvinceManager::HasHoldingType(const std::string& name) const {
     return m_HoldingTypes.contains(name);
 }
@@ -210,6 +217,34 @@ const std::map<int, Province*>& ProvinceManager::GetProvincesByIds() const {
     return m_ProvincesByIds;
 }
 
+Adjacency* ProvinceManager::GetAdjacencyByIds(int fromId, int toId) {
+    auto it = m_Adjacencies.find(std::make_pair(
+        std::min(fromId, toId),
+        std::max(fromId, toId)
+    ));
+    if (it == m_Adjacencies.end())
+        return nullptr;
+    return it->second.get();
+}
+    
+const Adjacency* ProvinceManager::GetAdjacencyByIds(int fromId, int toId) const {
+    auto it = m_Adjacencies.find(std::make_pair(
+        std::min(fromId, toId),
+        std::max(fromId, toId)
+    ));
+    if (it == m_Adjacencies.end())
+        return nullptr;
+    return it->second.get();
+}
+
+const std::map<std::pair<int, int>, UniquePtr<Adjacency>>& ProvinceManager::GetAdjacencies() {
+    return m_Adjacencies;
+}
+
+const std::map<std::pair<int, int>, UniquePtr<Adjacency>>& ProvinceManager::GetAdjacencies() const {
+    return m_Adjacencies;
+}
+
 OrderedMap<std::string, HoldingType>& ProvinceManager::GetHoldingTypes() {
     return m_HoldingTypes;
 }
@@ -281,6 +316,12 @@ void ProvinceManager::AddProvince(UniquePtr<Province> province) {
     m_ProvincesByColors[colorId] = std::move(province);
 }
 
+void ProvinceManager::AddAdjacency(UniquePtr<Adjacency> adjacency) {
+    if (adjacency == nullptr)
+        return;
+    m_Adjacencies[adjacency->GetId()] = std::move(adjacency);
+}
+
 void ProvinceManager::RemoveProvinceByColor(uint32_t color) {
     auto it = m_ProvincesByColors.find(color);
     if (it == m_ProvincesByColors.end())
@@ -306,6 +347,19 @@ void ProvinceManager::RemoveProvince(const Province *province) {
     if (province == nullptr)
         return;
     this->RemoveProvinceByColor(province->GetColorId());
+}
+
+void ProvinceManager::RemoveAdjacency(int fromId, int toId) {
+    m_Adjacencies.erase(std::make_pair(
+        std::min(fromId, toId),
+        std::max(fromId, toId)
+    ));
+}
+
+void ProvinceManager::RemoveAdjacency(Adjacency* adjacency) {
+    if (adjacency == nullptr)
+        return;
+    m_Adjacencies.erase(adjacency->GetId());
 }
 
 void ProvinceManager::RenameProvinceColor(uint32_t formerColor, uint32_t newColor) {
@@ -482,6 +536,8 @@ void ProvinceManager::LoadProvincesDefinition() {
             throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesDefinition: Failed to parse definitions.csv at \"{}\"\n{}", String::Join(line, ";"), e.what()));
         }
     }
+
+    LOG_INFO("Loaded {} provinces", m_ProvincesByColors.size());
 }
 
 void ProvinceManager::LoadProvincesImage() {
@@ -995,6 +1051,69 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
     }
 }
 
+void ProvinceManager::LoadAdjacencies(TitleManager& titleManager) {
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_ADJACENCIES);
+    
+    if (!std::filesystem::exists(filePath))
+        return;
+    
+    std::vector<std::vector<std::string>> lines = File::ReadCSV(filePath);
+
+    // Skip the first line.
+    if (!lines.empty())
+        lines.erase(lines.begin());
+
+    for(const auto& line : lines) {
+        std::string originalLine = String::Join(line, ";");
+
+        if (line.size() < 9) {
+            LOG_ERROR("Invalid line in adjacencies.csv: '{}'", originalLine);
+            continue;
+        }
+
+        // Skip the "-1;-1;;-1;-1;-1;-1;-1;" at the end of the file, which is necessary for the game to load.
+        if (line.at(0) == "-1")
+            continue;
+
+        try {
+            int fromId = std::stoi(line.at(0));
+            int toId = std::stoi(line.at(1));
+            std::string type = line.at(2);
+            int throughId = std::stoi(line.at(3));
+            int startX = std::stoi(line.at(4));
+            int startY = std::stoi(line.at(5));
+            sf::Vector2u start(startX, startY);
+            int stopX = std::stoi(line.at(6));
+            int stopY = std::stoi(line.at(7));
+            sf::Vector2u stop(stopX, stopY);
+            std::string comment = line.at(8);
+
+            if (m_ProvincesByIds.count(fromId) == 0)
+                LOG_ERROR("Adjacency with undefined province '{}' in '{}'", fromId, originalLine);
+            if (m_ProvincesByIds.count(toId) == 0)
+                LOG_ERROR("Adjacency with undefined province '{}' in '{}'", toId, originalLine);
+            if (type != "sea" && type != "river_large")
+                LOG_ERROR("Adjacency with invalid type '{}' in '{}'", type, originalLine);
+            if (m_ProvincesByIds.count(throughId) == 0)
+                LOG_ERROR("Adjacency with undefined province '{}' in '{}'", throughId, originalLine);
+
+            if (titleManager.GetBaronyByProvinceId(fromId) == nullptr)
+                LOG_ERROR("Adjacency with non-barony province '{}' in '{}'", fromId, originalLine);
+            if (titleManager.GetBaronyByProvinceId(toId) == nullptr)
+                LOG_ERROR("Adjacency with non-barony province '{}' in '{}'", toId, originalLine);
+
+            this->AddAdjacency(MakeUnique<Adjacency>(fromId, toId, type, throughId, start, stop, comment));
+        }
+        catch (std::exception& e) {
+            throw std::runtime_error(fmt::format("ProvinceManager::LoadAdjacencies: Failed to parse adjacencies.csv at \"{}\"\n{}", originalLine, e.what()));
+        }
+    }
+
+    LOG_INFO("Loaded {} adjacencies", m_Adjacencies.size());
+}
+
+////////////////////////////////////////////////////
+
 void ProvinceManager::ExportProvincesDefinition() {
     std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_DEFINITIONS);
     
@@ -1339,6 +1458,42 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
         fmt::println(file, "# {}", province->GetName());
         fmt::println(file, "{}", object->Serialize());
     }
+}
+
+void ProvinceManager::ExportAdjacencies() {
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_ADJACENCIES);
+    
+    // Create the directory if it does not exist.
+    std::filesystem::path fileDir = std::filesystem::path(filePath).parent_path();
+    if (!std::filesystem::exists(fileDir)) std::filesystem::create_directories(fileDir);
+
+    std::ofstream file(filePath, std::ios::binary);
+    if (!file) throw std::runtime_error(fmt::format("ProvinceManager::ExportAdjacencies: Failed to open file for writing at '{}'", filePath));
+
+    // The format of definition.csv is as following:
+    // From;To;Type;Through;start_x;start_y;stop_x;stop_y;Comment
+    // 1527;1526;river_large;629;948;2791;-1;-1;London-Southwark
+    // .....
+    // -1;-1;;-1;-1;-1;-1;-1;
+
+    fmt::println(file, "From;To;Type;Through;start_x;start_y;stop_x;stop_y;Comment\n");
+
+    for(const auto& [_, adjacency] : m_Adjacencies) {
+        fmt::println(file,
+            "{};{};{};{};{};{};{};{};{}",
+            adjacency->GetFromId(),
+            adjacency->GetToId(),
+            adjacency->GetType(),
+            adjacency->GetThroughId(),
+            adjacency->GetStart().x,
+            adjacency->GetStart().y,
+            adjacency->GetStop().x,
+            adjacency->GetStop().y,
+            adjacency->GetComment()
+        );
+    }
+
+    fmt::println(file, "-1;-1;;-1;-1;-1;-1;-1;");
 }
 
 ////////////////////////////////////////////////////

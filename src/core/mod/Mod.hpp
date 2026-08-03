@@ -87,6 +87,7 @@ public:
      * @param provincesTerrain If true, exports the provinces terrain to the province terrain file.
      * @param provincesClimate If true, exports the provinces climate to the province properties file.
      * @param provincesHistory If true, exports the provinces history to the history files.
+     * @param adjacencies If true, exports the province adjacencies.
      * @param titles If true, exports the titles definitions to the landed_titles files.
      * @param titlesHistory If true, exports the titles history to the history files.
      * @param titlesLocalization If true, exports the titles localization to the localization files.
@@ -99,6 +100,7 @@ public:
         bool provincesTerrain = true,
         bool provincesClimate = true,
         bool provincesHistory = true,
+        bool provinceAdjacencies = true,
         bool titles = true,
         bool titlesHistory = true,
         bool titlesLocalization = true,

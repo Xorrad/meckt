@@ -13,6 +13,7 @@ class ReligionManager;
 class DefineManager;
 
 class HoldingType;
+class Adjacency;
 class Province;
 class TerrainType;
 class Region;
@@ -70,6 +71,7 @@ class Faith;
 
 #include "provinces/ClimateType.hpp"
 #include "provinces/HoldingType.hpp"
+#include "provinces/Adjacency.hpp"
 #include "provinces/ProvinceFlags.hpp"
 #include "provinces/TerrainType.hpp"
 #include "titles/TitleType.hpp"

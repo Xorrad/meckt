@@ -29,6 +29,14 @@ public:
      * @return True if the province exists, false otherwise.
      */
     bool HasProvinceById(int id) const;
+    
+    /**
+     * @brief Checks two provinces share an adjacency.
+     * @param fromId The first province id.
+     * @param toId The second province id.
+     * @return True if the adjacency exists between those two provinces, false otherwise.
+     */
+    bool HasAdjacency(int fromId, int toId) const;
 
     /**
      * @brief Checks if a holding type exists.
@@ -196,6 +204,34 @@ public:
     const std::map<int, Province*>& GetProvincesByIds() const;
 
     /**
+     * @brief Retrieves a adjacency by 
+     * @param fromId The first province id.
+     * @param toId The second province id.
+     * @return A pointer to the correspond adjacency if it exists, `nullptr` otherwise.
+     */
+    Adjacency* GetAdjacencyByIds(int fromId, int toId);
+    
+    /**
+     * @brief Retrieves a adjacency by 
+     * @param fromId The first province id.
+     * @param toId The second province id.
+     * @return A pointer to the correspond adjacency if it exists, `nullptr` otherwise.
+     */
+    const Adjacency* GetAdjacencyByIds(int fromId, int toId) const;
+
+    /**
+     * @brief Retrieves the list of adjacencies.
+     * @return The adjacencies paired by their province ids.
+     */
+    const std::map<std::pair<int, int>, UniquePtr<Adjacency>>& GetAdjacencies();
+
+    /**
+     * @brief Retrieves the list of adjacencies.
+     * @return The adjacencies paired by their province ids.
+     */
+    const std::map<std::pair<int, int>, UniquePtr<Adjacency>>& GetAdjacencies() const;
+
+    /**
      * @brief Retrieves the list of holding types.
      * @return The holding types paired by their name.
      */
@@ -283,6 +319,12 @@ public:
     void AddProvince(UniquePtr<Province> province);
 
     /**
+     * @brief Adds an adjacency between two provinces.
+     * @param adjacency The adjacency to add.
+     */
+    void AddAdjacency(UniquePtr<Adjacency> adjacency);
+
+    /**
      * @brief Removes a province.
      * @param color The color of the province to remove.
      */
@@ -300,6 +342,19 @@ public:
      * @param province The province to remove.
      */
     void RemoveProvince(const Province* province);
+
+    /**
+     * @brief Removes an adjacency between two provinces.
+     * @param fromId The id of the province from which the adjacency starts.
+     * @param toId The id of the province to which the adjacency leads.
+     */
+    void RemoveAdjacency(int fromId, int toId);
+    
+    /**
+     * @brief Removes an adjacency between two provinces.
+     * @param adjacency A pointer to the adjacency to remove.
+     */
+    void RemoveAdjacency(Adjacency* adjacency);
 
     /**
      * @brief Renames a province's color.
@@ -391,6 +446,12 @@ public:
      */
     void LoadProvincesHistoryFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
 
+    /**
+     * @brief Loads the adjacencys from the adjacencies file.
+     * @param titleManager A reference to the mod's title manager.
+     */
+    void LoadAdjacencies(TitleManager& titleManager);
+
     ////////////////////////////////////////////////////
     
     /**
@@ -423,6 +484,12 @@ public:
      * @throws std::runtime_error if any of the files cannot be written.
      */
     void ExportProvincesHistory(TitleManager& titleManager);
+
+    /**
+     * @brief Exports the adjacencies.
+     * @throws std::runtime_error if the file cannot be opened or written to.
+     */
+    void ExportAdjacencies();
 
     ////////////////////////////////////////////////////
 
@@ -457,6 +524,8 @@ private:
 
     std::unordered_map<uint32_t, UniquePtr<Province>> m_ProvincesByColors;
     std::map<int, Province*> m_ProvincesByIds;
+
+    std::map<std::pair<int, int>, UniquePtr<Adjacency>> m_Adjacencies; // map_data/adjacencies.csv
 
     OrderedMap<std::string, HoldingType> m_HoldingTypes; // common/holdings/
     OrderedMap<std::string, TerrainType> m_TerrainTypes; // common/terrain_types/

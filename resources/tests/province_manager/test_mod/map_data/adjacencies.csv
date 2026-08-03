@@ -1,0 +1,8 @@
+From;To;Type;Through;start_x;start_y;stop_x;stop_y;Comment
+# A comment
+1;2;sea;1019;655;3608;668;3617;Crossing 1
+# Another Comment
+
+5;1;river_large;699;669;3577;698;3584;Crossing 2
+
+-1;-1;;-1;-1;-1;-1;-1;

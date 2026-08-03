@@ -1327,6 +1327,7 @@ void EditorMenu::RenderModals() {
         static bool provincesTerrain = true;
         static bool provincesClimate = true;
         static bool provincesHistory = true;
+        static bool provinceAdjacencies = true;
         static bool titles = true;
         static bool titlesHistory = true;
         static bool titlesLocalization = true;
@@ -1343,6 +1344,7 @@ void EditorMenu::RenderModals() {
             provincesTerrain = true;
             provincesClimate = true;
             provincesHistory = true;
+            provinceAdjacencies = true;
             titles = true;
             titlesHistory = true;
             titlesLocalization = true;
@@ -1356,6 +1358,7 @@ void EditorMenu::RenderModals() {
             provincesTerrain = false;
             provincesClimate = false;
             provincesHistory = false;
+            provinceAdjacencies = false;
             titles = false;
             titlesHistory = false;
             titlesLocalization = false;
@@ -1387,6 +1390,10 @@ void EditorMenu::RenderModals() {
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "history/provinces/");
         
+        ImGui::Checkbox("province adjacencies  ", &provinceAdjacencies);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "map_data/adjacencies.csv");
+        
         ImGui::Checkbox("titles  ", &titles);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "common/landed_titles/");
@@ -1417,6 +1424,7 @@ void EditorMenu::RenderModals() {
                 provincesTerrain,
                 provincesClimate,
                 provincesHistory,
+                provinceAdjacencies,
                 titles,
                 titlesHistory,
                 titlesLocalization,

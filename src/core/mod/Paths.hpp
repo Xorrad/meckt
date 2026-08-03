@@ -23,6 +23,7 @@ namespace Paths {
     static constexpr GamePath MAP_DATA_RIVERS = "map_data/rivers.png";
     static constexpr GamePath MAP_DATA_DEFAULT_MAP = "map_data/default.map";
     static constexpr GamePath MAP_DATA_CLIMATE = "map_data/climate.txt";
+    static constexpr GamePath MAP_DATA_ADJACENCIES = "map_data/adjacencies.csv";
     static constexpr GamePath MAP_DATA_GEOGRAPHICAL_REGIONS = "map_data/geographical_regions/";
 
     // Localization directory paths.
