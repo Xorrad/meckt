@@ -1,5 +1,7 @@
 #include "Configuration.hpp"
 
+#include "MapTooltip.hpp"
+
 #include <nlohmann/json.hpp>
 #include <cmrc/cmrc.hpp>
 
@@ -8,6 +10,11 @@ void Configuration::Initialize() {
     windowResolution = { desktopMode.size.x, desktopMode.size.y };
 
     Configuration::uiScale = std::max(desktopMode.size.x / 1920.f, desktopMode.size.y / 1080.f);
+
+    for (int i = 0; i < static_cast<int>(MapTooltip::COUNT); ++i)
+        Configuration::mapTooltips[static_cast<MapTooltip>(i)] = false;
+    Configuration::mapTooltips[MapTooltip::PROVINCE] = true;
+    Configuration::mapTooltips[MapTooltip::TITLES] = true;
 
 #ifdef DEBUG
     buildVersion = buildVersion + " (debug)";
@@ -46,6 +53,16 @@ void Configuration::Load() {
     Configuration::recentMods = data.value("recent_mods", std::list<std::string>{});
     Configuration::compactTooltip = data.value("compact_tooltip", false);
     Configuration::uiScale = data.value("ui_scale", Configuration::uiScale);
+
+    if (data.contains("map_tooltips") && data["map_tooltips"].is_object()) {
+        for (const auto& [key, value] : data["map_tooltips"].items()) {
+            MapTooltip tooltip = MapTooltipFromString(key);
+            // Skip invalid tooltip keys.
+            if (tooltip == MapTooltip::COUNT)
+                continue;
+            Configuration::mapTooltips[tooltip] = value.get<bool>();
+        }
+    }
 }
 
 void Configuration::Save() {
@@ -54,6 +71,11 @@ void Configuration::Save() {
     json["recent_mods"] = Configuration::recentMods;
     json["compact_tooltip"] = Configuration::compactTooltip;
     json["ui_scale"] = Configuration::uiScale;
+
+    for (int i = 0; i < static_cast<int>(MapTooltip::COUNT); ++i) {
+        MapTooltip tooltip = static_cast<MapTooltip>(i);
+        json["map_tooltips"][MapTooltipToString(tooltip)] = Configuration::mapTooltips[tooltip];
+    }
 
     // Dump that json object into the settings file.
     std::ofstream file(Configuration::settingsFile, std::ios::binary);

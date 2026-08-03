@@ -2,6 +2,7 @@
 #include "app/menu/tab/Tab.hpp"
 
 #include "app/App.hpp"
+#include "app/MapTooltip.hpp"
 
 #include "core/mod/Mod.hpp"
 #include "core/provinces/ProvinceManager.hpp"
@@ -96,26 +97,36 @@ void EditorMenu::UpdateHoveringText() {
     // Detailed tooltip always showing the province and liege titles info
     // regardless of the current map mode.
     if (!Configuration::compactTooltip) {
-        std::string text = fmt::format("#{} - {}", hoveredProvince->GetId(), hoveredProvince->GetName());
-        std::string hoveredTitleText = fmt::format("");
 
-        Title* hoveredBarony = hoveredProvince->GetProvinceLiegeTitle(
-            m_Mod.GetTitleManager(), 
-            TitleType::BARONY
-        );
+        std::string text = "";
+        std::string hoveredTitleText = "";
 
-        Title* hoveredTitle = hoveredProvince->GetProvinceFocusedTitle(
-            m_Mod.GetTitleManager(), 
-            MapModeToTileType(m_MapMode)
-        );
+        for (int i = 0; i < static_cast<int>(MapTooltip::TITLES); ++i) {
+            MapTooltip tooltip = static_cast<MapTooltip>(i);
+            if (!Configuration::mapTooltips[tooltip])
+                continue;
+            
+            text += fmt::format("{}\n", GetMapTooltipString(m_Mod, hoveredProvince, m_MapMode, tooltip, false));
+            hoveredTitleText += "\n";
 
-        Title* title = hoveredBarony;
-        while(title != nullptr) {
-            bool isMainTitle = (title == hoveredTitle && MapModeIsTitle(m_MapMode));
-            hoveredTitleText += fmt::format("\n{}", (isMainTitle ? title->GetName() : ""));
-            text += fmt::format("\n{}", (!isMainTitle ? title->GetName() : ""));
-            title = title->GetLiegeTitle();
+            if (tooltip == MapTooltip::PROVINCE) {
+                text += "\n";
+                hoveredTitleText += "\n";
+            }
         }
+        if (Configuration::mapTooltips[MapTooltip::TITLES]) {
+            if (!text.empty() && !text.ends_with("\n\n")) {
+                hoveredTitleText += "\n";
+                text += "\n";
+            }
+
+            text += fmt::format("{}", GetMapTooltipString(m_Mod, hoveredProvince, m_MapMode, MapTooltip::TITLES, false));
+            hoveredTitleText +=  Configuration::mapTooltips[MapTooltip::TITLES] ? GetMapTooltipString(m_Mod, hoveredProvince, m_MapMode, MapTooltip::TITLES, true) : "";
+        }
+
+        // Remove the last newline characters
+        while (!text.empty() && text.back() == '\n')
+            text.pop_back();
 
         m_HoverText.setString(text);
         m_HoverText.setPosition({(float) mousePosition.x + 12*Configuration::uiScale, (float) mousePosition.y - 8*Configuration::uiScale});
@@ -620,16 +631,28 @@ void EditorMenu::RenderMenuBar() {
             }
 
             ImGui::Separator();
-
-            for(const auto& [type, tab] : m_Tabs) {
-                ImGui::MenuItem(tab->GetName().c_str(), "", &tab->IsVisible());
-            }
             
-            ImGui::Separator();
+            if (ImGui::BeginMenu("Tooltips")) {
+                for (int i = 0; i < static_cast<int>(MapTooltip::COUNT); ++i) {
+                    MapTooltip tooltip = static_cast<MapTooltip>(i);
+                    ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+                    if (ImGui::MenuItem(MapTooltipToString(tooltip).data(), "", Configuration::mapTooltips[tooltip])) {
+                        Configuration::mapTooltips[tooltip] = !Configuration::mapTooltips[tooltip];
+                    }
+                    ImGui::PopItemFlag();
+                }
+                ImGui::EndMenu();
+            }
 
             ImGui::MenuItem("Borders", "", &m_DisplayBorders);
             if(ImGui::MenuItem("Compact Tooltip", "", &Configuration::compactTooltip)) {
                 Configuration::Save();
+            }
+
+            ImGui::Separator();
+
+            for(const auto& [type, tab] : m_Tabs) {
+                ImGui::MenuItem(tab->GetName().c_str(), "", &tab->IsVisible());
             }
 
             ImGui::Separator();

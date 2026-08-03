@@ -39,6 +39,7 @@ public:
     inline static float defaultWaterLevel = 3.8f;
     inline static bool compactTooltip = false;
     inline static float uiScale = 1.0f;
+    inline static std::unordered_map<MapTooltip, bool> mapTooltips = std::unordered_map<MapTooltip, bool>{};
 
     // Graphics
     inline static sf::Vector2u windowResolution = {800, 600};

@@ -7,6 +7,7 @@ enum class Fonts : int;
 enum class Shaders : int;
 
 enum class MapMode : int;
+enum class MapTooltip : int;
 
 // Custom backward::SignalHandling to print stacktrace to file.
 class SignalHandler;
