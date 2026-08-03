@@ -120,12 +120,13 @@ public:
       st.load_here(32, reinterpret_cast<void *>(uctx), info->si_addr);
     }
 
+    backward::Printer printer;
+    printer.address = true;
+
     Logger::Get()->Close();
 
     std::ofstream file(CRASH_FILE, std::ios::binary);
     if(file.good()) {
-        backward::Printer printer;
-        printer.address = true;
         printer.print(st, file);
         file.close();
         puts("stacktrace has been saved to file.");
@@ -133,6 +134,8 @@ public:
     else {
         puts("failed to save stacktrace to file.");
     }
+
+    printer.print(st, stderr);
 
 #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
     psiginfo(info, nullptr);
@@ -323,6 +326,7 @@ private:
     // StackTrace also requires that the PDBs are already loaded, which is done
     // in the constructor of TraceResolver
     backward::Printer printer;
+    printer.address = true;
 
     backward::StackTrace st;
     st.set_machine_type(printer.resolver().machine_type());
@@ -334,8 +338,6 @@ private:
 
     std::ofstream file(CRASH_FILE, std::ios::binary);
     if(file.good()) {
-        backward::Printer printer;
-        printer.address = true;
         printer.print(st, file);
         file.close();
         puts("stacktrace has been saved to file.");
@@ -343,6 +345,8 @@ private:
     else {
         puts("failed to save stacktrace to file.");
     }
+
+    printer.print(st, std::cerr);
   }
 };
 

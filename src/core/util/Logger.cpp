@@ -4,7 +4,7 @@ std::string GetLogsFileName(const std::string& name) {
     time_t now = time(0);
     tm* ltm = localtime(&now);
     char buffer[80];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", ltm);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", ltm);
     std::string date = std::string(buffer);
 
     std::string originalPath = "logs/" + name + "-" + date;
