@@ -10,6 +10,7 @@ namespace Paths {
     static constexpr GamePath COMMON_PROVINCE_TERRAIN = "common/province_terrain/";
     static constexpr GamePath COMMON_CULTURES = "common/culture/cultures/";
     static constexpr GamePath COMMON_RELIGIONS_TYPES = "common/religion/religion_types/";
+    static constexpr GamePath COMMON_DEFINES = "common/defines/";
 
     // History directory paths.
     static constexpr GamePath HISTORY_TITLES = "history/titles/";

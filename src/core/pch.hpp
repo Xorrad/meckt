@@ -10,6 +10,7 @@ class RegionManager;
 class TitleManager;
 class CultureManager;
 class ReligionManager;
+class DefineManager;
 
 class HoldingType;
 class Province;

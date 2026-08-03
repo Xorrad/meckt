@@ -4,15 +4,17 @@
 #include "regions/RegionManager.hpp"
 #include "cultures/CultureManager.hpp"
 #include "religions/ReligionManager.hpp"
+#include "defines/DefineManager.hpp"
 
 #include <filesystem>
 #include <fmt/ostream.h>
 
-Mod::Mod(const std::string& rootDirectory) : Mod(rootDirectory, sf::Image(), sf::Image(), 3.8f) {}
+Mod::Mod(const std::string& rootDirectory) :
+    Mod(rootDirectory, sf::Image(), sf::Image())
+{}
 
-Mod::Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel) :
-    m_RootDirectory(rootDirectory),
-    m_WaterLevel(waterLevel)
+Mod::Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage) :
+    m_RootDirectory(rootDirectory)
 {
 
 }
@@ -76,6 +78,7 @@ DEFINE_MANAGER_GETTER(Province);
 DEFINE_MANAGER_GETTER(Region);
 DEFINE_MANAGER_GETTER(Culture);
 DEFINE_MANAGER_GETTER(Religion);
+DEFINE_MANAGER_GETTER(Define);
 
 ////////////////////////////////////////////
 
@@ -100,6 +103,7 @@ void Mod::Load(
     m_RegionManager = MakeUnique<RegionManager>(*this);
     m_CultureManager = MakeUnique<CultureManager>(*this);
     m_ReligionManager = MakeUnique<ReligionManager>(*this);
+    m_DefineManager = MakeUnique<DefineManager>(*this);
 
     #define LOAD_CATCH(method, state, name, required) \
         try { \
@@ -113,6 +117,7 @@ void Mod::Load(
             if (required) return; \
         }
 
+    LOAD_CATCH(m_DefineManager->LoadDefines(), LoadingState::DEFINES, "defines", false);
     LOAD_CATCH(m_ProvinceManager->LoadHoldingTypes(), LoadingState::HOLDING_TYPES, "holding types", true);
     LOAD_CATCH(m_ProvinceManager->LoadTerrainTypes(), LoadingState::TERRAIN_TYPES, "terrain types", true);
     LOAD_CATCH(m_ProvinceManager->LoadProvincesDefinition(), LoadingState::PROVINCES_DEFINITION, "provinces definition", true);

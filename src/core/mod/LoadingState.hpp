@@ -2,6 +2,7 @@
 
 enum class LoadingState {
     TEXTURES,
+    DEFINES,
     HOLDING_TYPES,
     TERRAIN_TYPES,
     PROVINCES_DEFINITION,
@@ -21,6 +22,7 @@ enum class LoadingState {
 
 const std::map<LoadingState, std::string> LoadingStateLabels = {
     { LoadingState::TEXTURES, "Textures" },
+    { LoadingState::DEFINES, "Defines" },
     { LoadingState::HOLDING_TYPES, " Holding Types" },
     { LoadingState::TERRAIN_TYPES, "Terrain Types" },
     { LoadingState::PROVINCES_DEFINITION, "Provinces Definition" },

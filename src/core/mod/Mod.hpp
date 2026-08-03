@@ -3,7 +3,7 @@
 class Mod {
 public:
     Mod(const std::string& rootDirectory);
-    Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage, float waterLevel);
+    Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage);
     ~Mod();
     
     //////////////////////////////////////////////////////
@@ -56,6 +56,7 @@ public:
     DECLARE_MANAGER_GETTER(Region);
     DECLARE_MANAGER_GETTER(Culture);
     DECLARE_MANAGER_GETTER(Religion);
+    DECLARE_MANAGER_GETTER(Define);
 
     //////////////////////////////////////////////////////
 
@@ -108,11 +109,10 @@ public:
 private:
     std::string m_RootDirectory;
 
-    float m_WaterLevel; // TODO: move to a define manager.
-
     UniquePtr<TitleManager> m_TitleManager;
     UniquePtr<ProvinceManager> m_ProvinceManager;
     UniquePtr<RegionManager> m_RegionManager;
     UniquePtr<CultureManager> m_CultureManager;
     UniquePtr<ReligionManager> m_ReligionManager;
+    UniquePtr<DefineManager> m_DefineManager;
 };
