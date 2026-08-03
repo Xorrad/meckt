@@ -9,6 +9,7 @@
 #include "core/religions/ReligionManager.hpp"
 #include "core/regions/RegionManager.hpp"
 #include "core/titles/TitleManager.hpp"
+#include "core/defines/DefineManager.hpp"
 
 #include <imgui/imgui.hpp>
 #include "app/menu/ImGuiStyle.hpp"
@@ -684,6 +685,10 @@ void EditorMenu::RenderMenuBarSelection() {
 void EditorMenu::RenderMenuBarTools() {
     if(ImGui::BeginMenu("Tools")) {
 
+        if(ImGui::MenuItem("Generate provinces flags")) {
+            m_ModalName = "Generate provinces flags";
+        }
+
         if(ImGui::MenuItem("Generate missing provinces")) {
             m_ModalName = "Generate missing provinces";
         }
@@ -956,6 +961,26 @@ void EditorMenu::RenderModals() {
     }
     // HARMONIZE COLOR: modal end
 
+    // GENERATE PROVINCES FLAGS: modal begin
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Generate provinces flags", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
+        ImGui::Separator();
+
+        if(ImGui::Button("Generate", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            m_Mod.GetProvinceManager().GenerateProvincesFlags(m_Mod.GetDefineManager().GetWaterLevel());
+        }
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    // GENERATE PROVINCES FLAGS: modal end
+    
     // GENERATE PROVINCES: modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Generate missing provinces", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {

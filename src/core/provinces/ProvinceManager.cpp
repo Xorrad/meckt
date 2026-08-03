@@ -1440,17 +1440,23 @@ void ProvinceManager::GenerateProvincesFlags(float waterLevel) {
         previousProvinceColor = provinceColor;
     }
 
-    // Assign the province flags depending on the ratio
-    // of pixels below water level.
+    // Assign the province flags depending on the ratio of pixels below water level.
     for (const auto& [color, pair] : count) {
         auto it = m_ProvincesByColors.find(color);
         if (it == m_ProvincesByColors.end())
             continue;
+        if (it->second->HasFlag(ProvinceFlags::RIVER) || it->second->HasFlag(ProvinceFlags::LAKE))
+            continue;
         bool isLand = (pair.first <= 2*pair.second);
+        bool isImpassable = it->second->HasFlag(ProvinceFlags::IMPASSABLE);
         it->second->SetFlags(ProvinceFlags::NONE);
         it->second->SetFlag(ProvinceFlags::LAND, isLand);
         it->second->SetFlag(ProvinceFlags::SEA, !isLand);
-        it->second->SetTerrain(isLand ? m_DefaultLandTerrain : m_DefaultSeaTerrain);
+        it->second->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
+        if (isLand && it->second->GetTerrain() == m_DefaultSeaTerrain)
+            it->second->SetTerrain(m_DefaultLandTerrain);
+        if (!isLand && it->second->GetTerrain() != m_DefaultSeaTerrain)
+            it->second->SetTerrain(m_DefaultSeaTerrain);
     }
 }
 

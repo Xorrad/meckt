@@ -378,7 +378,7 @@ void NewModMenu::CreateMod() {
         }
     }
 
-    m_Mod = MakeUnique<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage(), m_WaterLevel);
+    m_Mod = MakeUnique<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage());
     m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){});
     
     // Generate the world provinces using the heightmap to determine the landmass.
