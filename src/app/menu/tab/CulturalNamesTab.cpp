@@ -14,25 +14,48 @@ void CulturalNamesTab::Render() {
         return;
 
     TitleManager& titleManager = m_Mod.GetTitleManager();
+    std::map<std::string, std::string>& culturalNames = titleManager.GetLocCulturalNames("english");
 
     // Generate a map of whether a cultural name is filtered by name or not.
     static std::string filter = "";
-    static std::map<std::string, bool> filteredNames;
-    if(ImGui::InputText("filter", &filter)) {
-        filteredNames.clear();
+    static std::vector<std::map<std::string, std::string>::iterator> filteredNames;
 
-        for(const auto& [key, name] : titleManager.GetLocCulturalNames("english")) {
-            filteredNames[key] = (key.find(filter) != std::string::npos || name.find(filter) != std::string::npos);
+    const auto UpdateFilteredNames = [&]() {
+        filteredNames.clear();
+        filteredNames.reserve(culturalNames.size());
+
+        // Build a list of visible entries.
+        for (auto it = culturalNames.begin(); it != culturalNames.end(); ++it) {
+            if (filter.empty()
+                || it->first.find(filter) != std::string::npos
+                || it->second.find(filter) != std::string::npos
+            )
+                filteredNames.push_back(it);
         }
+    };
+
+    if(ImGui::InputText("filter", &filter) || ImGui::IsWindowAppearing()) {
+        UpdateFilteredNames();
     }
 
     static std::string newCulturalName = "";
     const auto& AddNewCulturalName = [&]() {
-        std::string key = "cn_" + newCulturalName;
+        if (!newCulturalName.starts_with("cn_")
+            && !newCulturalName.starts_with("b_")
+            && !newCulturalName.starts_with("c_")
+            && !newCulturalName.starts_with("d_")
+            && !newCulturalName.starts_with("k_")
+            && !newCulturalName.starts_with("e_")
+            && !newCulturalName.starts_with("h_")
+        ) {
+            newCulturalName = "cn_" + newCulturalName;
+        }
+        std::string key = newCulturalName;
         if(titleManager.HasLocCulturalName("english", key))
             return;
         titleManager.AddLocCulturalName("english", key, " ");
         newCulturalName = "";
+        UpdateFilteredNames();
     };
     if(ImGui::InputText("##key", &newCulturalName, ImGuiInputTextFlags_EnterReturnsTrue)) {
         AddNewCulturalName();
@@ -48,38 +71,38 @@ void CulturalNamesTab::Render() {
         ImGui::TableSetupColumn("Delete", ImGuiTableColumnFlags_WidthFixed, 20.0f);
         ImGui::TableHeadersRow();
 
-        std::map<std::string, std::string>& culturalNames = titleManager.GetLocCulturalNames("english");
-        for(auto it = culturalNames.begin(); it != culturalNames.end(); ) {
-            std::string key = it->first;
-            std::string& name = it->second;
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(filteredNames.size()));
 
-            if(filteredNames.contains(key) && !filteredNames[key]) {
-                ++it;
-                continue;
+        while (clipper.Step()) {
+            for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
+                auto it = filteredNames[row];
+                const std::string& key = it->first;
+                std::string& name = it->second;
+
+                ImGui::TableNextRow();
+                
+                ImGui::PushID(key.c_str());
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(key.c_str());
+                
+                ImGui::TableNextColumn();
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                ImGui::InputText("##name", &name);
+                
+                ImGui::TableNextColumn();
+                if(ImGui::Button("x")) {
+                    filteredNames.erase(filteredNames.begin() + row);
+                    culturalNames.erase(it);
+                    ImGui::PopID();
+                    goto EndTable;
+                }
+                
+                ImGui::PopID();
             }
-
-            ImGui::TableNextRow();
-            
-            ImGui::PushID(key.c_str());
-
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", key.c_str());
-            
-            ImGui::TableNextColumn();
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::InputText("##name", &name);
-            
-            ImGui::TableNextColumn();
-            if(ImGui::Button("x")) {
-                it = culturalNames.erase(it);
-                continue;
-            }
-            
-            ImGui::PopID();
-
-            ++it;
         }
-
+        EndTable:
         ImGui::EndTable();
     }
 }
