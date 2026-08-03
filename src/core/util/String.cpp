@@ -1,0 +1,139 @@
+#include "String.hpp"
+
+std::string String::Strip(std::string str, std::string toReplace) {
+    if (toReplace.empty())
+        return str;
+    size_t i;
+    while((i = str.find(toReplace)) != std::string::npos) {
+        str.erase(i, toReplace.size());
+    }
+    return str;
+}
+
+std::string String::ToLowercase(std::string str) {
+    for(int i = 0; i < str.size(); i++) {
+        str[i] = tolower(str[i]);
+    }
+    return str;
+}
+
+std::string String::StripNonPrintable(const std::string& str) {
+    std::string s = "";
+    for(int i = 0; i < str.size(); i++) {
+        if(isprint(str[i]))
+            s.push_back(str[i]);
+    }
+    return s;
+}
+
+std::vector<std::string> String::Split(std::string str, const std::string& delimiter) {
+    std::vector<std::string> result;
+    size_t i = 0;
+    while ((i = str.find(delimiter)) != std::string::npos) {
+        std::string r = str.substr(0, i);
+        result.push_back(str.substr(0, i));
+        str.erase(0, i + delimiter.length());
+    }
+    result.push_back(str);
+    return result;
+}
+
+std::string String::Join(std::vector<std::string> list, const std::string& delimiter) {
+    if (list.empty())
+        return "";
+
+    // Determine the string size to allocate.
+    size_t size = 0;
+    for (const auto& str : list)
+        size += str.size();
+    size += delimiter.size() * (list.size() - 1);
+
+    std::string result;
+    result.reserve(size);
+
+    result += list[0];
+    for (size_t i = 1; i < list.size(); i++) {
+        result += delimiter;
+        result += list[i];
+    }
+    
+    return result;
+}
+
+void String::ReplaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty())
+        return;
+    size_t startPos = 0;
+    while ((startPos = str.find(from, startPos)) != std::string::npos) {
+        str.replace(startPos, from.length(), to);
+        startPos += to.length();
+    }
+} 
+
+std::string String::FileSizeFormat(size_t size) {
+    if(size < 1000)
+        return std::format("{:} B", size);
+    if(size < 1000000)
+        return std::format("{:.1f} KB", size/1000.f);
+    if(size < 1000000000)
+        return std::format("{:.1f} MB", size/1000000.f);
+    return std::format("{:.1f} GB", size/1000000000.f);
+}
+
+std::string String::DurationFormat(const sf::Time& time) {
+    if(time.asMilliseconds() < 1.f)
+        return std::format("{:}μs", time.asMicroseconds());
+    if(time.asSeconds() < 1.f)
+        return std::format("{:}ms", time.asMilliseconds());
+    return std::format("{:.1f}s", time.asSeconds());
+}
+
+bool String::IsDigit(char ch) {
+    return ch >= '0' && ch <= '9';
+}
+
+bool String::IsAlpha(char ch) {
+    return (ch >= 'a' && ch <= 'z')
+        || (ch >= 'A' && ch <= 'Z')
+        || (ch == '_');
+}
+
+bool String::IsAlphaNumeric(char ch) {
+    return IsDigit(ch) || IsAlpha(ch);
+}
+
+double String::ParseDouble(const std::string& str) {
+    std::stringstream ss(str);
+    double value;
+
+    // Force the use of '.' as the decimal separator.
+    ss.imbue(std::locale("C"));
+
+    if (!(ss >> value))
+        throw std::invalid_argument("ParseDouble: invalid numeric format: " + str);
+
+    // Ensure there is no trailing garbage, except whitespace.
+    ss >> std::ws;
+    if (!ss.eof())
+        throw std::invalid_argument("ParseDouble: trailing characters in: " + str);
+
+    return value;
+}
+
+int String::ParseInt(const std::string& str) {
+    std::stringstream ss(str);
+    int value;
+
+    // Force the use of '.' as the decimal separator.
+    ss.imbue(std::locale("C"));
+
+    if (!(ss >> value))
+        throw std::invalid_argument("ParseInt: invalid numeric format: " + str);
+
+    // Ensure there is no trailing garbage, except whitespace.
+    ss >> std::ws;
+    if (!ss.eof())
+        throw std::invalid_argument("ParseInt: trailing characters in: " + str);
+
+    return value;
+}

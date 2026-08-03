@@ -1,0 +1,54 @@
+name: Run meckt
+description: Import and export the current mod using meckt.
+
+inputs:
+  mod:
+    description: Mod name.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Download built executable
+      uses: actions/download-artifact@v8
+      with:
+        name: meckt-tests
+        path: ${{ github.workspace }}/meckt-tests-artefact
+
+    - name: Make executable
+      shell: bash
+      run: |
+        mv meckt-tests-artefact/meckt-tests meckt-tests
+        rm -d meckt-tests-artefact
+        chmod +x meckt-tests
+
+    - name: Run meckt on vanilla files
+      if: matrix.mod == 'vanilla'
+      shell: bash
+      run: |
+        docker run --rm \
+          -v "${{ github.workspace }}:/workspace" \
+          -w /workspace \
+          ck3 \
+          bash -c '/workspace/meckt-tests --mod "$CK3_DIR/game"'
+
+    - name: Run meckt on mod files
+      if: matrix.mod != 'vanilla'
+      shell: bash
+      run: |
+        docker run --rm \
+          -v "${{ github.workspace }}:/workspace" \
+          -v "${{ github.workspace }}/ck3-user-data:/root/.local/share/Paradox Interactive/Crusader Kings III" \
+          -w /workspace \
+          ck3 \
+          bash -c '/workspace/meckt-tests --mod "$CK3_USER_DIR/mod/${{ matrix.mod }}"'
+
+    - name: Print crash report
+      if: always()
+      shell: bash
+      run: |
+        dir="${{ github.workspace }}/logs/"
+        ls -l "$dir"
+        [[ -d "$dir" ]] && { shopt -s nullglob; for f in "$dir"/*; do [[ -f "$f" ]] && { echo "============================== $f =============================="; cat "$f"; echo; }; done; shopt -u nullglob; }
+
+    

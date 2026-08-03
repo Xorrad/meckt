@@ -1,17 +1,20 @@
 #include "Configuration.hpp"
 
 #include <nlohmann/json.hpp>
+#include <cmrc/cmrc.hpp>
 
 void Configuration::Initialize() {
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
     windowResolution = { desktopMode.size.x, desktopMode.size.y };
+
+    Configuration::uiScale = std::max(desktopMode.size.x / 1920.f, desktopMode.size.y / 1080.f);
 
 #ifdef DEBUG
     buildVersion = buildVersion + " (debug)";
 #endif
 
 #ifdef DEB
-    Configuration::assetsPath = "/usr/local/share/meckt/assets";
+    Configuration::resourcesPath = "/usr/local/share/meckt/resources";
     Configuration::settingsFile = "/usr/local/share/meckt/" + Configuration::settingsFile;
 #endif
 
@@ -42,6 +45,7 @@ void Configuration::Load() {
 
     Configuration::recentMods = data.value("recent_mods", std::list<std::string>{});
     Configuration::compactTooltip = data.value("compact_tooltip", false);
+    Configuration::uiScale = data.value("ui_scale", Configuration::uiScale);
 }
 
 void Configuration::Save() {
@@ -49,25 +53,26 @@ void Configuration::Save() {
     nlohmann::json json;
     json["recent_mods"] = Configuration::recentMods;
     json["compact_tooltip"] = Configuration::compactTooltip;
+    json["ui_scale"] = Configuration::uiScale;
 
     // Dump that json object into the settings file.
-    std::ofstream file(Configuration::settingsFile, std::ios::out);
+    std::ofstream file(Configuration::settingsFile, std::ios::binary);
     file << json.dump(1, '\t');
     file.close();
 }
 
 void Configuration::InitializeTextures() {
-    // textures.Load(Textures::LOGO, Configuration::assetsPath + "/textures/logo.png");
+    // textures.Load(Textures::LOGO, Configuration::resourcesPath + "/textures/logo.png");
 }
 
 void Configuration::InitializeFonts() {
-    fonts.Load(Fonts::FIGTREE, Configuration::assetsPath + "/fonts/Figtree-Medium.ttf");
-    fonts.Load(Fonts::NOTO_SANS, Configuration::assetsPath + "/fonts/NotoSans-VariableFont_wdth,wght.ttf");
+    fonts.Load(Fonts::FIGTREE, Configuration::resourcesPath + "fonts/figtree_medium.ttf");
+    fonts.Load(Fonts::NOTO_SANS, Configuration::resourcesPath + "fonts/notosans.ttf");
 }
 
 void Configuration::InitializeShaders() {
-    shaders.Load(Shaders::PROVINCES, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/provinces.frag");
-    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/heightmap_landmass.frag");
-    shaders.Load(Shaders::PROVINCES_LANDMASS, Configuration::assetsPath + "/shaders/provinces.vert", Configuration::assetsPath + "/shaders/provinces_landmass.frag");
-    // shaders.Load(Shaders::PROVINCES, Configuration::assetsPath + "/shaders/provinces.frag", sf::Shader::Fragment);
+    shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "shaders/provinces.vert", Configuration::resourcesPath + "shaders/provinces.frag");
+    shaders.Load(Shaders::HEIGHTMAP_LANDMASS, Configuration::resourcesPath + "shaders/provinces.vert", Configuration::resourcesPath + "shaders/heightmap_landmass.frag");
+    shaders.Load(Shaders::PROVINCES_LANDMASS, Configuration::resourcesPath + "shaders/provinces.vert", Configuration::resourcesPath + "shaders/provinces_landmass.frag");
+    // shaders.Load(Shaders::PROVINCES, Configuration::resourcesPath + "shaders/provinces.frag", sf::Shader::Fragment);
 }

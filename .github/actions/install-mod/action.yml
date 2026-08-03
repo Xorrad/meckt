@@ -1,0 +1,21 @@
+name: Install CK3 Mod
+description: Setup a mod from the meckt-lfs repo into the CK3 mod directory.
+
+inputs:
+  mod:
+    description: Mod name.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Extract mod
+      shell: bash
+      run: |
+        mkdir -p "${{ github.workspace }}/ck3-user-data/mod/"
+        tar -xzf meckt-lfs/${{ inputs.mod }}.tar.gz -C ${{ github.workspace }}/ck3-user-data/mod/
+        ls -l ${{ github.workspace }}/ck3-user-data/mod/
+        
+    - name: Apply mod
+      shell: bash
+      run: jq -n --arg mod "mod/${{ inputs.mod }}.mod" '{disabled_dlcs:[],enabled_mods:[$mod]}' > ${{ github.workspace }}/ck3-user-data/dlc_load.json

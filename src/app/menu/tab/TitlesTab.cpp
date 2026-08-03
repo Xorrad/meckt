@@ -1,8 +1,9 @@
 #include "TitlesTab.hpp"
 #include "app/menu/EditorMenu.hpp"
-#include "app/mod/Mod.hpp"
-#include "app/map/Province.hpp"
-#include "app/map/Title.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/provinces/ProvinceManager.hpp"
+#include "core/titles/TitleManager.hpp"
 
 #include <imgui/imgui.hpp>
 
@@ -11,8 +12,6 @@ TitlesTab::TitlesTab(EditorMenu& menu, bool visible) : Tab("Titles", Tabs::TITLE
 void TitlesTab::Render() {
     if(!m_Visible)
         return;
-
-    Mod& mod = this->GetMod();
 
     // Generate a map of whether a title is filtered by name or not.
     static std::string filter = "";
@@ -44,7 +43,7 @@ void TitlesTab::Render() {
             return finalFiltered;
         };
 
-        for(const auto& [name, title] : mod.GetTitles()) {
+        for(const auto& [name, title] : m_Mod.GetTitleManager().GetTitles()) {
             if(title->GetLiegeTitle() == nullptr)
                 FilterTitles(title.get(), false);
         }
@@ -89,8 +88,9 @@ void TitlesTab::Render() {
                     }
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-                    sf::Vector2i titlePos = title->GetImagePosition(mod);
+                    sf::Vector2i titlePos = title->GetImagePosition(m_Mod.GetProvinceManager());
                     m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                    m_Menu.UpdateCameraBounds();
                 }
 
                 ImGui::TableNextColumn();
@@ -122,8 +122,9 @@ void TitlesTab::Render() {
                     }
                 }
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-                    sf::Vector2i titlePos = title->GetImagePosition(mod);
+                    sf::Vector2i titlePos = title->GetImagePosition(m_Mod.GetProvinceManager());
                     m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                    m_Menu.UpdateCameraBounds();
                 }
 
                 ImGui::TableNextColumn();
@@ -138,7 +139,7 @@ void TitlesTab::Render() {
             }
         };
 
-        for(const auto& [name, title] : mod.GetTitles()) {
+        for(const auto& [name, title] : m_Mod.GetTitleManager().GetTitles()) {
             if(title->GetLiegeTitle() == nullptr)
                 DisplayTitle(title.get());
         }

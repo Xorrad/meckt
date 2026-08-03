@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app/ResourceManager.hpp"
+#include "core/util/ResourceManager.hpp"
 
 enum class Textures : int {
     LOGO,
@@ -33,19 +33,20 @@ public:
     inline static std::string atlantisURL = "https://codeload.github.com/bombusfrigidus/Atlantis/zip/refs/heads/main";
     
     // Saved settings
-    inline static std::string assetsPath = "assets";
+    inline static std::string resourcesPath = "resources/app/";
     inline static std::string settingsFile = "settings.json";
     inline static std::list<std::string> recentMods = std::list<std::string>{};
     inline static float defaultWaterLevel = 3.8f;
     inline static bool compactTooltip = false;
+    inline static float uiScale = 1.0f;
 
     // Graphics
     inline static sf::Vector2u windowResolution = {800, 600};
     
     // Resources
     inline static ResourceManager<sf::Texture, Textures> textures = ResourceManager<sf::Texture, Textures>("texture");
-    inline static ResourceManager<sf::Font, Fonts> fonts = ResourceManager<sf::Font, Fonts>();
-    inline static ResourceManager<sf::Shader, Shaders> shaders = ResourceManager<sf::Shader, Shaders>();
+    inline static ResourceManager<sf::Font, Fonts> fonts = ResourceManager<sf::Font, Fonts>("fonts");
+    inline static ResourceManager<sf::Shader, Shaders> shaders = ResourceManager<sf::Shader, Shaders>("shaders");
 
     static void Initialize();
     static void Deinitialize();

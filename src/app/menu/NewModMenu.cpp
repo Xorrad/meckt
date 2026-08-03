@@ -1,11 +1,11 @@
 #include "NewModMenu.hpp"
 
 #include "app/App.hpp"
-#include "app/mod/Mod.hpp"
-#include "app/map/Title.hpp"
+#include "app/menu/HomeMenu.hpp"
+#include "app/menu/EditorMenu.hpp"
 
-#include "HomeMenu.hpp"
-#include "EditorMenu.hpp"
+#include "core/mod/Mod.hpp"
+#include "core/titles/TitleManager.hpp"
 
 #include "ImGuiStyle.hpp"
 #include <imgui/imgui.hpp>
@@ -64,7 +64,7 @@ void NewModMenu::Render() {
     ImGui::SetCursorPos(ImVec2(margin, marginTop));
 
     // Menu Title.
-    ImGui::PushFont(ImGui::notoSansLargeFont);
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_LARGE);
     ImGui::TextColored(ImVec4(0.26f, 0.59f, 0.98f, 1.00f), "Create a new mod");
     ImGui::PopFont();
 
@@ -78,11 +78,11 @@ void NewModMenu::Render() {
         bool canCreate = isDirEmpty && hasProvincesImage;
 
         // Configuration section.
-        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
         ImGui::Text("Configuration");
         ImGui::PopFont();
 
-        ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
 
         ImGui::Dummy(ImVec2(0.0f, spacing));
 
@@ -174,7 +174,7 @@ void NewModMenu::Render() {
         ImGui::Dummy(ImVec2(0.0f, spacing));
 
         // Preview section (display the expected maps).
-        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
         ImGui::Text("Preview");
         ImGui::PopFont();
 
@@ -196,7 +196,7 @@ void NewModMenu::Render() {
         ImGui::Separator();
         ImGui::NewLine();
 
-        ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
 
         if (!isDirEmpty) {
             ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "The mod directory is not empty!");
@@ -223,11 +223,11 @@ void NewModMenu::Render() {
     }
     else {
         // Configuration section.
-        ImGui::PushFont(ImGui::notoSansMediumFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
         ImGui::Text("Creating project...");
         ImGui::PopFont();
 
-        ImGui::PushFont(ImGui::notoSansNormalFont);
+        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
         ImGui::Dummy(ImVec2(0.0f, spacing));
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImGui::GetColorU32(ImGuiCol_Button));
         ImGui::ProgressBar(((float) m_CreationState)/(CreationStateLabels.size()-1), ImVec2(0.0f, 0.0f), CreationStateLabels.at(m_CreationState).c_str());
@@ -333,7 +333,7 @@ void NewModMenu::CreateMod() {
 
     SharedPtr<Jomini::Object> descriptorData = Jomini::ParseFile((modPath / "descriptor.mod").string());
     descriptorData->Put("name", "\"" + m_ModName + "\"");
-    std::ofstream descriptorFile(modPath / "descriptor.mod", std::ios::out);
+    std::ofstream descriptorFile(modPath / "descriptor.mod", std::ios::binary);
     descriptorFile << descriptorData->Serialize();
     descriptorFile.close();
 
@@ -342,7 +342,7 @@ void NewModMenu::CreateMod() {
     std::replace(modFileName.begin(), modFileName.end(), ' ', '_');
     std::replace(modFileName.begin(), modFileName.end(), '\'', '_');
     descriptorData->Put("path", "\"" + modPath.string() + "\"");
-    descriptorFile.open(modPath / std::string(modFileName + ".mod"), std::ios::out);
+    descriptorFile.open(modPath / std::string(modFileName + ".mod"), std::ios::binary);
     descriptorFile << descriptorData->Serialize();
     descriptorFile.close();
 
@@ -351,7 +351,7 @@ void NewModMenu::CreateMod() {
         std::filesystem::create_directories((modPath / "common" / "defines").string().c_str());
 
         // Replace the vanilla water level with what the user specified.
-        std::ofstream outFile((modPath / "common" / "defines" / "01_defines.txt").string(), std::ios::out);
+        std::ofstream outFile((modPath / "common" / "defines" / "01_defines.txt").string(), std::ios::binary);
         outFile << "NJominiMap = {\n";
         outFile << "\tWATERLEVEL = " << std::fixed << std::setprecision(2) << m_WaterLevel << "\n";
         outFile << "}";
@@ -379,19 +379,19 @@ void NewModMenu::CreateMod() {
     }
 
     m_Mod = MakeUnique<Mod>(m_ModPath, m_HeightmapTexture.copyToImage(), m_ProvincesTexture.copyToImage(), m_WaterLevel);
-    m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){}, false);
+    m_Mod->Load([](){}, [](LoadingState state){}, [](const std::string& error){});
     
     // Generate the world provinces using the heightmap to determine the landmass.
     // TODO: intermediate preview of the generation?
     if (m_TemplateType == TemplateType::HEIGHTMAP_IMAGE) {
         m_CreationState = CreationState::GENERATING_WORLD;
 
-        m_Mod->ClearProvinces();
-        m_Mod->GenerateWorld();
-        m_Mod->ExportDefaultMapFile();
-        m_Mod->ExportProvincesDefinition();
-        m_Mod->ExportProvincesTerrain();
-        m_Mod->ExportProvincesHistory();
+        // m_Mod->ClearProvinces();
+        // m_Mod->GenerateWorld();
+        // m_Mod->ExportDefaultMapFile();
+        // m_Mod->ExportProvincesDefinition();
+        // m_Mod->ExportProvincesTerrain();
+        // m_Mod->ExportProvincesHistory();
 
         this->SetupAtlantisTitles();
     }
@@ -400,10 +400,10 @@ void NewModMenu::CreateMod() {
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATING_PROVINCES;
 
-        m_Mod->ClearProvinces();
-        m_Mod->GenerateMissingProvinces();
-        m_Mod->ExportProvincesDefinition();
-        m_Mod->ExportProvincesHistory();
+        // m_Mod->ClearProvinces();
+        // m_Mod->GenerateMissingProvinces();
+        // m_Mod->ExportProvincesDefinition();
+        // m_Mod->ExportProvincesHistory();
         
         this->SetupAtlantisTitles();
     }
@@ -413,12 +413,12 @@ void NewModMenu::CreateMod() {
     if (m_TemplateType == TemplateType::PROVINCES_IMAGE) {
         m_CreationState = CreationState::GENERATE_TERRAIN;
         
-        m_Mod->DetermineProvincesFlags();
-        m_Mod->ExportDefaultMapFile();
-        m_Mod->ExportProvincesTerrain();
+        // m_Mod->DetermineProvincesFlags();
+        // m_Mod->ExportDefaultMapFile();
+        // m_Mod->ExportProvincesTerrain();
 
         m_CreationState = CreationState::GENERATE_RIVERS;
-        m_Mod->GenerateRivers();
+        // m_Mod->GenerateRivers();
     }
     
     m_CreationState = CreationState::FINISHED;
@@ -426,9 +426,9 @@ void NewModMenu::CreateMod() {
 
 void NewModMenu::SetupAtlantisTitles() {
     std::function<UniquePtr<Title>(std::string)> ExtractTitleOwnership = [&](const std::string& titleName) {
-        auto it = m_Mod->GetTitles().find(titleName);
+        auto it = m_Mod->GetTitleManager().GetTitles().find(titleName);
         UniquePtr<Title> title = std::move(it->second);
-        m_Mod->GetTitles().erase(it);
+        m_Mod->GetTitleManager().GetTitles().erase(it);
         return title;
     };
 
@@ -446,14 +446,14 @@ void NewModMenu::SetupAtlantisTitles() {
     static_cast<BaronyTitle*>(barony.get())->SetProvinceId(1);
 
     // Delete any other titles.
-    m_Mod->ClearTitles();
-    m_Mod->AddTitle(std::move(empire));
-    m_Mod->AddTitle(std::move(kingdom));
-    m_Mod->AddTitle(std::move(duchy));
-    m_Mod->AddTitle(std::move(county));
+    // m_Mod->ClearTitles();
+    m_Mod->GetTitleManager().AddTitle(std::move(empire));
+    m_Mod->GetTitleManager().AddTitle(std::move(kingdom));
+    m_Mod->GetTitleManager().AddTitle(std::move(duchy));
+    m_Mod->GetTitleManager().AddTitle(std::move(county));
 
     // Save changes.
-    m_Mod->ExportTitles();
-    m_Mod->ExportTitlesHistory();
-    m_Mod->ExportTitlesLocalization();
+    m_Mod->GetTitleManager().ExportTitles();
+    m_Mod->GetTitleManager().ExportTitlesHistory();
+    m_Mod->GetTitleManager().ExportTitlesLocalization();
 }

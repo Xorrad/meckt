@@ -1,11 +1,12 @@
 #include "SelectionHandler.hpp"
-#include "app/menu/EditorMenu.hpp"
 
 #include "app/App.hpp"
-#include "app/mod/Mod.hpp"
-#include "app/map/Province.hpp"
-#include "app/map/Region.hpp"
-#include "app/map/Title.hpp"
+#include "app/menu/EditorMenu.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/provinces/Province.hpp"
+#include "core/regions/Region.hpp"
+#include "core/titles/Title.hpp"
 
 SelectionHandler::SelectionHandler(EditorMenu& menu) :
     m_Menu(menu),
@@ -128,16 +129,19 @@ void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province) {
         --it;
 
         SelectionCallbackResult res = (*it)(button, province);
-
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
-            it = m_ProvinceCallbacks.erase(it);
-            continue;
-        }
+        bool shouldInterrupt = SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT);
 
         if (SelectionCallbackHasFlag(res, SelectionCallbackResult::UPDATE_MAP))
             updateMap = true;
 
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT))
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
+            it = m_ProvinceCallbacks.erase(it);
+            if (shouldInterrupt)
+                break;
+            continue;
+        }
+
+        if (shouldInterrupt)
             break;
     }
 
@@ -152,16 +156,19 @@ void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province, Tit
         --it;
 
         SelectionCallbackResult res = (*it)(button, province, title);
-
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
-            it = m_TitleCallbacks.erase(it);
-            continue;
-        }
+        bool shouldInterrupt = SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT);
 
         if (SelectionCallbackHasFlag(res, SelectionCallbackResult::UPDATE_MAP))
             updateMap = true;
 
-        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT))
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
+            it = m_TitleCallbacks.erase(it);
+            if (shouldInterrupt)
+                break;
+            continue;
+        }
+
+        if (shouldInterrupt)
             break;
     }
 

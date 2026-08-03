@@ -1,11 +1,11 @@
 ﻿name: Build Artifacts
 
 on:
-  push:
-    branches: [ "master", "cmake" ]
-  pull_request:
-    branches: [ "master", "cmake" ]
   workflow_dispatch:
+  push:
+    branches: [ master, tests ]
+  pull_request:
+    branches: [ master, tests ]
 
 jobs:
   build:
@@ -17,8 +17,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+    - name: Checkout main repo
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
         submodules: true
@@ -30,24 +30,25 @@ jobs:
         sudo apt-get install -y build-essential zip pkg-config libgtk-3-dev libcurl4-openssl-dev libopenal-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libfreetype-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev
       
     - name: Configure CMake
-      run: |
-        cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build Executable
-      run: cmake --build ${{ github.workspace }}/build --target meckt --config Release --parallel
+      run: cmake --build ${{ github.workspace }}/build --target meckt-app --config Release --parallel
         
-    - name: Upload ZIP Artifact (Windows)
-      uses: actions/upload-artifact@v4
+    - name: Upload Artifact (Windows)
+      uses: actions/upload-artifact@v7
       if: runner.os == 'Windows'
       with:
         name: win-meckt-release
-        path: ${{ github.workspace }}/bin/Release
+        path: ${{ github.workspace }}/build/bin/Release
         if-no-files-found: error
+        archive: false
 
-    - name: Upload ZIP Artifact (Linux)
-      uses: actions/upload-artifact@v4
+    - name: Upload Artifact (Linux)
+      uses: actions/upload-artifact@v7
       if: runner.os == 'Linux'
       with:
         name: linux-meckt-release
-        path: ${{ github.workspace }}/bin/Release
+        path: ${{ github.workspace }}/build/bin/
         if-no-files-found: error
+        archive: false

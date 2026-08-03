@@ -1,15 +1,17 @@
 #include "PropertiesTab.hpp"
+
+#include "app/App.hpp"
 #include "app/menu/EditorMenu.hpp"
 #include "app/menu/selection/SelectionHandler.hpp"
 
-#include "app/App.hpp"
-#include "app/mod/Mod.hpp"
-#include "app/map/Province.hpp"
-#include "app/map/Region.hpp"
-#include "app/map/Title.hpp"
+#include "core/mod/Mod.hpp"
+#include "core/provinces/ProvinceManager.hpp"
+#include "core/titles/TitleManager.hpp"
+#include "core/regions/RegionManager.hpp"
 
 #include "imgui/imgui.hpp"
 #include "app/menu/ImGuiStyle.hpp"
+#include "provinces/ProvinceFlags.hpp"
 
 PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
@@ -24,11 +26,12 @@ PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     m_DisplayRegionsProvinces(true),
     m_DisplayRegionsRegions(true)
 {
-    m_SelectingTitleText.setCharacterSize(24);
+    m_SelectingTitleText.setCharacterSize(24 * Configuration::uiScale);
     m_SelectingTitleText.setString("Click on a title.");
     m_SelectingTitleText.setFillColor(sf::Color::Red);
     m_SelectingTitleText.setFont(Configuration::fonts.Get(Fonts::NOTO_SANS));
     m_SelectingTitleText.setPosition({10, 20});
+    m_SelectingTitleText.setScale({ Configuration::uiScale, Configuration::uiScale });
 
     m_Clock.restart();
 }
@@ -73,7 +76,8 @@ void PropertiesTab::Render() {
             m_SelectingTitleText.setFillColor(sf::Color(red, 0, 0, 255));
         }
 
-        m_SelectingTitleText.setPosition({node->Pos.x + 10, node->Pos.y + 10});
+        m_SelectingTitleText.setCharacterSize(24 * Configuration::uiScale);
+        m_SelectingTitleText.setPosition({node->Pos.x + 10*Configuration::uiScale, node->Pos.y + 10*Configuration::uiScale});
         m_Menu.GetApp().GetWindow().draw(m_SelectingTitleText);
     }
 
@@ -98,7 +102,7 @@ void PropertiesTab::RenderJointProvinces() {
     Province* firstProvince = m_Menu.GetSelectionHandler().GetProvinces().front();
 
     std::string culture = firstProvince->GetCulture();
-    std::string religion = firstProvince->GetReligion();
+    std::string religion = firstProvince->GetFaith();
     std::string holding = firstProvince->GetHolding();
     std::string terrain = firstProvince->GetTerrain();
 
@@ -109,16 +113,16 @@ void PropertiesTab::RenderJointProvinces() {
     std::string harshWinterFactorOverride = firstProvince->GetHarshWinterFactorOverride();
 
     int isCoastal = firstProvince->HasFlag(ProvinceFlags::COASTAL);
-    int isLake = firstProvince->HasFlag(ProvinceFlags::LAKE);
     int isIsland = firstProvince->HasFlag(ProvinceFlags::ISLAND);
     int isLand = firstProvince->HasFlag(ProvinceFlags::LAND);
     int isSea = firstProvince->HasFlag(ProvinceFlags::SEA);
     int isRiver = firstProvince->HasFlag(ProvinceFlags::RIVER);
+    int isLake = firstProvince->HasFlag(ProvinceFlags::LAKE);
     int isImpassable = firstProvince->HasFlag(ProvinceFlags::IMPASSABLE);
 
     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
         if (province->GetCulture() != culture) culture = "*****";
-        if (province->GetReligion() != religion) religion = "*****";
+        if (province->GetFaith() != religion) religion = "*****";
         if (province->GetHolding() != holding) holding = "*****";
         if (province->GetTerrain() != terrain) terrain = "*****";
         if (province->GetClimateType() != climateType) climateType = ClimateType::COUNT;
@@ -127,11 +131,11 @@ void PropertiesTab::RenderJointProvinces() {
         if (province->GetNormalWinterFactorOverride() != normalWinterFactorOverride) normalWinterFactorOverride = "*****";
         if (province->GetHarshWinterFactorOverride() != harshWinterFactorOverride) harshWinterFactorOverride = "*****";
         if (province->HasFlag(ProvinceFlags::COASTAL) != isCoastal) isCoastal = -1;
-        if (province->HasFlag(ProvinceFlags::LAKE) != isLake) isLake = -1;
         if (province->HasFlag(ProvinceFlags::ISLAND) != isIsland) isIsland = -1;
         if (province->HasFlag(ProvinceFlags::LAND) != isLand) isLand = -1;
         if (province->HasFlag(ProvinceFlags::SEA) != isSea) isSea = -1;
         if (province->HasFlag(ProvinceFlags::RIVER) != isRiver) isRiver = -1;
+        if (province->HasFlag(ProvinceFlags::LAKE) != isLake) isLake = -1;
         if (province->HasFlag(ProvinceFlags::IMPASSABLE) != isImpassable) isImpassable = -1;
     }
 
@@ -139,56 +143,70 @@ void PropertiesTab::RenderJointProvinces() {
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0, 57, 106, 255));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32(2, 45, 86, 255));
     if (ImGui::CollapsingHeader("global", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::BeginChild("##joint-provinces", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+        ImGui::BeginChild("##joint-provinces", ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
         ImGui::PushID("joint-provinces");
 
-        // PROVINCE: terrain (combobox)
-        if (ImGui::BeginCombo("terrain type", terrain.c_str())) {
-            for (const auto& [newTerrain, _] : m_Menu.GetApp().GetMod().GetTerrainTypes()) {
-                const bool isSelected = (terrain == newTerrain);
-                if (ImGui::Selectable(newTerrain.c_str(), isSelected)) {
-                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
-                        province->SetTerrain(newTerrain);
-                    }
-                    m_Menu.RefreshMapMode(MapMode::TERRAIN);
+        // PROVINCE: terrain type (combobox)
+        Components::TerrainTypeCombo(
+            m_Mod.GetProvinceManager().GetTerrainTypes(),
+            terrain, 
+            [&](const auto& newTerrainType) {
+                for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
+                    province->SetTerrain(newTerrainType ? newTerrainType->GetName() : "");
                 }
-
-                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
+                m_Menu.RefreshMapMode(MapMode::TERRAIN);
             }
-            ImGui::EndCombo();
-        }
+        );
+
         
         // PROVINCE: flags (checkbox)
         #define UPDATE_FLAG(flag, var) \
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) { \
                 province->SetFlag(ProvinceFlags::flag, var); \
             }
+        #define UPDATE_FLAG_SEA_RIVER_LAKE(flag, var, isSea, isRiver, isLake) \
+            for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) { \
+                province->SetFlag(ProvinceFlags::flag, var); \
+                province->SetFlag(ProvinceFlags::LAND, !(isSea || isRiver || isLake)); \
+            }
 
         if (ImGui::BeginTable("province flags", 2)) {
+            
+            // Coastal - Island
+
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::BeginDisabled();
             if (ImGui::CheckBoxTristate("Coastal", &isCoastal)) UPDATE_FLAG(COASTAL, isCoastal);
             ImGui::EndDisabled();
+            
             ImGui::TableSetColumnIndex(1);
-            if (ImGui::CheckBoxTristate("Lake", &isLake)) UPDATE_FLAG(LAKE, isLake);
+            ImGui::BeginDisabled();
+            if (ImGui::CheckBoxTristate("Island", &isIsland)) UPDATE_FLAG(ISLAND, isIsland);
+            ImGui::EndDisabled();
+
+            // Land - Sea
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::BeginDisabled();
-            if (ImGui::CheckBoxTristate("Island", &isIsland)) UPDATE_FLAG(ISLAND, isIsland);
-            ImGui::EndDisabled();
-            ImGui::TableSetColumnIndex(1);
             if (ImGui::CheckBoxTristate("Land", &isLand)) UPDATE_FLAG(LAND, isLand);
-            
+            ImGui::EndDisabled();
+
+            ImGui::TableSetColumnIndex(1);
+            if (ImGui::CheckBoxTristate("Sea", &isSea)) UPDATE_FLAG_SEA_RIVER_LAKE(SEA, isSea, isSea, isRiver, isLake);
+
+            // River - Lake
+
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            if (ImGui::CheckBoxTristate("Sea", &isSea)) UPDATE_FLAG(SEA, isSea);
-            ImGui::TableSetColumnIndex(1);
-            if (ImGui::CheckBoxTristate("River", &isRiver)) UPDATE_FLAG(RIVER, isRiver);
+            if (ImGui::CheckBoxTristate("River", &isRiver)) UPDATE_FLAG_SEA_RIVER_LAKE(RIVER, isRiver, isSea, isRiver, isLake);
             
+            ImGui::TableSetColumnIndex(1);
+            if (ImGui::CheckBoxTristate("Lake", &isLake)) UPDATE_FLAG_SEA_RIVER_LAKE(LAKE, isLake, isSea, isRiver, isLake);
+
+            // Impassable
+
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             if (ImGui::CheckBoxTristate("Impassable", &isImpassable)) UPDATE_FLAG(IMPASSABLE, isImpassable);
@@ -207,48 +225,38 @@ void PropertiesTab::RenderJointProvinces() {
         // PROVINCE: religion (field)
         if (ImGui::InputTextCommitOnEnter("religion", &religion)) {
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
-                province->SetReligion(religion);
+                province->SetFaith(religion);
             }
-            m_Menu.RefreshMapMode(MapMode::RELIGION);
+            m_Menu.RefreshMapMode(MapMode::FAITH);
         }
 
         // PROVINCE: holding type (combobox)
-        if (ImGui::BeginCombo("holding", holding.c_str())) {
-            for (const auto& [newHolding, _] : m_Menu.GetApp().GetMod().GetHoldingTypes()) {
-                const bool isSelected = (holding == newHolding);
-                if (ImGui::Selectable(newHolding.c_str(), isSelected)) {
-                    for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
-                        province->SetHolding(newHolding);
-                    }
+        Components::HoldingTypeCombo(
+            m_Mod.GetProvinceManager().GetHoldingTypes(),
+            holding,
+            [&](const auto& newHoldingType) {
+                for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
+                    province->SetHolding(newHoldingType ? newHoldingType->GetName() : "");
                 }
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
             }
-            ImGui::EndCombo();
-        }
+        );
 
         // PROVINCE: climate (collapsing header + child window (for borders) + text inputs)
         ImGui::SetNextItemOpen(m_DisplayClimate, ImGuiCond_Appearing);
         if (ImGui::CollapsingHeader("climate")) {
             m_DisplayClimate = true;
             
-            if (ImGui::BeginChild("climate", ImVec2(0, 175), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+            if (ImGui::BeginChild("climate", ImVec2(0, 175), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
-                ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate").x - 10);
-                if (ImGui::BeginCombo("climate", ClimateTypeLabels.at(climateType))) {
-                    for (int i = 0; i < (int) ClimateType::COUNT; i++) {
-                        ClimateType type = (ClimateType) i;
-                        const bool isSelected = (type == climateType);
-                        if (ImGui::Selectable(ClimateTypeLabels.at(type), isSelected)) {
-                            for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
-                                province->SetClimateType(type);
-                            }
+                ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate type").x - 10);
+                Components::ClimateTypeCombo(
+                    climateType,
+                    [&](ClimateType newClimateType) {
+                        for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
+                            province->SetClimateType(newClimateType);
                         }
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
                     }
-                    ImGui::EndCombo();
-                }
+                );
                 
                 // Use the same width for all items below so they are aligned.
                 int width = 0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("normal winter factor override").x;
@@ -319,7 +327,7 @@ void PropertiesTab::RenderProvinces() {
             Province* province = provinces[index];
                 
             if (ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::BeginChild(fmt::format("##province-{}", province->GetId()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+                ImGui::BeginChild(fmt::format("##province-{}", province->GetId()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
                 ImGui::PushID(province->GetId());                        
 
                 // PROVINCE: id (field)
@@ -329,7 +337,10 @@ void PropertiesTab::RenderProvinces() {
                 ImGui::EndDisabled();
 
                 // PROVINCE: name (field)
-                ImGui::InputTextCommitOnEnter("name", &province->m_Name);
+                std::string name = province->GetName();
+                if (ImGui::InputTextCommitOnEnter("name", &name)) {
+                    province->SetName(name);
+                }
 
                 // PROVINCE: color (colorpicker)
                 sf::Color color = province->GetColor();
@@ -341,55 +352,71 @@ void PropertiesTab::RenderProvinces() {
                 }
                 ImGui::EndDisabled();
 
-                // PROVINCE: terrain (combobox)
-                if (ImGui::BeginCombo("terrain type", province->GetTerrain().c_str())) {
-                    for (const auto& [terrain, _] : m_Menu.GetApp().GetMod().GetTerrainTypes()) {
-                        const bool isSelected = (province->GetTerrain() == terrain);
-                        if (ImGui::Selectable(terrain.c_str(), isSelected)) {
-                            province->SetTerrain(terrain);
-                            m_Menu.RefreshMapMode(MapMode::TERRAIN);
-                        }
 
-                        // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
+                // PROVINCE: terrain type (combobox)
+                Components::TerrainTypeCombo(
+                    m_Mod.GetProvinceManager().GetTerrainTypes(),
+                    province->GetTerrain(), 
+                    [&](const auto& newTerrainType) {
+                        province->SetTerrain(newTerrainType ? newTerrainType->GetName() : "");
+                        m_Menu.RefreshMapMode(MapMode::TERRAIN);
                     }
-                    ImGui::EndCombo();
-                }
+                );
             
                 // PROVINCE: flags (checkbox)
                 bool isCoastal = province->HasFlag(ProvinceFlags::COASTAL);
-                bool isLake = province->HasFlag(ProvinceFlags::LAKE);
                 bool isIsland = province->HasFlag(ProvinceFlags::ISLAND);
                 bool isLand = province->HasFlag(ProvinceFlags::LAND);
                 bool isSea = province->HasFlag(ProvinceFlags::SEA);
                 bool isRiver = province->HasFlag(ProvinceFlags::RIVER);
+                bool isLake = province->HasFlag(ProvinceFlags::LAKE);
                 bool isImpassable = province->HasFlag(ProvinceFlags::IMPASSABLE);
 
                 if (ImGui::BeginTable("province flags", 2)) {
-                    ImGui::TableNextRow();
-                
+                    
+                    // Coastal - Island
+
+                    ImGui::TableNextRow();                
                     ImGui::TableSetColumnIndex(0);
                     ImGui::BeginDisabled();
                     if (ImGui::Checkbox("Coastal", &isCoastal)) province->SetFlag(ProvinceFlags::COASTAL, isCoastal);
                     ImGui::EndDisabled();
+
                     ImGui::TableSetColumnIndex(1);
-                    if (ImGui::Checkbox("Lake", &isLake)) province->SetFlag(ProvinceFlags::LAKE, isLake);
+                    ImGui::BeginDisabled();
+                    if (ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
+                    ImGui::EndDisabled();
+                    
+                    // Land - Sea
 
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     ImGui::BeginDisabled();
-                    if (ImGui::Checkbox("Island", &isIsland)) province->SetFlag(ProvinceFlags::ISLAND, isIsland);
+                    ImGui::Checkbox("Land", &isLand);
                     ImGui::EndDisabled();
+                    
                     ImGui::TableSetColumnIndex(1);
-                    if (ImGui::Checkbox("Land", &isLand)) province->SetFlag(ProvinceFlags::LAND, isLand);
-                
+                    if (ImGui::Checkbox("Sea", &isSea)) {
+                        province->SetFlag(ProvinceFlags::SEA, isSea);
+                        province->SetFlag(ProvinceFlags::LAND, !(province->HasFlag(ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE)));
+                    }
+
+                    // River - Lake
+
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
-                    if (ImGui::Checkbox("Sea", &isSea)) province->SetFlag(ProvinceFlags::SEA, isSea);
+                    if (ImGui::Checkbox("River", &isRiver)) {
+                        province->SetFlag(ProvinceFlags::RIVER, isRiver);
+                        province->SetFlag(ProvinceFlags::LAND, !(province->HasFlag(ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE)));
+                    }
                     ImGui::TableSetColumnIndex(1);
-                    if (ImGui::Checkbox("River", &isRiver)) province->SetFlag(ProvinceFlags::RIVER, isRiver);
-                
+                    if (ImGui::Checkbox("Lake", &isLake)) {
+                        province->SetFlag(ProvinceFlags::LAKE, isLake);
+                        province->SetFlag(ProvinceFlags::LAND, !(province->HasFlag(ProvinceFlags::SEA | ProvinceFlags::RIVER | ProvinceFlags::LAKE)));
+                    }
+
+                    // Impassable
+
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     if (ImGui::Checkbox("Impassable", &isImpassable)) province->SetFlag(ProvinceFlags::IMPASSABLE, isImpassable);
@@ -398,33 +425,35 @@ void PropertiesTab::RenderProvinces() {
                 }
 
                 // PROVINCE: culture (field)
-                if (ImGui::InputTextCommitOnEnter("culture", &province->m_Culture)) {
+                std::string culture = province->GetCulture();
+                if (ImGui::InputTextCommitOnEnter("culture", &culture)) {
+                    province->SetCulture(culture);
                     m_Menu.RefreshMapMode(MapMode::CULTURE);
                 }
 
-                // PROVINCE: religion (field)
-                if (ImGui::InputTextCommitOnEnter("religion", &province->m_Religion)) {
-                    m_Menu.RefreshMapMode(MapMode::RELIGION);
+                // PROVINCE: faith (field)
+                std::string faith = province->GetFaith();
+                if (ImGui::InputTextCommitOnEnter("faith", &faith)) {
+                    province->SetFaith(faith);
+                    m_Menu.RefreshMapMode(MapMode::FAITH);
                 }
 
+
                 // PROVINCE: holding type (combobox)
-                if (ImGui::BeginCombo("holding", province->GetHolding().c_str())) {
-                    for (const auto& [holding, _] : m_Menu.GetApp().GetMod().GetHoldingTypes()) {
-                        const bool isSelected = (province->GetHolding() == holding);
-                        if (ImGui::Selectable(holding.c_str(), isSelected))
-                            province->SetHolding(holding);
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
+                Components::HoldingTypeCombo(
+                    m_Mod.GetProvinceManager().GetHoldingTypes(),
+                    province->GetHolding(),
+                    [&](const auto& newHoldingType) {
+                        province->SetHolding(newHoldingType ? newHoldingType->GetName() : "");
                     }
-                    ImGui::EndCombo();
-                }
+                );
 
                 // PROVINCE: history (collapsing header + child window (for borders) + collapsing header for each dates)
                 ImGui::SetNextItemOpen(m_DisplayHistory, ImGuiCond_Appearing);
                 if (ImGui::CollapsingHeader("history")) {
                     m_DisplayHistory = true;
 
-                    if (ImGui::BeginChild((province->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((province->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         static std::string date = "";
                         static bool isDateValid = true;
@@ -528,7 +557,7 @@ void PropertiesTab::RenderProvinces() {
                 if (ImGui::CollapsingHeader("climate")) {
                     m_DisplayClimate = true;
                 
-                    if (ImGui::BeginChild((province->GetName() + "-climate").c_str(), ImVec2(0, 175), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((province->GetName() + "-climate").c_str(), ImVec2(0, 175), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         ImGui::SetNextItemWidth(0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("climate").x - 10);
                         if (ImGui::BeginCombo("climate", ClimateTypeLabels.at(province->GetClimateType()))) {
@@ -547,18 +576,29 @@ void PropertiesTab::RenderProvinces() {
                         int width = 0.9f * ImGui::GetWindowWidth() - ImGui::CalcTextSize("normal winter factor override").x;
 
                         ImGui::SetNextItemWidth(width);
-                        if (ImGui::InputTextCommitOnEnter("winter severity bias", &province->m_WinterSeverityBias)) {
+                        std::string winterSeverityBias = province->GetWinterSeverityBias();
+                        if (ImGui::InputTextCommitOnEnter("winter severity bias", &winterSeverityBias)) {
+                            province->SetWinterSeverityBias(winterSeverityBias);
                             m_Menu.RefreshMapMode(MapMode::WINTER_SEVERITY);
                         }
 
                         ImGui::SetNextItemWidth(width);
-                        ImGui::InputTextCommitOnEnter("mild winter factor override", &province->m_MildWinterFactorOverride);
+                        std::string mildWinterFactorOverride = province->GetMildWinterFactorOverride();
+                        if (ImGui::InputTextCommitOnEnter("mild winter factor override", &mildWinterFactorOverride)) {
+                            province->SetMildWinterFactorOverride(mildWinterFactorOverride);
+                        }
 
                         ImGui::SetNextItemWidth(width);
-                        ImGui::InputTextCommitOnEnter("normal winter factor override", &province->m_NormalWinterFactorOverride);
+                        std::string normalWinterFactorOverride = province->GetNormalWinterFactorOverride();
+                        if (ImGui::InputTextCommitOnEnter("normal winter factor override", &normalWinterFactorOverride)) {
+                            province->SetNormalWinterFactorOverride(normalWinterFactorOverride);
+                        }
 
                         ImGui::SetNextItemWidth(width);
-                        ImGui::InputTextCommitOnEnter("harsh winter factor override", &province->m_HarshWinterFactorOverride);
+                        std::string harshWinterFactorOverride = province->GetHarshWinterFactorOverride();
+                        if (ImGui::InputTextCommitOnEnter("harsh winter factor override", &harshWinterFactorOverride)) {
+                            province->SetHarshWinterFactorOverride(harshWinterFactorOverride);
+                        }
 
                         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "note: leave fields empty if you don't want any value.");
                     }
@@ -569,11 +609,10 @@ void PropertiesTab::RenderProvinces() {
                 }
 
                 // PROVINCE: switch to barony (button)
-                if (m_Menu.GetApp().GetMod().GetBaroniesByProvinceIds().count(province->GetId()) > 0) {
+                if (BaronyTitle* baronyTitle = m_Mod.GetTitleManager().GetBaronyByProvinceId(province->GetId())) {
                     if (ImGui::Button("switch to barony")) {
-                        Title* title = m_Menu.GetApp().GetMod().GetBaroniesByProvinceIds()[province->GetId()];
                         m_Menu.SwitchMapMode(MapMode::BARONY, true);
-                        m_Menu.GetSelectionHandler().Select(title);
+                        m_Menu.GetSelectionHandler().Select(baronyTitle);
                     }
                 }
                 // PROVINCE: create barony (button)
@@ -582,7 +621,7 @@ void PropertiesTab::RenderProvinces() {
                         // Make sure to use a title name that isn't already taken.
                         std::string baronyName = "b_" + String::ToLowercase(province->GetName());
                         int i = 1;
-                        while(m_Menu.GetApp().GetMod().GetTitles().count(baronyName) > 0) {
+                        while(m_Mod.GetTitleManager().HasTitle(baronyName)) {
                             baronyName = "b_" + String::ToLowercase(province->GetName()) + std::to_string(i);
                             i++;
                         }
@@ -591,7 +630,7 @@ void PropertiesTab::RenderProvinces() {
                         BaronyTitle* baronyTitle = dynamic_cast<BaronyTitle*>(title.get());
                         baronyTitle->SetProvinceId(province->GetId());
 
-                        m_Menu.GetApp().GetMod().AddTitle(std::move(title));
+                        m_Mod.GetTitleManager().AddTitle(std::move(title));
                     }
                 }
 
@@ -613,24 +652,33 @@ void PropertiesTab::RenderTitles() {
             Title* title = titles[index];
 
             if (ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::BeginChild(fmt::format("##title-{}", title->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+                ImGui::BeginChild(fmt::format("##title-{}", title->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
                 ImGui::PushID(title->GetName().c_str());
 
                 // TITLE: name/tag (field)
-                std::string formerName = title->m_Name;
-                if (ImGui::InputTextCommitOnEnter("name", &title->m_Name)) {
+                std::string titleName = title->GetName();
+                if (ImGui::InputTextCommitOnEnter("name", &titleName)) {
                     // Rename the title globally, including titles history.
-                    m_Menu.GetApp().GetMod().RenameTitle(title, formerName);
+                    m_Mod.GetTitleManager().RenameTitle(title->GetName(), titleName);
                 }
 
                 // TITLE: localization name (field)
-                ImGui::InputTextCommitOnEnter("loc. name", &title->GetLocName("english"));
+                std::string locName = title->GetLocName("english");
+                if (ImGui::InputTextCommitOnEnter("loc. name", &locName)) {
+                    title->SetLocName("english", locName);
+                }
 
                 // TITLE: localization adjective (field)
-                ImGui::InputTextCommitOnEnter("loc. adjective", &title->GetLocAdjective("english"));
+                std::string locAdjective = title->GetLocAdjective("english");
+                if (ImGui::InputTextCommitOnEnter("loc. adjective", &locAdjective)) {
+                    title->SetLocAdjective("english", locAdjective);
+                }
 
                 // TITLE: localization article (field)
-                ImGui::InputTextCommitOnEnter("loc. article", &title->GetLocArticle("english"));
+                std::string locArticle = title->GetLocArticle("english");
+                if (ImGui::InputTextCommitOnEnter("loc. article", &locArticle)) {
+                    title->SetLocArticle("english", locArticle);
+                }
 
                 // TITLE: tier/type (combo)
                 ImGui::BeginDisabled();
@@ -647,8 +695,11 @@ void PropertiesTab::RenderTitles() {
                 }
 
                 // TITLE: landless (checkbox)
+                bool landless = title->IsLandless();
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-                ImGui::Checkbox("Landless", &title->m_Landless);
+                if (ImGui::Checkbox("Landless", &landless)) {
+                    title->SetLandless(landless);
+                }
                 ImGui::PopStyleVar();
 
                 // TITLE: cultural names (collapsing header + child window (for borders) + collapsing header for each culture)
@@ -656,7 +707,7 @@ void PropertiesTab::RenderTitles() {
                 if (ImGui::CollapsingHeader("cultural names")) {
                     m_DisplayCulturalNames = true;
 
-                    if (ImGui::BeginChild((title->GetName() + "-cultural-names").c_str(), ImVec2(0, 100), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((title->GetName() + "-cultural-names").c_str(), ImVec2(0, 100), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         static std::string newCulture = "";
 
@@ -705,7 +756,7 @@ void PropertiesTab::RenderTitles() {
                 if (ImGui::CollapsingHeader("history")) {
                     m_DisplayHistory = true;
 
-                    if (ImGui::BeginChild((title->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+                    if (ImGui::BeginChild((title->GetName() + "-history").c_str(), ImVec2(0, 250), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
 
                         static std::string date = "";
                         static bool isDateValid = true;
@@ -808,9 +859,17 @@ void PropertiesTab::RenderTitles() {
 
                     // BARONY: province id (field)
                     BaronyTitle* barony = static_cast<BaronyTitle*>(title);
-                    if (ImGui::InputInt("province id", &barony->m_ProvinceId)) {
-                        if (m_Menu.GetApp().GetMod().GetProvincesByIds().count(barony->m_ProvinceId) == 0) {
-                            LOG_ERROR("Barony with undefined province id: {},{}", barony->GetName(), barony->GetProvinceId());
+                    int provinceId = barony->GetProvinceId();
+                    if (ImGui::InputInt("province id", &provinceId)) {
+                        if (!m_Mod.GetProvinceManager().HasProvinceById(provinceId)) {
+                            ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
+                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
+                            ImGui::Text("⚠️");
+                            if (ImGui::IsItemHovered())
+                                ImGui::SetTooltip("No province with this id exists!");
+                            ImGui::PopStyleColor();
+                            ImGui::PopFont();
+                            LOG_ERROR("Barony with undefined province id: {},{}", barony->GetName(), provinceId);
                         }
                     }
 
@@ -825,8 +884,7 @@ void PropertiesTab::RenderTitles() {
                                 if (button != sf::Mouse::Button::Left)
                                     return SelectionCallbackResult::INTERRUPT;
 
-                                barony->SetProvinceId(province->GetId());
-                                m_Menu.GetApp().GetMod().GetBaroniesByProvinceIds()[barony->GetProvinceId()] = barony;
+                                m_Mod.GetTitleManager().ChangeBaronyProvinceId(barony, province->GetId());
 
                                 m_Menu.SwitchMapMode(previousMapMode, false);
                                 m_SelectingTitle = false;
@@ -837,8 +895,7 @@ void PropertiesTab::RenderTitles() {
 
                     // BARONY: Switch to province (button)
                     if (ImGui::Button("switch to province")) {
-                        if (m_Menu.GetApp().GetMod().GetProvincesByIds().count(barony->GetProvinceId()) > 0) {
-                            Province* province = m_Menu.GetApp().GetMod().GetProvincesByIds()[barony->GetProvinceId()];
+                        if (Province* province = m_Mod.GetProvinceManager().GetProvinceById(barony->GetProvinceId())) {
                             m_Menu.SwitchMapMode(MapMode::PROVINCES, true);
                             m_Menu.GetSelectionHandler().Select(province);
                         }
@@ -852,7 +909,7 @@ void PropertiesTab::RenderTitles() {
                     if (ImGui::CollapsingHeader("dejure titles")) {
                         m_DisplayDejureTitles = true;
 
-                        ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_None);
+                        ImGui::BeginChild("dejure titles", ImVec2(0, 250), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_None);
 
                         if (ImGui::BeginMenuBar()) {
                             if (ImGui::BeginMenu("dejure titles")) {
@@ -911,20 +968,32 @@ void PropertiesTab::RenderTitles() {
 
                         // HIGHTITLE: add new dejure title (button)
                         if (ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
-                            TitleType dejureType = (TitleType)(((int)highTitle->GetType()) - 1);
+                            TitleType dejureType = static_cast<TitleType>(static_cast<int>(highTitle->GetType()) - 1);
+                            MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
                             m_SelectingTitle = true;
                             m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
                             m_Menu.GetSelectionHandler().AddCallback(
-                                [this, highTitle, dejureType](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
+                                [this, highTitle, dejureType, liegeMapMode](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
                                     if (button != sf::Mouse::Button::Left)
-                                        return SelectionCallbackResult::INTERRUPT;
+                                        goto StopSelecting;
+
                                     if (!clickedTitle->Is(dejureType))
                                         return SelectionCallbackResult::INTERRUPT;
+
+                                    // Add the clicked title as a dejure vassals,
+                                    // and then update the textures for all map modes above the clicked title type.
                                     highTitle->AddDejureTitle(clickedTitle);
-                                    MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                                    for (int i = (int) liegeMapMode; i <= (int) MapMode::HEGEMONY; i++) {
-                                        m_Menu.UpdateTexture((MapMode)i, false);
+                                    for (int i = static_cast<int>(liegeMapMode); i <= static_cast<int>(MapMode::HEGEMONY); i++) {
+                                        m_Menu.UpdateTexture(static_cast<MapMode>(i), false);
 									}
+
+                                    // Keep selecting if the user is holding the left shift key, otherwise stop selecting.
+                                    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
+                                        m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
+                                        return SelectionCallbackResult::INTERRUPT;
+                                    }
+
+                                    StopSelecting:
                                     m_Menu.SwitchMapMode(liegeMapMode, false);
                                     m_SelectingTitle = false;
                                     return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
@@ -1007,7 +1076,7 @@ void PropertiesTab::RenderTitles() {
                             }
                         }
 
-                        m_Menu.GetApp().GetMod().RemoveTitle(title);
+                        m_Mod.GetTitleManager().RemoveTitle(title);
 
                         m_Menu.UpdateTextures();
                         m_Menu.RefreshCurrentMapMode(true, false);
@@ -1030,24 +1099,39 @@ void PropertiesTab::RenderTitles() {
 }
 
 void PropertiesTab::RenderRegions() {
-    Mod& mod = m_Menu.GetApp().GetMod();
-
     std::vector<Region*> regions = std::vector<Region*>(m_Menu.GetSelectionHandler().GetRegions().begin(), m_Menu.GetSelectionHandler().GetRegions().end());
     for (Region* region : regions) {
                 
         if (ImGui::CollapsingHeader(region->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::BeginChild(fmt::format("##region-{}", region->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+            ImGui::BeginChild(fmt::format("##region-{}", region->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
             ImGui::PushID(region->GetName().c_str());
 
             // REGION: name/tag (field)
-            std::string formerName = region->m_Name;
-            if (ImGui::InputTextCommitOnEnter("name", &region->m_Name)) {
-                m_Menu.GetApp().GetMod().RenameRegion(region, formerName);
+            std::string formerName = region->GetName();
+            if (ImGui::InputTextCommitOnEnter("name", &formerName)) {
+                m_Mod.GetRegionManager().RenameRegion(region->GetName(), formerName);
+            }
+            
+            // REGION: file name (field)
+            std::string formerFileName = region->GetFileName();
+            if (ImGui::InputTextCommitOnEnter("file name", &formerFileName)) {
+                region->SetFileName(formerFileName);
             }
 
             // REGION: generate modifiers (checkbox)
+            bool generateModifiers = region->DoesGenerateModifiers();
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-            ImGui::Checkbox("Generate Modifiers", &region->m_GenerateModifiers);
+            if (ImGui::Checkbox("Generate Modifiers", &generateModifiers)) {
+                region->SetGenerateModifiers(generateModifiers);
+            }
+            ImGui::PopStyleVar();
+            
+            // REGION: should remember counties order (checkbox)
+            bool shouldRememberCountiesOrder = region->ShouldRememberCountiesOrder();
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            if (ImGui::Checkbox("Should Remember Counties Order", &shouldRememberCountiesOrder)) {
+                region->SetShouldRememberCountiesOrder(shouldRememberCountiesOrder);
+            }
             ImGui::PopStyleVar();
 
             // REGION: titles (list)
@@ -1055,7 +1139,7 @@ void PropertiesTab::RenderRegions() {
             if (ImGui::CollapsingHeader("titles")) {
                 m_DisplayRegionsTitles = true;
 
-                ImGui::BeginChild("titles", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+                ImGui::BeginChild("titles", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
                 const auto DisplayTitles = [&](auto titles) {
                     for (const auto& title : titles) {
@@ -1094,7 +1178,7 @@ void PropertiesTab::RenderRegions() {
                     if (ImGui::IsWindowAppearing())
                         ImGui::SetKeyboardFocusHere(-1);
 
-                    for (const auto& [name, title] : mod.GetTitles()) {
+                    for (const auto& [name, title] : m_Mod.GetTitleManager().GetTitles()) {
                         if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::HEGEMONY) || title->Is(TitleType::BARONY))
                             continue;
                         if (!filter.PassFilter(name.c_str()))
@@ -1109,7 +1193,7 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
-                ImGui::PushFont(ImGui::notoSansNormalFont);
+                ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                 if (m_SelectingTitle) ImGui::BeginDisabled();
                 if (ImGui::SmallButton("📌") && !m_SelectingTitle) {
                     m_SelectingTitle = true;
@@ -1152,7 +1236,7 @@ void PropertiesTab::RenderRegions() {
             if (ImGui::CollapsingHeader("provinces")) {
                 m_DisplayRegionsProvinces = true;
 
-                ImGui::BeginChild("provinces", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+                ImGui::BeginChild("provinces", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
                 std::vector<Province*> provinces = std::vector<Province*>(region->GetProvinces().begin(), region->GetProvinces().end());
                 for (Province* province : provinces) {
@@ -1183,7 +1267,7 @@ void PropertiesTab::RenderRegions() {
                     if (ImGui::IsWindowAppearing())
                         ImGui::SetKeyboardFocusHere(-1);
 
-                    for (const auto& [id, province] : mod.GetProvincesByIds()) {
+                    for (const auto& [id, province] : m_Mod.GetProvinceManager().GetProvincesByIds()) {
                         if (!filter.PassFilter(std::to_string(id).c_str()) && !filter.PassFilter(province->GetName().c_str()))
                             continue;
                         if (ImGui::Selectable(fmt::format("{}\t-\t{}", id, province->GetName()).c_str())) {
@@ -1196,7 +1280,7 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
-                ImGui::PushFont(ImGui::notoSansNormalFont);
+                ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                 if (m_SelectingProvince) ImGui::BeginDisabled();
                 if (ImGui::SmallButton("📌") && !m_SelectingProvince) {
                     m_SelectingProvince = true;
@@ -1233,7 +1317,7 @@ void PropertiesTab::RenderRegions() {
             if (ImGui::CollapsingHeader("regions")) {
                 m_DisplayRegionsRegions = true;
 
-                ImGui::BeginChild("regions", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
+                ImGui::BeginChild("regions", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None);
 
                 std::vector<Region*> regions = std::vector<Region*>(region->GetRegions().begin(), region->GetRegions().end());
                 for (Region* subRegion : regions) {
@@ -1243,7 +1327,7 @@ void PropertiesTab::RenderRegions() {
 
                     if (subRegion->HasRegion(region)) {
                         ImGui::SameLine(ImGui::GetWindowContentRegionMax().x-50);
-                        ImGui::PushFont(ImGui::notoSansNormalFont);
+                        ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
                         ImGui::Text("⚠️");
                         if (ImGui::IsItemHovered())
@@ -1274,7 +1358,7 @@ void PropertiesTab::RenderRegions() {
                     if (ImGui::IsWindowAppearing())
                         ImGui::SetKeyboardFocusHere(-1);
 
-                    for (const auto& [name, subRegion] : mod.GetRegions()) {
+                    for (const auto& [name, subRegion] : m_Mod.GetRegionManager().GetRegions()) {
                         if (!filter.PassFilter(name.c_str()))
                             continue;
                         if (ImGui::Selectable(name.c_str())) {
@@ -1305,7 +1389,7 @@ void PropertiesTab::RenderRegions() {
                 if (ImGui::Button("Delete", ImVec2(120, 0))) {
                     ImGui::CloseCurrentPopup();
 
-                    mod.RemoveRegion(region);
+                    m_Mod.GetRegionManager().RemoveRegion(region);
                     m_Menu.GetSelectionHandler().Deselect(region);
                     m_Menu.GetSelectionHandler().Update();
                 }

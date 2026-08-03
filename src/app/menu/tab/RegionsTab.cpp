@@ -1,10 +1,11 @@
 #include "ProvincesTab.hpp"
 #include "app/menu/EditorMenu.hpp"
-#include "app/mod/Mod.hpp"
 #include "app/App.hpp"
-#include "app/map/Title.hpp"
-#include "app/map/Province.hpp"
-#include "app/map/Region.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/titles/TitleManager.hpp"
+#include "core/provinces/ProvinceManager.hpp"
+#include "core/regions/RegionManager.hpp"
 
 #include "imgui/imgui.hpp"
 
@@ -14,8 +15,6 @@ void RegionsTab::Render() {
     if (!m_Visible)
         return;
 
-    Mod& mod = this->GetMod();
-
     // Generate a map of whether a region is filtered by name or not.
     static std::string filter = "";
     static std::vector<Region*> filteredRegions;
@@ -23,12 +22,12 @@ void RegionsTab::Render() {
     // Keep track of how many regions there were last time the list was updated.
     static size_t lastRegionsCount = 0;
     bool updated = false;
-    if (ImGui::InputText("filter", &filter) || mod.GetRegions().size() != lastRegionsCount) {
+    if (ImGui::InputText("filter", &filter) || m_Mod.GetRegionManager().GetRegions().size() != lastRegionsCount) {
         filteredRegions.clear();
-        lastRegionsCount = mod.GetRegions().size();
+        lastRegionsCount = m_Mod.GetRegionManager().GetRegions().size();
         updated = true;
 
-        for(const auto& [regionName, region] : mod.GetRegions()) {
+        for(const auto& [regionName, region] : m_Mod.GetRegionManager().GetRegions()) {
             if (regionName.find(filter) != std::string::npos)
                 filteredRegions.push_back(region.get());
         }

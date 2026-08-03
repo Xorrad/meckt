@@ -1,0 +1,58 @@
+name: Run CK3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master, tests ]
+  pull_request:
+    branches: [ master, tests ]
+
+jobs:
+
+  build-meckt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: true
+        
+      - name: Build meckt
+        uses: ./.github/actions/build-meckt
+
+  run-ck3:
+    needs: build-meckt
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: [vanilla, agot, ate]
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Setup CK3
+        uses: ./.github/actions/setup-ck3
+        with:
+          token: ${{ secrets.MECKT_LFS_PAT }}
+          mod: ${{ matrix.mod }}
+
+      - name: Install mod
+        uses: ./.github/actions/install-mod
+        if: ${{ matrix.mod != 'vanilla' }}
+        with:
+          mod: ${{ matrix.mod }}
+
+      - name: Run meckt
+        uses: ./.github/actions/run-meckt
+        with:
+          mod: ${{ matrix.mod }}
+
+      - name: Run CK3
+        uses: ./.github/actions/run-ck3
+        with:
+          artifact-name: logs-${{ matrix.mod }}

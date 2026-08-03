@@ -1,9 +1,10 @@
 #include "ProvincesTab.hpp"
 #include "app/menu/EditorMenu.hpp"
-#include "app/mod/Mod.hpp"
 #include "app/App.hpp"
-#include "app/map/Province.hpp"
-#include "app/map/Title.hpp"
+
+#include "core/mod/Mod.hpp"
+#include "core/provinces/ProvinceManager.hpp"
+#include "core/titles/TitleManager.hpp"
 
 #include <imgui/imgui.hpp>
 
@@ -12,8 +13,6 @@ ProvincesTab::ProvincesTab(EditorMenu& menu, bool visible) : Tab("Provinces", Ta
 void ProvincesTab::Render() {
     if(!m_Visible)
         return;
-
-    Mod& mod = this->GetMod();
 
     // Generate a map of whether a province is filtered by name or not.
     static std::string filter = "";
@@ -24,12 +23,12 @@ void ProvincesTab::Render() {
     // Keep track of how many provinces there were last time the list was updated.
     static size_t lastProvincesCount = 0;
     bool updated = false;
-    if(ImGui::InputText("filter", &filter) || mod.GetProvinces().size() != lastProvincesCount) {
+    if(ImGui::InputText("filter", &filter) || m_Mod.GetProvinceManager().GetProvincesByColors().size() != lastProvincesCount) {
         filteredProvinces.clear();
-        lastProvincesCount = mod.GetProvinces().size();
+        lastProvincesCount = m_Mod.GetProvinceManager().GetProvincesByColors().size();
         updated = true;
 
-        for(const auto& [colorId, province] : mod.GetProvinces()) {
+        for(const auto& [colorId, province] : m_Mod.GetProvinceManager().GetProvincesByColors()) {
             if (province->GetName().find(filter) != std::string::npos || std::to_string(province->GetId()).find(filter) != std::string::npos)
                 filteredProvinces.push_back(province.get());
         }
@@ -126,6 +125,7 @@ void ProvincesTab::Render() {
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     sf::Vector2i titlePos = province->GetImagePosition();
                     m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                    m_Menu.UpdateCameraBounds();
                 }
 
                 ImGui::Text(province->GetName().c_str());

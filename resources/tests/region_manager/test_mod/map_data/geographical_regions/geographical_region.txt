@@ -1,0 +1,37 @@
+﻿region3 = {
+	regions = {
+		region1
+	}
+}
+
+region1 = {
+	kingdoms = {
+		k_test
+	}
+
+	duchies =  {
+		d_test1
+	}
+
+	counties = {
+		c_test1
+		c_test2
+	}
+
+	provinces = {
+		1 2 3
+	}
+
+	generate_modifiers = yes
+	should_remember_counties_order = yes
+}
+
+region2 = {
+	regions = {
+		region1
+	}
+
+	counties = {
+		c_test1
+	}
+}
