@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <lodepng.h>
+#include <nfd.h>
 
 sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(std::unordered_map<uint32_t, uint32_t>&)> mapFunc) {
     // Used for benchmarking.
@@ -167,5 +168,27 @@ void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>
     if (error) {
         LOG_ERROR("Failed to save image '{}': {}", filePath, lodepng_error_text(error));
         return;
+    }
+}
+
+void Image::SaveWithDialog(const sf::Image& image) {
+    nfdchar_t* outPath = nullptr;
+
+    nfdresult_t result = NFD_SaveDialog(
+        "png",
+        "image.png",
+        &outPath
+    );
+
+    if (result == NFD_OKAY) {
+        std::string pathStr(outPath);
+        if (!pathStr.ends_with(".png")) {
+            pathStr += ".png";
+        }
+        image.saveToFile(pathStr);
+        free(outPath);
+    }
+    else if (result == NFD_ERROR) {
+        throw std::runtime_error(fmt::format("Failed to save image: {}", NFD_GetError()));
     }
 }

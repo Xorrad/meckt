@@ -719,6 +719,75 @@ void EditorMenu::RenderMenuBarTools() {
         if(ImGui::MenuItem("Generate provinces climate")) {
             m_ModalName = "Generate provinces climate";
         }
+        
+        if(ImGui::MenuItem("Save image to disk")) {
+            try {
+                if (m_MapSprite.has_value()) {
+                    sf::RenderTexture renderTexture(sf::Vector2u(m_Camera.getSize()));
+
+                    // Update provinces shader
+                    sf::Shader& provinceShader = Configuration::shaders.Get(Shaders::PROVINCES);
+                    provinceShader.setUniform("texture", sf::Shader::CurrentTexture);
+                    provinceShader.setUniform("time", m_Clock.getElapsedTime().asSeconds());
+                    provinceShader.setUniform("mapMode", (int) m_MapMode);
+                    provinceShader.setUniform("displayBorders", m_DisplayBorders);
+
+                    renderTexture.setView(m_Camera);
+
+                    renderTexture.clear(sf::Color::Transparent);
+                    if(MapModeIsProvince(m_MapMode) || MapModeIsTitle(m_MapMode))
+                        renderTexture.draw(*m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
+                    else 
+                        renderTexture.draw(*m_MapSprite);
+                    renderTexture.display();
+
+                    // Determine which part of the camera is actually part of the map.
+
+                    sf::FloatRect cameraRect(
+                        m_Camera.getCenter() - m_Camera.getSize() / 2.f,
+                        m_Camera.getSize()
+                    );
+
+                    sf::FloatRect mapRect(
+                        {0.f, 0.f},
+                        sf::Vector2f(m_Mod.GetProvinceManager().GetProvincesImage().getSize())
+                    );
+
+                    std::optional<sf::FloatRect> visibleRectOpt = cameraRect.findIntersection(mapRect);
+                    if (visibleRectOpt.has_value()) {
+                        sf::FloatRect visibleRect = visibleRectOpt.value();
+                        sf::Image full = renderTexture.getTexture().copyToImage();
+
+                        sf::Image cropped;
+                        cropped.resize({
+                            static_cast<unsigned>(visibleRect.size.x),
+                            static_cast<unsigned>(visibleRect.size.y)
+                        });
+
+                        cropped.copy(
+                            full,
+                            {0, 0},
+                            sf::IntRect(
+                                {
+                                    static_cast<int>(visibleRect.position.x - cameraRect.position.x),
+                                    static_cast<int>(visibleRect.position.y - cameraRect.position.y)
+                                },
+                                {
+                                    static_cast<int>(visibleRect.size.x),
+                                    static_cast<int>(visibleRect.size.y)
+                                }
+                            ),
+                            false
+                        );
+
+                        Image::SaveWithDialog(cropped);
+                    }
+                }
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("Failed to save image to disk: {}", e.what());
+            }
+        }
 
         ImGui::EndMenu();
     }
