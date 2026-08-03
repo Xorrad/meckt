@@ -851,6 +851,7 @@ void EditorMenu::RenderModals() {
 
         static std::string name;
         static bool generateModifiers;
+        static bool shouldRememberCountiesOrder;
 
         bool isNameTaken = m_Mod.GetRegionManager().HasRegion(name);
 
@@ -859,12 +860,17 @@ void EditorMenu::RenderModals() {
             initialized = true;
             name = "";
             generateModifiers = false;
+            shouldRememberCountiesOrder = false;
         }
 
         ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, FilterTitleName);
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::Checkbox("Generate Modifiers", &generateModifiers);
+        ImGui::PopStyleVar();
+        
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+        ImGui::Checkbox("Remember Counties Order", &shouldRememberCountiesOrder);
         ImGui::PopStyleVar();
         
         if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another region.");
@@ -879,7 +885,7 @@ void EditorMenu::RenderModals() {
             // Create a new region using the attributes.
             UniquePtr<Region> region = MakeUnique<Region>(name);
             region->SetGenerateModifiers(generateModifiers);
-
+            region->SetShouldRememberCountiesOrder(shouldRememberCountiesOrder);
             // Add valid selected titles to the region.
             for (Title* title : m_SelectionHandler.GetTitles()) {
                 if (title->Is(TitleType::EMPIRE) || title->Is(TitleType::HEGEMONY) || title->Is(TitleType::BARONY))
