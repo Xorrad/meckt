@@ -967,6 +967,8 @@ void EditorMenu::RenderModals() {
         ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
         ImGui::Separator();
 
+        ImGui::Text("This will generate LAND and SEA flags for all provinces, excluding rivers and lakes, based on the heightmap and water level.");
+
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
             m_Mod.GetProvinceManager().GenerateProvincesFlags(m_Mod.GetDefineManager().GetWaterLevel());
@@ -986,6 +988,8 @@ void EditorMenu::RenderModals() {
     if(ImGui::BeginPopupModal("Generate missing provinces", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
         ImGui::Separator();
+
+        ImGui::Text("This will generate a province for every color present in the provinces.png image that doesn't already have a corresponding province.");
 
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
@@ -1007,6 +1011,9 @@ void EditorMenu::RenderModals() {
         ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
         ImGui::Separator();
 
+        ImGui::Text("This will generate a barony title for every LAND province that doesn't already have a barony title.");
+        ImGui::Text("The new barony title will be automatically assigned to the corresponding province and the barony name will be set to the province name.");
+
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
             m_Mod.GetTitleManager().GenerateMissingBaronies(m_Mod.GetProvinceManager());
@@ -1027,10 +1034,11 @@ void EditorMenu::RenderModals() {
         ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This action cannot be undone!");
         ImGui::Separator();
 
+        ImGui::Text("This will generate names and adjectives localization for every title that doesn't already have a one.");
+        ImGui::Text("This will not overwrite existing localization.");
+
         static bool generateNames = true;
         static bool generateAdjectives = true;
-
-        ImGui::Text("This will not overwrite existing localization.");
 
         ImGui::Checkbox("names   ", &generateNames);
         ImGui::SameLine();
@@ -1274,16 +1282,16 @@ void EditorMenu::RenderModals() {
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "map_data/definition.csv");
         
+        std::string provinceTerrainPath = m_Mod.GetProvinceManager().GetProvinceTerrainFileName();
         ImGui::Checkbox("provinces terrain  ", &provincesTerrain);
         ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "common/province_terrain/");
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), fmt::format("common/province_terrain/{}", provinceTerrainPath).c_str());
         
         
+        std::string provinceTerrainPropertiesPath = m_Mod.GetProvinceManager().GetProvinceTerrainPropertiesFileName();
         ImGui::Checkbox("provinces climate  ", &provincesClimate);
         ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "common/province_terrain/01_province_properties.txt  &");
-        ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "map_data/climate.txt");
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), fmt::format("common/province_terrain/{}  &  map_data/climate.txt", provinceTerrainPropertiesPath).c_str());
         
         ImGui::Checkbox("provinces history  ", &provincesHistory);
         ImGui::SameLine();
@@ -1307,7 +1315,7 @@ void EditorMenu::RenderModals() {
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), culturalNamesLocalizationPath.c_str());
         
-        std::string geographicalRegionsLocalizationPath = "geographical_regions/geographical_region.txt";
+        std::string geographicalRegionsLocalizationPath = "map_data/geographical_regions/";
         ImGui::Checkbox("geographical regions  ", &geographicalRegions);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), geographicalRegionsLocalizationPath.c_str());
