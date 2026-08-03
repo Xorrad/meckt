@@ -12,11 +12,13 @@ meckt is a tool whose goal is making total conversion mod easier and less cumber
 
 ## Overview
 
-![overview](images/overview-1.7.png)  
+![overview](images/overview-1.8.png)  
 
-![views](images/views-1.7.png)  
+![overview](images/overview2-1.8.png)  
 
-![tools](images/tools-1.7.png)  
+![tools](images/tools-1.8.png)  
+
+![views](images/wrapping-1.0.png)  
 
 ## Controls
 
@@ -79,6 +81,7 @@ Contributions to the project are highly appreciated! There are several ways to g
 - **lodepng** (http://lodev.org/lodepng/)
 - **nlohmann-json** (https://github.com/nlohmann/json)
 - **jomini-parser** (https://github.com/Xorrad/jomini-parser)
+- **doctest** (https://github.com/doctest/doctest)
 
 ## License
 
