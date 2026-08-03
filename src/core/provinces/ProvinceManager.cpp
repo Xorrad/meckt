@@ -68,6 +68,18 @@ const sf::Image& ProvinceManager::GetRiversImage() const {
     return m_RiversImage;
 }
 
+sf::Image ProvinceManager::GetFlagsImage() const {
+    sf::Image image = Image::MapPixels(
+        m_ProvincesImage,
+        [&](auto& mappedColors){
+            for(const auto& [provinceColorId, province] : m_ProvincesByColors) {
+                mappedColors[province->GetColor().toInteger()] = ProvincesFlagsToColor(province->GetFlags()).toInteger();
+            }    
+        }
+    );
+    return image;
+}
+
 sf::Image ProvinceManager::GetTerrainImage() const {
     // - Map provinces colors to their terrain color.
     // - Copy province image.

@@ -4,24 +4,25 @@ enum class MapMode {
     PROVINCES       = 0,
     HEIGHTMAP       = 1,
     RIVERS          = 2,
-    TERRAIN         = 3,
-    CLIMATE         = 4,
-    WINTER_SEVERITY = 5,
-    CULTURE         = 6,
-    FAITH           = 7,
-    BARONY          = 8,
-    COUNTY          = 9,
-    DUCHY           = 10,
-    KINGDOM         = 11,
-    EMPIRE          = 12,
-    HEGEMONY        = 13,
-    COUNT           = 14,
+    FLAGS           = 3,
+    TERRAIN         = 4,
+    CLIMATE         = 5,
+    WINTER_SEVERITY = 6,
+    CULTURE         = 7,
+    FAITH           = 8,
+    BARONY          = 9,
+    COUNTY          = 10,
+    DUCHY           = 11,
+    KINGDOM         = 12,
+    EMPIRE          = 13,
+    HEGEMONY        = 14,
+    COUNT           = 15,
 };
 const int MapModeTitleStartIndex = static_cast<int>(MapMode::BARONY);
 
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
-    "Terrain", "Climate", "Winter Severity", "Culture", "Faith",
+    "Flags", "Terrain", "Climate", "Winter Severity", "Culture", "Faith",
     "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony"
 };
 
@@ -35,4 +36,19 @@ inline MapMode TitleTypeToMapMode(TitleType type) {
 
 inline bool MapModeIsTitle(MapMode mode) {
     return static_cast<int>(mode) >= static_cast<int>(MapMode::BARONY) && static_cast<int>(mode) <= static_cast<int>(MapMode::HEGEMONY);
+}
+
+inline bool MapModeIsProvince(MapMode mode) {
+    switch (mode) {
+        case MapMode::PROVINCES:
+        case MapMode::FLAGS:
+        case MapMode::TERRAIN:
+        case MapMode::CLIMATE:
+        case MapMode::WINTER_SEVERITY:
+        case MapMode::CULTURE:
+        case MapMode::FAITH:
+            return true;
+        default:
+            return false;
+    }
 }

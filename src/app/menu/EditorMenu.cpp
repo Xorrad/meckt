@@ -146,12 +146,7 @@ void EditorMenu::UpdateHoveringText() {
 
     // Legacy compact tooltip displaying the province or title info
     // depending on the current map mode.
-    if(m_MapMode == MapMode::PROVINCES
-    || m_MapMode == MapMode::TERRAIN
-    || m_MapMode == MapMode::CLIMATE
-    || m_MapMode == MapMode::WINTER_SEVERITY
-    || m_MapMode == MapMode::CULTURE
-    || m_MapMode == MapMode::FAITH) {
+    if(MapModeIsProvince(m_MapMode)) {
         m_HoverText.setString(fmt::format("#{} ({})", hoveredProvince->GetId(), hoveredProvince->GetName()));
         m_HoverTitleText.setString("");
         m_HoverText.setPosition({(float) mousePosition.x + 5*Configuration::uiScale, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10*Configuration::uiScale});
@@ -277,6 +272,9 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::TERRAIN:
             m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetTerrainImage());
             break;
+        case MapMode::FLAGS:
+            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetFlagsImage());
+            break;
         case MapMode::CLIMATE:
             m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetClimateImage());
             break;
@@ -398,13 +396,7 @@ void EditorMenu::Event(const sf::Event& event) {
 
         if(d < 5) {
 
-            if(m_MapMode == MapMode::PROVINCES
-            || m_MapMode == MapMode::TERRAIN
-            || m_MapMode == MapMode::CLIMATE
-            || m_MapMode == MapMode::WINTER_SEVERITY
-            || m_MapMode == MapMode::CULTURE
-            || m_MapMode == MapMode::FAITH
-            || MapModeIsTitle(m_MapMode)) {
+            if(MapModeIsProvince(m_MapMode) || MapModeIsTitle(m_MapMode)) {
                 Province* hoveredProvince = this->GetHoveredProvince();
                 if(hoveredProvince != nullptr) {
                     if(MapModeIsTitle(m_MapMode)) {
@@ -440,13 +432,7 @@ void EditorMenu::Render() {
 
     ToggleCamera(true);
 
-    if(m_MapMode == MapMode::PROVINCES
-    || m_MapMode == MapMode::TERRAIN
-    || m_MapMode == MapMode::CLIMATE
-    || m_MapMode == MapMode::WINTER_SEVERITY
-    || m_MapMode == MapMode::CULTURE
-    || m_MapMode == MapMode::FAITH
-    || MapModeIsTitle(m_MapMode))
+    if(MapModeIsProvince(m_MapMode) || MapModeIsTitle(m_MapMode))
         window.draw(*m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
     else 
         window.draw(*m_MapSprite);
@@ -480,8 +466,9 @@ void EditorMenu::Render() {
 
 void EditorMenu::InitSelectionCallbacks() {
     m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, Province* province) {
-        if((m_MapMode != MapMode::PROVINCES && m_MapMode != MapMode::TERRAIN && m_MapMode != MapMode::WINTER_SEVERITY && m_MapMode != MapMode::CULTURE && m_MapMode != MapMode::FAITH)
-        || button != sf::Mouse::Button::Left)
+        if(button != sf::Mouse::Button::Left)
+            return SelectionCallbackResult::CONTINUE;
+        if(!MapModeIsProvince(m_MapMode))
             return SelectionCallbackResult::CONTINUE;
 
         bool isSelected = m_SelectionHandler.IsSelected(province);

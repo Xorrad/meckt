@@ -89,6 +89,14 @@ public:
     const sf::Image& GetRiversImage() const;
 
     /**
+     * @brief Generates the province flags image.
+     *        SEA provinces are colored in blue, LAND provinces are colored in green, and RIVERS/LAKES are colored in shades of blue.
+     * @note  This function can be expensive: to be used with sparingly.
+     * @return The generated flags image.
+     */
+    sf::Image GetFlagsImage() const;
+    
+    /**
      * @brief Generates the terrain image.
      *        Each province's color is replaced by its terrain color.
      * @note  This function can be expensive: to be used with sparingly.

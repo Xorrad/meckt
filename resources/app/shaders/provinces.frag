@@ -23,17 +23,18 @@ const int HEGEMONY = 6;
 const int MAPMODE_PROVINCES = 0;
 const int MAPMODE_HEIGHTMAP = 1;
 const int MAPMODE_RIVERS = 2;
-const int MAPMODE_TERRAIN = 3;
-const int MAPMODE_CLIMATE = 4;
-const int MAPMODE_WINTER_SEVERITY = 5;
-const int MAPMODE_CULTURE = 6;
-const int MAPMODE_RELIGION = 7;
-const int MAPMODE_BARONY = 8;
-const int MAPMODE_COUNTY = 9;
-const int MAPMODE_DUCHY = 10;
-const int MAPMODE_KINGDOM = 11;
-const int MAPMODE_EMPIRE = 12;
-const int MAPMODE_HEGEMONY = 13;
+const int MAPMODE_FLAGS = 3;
+const int MAPMODE_TERRAIN = 4;
+const int MAPMODE_CLIMATE = 5;
+const int MAPMODE_WINTER_SEVERITY = 6;
+const int MAPMODE_CULTURE = 7;
+const int MAPMODE_RELIGION = 8;
+const int MAPMODE_BARONY = 9;
+const int MAPMODE_COUNTY = 10;
+const int MAPMODE_DUCHY = 11;
+const int MAPMODE_KINGDOM = 12;
+const int MAPMODE_EMPIRE = 13;
+const int MAPMODE_HEGEMONY = 14;
 
 // The last (4th) element of the array is used to distinguish the type defined above.
 uniform vec4 selectedEntities[1000];
@@ -130,7 +131,7 @@ void main() {
         }
     }
 
-    if((mapMode == MAPMODE_CULTURE || mapMode == MAPMODE_RELIGION) && alpha == 0.0) {
+    if((mapMode == MAPMODE_CULTURE || mapMode == MAPMODE_RELIGION || mapMode == MAPMODE_FLAGS) && alpha == 0.0) {
         color.a = 1.0;
         if(cos(10000.0*(pixelPos.x+pixelPos.y)) >= 0.5) {
             color = mix(color, vec4(0.0, 0.0, 0.0, 1.0), 0.75);

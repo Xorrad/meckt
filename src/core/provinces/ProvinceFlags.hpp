@@ -18,3 +18,4 @@ ProvinceFlags& operator|=(ProvinceFlags& a, ProvinceFlags b);
 ProvinceFlags& operator&=(ProvinceFlags& a, ProvinceFlags b);
 
 std::string ProvinceFlagsToString(ProvinceFlags flags);
+sf::Color ProvincesFlagsToColor(ProvinceFlags flags);
