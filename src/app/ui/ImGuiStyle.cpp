@@ -200,7 +200,7 @@ bool ImGui::InputTextLocked(const char* label, std::string* str) {
     return pressed;
 }
 
-bool ImGui::InputTextCommitOnEnter(const char* label, std::string* value, ImGuiInputTextFlags flags) {
+bool ImGui::InputTextCommitOnEnter(const char* label, std::string* value, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data) {
     ImGuiID id = ImGui::GetID(label);
 
     struct State {
@@ -216,8 +216,15 @@ bool ImGui::InputTextCommitOnEnter(const char* label, std::string* value, ImGuiI
     // Initialize buffer when first used.
     if (!state.editing)
         state.buffer = *value;
+    
+    bool isTextEdited = state.editing && state.buffer != *value;
+    if(isTextEdited)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.f));
 
-    bool enterPressed = ImGui::InputText(label, &state.buffer, flags);
+    bool enterPressed = ImGui::InputText(label, &state.buffer, flags, callback, user_data);
+
+    if(isTextEdited)
+        ImGui::PopStyleColor();
 
     // User clicked into field.
     if (ImGui::IsItemActivated()) {

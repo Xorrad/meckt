@@ -36,4 +36,4 @@ class LogTab;
 #include "app/menu/Menu.hpp"
 #include "app/menu/selection/SelectionCallbackResult.hpp"
 #include "app/menu/tab/Tab.hpp"
-#include "app/ui/components/Components.hpp"
+#include "app/ui/Components.hpp"

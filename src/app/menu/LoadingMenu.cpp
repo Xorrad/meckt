@@ -1,9 +1,6 @@
 #include "LoadingMenu.hpp"
 #include "app/App.hpp"
 
-#include "ImGuiStyle.hpp"
-#include <imgui/imgui.hpp>
-
 LoadingMenu::LoadingMenu(App& app, std::function<void()> completeCallback, std::function<void(const std::string&)> errorCallback) :
     Menu(app, "Loading"),
     m_State((LoadingState) 0),

@@ -9,15 +9,8 @@
 #include "core/titles/TitleManager.hpp"
 #include "core/regions/RegionManager.hpp"
 
-#include "imgui/imgui.hpp"
-#include "app/menu/ImGuiStyle.hpp"
-#include "provinces/ProvinceFlags.hpp"
-
 PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
-	m_SelectingTitleText(Configuration::fonts.Get(Fonts::NOTO_SANS)),
-    m_SelectingTitle(false),
-    m_SelectingProvince(false),
     m_DisplayCulturalNames(false),
     m_DisplayHistory(false),
     m_DisplayDejureTitles(false),
@@ -26,60 +19,27 @@ PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     m_DisplayRegionsProvinces(true),
     m_DisplayRegionsRegions(true)
 {
-    m_SelectingTitleText.setCharacterSize(24 * Configuration::uiScale);
-    m_SelectingTitleText.setString("Click on a title.");
-    m_SelectingTitleText.setFillColor(sf::Color::Red);
-    m_SelectingTitleText.setFont(Configuration::fonts.Get(Fonts::NOTO_SANS));
-    m_SelectingTitleText.setPosition({10, 20});
-    m_SelectingTitleText.setScale({ Configuration::uiScale, Configuration::uiScale });
-
-    m_Clock.restart();
 }
 
 void PropertiesTab::Update(sf::Time delta) {
-    if (m_Clock.getElapsedTime().asSeconds() > 0.5) {
-        std::string selectionText = fmt::format("Click on a {}", m_SelectingTitle ? "title" : "province");
-
-        if (m_Clock.getElapsedTime().asSeconds() > 1.5) { m_Clock.restart(); selectionText += "..."; }
-        else if (m_Clock.getElapsedTime().asSeconds() > 1.0) selectionText += "..";
-        else selectionText += ".";
-
-        m_SelectingTitleText.setString(selectionText);
-    }
-
     // Cancel selecting a title or province by pressing escape.
-    if ((m_SelectingTitle || m_SelectingProvince) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-        if (m_SelectingTitle) m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
-        if (m_SelectingProvince) m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
-        m_SelectingTitle = false;
-        m_SelectingProvince = false;
+    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+        m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
+        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
+    }
+    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+        m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
+        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
+    }
+    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+        m_Menu.GetSelectionHandler().m_PositionCallbacks.pop_back();
+        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
     }
 }
 
 void PropertiesTab::Render() {
     if (!m_Visible)
         return;
-
-    if (m_SelectingTitle || m_SelectingProvince) {
-        // Draw a red outline around the view of the map.
-        ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(m_Menu.GetDockspaceID());
-        if (node != nullptr) {
-            int red = 255 - (abs(sin(2*3.1415*0.05*std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()/100.f)) * 150);
-            ImGui::GetBackgroundDrawList()->AddRect(
-                node->Pos,
-                { node->Pos.x + node->Size.x, node->Pos.y + node->Size.y },
-                IM_COL32(red, 0, 0, 255),
-                0.f,
-                ImDrawFlags_None,
-                3.f
-            );
-            m_SelectingTitleText.setFillColor(sf::Color(red, 0, 0, 255));
-        }
-
-        m_SelectingTitleText.setCharacterSize(24 * Configuration::uiScale);
-        m_SelectingTitleText.setPosition({node->Pos.x + 10*Configuration::uiScale, node->Pos.y + 10*Configuration::uiScale});
-        m_Menu.GetApp().GetWindow().draw(m_SelectingTitleText);
-    }
 
     if (m_Menu.GetSelectionHandler().GetProvinces().size() > 0) {
         if (m_Menu.GetSelectionHandler().GetProvinces().size() > 1) {
@@ -92,6 +52,9 @@ void PropertiesTab::Render() {
     }
     else if (m_Menu.GetSelectionHandler().GetRegions().size() > 0) {
         this->RenderRegions();
+    }
+    else if (m_Menu.GetSelectionHandler().GetAdjacency() != nullptr) {
+        this->RenderAdjacency();
     }
     
 }
@@ -875,8 +838,8 @@ void PropertiesTab::RenderTitles() {
 
                     // BARONY: province id (field)
                     ImGui::NewLine();
-                    if (ImGui::Button((m_SelectingTitle) ? "click on a province..." : "change province") && !m_SelectingTitle) {
-                        m_SelectingTitle = true;
+                    if (ImGui::Button((m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE)) ? "click on a province..." : "change province") && !m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE)) {
+                        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::PROVINCE);
                         MapMode previousMapMode = m_Menu.GetMapMode();
                         m_Menu.SwitchMapMode(MapMode::PROVINCES, false);
                         m_Menu.GetSelectionHandler().AddCallback(
@@ -887,7 +850,7 @@ void PropertiesTab::RenderTitles() {
                                 m_Mod.GetTitleManager().ChangeBaronyProvinceId(barony, province->GetId());
 
                                 m_Menu.SwitchMapMode(previousMapMode, false);
-                                m_SelectingTitle = false;
+                                m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
                                 return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                             }
                         );
@@ -967,10 +930,10 @@ void PropertiesTab::RenderTitles() {
                         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "note: drag to change order.");
 
                         // HIGHTITLE: add new dejure title (button)
-                        if (ImGui::SmallButton((m_SelectingTitle) ? "click on a title..." : "add") && !m_SelectingTitle) {
+                        if (ImGui::SmallButton((m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) ? "click on a title..." : "add") && !m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) {
                             TitleType dejureType = static_cast<TitleType>(static_cast<int>(highTitle->GetType()) - 1);
                             MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                            m_SelectingTitle = true;
+                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::TITLE);
                             m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
                             m_Menu.GetSelectionHandler().AddCallback(
                                 [this, highTitle, dejureType, liegeMapMode](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
@@ -995,7 +958,7 @@ void PropertiesTab::RenderTitles() {
 
                                     StopSelecting:
                                     m_Menu.SwitchMapMode(liegeMapMode, false);
-                                    m_SelectingTitle = false;
+                                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
                                     return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                                 }
                             );
@@ -1010,8 +973,8 @@ void PropertiesTab::RenderTitles() {
 
                         // HIGHTITLE: change capital county (button)
                         ImGui::NewLine();
-                        if (ImGui::Button((m_SelectingTitle) ? "click on a title..." : "change capital county") && !m_SelectingTitle) {
-                            m_SelectingTitle = true;
+                        if (ImGui::Button((m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) ? "click on a title..." : "change capital county") && !m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) {
+                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::TITLE);
                             m_Menu.SwitchMapMode(MapMode::COUNTY, false);
                             m_Menu.GetSelectionHandler().AddCallback(
                                 [this, highTitle](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
@@ -1029,7 +992,7 @@ void PropertiesTab::RenderTitles() {
 
                                 DeleteCallback:
                                     m_Menu.SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
-                                    m_SelectingTitle = false;
+                                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
                                     return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                                 }
                             );
@@ -1193,14 +1156,15 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
+                bool wasSelectingTitle = m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE);
                 ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
-                if (m_SelectingTitle) ImGui::BeginDisabled();
-                if (ImGui::SmallButton("📌") && !m_SelectingTitle) {
-                    m_SelectingTitle = true;
+                if (wasSelectingTitle) ImGui::BeginDisabled();
+                if (ImGui::SmallButton("📌") && !wasSelectingTitle) {
+                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::TITLE);
 
-                    if (m_SelectingProvince) {
+                    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE)) {
                         m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
-                        m_SelectingProvince = false;
+                        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
                     }
 
                     if (!MapModeIsTitle(m_Menu.GetMapMode()))
@@ -1218,12 +1182,12 @@ void PropertiesTab::RenderRegions() {
                             m_Menu.GetSelectionHandler().Update();
                             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
-                            m_SelectingTitle = false;
+                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
                             return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                         }
                     );
                 }
-                if (m_SelectingTitle) ImGui::EndDisabled();
+                if (wasSelectingTitle) ImGui::EndDisabled();
                 ImGui::PopFont();
                 ImGui::EndChild();
             }
@@ -1280,15 +1244,16 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
+                bool wasSelectingProvince = m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE);
                 ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
-                if (m_SelectingProvince) ImGui::BeginDisabled();
-                if (ImGui::SmallButton("📌") && !m_SelectingProvince) {
-                    m_SelectingProvince = true;
+                if (wasSelectingProvince) ImGui::BeginDisabled();
+                if (ImGui::SmallButton("📌") && !wasSelectingProvince) {
+                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::PROVINCE);
                     m_Menu.SwitchMapMode(MapMode::PROVINCES, false);
 
-                    if (m_SelectingTitle) {
+                    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) {
                         m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
-                        m_SelectingTitle = false;
+                        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
                     }
 
                     m_Menu.GetSelectionHandler().AddCallback(
@@ -1299,12 +1264,12 @@ void PropertiesTab::RenderRegions() {
                             m_Menu.GetSelectionHandler().Update();
                             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
                                 return SelectionCallbackResult::INTERRUPT;
-                            m_SelectingProvince = false;
+                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
                             return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                         }
                     );
                 }
-                if (m_SelectingProvince) ImGui::EndDisabled();
+                if (wasSelectingProvince) ImGui::EndDisabled();
                 ImGui::PopFont();
                 ImGui::EndChild();
             }
@@ -1406,5 +1371,100 @@ void PropertiesTab::RenderRegions() {
             ImGui::EndChild();
         }
 
+    }
+}
+
+void PropertiesTab::RenderAdjacency() {
+    Adjacency* adjacency = m_Menu.GetSelectionHandler().GetAdjacency();
+
+    if (ImGui::CollapsingHeader(fmt::format("#{}-{} ({})", adjacency->GetFromId(), adjacency->GetToId(), adjacency->GetComment()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::BeginChild(fmt::format("##adjacency-{}-{}", adjacency->GetFromId(), adjacency->GetToId()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+
+        const auto DrawMissingBaronyIcon = [&](int id) {
+            if (m_Mod.GetTitleManager().GetBaronyByProvinceId(id) == nullptr) {
+                ImGui::SameLine();
+                ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.7f, 0.f, 1.f));
+                ImGui::Text("⚠️");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("This province doesn't have a barony assigned!");
+                ImGui::PopStyleColor();
+                ImGui::PopFont();
+                LOG_ERROR("Adjacency '{},{}' with non-barony province '{}'", adjacency->GetId().first, adjacency->GetId().second, id);
+            }
+        };
+
+        // ADJACENCY: from id (text input + picker + alerts)
+        Components::ProvinceInput("from id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetFromId(), [&](int newProvinceId) {
+            std::pair<int, int> formerIds = adjacency->GetId();
+            adjacency->SetFromId(newProvinceId);
+            m_Mod.GetProvinceManager().RenameAdjacencyIds(formerIds, adjacency->GetId());
+            m_Menu.GetSelectionHandler().Update();
+
+            // Automatically change the start position to the new province position.
+            Province* province = m_Mod.GetProvinceManager().GetProvinceById(newProvinceId);
+            if (province != nullptr) {
+                adjacency->SetStart(sf::Vector2u(province->GetImagePosition()));
+            }
+        });
+        DrawMissingBaronyIcon(adjacency->GetFromId());
+
+        // ADJACENCY: to id (text input + picker + alerts)
+        Components::ProvinceInput("to id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetToId(), [&](int newProvinceId) {
+            std::pair<int, int> formerIds = adjacency->GetId();
+            adjacency->SetToId(newProvinceId);
+            m_Mod.GetProvinceManager().RenameAdjacencyIds(formerIds, adjacency->GetId());
+            m_Menu.GetSelectionHandler().Update();
+
+            Province* province = m_Mod.GetProvinceManager().GetProvinceById(newProvinceId);
+            if (province != nullptr) {
+                adjacency->SetStop(sf::Vector2u(province->GetImagePosition()));
+            }
+        });
+        DrawMissingBaronyIcon(adjacency->GetToId());
+
+        // ADJACENCY: type (combobox)
+        Components::AdjacencyTypeCombo(
+            adjacency->GetType(),
+            [&](const auto& newType) {
+                adjacency->SetType(newType);
+            }
+        );
+        
+        // ADJACENCY: through id (text input + picker + alerts)
+        Components::ProvinceInput("through id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetThroughId(), [adjacency](int newProvinceId) {
+            adjacency->SetThroughId(newProvinceId);
+        });
+
+        // ADJACENCY: start position
+        Components::PositionInput("start", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetStart(), [adjacency](sf::Vector2u newPosition) {
+            adjacency->SetStart(newPosition);
+        });
+        
+        // ADJACENCY: stop position
+        Components::PositionInput("stop", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetStop(), [adjacency](sf::Vector2u newPosition) {
+            adjacency->SetStop(newPosition);
+        });
+        
+        // ADJACENCY: comment (field)
+        std::string comment = adjacency->GetComment();
+        if (ImGui::InputTextCommitOnEnter("comment", &comment)) {
+            adjacency->SetComment(comment);
+        }
+
+        // ADJACENCY: delete adjacency (button)
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(0.f, 0.6f, 0.6f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4) ImColor::HSV(0.f, 0.7f, 0.7f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4) ImColor::HSV(0.f, 0.8f, 0.8f));
+        if (ImGui::Button("Delete"))
+            ImGui::OpenPopup("delete-adjacency");
+        ImGui::PopStyleColor(3);
+        
+        Components::ConfirmationModal("delete-adjacency", "Delete this adjacency?", [&] {
+            m_Menu.GetSelectionHandler().Deselect(adjacency);
+            m_Mod.GetProvinceManager().RemoveAdjacency(adjacency);
+        });
+
+        ImGui::EndChild();
     }
 }

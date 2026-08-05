@@ -396,6 +396,19 @@ void ProvinceManager::RenameProvinceId(int formerId, int newId) {
     m_ProvincesByIds.erase(it);
 }
 
+void ProvinceManager::RenameAdjacencyIds(std::pair<int, int> formerIds, std::pair<int, int> newIds) {
+    auto node = m_Adjacencies.extract(formerIds);
+    
+    if (node.empty())
+        return;
+
+    node.key() = newIds;
+    node.mapped()->SetFromId(newIds.first);
+    node.mapped()->SetToId(newIds.second);
+    
+    m_Adjacencies.insert(std::move(node));
+}
+
 //////////////////////////////////////////////////////
 
 void ProvinceManager::LoadHoldingTypes() {

@@ -7,8 +7,6 @@
 #include "core/mod/Mod.hpp"
 #include "core/titles/TitleManager.hpp"
 
-#include "ImGuiStyle.hpp"
-#include <imgui/imgui.hpp>
 #include <nfd.h>
 #include <filesystem>
 
@@ -20,7 +18,7 @@ NewModMenu::NewModMenu(App& app) :
     m_TemplateType(TemplateType::DEFAULT),
     m_ProvincesImagePath(""),
     m_HeightmapImagePath(""),
-    m_WaterLevel(3.8f),
+    m_WaterLevel(Configuration::defaultWaterLevel),
     m_IsCreating(false),
     m_CreationState(CreationState::CLONING),
     m_CreationThread(nullptr)

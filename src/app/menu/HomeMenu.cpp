@@ -3,9 +3,6 @@
 #include "NewModMenu.hpp"
 #include "app/App.hpp"
 
-#include "ImGuiStyle.hpp"
-#include "imgui.h"
-#include <imgui/imgui.hpp>
 #include <nfd.h>
 
 bool HomeMenu::s_PromptUpdate = true;

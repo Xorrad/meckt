@@ -4,7 +4,7 @@
 #include "app/menu/EditorMenu.hpp"
 
 #include "core/mod/Mod.hpp"
-#include "core/provinces/Province.hpp"
+#include "core/provinces/ProvinceManager.hpp"
 #include "core/regions/Region.hpp"
 #include "core/titles/Title.hpp"
 
@@ -14,11 +14,21 @@ SelectionHandler::SelectionHandler(EditorMenu& menu) :
     m_ProvincesLookup({}),
     m_Titles({}),
     m_Regions({}),
+    m_Adjacency(nullptr),
     m_ProvinceCallbacks({}),
     m_TitleCallbacks({}),
     m_Colors({}),
-    m_Count(0)
-{}
+    m_Count(0),
+    m_SelectionText(Configuration::fonts.Get(Fonts::NOTO_SANS)),
+    m_SelectionType(SelectionType::NONE)
+{
+    m_SelectionText.setCharacterSize(24 * Configuration::uiScale);
+    m_SelectionText.setString("");
+    m_SelectionText.setFillColor(sf::Color::Red);
+    m_SelectionText.setFont(Configuration::fonts.Get(Fonts::NOTO_SANS));
+    m_SelectionText.setPosition({10, 20});
+    m_SelectionText.setScale({ Configuration::uiScale, Configuration::uiScale });
+}
 
 void SelectionHandler::Select(Province* province, bool update) {
     if (m_ProvincesLookup.find(province) != m_ProvincesLookup.end())
@@ -40,6 +50,11 @@ void SelectionHandler::Select(Region* region) {
     if(this->IsSelected(region))
         return;
     m_Regions.push_back(region);
+    this->Update();
+}
+
+void SelectionHandler::Select(Adjacency* adjacency) {
+    m_Adjacency = adjacency;
     this->Update();
 }
 
@@ -72,12 +87,21 @@ void SelectionHandler::Deselect(Region* region) {
     this->Update();
 }
 
+void SelectionHandler::Deselect(Adjacency* adjacency) {
+    if (m_Adjacency == adjacency) {
+        m_Adjacency = nullptr;
+        this->Update();
+    }
+        
+}
+
 void SelectionHandler::ClearSelection() {
     m_Provinces.clear();
     m_ProvincesLookup.clear();
     m_Titles.clear();
     m_Regions.clear();
     m_Colors.clear();
+    m_Adjacency = nullptr;
 
     this->Update();
 }
@@ -94,6 +118,10 @@ bool SelectionHandler::IsSelected(const Region* region) const {
     return std::find(m_Regions.begin(), m_Regions.end(), region) != m_Regions.end();
 }
 
+bool SelectionHandler::IsSelected(const Adjacency* adjacency) const {
+    return m_Adjacency == adjacency;
+}
+
 std::span<Province*> SelectionHandler::GetProvinces() {
     return m_Provinces;
 }
@@ -106,6 +134,10 @@ std::span<Region*> SelectionHandler::GetRegions() {
     return m_Regions;
 }
 
+Adjacency* SelectionHandler::GetAdjacency() {
+    return m_Adjacency;
+}
+
 std::vector<sf::Glsl::Vec4>& SelectionHandler::GetColors() {
     return m_Colors;
 }
@@ -114,12 +146,55 @@ std::size_t SelectionHandler::GetCount() const {
     return m_Count;
 }
 
+void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, sf::Vector2f)> callback) {
+    m_PositionCallbacks.push_back(callback);
+}
+
 void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, Province*)> callback) {
     m_ProvinceCallbacks.push_back(callback);
 }
 
 void SelectionHandler::AddCallback(std::function<SelectionCallbackResult(sf::Mouse::Button, Province*, Title*)> callback) {
     m_TitleCallbacks.push_back(callback);
+}
+
+void SelectionHandler::RemoveLastProvinceCallback() {
+    if (m_ProvinceCallbacks.empty())
+        return;
+    m_ProvinceCallbacks.pop_back();
+}
+
+void SelectionHandler::RemoveLastPositionCallback() {
+    if (m_PositionCallbacks.empty())
+        return;
+    m_PositionCallbacks.pop_back();
+}
+
+void SelectionHandler::OnClick(sf::Mouse::Button button, sf::Vector2f position) {
+    bool updateMap = false;
+
+    for (auto it = m_PositionCallbacks.end(); it != m_PositionCallbacks.begin(); ) {
+        --it;
+
+        SelectionCallbackResult res = (*it)(button, position);
+        bool shouldInterrupt = SelectionCallbackHasFlag(res, SelectionCallbackResult::INTERRUPT);
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::UPDATE_MAP))
+            updateMap = true;
+
+        if (SelectionCallbackHasFlag(res, SelectionCallbackResult::DELETE_CALLBACK)) {
+            it = m_PositionCallbacks.erase(it);
+            if (shouldInterrupt)
+                break;
+            continue;
+        }
+
+        if (shouldInterrupt)
+            break;
+    }
+
+    if (updateMap)
+        m_Menu.RefreshCurrentMapMode(false);
 }
 
 void SelectionHandler::OnClick(sf::Mouse::Button button, Province* province) {
@@ -181,6 +256,32 @@ void SelectionHandler::Update() {
     this->UpdateShader();
 }
 
+void SelectionHandler::UpdateSelectionText() {
+    static const std::string_view labels[]{ "", "title", "province", "pixel" }; 
+    int step = 1 + time(NULL) % 3;
+    m_SelectionText.setString(fmt::format(
+        "Click on a {}{}",
+        labels[static_cast<int>(m_SelectionType)],
+        std::string(std::max(1, step), '.')
+    ));
+}
+
+sf::Text& SelectionHandler::GetSelectionText() {
+    return m_SelectionText;
+}
+
+void SelectionHandler::SetSelectionType(SelectionType type) {
+    m_SelectionType = type;
+}
+
+SelectionType SelectionHandler::GetSelectionType() const {
+    return m_SelectionType;
+}
+
+bool SelectionHandler::IsSelectionType(SelectionType type) const {
+    return m_SelectionType == type;
+}
+
 void SelectionHandler::UpdateColors() {
     /*sf::Vector2f center = m_Menu.GetCamera().getCenter();
     sf::Vector2f size = m_Menu.GetCamera().getSize()*2.f;
@@ -232,6 +333,16 @@ void SelectionHandler::UpdateColors() {
     PushProvinces(m_Provinces);
     PushTitles(m_Titles);
     for (Region* region : m_Regions) PushRegion(region);
+
+    // Push the colors for the selected province adjacency.
+    if (m_Adjacency != nullptr) {
+        Province* fromProvince = m_Menu.GetApp().GetMod().GetProvinceManager().GetProvinceById(m_Adjacency->GetFromId());
+        Province* toProvince = m_Menu.GetApp().GetMod().GetProvinceManager().GetProvinceById(m_Adjacency->GetToId());
+        Province* throughProvince = m_Menu.GetApp().GetMod().GetProvinceManager().GetProvinceById(m_Adjacency->GetThroughId());
+        if (fromProvince != nullptr) PushProvinces(std::vector<Province*>{fromProvince});
+        if (toProvince != nullptr) PushProvinces(std::vector<Province*>{toProvince});
+        // if (throughProvince != nullptr) PushProvinces(std::vector<Province*>{throughProvince});
+    }
 }
 
 void SelectionHandler::UpdateShader() {

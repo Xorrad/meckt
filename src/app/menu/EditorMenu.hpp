@@ -10,6 +10,7 @@ friend SelectionHandler;
 public:
     EditorMenu(App& app);
 
+    sf::Vector2f GetHoveredPosition();
     Province* GetHoveredProvince();
     MapMode GetMapMode() const;
     SelectionHandler& GetSelectionHandler();

@@ -16,6 +16,8 @@ meckt is a tool whose goal is making total conversion mod easier and less cumber
 
 ![overview](images/overview2-1.8.png)  
 
+![overview](images/overview3-1.8.png)  
+
 ![tools](images/tools-1.8.png)  
 
 ![views](images/wrapping-1.0.png)  

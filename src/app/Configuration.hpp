@@ -38,6 +38,7 @@ public:
     inline static std::list<std::string> recentMods = std::list<std::string>{};
     inline static float defaultWaterLevel = 3.8f;
     inline static bool compactTooltip = false;
+    inline static bool adjacenciesConnections = true;
     inline static float uiScale = 1.0f;
     inline static std::unordered_map<MapTooltip, bool> mapTooltips = std::unordered_map<MapTooltip, bool>{};
 

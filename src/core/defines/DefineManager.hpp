@@ -18,7 +18,7 @@ public:
 
     /**
      * @brief Returns the water level defined in the mod or the vanilla one if not defined.
-     * @return A float representing the water level (3.8f by default).
+     * @return A float representing the water level.
      */
     float GetWaterLevel() const;
 
@@ -38,5 +38,5 @@ public:
 private:
     Mod& m_Mod;
 
-    float m_WaterLevel; // 3.8f
+    float m_WaterLevel;
 };

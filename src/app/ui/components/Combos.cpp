@@ -1,4 +1,4 @@
-#include "Components.hpp"
+#include "Combos.hpp"
 
 #include "core/provinces/Province.hpp"
 #include "core/provinces/TerrainType.hpp"
@@ -53,6 +53,27 @@ bool Components::ClimateTypeCombo(ClimateType currentClimateType, std::function<
             if (isSelected)
                 ImGui::SetItemDefaultFocus();
         }
+        ImGui::EndCombo();
+    }
+    return valueChanged;
+}
+
+bool Components::AdjacencyTypeCombo(std::string currentType, std::function<void(std::string)> onSelect) {
+    bool valueChanged = false;
+    if (ImGui::BeginCombo("type", currentType.c_str())) {
+        
+        if (ImGui::Selectable("sea", (currentType == "sea"))) {
+            onSelect("sea");
+            valueChanged = true;
+        }
+        if (currentType == "sea") ImGui::SetItemDefaultFocus();
+
+        if (ImGui::Selectable("river_large", (currentType == "river_large"))) {
+            onSelect("river_large");
+            valueChanged = true;
+        }
+        if (currentType == "river_large") ImGui::SetItemDefaultFocus();
+
         ImGui::EndCombo();
     }
     return valueChanged;

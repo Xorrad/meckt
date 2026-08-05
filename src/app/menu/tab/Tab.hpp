@@ -7,6 +7,7 @@ enum class Tabs {
     REGIONS,
     LOG,
     CULTURAL_NAMES,
+    ADJACENCIES,
 };
 
 class Tab {
@@ -41,3 +42,4 @@ protected:
 #include "RegionsTab.hpp"
 #include "LogTab.hpp"
 #include "CulturalNamesTab.hpp"
+#include "AdjacenciesTab.hpp"

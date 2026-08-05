@@ -95,6 +95,7 @@ void CulturalNamesTab::Render() {
                 if(ImGui::Button("x")) {
                     filteredNames.erase(filteredNames.begin() + row);
                     culturalNames.erase(it);
+                    UpdateFilteredNames();
                     ImGui::PopID();
                     goto EndTable;
                 }

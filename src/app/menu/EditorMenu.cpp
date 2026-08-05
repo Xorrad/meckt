@@ -12,10 +12,6 @@
 #include "core/titles/TitleManager.hpp"
 #include "core/defines/DefineManager.hpp"
 
-#include <imgui/imgui.hpp>
-#include "app/menu/ImGuiStyle.hpp"
-#include "imgui.h"
-
 EditorMenu::EditorMenu(App& app) :
     Menu(app, "Editor"),
     m_Mod(app.GetMod()),
@@ -53,13 +49,18 @@ EditorMenu::EditorMenu(App& app) :
     this->InitTabs();
 }
 
+sf::Vector2f EditorMenu::GetHoveredPosition() {
+    ToggleCamera(true);
+    sf::Vector2f mousePosition = m_App.GetWindow().mapPixelToCoords(sf::Mouse::getPosition(m_App.GetWindow()));
+    ToggleCamera(false);
+    return mousePosition;
+}
+
 Province* EditorMenu::GetHoveredProvince() {
     if (!m_MapSprite.has_value())
         return nullptr;
 
-    ToggleCamera(true);
-    sf::Vector2f mousePosition = m_App.GetWindow().mapPixelToCoords(sf::Mouse::getPosition(m_App.GetWindow()));
-    ToggleCamera(false);
+    sf::Vector2f mousePosition = GetHoveredPosition();
 
     if(!m_MapSprite->getGlobalBounds().contains(mousePosition))
         return nullptr;
@@ -409,6 +410,8 @@ void EditorMenu::Event(const sf::Event& event) {
                 }
             }
 
+            sf::Vector2f hoveredPosition = GetHoveredPosition();
+            m_SelectionHandler.OnClick(mouseButton->button, hoveredPosition);
         }
     }
     else  if (const auto* resize = event.getIf<sf::Event::Resized>()) {
@@ -437,13 +440,68 @@ void EditorMenu::Render() {
     else 
         window.draw(*m_MapSprite);
 
+    // Draw red lines between province adjacencies.
+    sf::FloatRect cameraRect(
+        m_Camera.getCenter() - m_Camera.getSize() / 2.f,
+        m_Camera.getSize()
+    );
+    uint32_t imageHeight = m_Mod.GetProvinceManager().GetProvincesImage().getSize().y;
+    const auto DrawAdjacencyLine = [&](Adjacency* adjacency) {
+        // The y axis needs to be flipped.
+        sf::Vector2f start = sf::Vector2f(adjacency->GetStart());
+        sf::Vector2f stop = sf::Vector2f(adjacency->GetStop());
+        start.y = imageHeight - start.y;
+        stop.y = imageHeight - stop.y;
+
+        if (!cameraRect.contains(sf::Vector2f(start)) && !cameraRect.contains(stop))
+            return;
+
+        sf::Vertex line[] {
+            {start, sf::Color::Red},
+            {stop, sf::Color::Red}
+        };
+        window.draw(line, 2, sf::PrimitiveType::Lines);
+    };
+    if (Configuration::adjacenciesConnections) {
+        for (const auto& [ids, adjacency] : m_Mod.GetProvinceManager().GetAdjacencies()) {
+            DrawAdjacencyLine(adjacency.get());
+        }
+    }
+    else if (m_SelectionHandler.GetAdjacency() != nullptr) {
+        DrawAdjacencyLine(m_SelectionHandler.GetAdjacency());
+    }
+
     ToggleCamera(false);
 
-    if (!Configuration::compactTooltip) {
-        window.draw(m_HoverShape);
-        window.draw(m_HoverTitleText);
+    if (!m_SelectionHandler.IsSelectionType(SelectionType::NONE)) {
+        // Draw a red outline around the view of the map.
+        ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(m_DockspaceID);
+        if (node != nullptr) {
+            int red = 255 - (abs(sin(2*3.1415*0.05*std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()/100.f)) * 150);
+            ImGui::GetBackgroundDrawList()->AddRect(
+                node->Pos,
+                { node->Pos.x + node->Size.x, node->Pos.y + node->Size.y },
+                IM_COL32(red, 0, 0, 255),
+                0.f,
+                ImDrawFlags_None,
+                3.f
+            );
+            m_SelectionHandler.GetSelectionText().setFillColor(sf::Color(red, 0, 0, 255));
+        }
+
+        m_SelectionHandler.UpdateSelectionText();
+        m_SelectionHandler.GetSelectionText().setCharacterSize(24 * Configuration::uiScale);
+        m_SelectionHandler.GetSelectionText().setPosition({node->Pos.x + 10*Configuration::uiScale, node->Pos.y + 34*Configuration::uiScale});
+        window.draw(m_SelectionHandler.GetSelectionText());
     }
-    window.draw(m_HoverText);
+
+    if (!ImGui::IsAnyItemHovered()) {
+        if (!Configuration::compactTooltip) {
+            window.draw(m_HoverShape);
+            window.draw(m_HoverTitleText);
+        }
+        window.draw(m_HoverText);
+    }
 
     this->RenderMenuBar();
     this->RenderModals();
@@ -466,6 +524,8 @@ void EditorMenu::Render() {
 
 void EditorMenu::InitSelectionCallbacks() {
     m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, Province* province) {
+        if (!m_SelectionHandler.IsSelectionType(SelectionType::NONE))
+            return SelectionCallbackResult::CONTINUE;
         if(button != sf::Mouse::Button::Left)
             return SelectionCallbackResult::CONTINUE;
         if(!MapModeIsProvince(m_MapMode))
@@ -491,6 +551,9 @@ void EditorMenu::InitSelectionCallbacks() {
     });
 
     m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, Province* province, Title* title) {
+        if (!m_SelectionHandler.IsSelectionType(SelectionType::NONE))
+            return SelectionCallbackResult::CONTINUE;
+
         bool isSelected = m_SelectionHandler.IsSelected(title);
         bool severalSelected = m_SelectionHandler.GetTitles().size() > 1;
 
@@ -540,6 +603,7 @@ void EditorMenu::InitTabs() {
     m_Tabs[Tabs::REGIONS] = MakeUnique<RegionsTab>(*this, true);
     m_Tabs[Tabs::LOG] = MakeUnique<LogTab>(*this, true);
     m_Tabs[Tabs::CULTURAL_NAMES] = MakeUnique<CulturalNamesTab>(*this, true);
+    m_Tabs[Tabs::ADJACENCIES] = MakeUnique<AdjacenciesTab>(*this, true);
 }
 
 void EditorMenu::SetupDockspace() {
@@ -579,6 +643,7 @@ void EditorMenu::SetupDockspace() {
         ImGui::DockBuilderDockWindow("Provinces", dockRight);
         ImGui::DockBuilderDockWindow("Geographical Regions", dockRight);
         ImGui::DockBuilderDockWindow("Cultural Names", dockRight);
+        ImGui::DockBuilderDockWindow("Adjacencies", dockRight);
         ImGui::DockBuilderDockWindow("Properties", dockRightDown);
         ImGui::DockBuilderDockWindow("Log", dockDown);
 
@@ -637,6 +702,9 @@ void EditorMenu::RenderMenuBar() {
             }
 
             ImGui::MenuItem("Borders", "", &m_DisplayBorders);
+            if(ImGui::MenuItem("Adjacencies Connections", "", &Configuration::adjacenciesConnections)) {
+                Configuration::Save();
+            }
             if(ImGui::MenuItem("Compact Tooltip", "", &Configuration::compactTooltip)) {
                 Configuration::Save();
             }
@@ -687,6 +755,10 @@ void EditorMenu::RenderMenuBarSelection() {
         
         if(ImGui::MenuItem("Create geographical region")) {
             m_ModalName = "Create a new geographical region";
+        }
+
+        if(ImGui::MenuItem("Create adjacency")) {
+            m_ModalName = "Create a new adjacency";
         }
         
         if(ImGui::MenuItem("Harmonize colors")) {
@@ -793,15 +865,6 @@ void EditorMenu::RenderMenuBarTools() {
     }
 }
 
-// TODO: move this to a seperate file in util directory.
-static int FilterTitleName(ImGuiInputTextCallbackData* data) { 
-    ImWchar c = data->EventChar;
-    if((c >= 'a' && c <= 'z') || c >= '_') return 0;
-    if((c >= '0' && c <= '9')) return 0;
-    if(c >= 'A' && c <= 'Z') { data->EventChar += 'A'-'a'; return 0; }
-    return 1;
-}
-
 void EditorMenu::RenderModals() {
     // CREATE TITLE: modal begin
     ImVec2 size = ImGui::GetMainViewport()->Size;
@@ -840,7 +903,7 @@ void EditorMenu::RenderModals() {
             }
         }
 
-        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, FilterTitleName);
+        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, Components::Filters::TitleName);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "?");
         if (ImGui::IsItemHovered())
@@ -947,7 +1010,7 @@ void EditorMenu::RenderModals() {
             shouldRememberCountiesOrder = false;
         }
 
-        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, FilterTitleName);
+        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, Components::Filters::TitleName);
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::Checkbox("Generate Modifiers", &generateModifiers);
@@ -1002,6 +1065,105 @@ void EditorMenu::RenderModals() {
         ImGui::EndPopup();
     }
     // CREATE REGION: modal end
+
+    // CREATE ADJACENCY: modal begin
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Create a new adjacency", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Create a new province adjacency:");
+        ImGui::Separator();
+
+        bool hasProvincesSelected = (m_SelectionHandler.GetProvinces().size() > 1);
+
+        static int throughId;
+        static std::string type;
+        static std::string comment;
+        static bool initialized = false;
+
+        if(!initialized) {
+            initialized = true;
+            throughId = 0;
+            type = "sea";
+            comment = "";
+
+            // Use the first selected title as default color.
+            if(hasProvincesSelected) {
+                comment = fmt::format("{}-{}", m_SelectionHandler.GetProvinces()[0]->GetName(), m_SelectionHandler.GetProvinces()[1]->GetName());
+            }
+        }
+
+        if(!hasProvincesSelected) ImGui::BeginDisabled();
+        
+        ImGui::BeginDisabled();
+        std::string fromId = (hasProvincesSelected ? fmt::format("{} - {}", m_SelectionHandler.GetProvinces()[0]->GetId(), m_SelectionHandler.GetProvinces()[0]->GetName()) : "");
+        ImGui::InputTextCommitOnEnter("from id", &fromId);
+        std::string toId = (hasProvincesSelected ? fmt::format("{} - {}", m_SelectionHandler.GetProvinces()[1]->GetId(), m_SelectionHandler.GetProvinces()[1]->GetName()) : "");
+        ImGui::InputTextCommitOnEnter("to id", &toId);
+        ImGui::EndDisabled();
+
+        // Through Id (text input)
+        std::string newThroughId = std::to_string(throughId);
+        if (ImGui::InputTextCommitOnEnter("through id", &newThroughId, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, Components::Filters::Numeric)) {
+            try {
+                throughId = std::stoi(newThroughId);    
+            }
+            catch(...) {}
+        }
+
+        // Type (combobox)
+        Components::AdjacencyTypeCombo(
+            type,
+            [&](const auto& newType) {
+                type = newType;
+            }
+        );
+
+        // Comment (text input)
+        std::string newComment = comment;
+        if (ImGui::InputTextCommitOnEnter("comment", &newComment)) {
+            comment = newComment;
+        }
+
+        if(!hasProvincesSelected) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "You have to select at two provinces.");
+
+        if(ImGui::Button("Create", ImVec2(120, 0)) && hasProvincesSelected) {
+            ImGui::CloseCurrentPopup();
+            initialized = false;
+
+            Province* fromProvince = m_SelectionHandler.GetProvinces()[0];
+            Province* toProvince = m_SelectionHandler.GetProvinces()[1];
+
+            sf::Vector2f fromPosition = sf::Vector2f(fromProvince->GetImagePosition());
+            fromPosition.x = std::max(0.f, fromPosition.x);
+            fromPosition.y = std::max(0.f, m_Mod.GetProvinceManager().GetProvincesImage().getSize().y - fromPosition.y);
+            
+            sf::Vector2f toPosition = sf::Vector2f(toProvince->GetImagePosition());
+            toPosition.x = std::max(0.f, toPosition.x);
+            toPosition.y = std::max(0.f, m_Mod.GetProvinceManager().GetProvincesImage().getSize().y - toPosition.y);
+
+            UniquePtr<Adjacency> adjacency = MakeUnique<Adjacency>(
+                fromProvince->GetId(),
+                toProvince->GetId(),
+                type, throughId,
+                sf::Vector2u(fromPosition),
+                sf::Vector2u(toPosition),
+                comment
+            );
+
+            m_SelectionHandler.ClearSelection();
+            m_SelectionHandler.Select(adjacency.get());
+            m_Mod.GetProvinceManager().AddAdjacency(std::move(adjacency));
+        }
+        if(!hasProvincesSelected) ImGui::EndDisabled();
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if(ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            initialized = false;
+        }
+        ImGui::EndPopup();
+    }
+    // CREATE ADJACENCY: modal end
 
     // HARMONIZE COLOR: modal begin
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));

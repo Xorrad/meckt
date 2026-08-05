@@ -23,5 +23,5 @@ namespace ImGui {
     bool CheckBoxTristate(const char* label, int* v_tristate);
     bool TextButton(const char* label);
     bool InputTextLocked(const char* label, std::string* str);
-    bool InputTextCommitOnEnter(const char* label, std::string* value, ImGuiInputTextFlags flags = 0);
+    bool InputTextCommitOnEnter(const char* label, std::string* value, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
 }

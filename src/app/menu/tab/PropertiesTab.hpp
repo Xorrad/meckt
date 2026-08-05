@@ -11,14 +11,9 @@ public:
     void RenderProvinces();
     void RenderTitles();
     void RenderRegions();
+    void RenderAdjacency();
 
 private:
-    sf::Clock m_Clock;
-
-    sf::Text m_SelectingTitleText;
-    bool m_SelectingTitle;
-    bool m_SelectingProvince;
-
     bool m_DisplayCulturalNames;
     bool m_DisplayHistory;
     bool m_DisplayDejureTitles;

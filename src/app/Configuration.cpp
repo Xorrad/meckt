@@ -52,6 +52,7 @@ void Configuration::Load() {
 
     Configuration::recentMods = data.value("recent_mods", std::list<std::string>{});
     Configuration::compactTooltip = data.value("compact_tooltip", false);
+    Configuration::adjacenciesConnections = data.value("adjacenciesConnections", true);
     Configuration::uiScale = data.value("ui_scale", Configuration::uiScale);
 
     if (data.contains("map_tooltips") && data["map_tooltips"].is_object()) {
@@ -70,6 +71,7 @@ void Configuration::Save() {
     nlohmann::json json;
     json["recent_mods"] = Configuration::recentMods;
     json["compact_tooltip"] = Configuration::compactTooltip;
+    json["adjacenciesConnections"] = Configuration::adjacenciesConnections;
     json["ui_scale"] = Configuration::uiScale;
 
     for (int i = 0; i < static_cast<int>(MapTooltip::COUNT); ++i) {

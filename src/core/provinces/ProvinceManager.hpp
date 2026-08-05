@@ -370,6 +370,13 @@ public:
      */
     void RenameProvinceId(int formerId, int newId);
 
+    /**
+     * @brief Changes the from and to ids of an adjacency.
+     * @param formerIds The former ids of the adjacency.
+     * @param newIds The new ids of the adjacency.
+     */
+    void RenameAdjacencyIds(std::pair<int, int> formerIds, std::pair<int, int> newIds);
+
     //////////////////////////////////////////////////////
 
     /**
