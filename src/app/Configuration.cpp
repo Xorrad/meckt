@@ -40,15 +40,21 @@ void Configuration::Deinitialize() {
 }
 
 void Configuration::Load() {
-    // Check if there is a legacy settings file saved as yaml, if so, rename it to json.
-    if (std::filesystem::exists("settings.yml"))
-        std::filesystem::rename("settings.yml", Configuration::settingsFile);
-
     // Import settings from the specified file as an json object.
     std::ifstream file(Configuration::settingsFile, std::ios::binary);
-    if (!file) return;
-    nlohmann::json data = nlohmann::json::parse(file);
-    file.close();
+    if (!file.is_open()) {
+        LOG_ERROR("Failed to open settings file '{}' for reading: {}", Configuration::settingsFile, std::strerror(errno));
+        return;
+    }
+
+    nlohmann::json data;
+    try {
+        data = nlohmann::json::parse(file);
+        file.close();
+    }
+    catch (std::exception& e) {
+        LOG_ERROR("Failed to parse settings file '{}': {}", Configuration::settingsFile, e.what());
+    }
 
     Configuration::recentMods = data.value("recent_mods", std::list<std::string>{});
     Configuration::compactTooltip = data.value("compact_tooltip", false);
@@ -81,6 +87,11 @@ void Configuration::Save() {
 
     // Dump that json object into the settings file.
     std::ofstream file(Configuration::settingsFile, std::ios::binary);
+    if (!file.is_open()) {
+        LOG_ERROR("Failed to open settings file '{}' for writing: {}", Configuration::settingsFile, std::strerror(errno));
+        return;
+    }
+
     file << json.dump(1, '\t');
     file.close();
 }
