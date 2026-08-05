@@ -574,7 +574,7 @@ void ProvinceManager::LoadProvincesImage() {
     };
 
     // Split the image vertically between all the threads.
-    const int threadsCount = 4;
+    const int threadsCount = 1;
     std::vector<UniquePtr<std::thread>> threads;
     const size_t threadRange = totalPixels / threadsCount;
 
