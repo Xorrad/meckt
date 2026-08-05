@@ -49,7 +49,7 @@ sudo apt-get install -y build-essential zip pkg-config libgtk-3-dev libcurl4-ope
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --target meckt --config Release
+cmake --build . --target meckt-app --config Release
 ```
 
 
@@ -66,7 +66,7 @@ git clone --recursive https://github.com/Xorrad/meckt.git
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --target meckt --config Release
+cmake --build . --target meckt-app --config Release
 ```
 
 ## Contributing
