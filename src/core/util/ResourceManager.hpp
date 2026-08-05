@@ -26,7 +26,7 @@ public:
             auto file = fs.open(path);
             std::string_view data(file.begin(), std::distance(file.begin(), file.end()));
             
-            success = this->Load(*ptr, true, std::string(data), std::forward<Args>(args)...);
+            success = this->Load(*ptr, true, data, std::forward<Args>(args)...);
             std::string source = "memory " + path;
         #endif
 
@@ -48,7 +48,7 @@ public:
 
 private:
     template <typename T, typename... Args>
-    bool Load(T& resource, bool fromMemory, const std::string& data, Args&&... args) {
+    bool Load(T& resource, bool fromMemory, std::string_view data, Args&&... args) {
         if constexpr (std::is_same_v<T, sf::Music> || std::is_same_v<T, sf::Font>) {
             if (fromMemory)
                 return resource.openFromMemory(data.data(), data.size(), std::forward<Args>(args)...);
