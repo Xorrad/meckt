@@ -1390,7 +1390,6 @@ void PropertiesTab::RenderAdjacency() {
                     ImGui::SetTooltip("This province doesn't have a barony assigned!");
                 ImGui::PopStyleColor();
                 ImGui::PopFont();
-                LOG_ERROR("Adjacency '{},{}' with non-barony province '{}'", adjacency->GetId().first, adjacency->GetId().second, id);
             }
         };
 
