@@ -453,6 +453,9 @@ void EditorMenu::Render() {
         start.y = imageHeight - start.y;
         stop.y = imageHeight - stop.y;
 
+        if (start.x < 0 || start.y < 0 || stop.x < 0 || stop.y < 0)
+            return;
+
         if (!cameraRect.contains(sf::Vector2f(start)) && !cameraRect.contains(stop))
             return;
 
