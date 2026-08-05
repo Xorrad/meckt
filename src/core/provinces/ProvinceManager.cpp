@@ -1093,11 +1093,11 @@ void ProvinceManager::LoadAdjacencies(TitleManager& titleManager) {
             int toId = std::stoi(line.at(1));
             std::string type = line.at(2);
             int throughId = std::stoi(line.at(3));
-            int startX = std::stoi(line.at(4));
-            int startY = std::stoi(line.at(5));
+            uint32_t startX = std::stoul(line.at(4));
+            uint32_t startY = std::stoul(line.at(5));
             sf::Vector2u start(startX, startY);
-            int stopX = std::stoi(line.at(6));
-            int stopY = std::stoi(line.at(7));
+            uint32_t stopX = std::stoul(line.at(6));
+            uint32_t stopY = std::stoul(line.at(7));
             sf::Vector2u stop(stopX, stopY);
             std::string comment = line.at(8);
 
