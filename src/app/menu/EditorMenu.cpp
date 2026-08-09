@@ -961,8 +961,10 @@ void EditorMenu::RenderModals() {
                 if(!title->Is(TitleType::COUNTY) && hasSelectedTitle) {
                     Title* capitalTitle = m_SelectionHandler.GetTitles()[0];
                     if(!title->Is(TitleType::DUCHY)) {
-                        while(capitalTitle != nullptr && !capitalTitle->Is(TitleType::COUNTY))
-                            capitalTitle = dynamic_cast<HighTitle*>(capitalTitle)->GetCapitalTitle();
+                        while(capitalTitle != nullptr && !capitalTitle->Is(TitleType::COUNTY)) {
+                            HighTitle* highCapitalTitle = dynamic_cast<HighTitle*>(capitalTitle);
+                            capitalTitle = highCapitalTitle ? highCapitalTitle->GetCapitalTitle() : nullptr;
+                        }
                     }
                     highTitle->SetCapitalTitle(dynamic_cast<CountyTitle*>(capitalTitle));
                 }
