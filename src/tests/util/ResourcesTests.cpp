@@ -35,7 +35,7 @@ TEST_SUITE("[Resources] ResourceManager") {
 TEST_CASE("[Resources] ResourceManager: Texture") {
     // sf::Texture requires to load the texture on the graphics card.
     ResourceManager<sf::Image, int> manager("texture");
-    
+
     REQUIRE_NOTHROW(manager.Load(1, "resources/tests/resource_manager/test.png"));
 
     sf::Image& image = manager.Get(1);
@@ -48,7 +48,7 @@ TEST_CASE("[Resources] ResourceManager: Texture") {
 
 TEST_CASE("[Resources] ResourceManager: Font") {
     ResourceManager<sf::Font, int> manager("font");
-    
+
     REQUIRE_NOTHROW(manager.Load(1, "resources/app/fonts/figtree_medium.ttf"));
     REQUIRE_NOTHROW(manager.Load(2, "resources/app/fonts/notoemoji.ttf"));
     REQUIRE_NOTHROW(manager.Load(3, "resources/app/fonts/notosans.ttf"));

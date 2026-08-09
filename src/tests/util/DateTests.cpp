@@ -8,7 +8,7 @@ TEST_CASE("[Date] Constructor") {
     CHECK_EQ(d.year, 0);
     CHECK_EQ(d.month, 0);
     CHECK_EQ(d.day, 0);
-    
+
     // Numbers constructor
     d = Jomini::Date(1, 2, 3);
     CHECK_EQ(d.year, 1);
@@ -19,13 +19,13 @@ TEST_CASE("[Date] Constructor") {
     CHECK_EQ(d.year, -100);
     CHECK_EQ(d.month, 2);
     CHECK_EQ(d.day, 3);
-    
+
     // String constructor
     d = Jomini::Date("100.1.1");
     CHECK_EQ(d.year, 100);
     CHECK_EQ(d.month, 1);
     CHECK_EQ(d.day, 1);
-    
+
     d = Jomini::Date("-100.1.1");
     CHECK_EQ(d.year, -100);
     CHECK_EQ(d.month, 1);
@@ -57,20 +57,20 @@ TEST_CASE("[Date] Operators") {
     CHECK(Jomini::Date(0, 0, 1) < Jomini::Date(1, 1, 1));
     CHECK(Jomini::Date(0, 1, 1) < Jomini::Date(1, 1, 1));
     CHECK_FALSE(Jomini::Date(1, 1, 1) < Jomini::Date(1, 1, 1));
-    
+
     // Less than or equal to
     CHECK(Jomini::Date(0, 0, 0) <= Jomini::Date(1, 1, 1));
     CHECK(Jomini::Date(0, 0, 1) <= Jomini::Date(1, 1, 1));
     CHECK(Jomini::Date(0, 1, 1) <= Jomini::Date(1, 1, 1));
     CHECK(Jomini::Date(1, 1, 1) <= Jomini::Date(1, 1, 1));
     CHECK_FALSE(Jomini::Date(1, 1, 2) <= Jomini::Date(1, 1, 1));
-    
+
     // Greater than
     CHECK(Jomini::Date(1, 1, 1) > Jomini::Date(0, 0, 0));
     CHECK(Jomini::Date(0, 1, 1) > Jomini::Date(0, 0, 0));
     CHECK(Jomini::Date(0, 0, 1) > Jomini::Date(0, 0, 0));
     CHECK_FALSE(Jomini::Date(0, 0, 0) > Jomini::Date(0, 0, 0));
-    
+
     // Greater than or equal to
     CHECK(Jomini::Date(1, 1, 2) >= Jomini::Date(0, 0, 1));
     CHECK(Jomini::Date(0, 1, 2) >= Jomini::Date(0, 0, 1));
@@ -97,7 +97,7 @@ TEST_CASE("[Date] ParseDate: invalid inputs") {
     CHECK_THROWS_AS(Date::ParseDate("abcd"), std::invalid_argument);
     CHECK_THROWS_AS(Date::ParseDate("1.abcd"), std::invalid_argument);
     CHECK_THROWS_AS(Date::ParseDate("1.1.abcd"), std::invalid_argument);
-    
+
     CHECK_THROWS_AS(Date::ParseDate("1.1.0"), std::invalid_argument);
     CHECK_THROWS_AS(Date::ParseDate("1.1.32"), std::invalid_argument);
     CHECK_THROWS_AS(Date::ParseDate("1.0.1"), std::invalid_argument);

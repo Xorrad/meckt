@@ -30,13 +30,13 @@ TEST_CASE("[String] Split") {
     CHECK_EQ(l.size(), 2);
     CHECK_EQ(l.at(0), "hello");
     CHECK_EQ(l.at(1), "world");
-    
+
     l = String::Split("one;two;three four", ";");
     CHECK_EQ(l.size(), 3);
     CHECK_EQ(l.at(0), "one");
     CHECK_EQ(l.at(1), "two");
     CHECK_EQ(l.at(2), "three four");
-    
+
     l = String::Split("one1deltwo2delthree3del", "del");
     CHECK_EQ(l.size(), 4);
     CHECK_EQ(l.at(0), "one1");
@@ -56,15 +56,15 @@ TEST_CASE("[String] ReplaceAll") {
     std::string str = "hello world";
     String::ReplaceAll(str, "world", "");
     CHECK_EQ(str, "hello ");
-    
+
     str = "123456";
     String::ReplaceAll(str, "345", "123");
     CHECK_EQ(str, "121236");
-    
+
     str = "aaaaaaaa";
     String::ReplaceAll(str, "a", "b");
     CHECK_EQ(str, "bbbbbbbb");
-    
+
     str = "hello world";
     String::ReplaceAll(str, "hello ", "");
     CHECK_EQ(str, "world");

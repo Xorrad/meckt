@@ -100,13 +100,13 @@ TEST_CASE("[OrderedMap] size") {
 
     for (int i = 0; i < 10; i++)
         map.insert(i, i);
-    
+
     CHECK_EQ(map.size(), 10);
 }
 
 TEST_CASE("[OrderedMap] empty") {
     OrderedMap<int, int> map;
-    
+
     CHECK(map.empty());
 
     map.insert(1, 1);
@@ -147,7 +147,7 @@ TEST_CASE("[OrderedMap] erase: preserve insertion order") {
 
 TEST_CASE("[OrderedMap] find") {
     OrderedMap<std::string, int> map;
-    
+
     map.insert("a", 1);
 
     auto b = map.find("b");

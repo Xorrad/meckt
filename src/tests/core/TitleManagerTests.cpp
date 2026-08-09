@@ -4,6 +4,41 @@
 #include "titles/TitleManager.hpp"
 #include "provinces/ProvinceManager.hpp"
 #include "util/Yaml.hpp"
+#include "../TestUtil.hpp"
+
+// Shared verification helpers, reused by LoadTitles/ExportTitles to avoid re-writing the same
+// "check title exists / has this liege / has these properties" loops for both tests.
+namespace {
+
+void CheckTitlesExist(TitleManager& manager, const std::vector<std::string>& names, bool shouldExist = true) {
+    for (const auto& name : names)
+        CHECK_EQ(manager.HasTitle(name), shouldExist);
+}
+
+void CheckTitlesLiege(TitleManager& manager, const std::vector<std::pair<std::string, std::string>>& expected) {
+    for (const auto& [childName, parentName] : expected) {
+        Title* parent = parentName.empty() ? nullptr : manager.GetTitle(parentName);
+        CHECK(manager.GetTitle(childName)->GetLiegeTitle() == parent);
+    }
+}
+
+struct TitlePropertyTestData {
+    std::string name;
+    sf::Color color;
+    int provinceId = -1; // Only meaningful for baronies.
+};
+
+void CheckTitlesProperties(TitleManager& manager, const std::vector<TitlePropertyTestData>& expected) {
+    for (const auto& data : expected) {
+        REQUIRE(manager.HasTitle(data.name));
+        CHECK_EQ(manager.GetTitle(data.name)->GetName(), data.name);
+        CHECK_EQ(manager.GetTitle(data.name)->GetColor(), data.color);
+        if (data.provinceId != -1)
+            CHECK_EQ(manager.GetTitleAs<BaronyTitle>(data.name)->GetProvinceId(), data.provinceId);
+    }
+}
+
+}
 
 TEST_SUITE("[TitleManager]") {
 
@@ -18,12 +53,12 @@ TEST_CASE("[TitleManager] CountTitles") {
     CHECK_EQ(manager.CountTitles(TitleType::KINGDOM), 0);
     CHECK_EQ(manager.CountTitles(TitleType::EMPIRE), 0);
     CHECK_EQ(manager.CountTitles(TitleType::HEGEMONY), 0);
-    
+
     manager.AddTitle(MakeTitle(TitleType::COUNTY, "c_test", sf::Color::Yellow, false));
-    
+
     CHECK_EQ(manager.CountTitles(), 1);
     CHECK_EQ(manager.CountTitles(TitleType::COUNTY), 1);
-    
+
     manager.AddTitle(MakeTitle(TitleType::BARONY, "b_test", sf::Color::Yellow, false));
     manager.AddTitle(MakeTitle(TitleType::COUNTY, "c_test2", sf::Color::Yellow, false));
     manager.AddTitle(MakeTitle(TitleType::DUCHY, "d_test", sf::Color::Yellow, false));
@@ -44,7 +79,7 @@ TEST_CASE("[TitleManager] HasTitle: title doesn't exist") {
     Mod mod("");
     TitleManager manager(mod);
 
-    //3. Asserts
+    // 3. Asserts
     // Check that it returns false when the title doesn't exist.
     CHECK_FALSE(manager.HasTitle("b_test"));
     CHECK_FALSE(manager.HasTitle("c_test"));
@@ -58,7 +93,7 @@ TEST_CASE("[TitleManager] HasTitle: title doesn't exist") {
 TEST_CASE("[TitleManager] HasTitle: title exists") {
     Mod mod("");
     TitleManager manager(mod);
-    
+
     // 1. Initialize and add the title.
     manager.AddTitle(MakeTitle(TitleType::COUNTY, "c_test", sf::Color::Yellow, false));
     REQUIRE(manager.GetTitles().contains("c_test"));
@@ -68,15 +103,17 @@ TEST_CASE("[TitleManager] HasTitle: title exists") {
     CHECK(manager.HasTitle("c_test"));
 }
 
+//////////////////////////////////////////////////////
+
 TEST_CASE("[TitleManager] GetTitle: nullptr when title doesn't exist") {
     Mod mod("");
     TitleManager manager(mod);
-    
+
     // 3. Asserts
-    // Check that the function returns nullptr on non-existing titles. 
+    // Check that the function returns nullptr on non-existing titles.
     Title* title = manager.GetTitle("c_test");
     CHECK_EQ(title, nullptr);
-    
+
     // Check that the const function returns nullptr on non-existing titles.
     const Title* constTitle = std::as_const(manager).GetTitle("c_test");
     CHECK_EQ(constTitle, nullptr);
@@ -98,7 +135,7 @@ TEST_CASE("[TitleManager] GetTitle") {
     // Check that the normal version returns a valid title pointer.
     REQUIRE(title != nullptr);
     CHECK_EQ(title->GetName(), "c_test");
-    
+
     // Check that the const version returns a valid title pointer.
     REQUIRE(constTitle != nullptr);
     CHECK_EQ(constTitle->GetName(), "c_test");
@@ -107,12 +144,12 @@ TEST_CASE("[TitleManager] GetTitle") {
 TEST_CASE("[TitleManager] GetTitleAs: nullptr when title doesn't exist") {
     Mod mod("");
     TitleManager manager(mod);
-    
+
     // 3. Asserts
-    // Check that the function returns nullptr on non-existing titles. 
+    // Check that the function returns nullptr on non-existing titles.
     CountyTitle* title = manager.GetTitleAs<CountyTitle>("c_test");
     CHECK_EQ(title, nullptr);
-    
+
     // Check that the const function returns nullptr on non-existing titles.
     const CountyTitle* constTitle = std::as_const(manager).GetTitleAs<CountyTitle>("c_test");
     CHECK_EQ(constTitle, nullptr);
@@ -134,7 +171,7 @@ TEST_CASE("[TitleManager] GetTitleAs") {
     // Check that the normal version returns a valid title pointer.
     REQUIRE(title != nullptr);
     CHECK_EQ(title->GetName(), "c_test");
-    
+
     // Check that the const version returns a valid title pointer.
     REQUIRE(constTitle != nullptr);
     CHECK_EQ(constTitle->GetName(), "c_test");
@@ -155,7 +192,7 @@ struct TitleTestData {
 
 TEST_CASE("[TitleManager] AddTitle") {
     Mod mod("");
-    
+
     std::vector<TitleTestData> testSuite = {
         { TitleType::BARONY,   "b_test",    sf::Color::Yellow, 10  },
         { TitleType::BARONY,   "b_test2",   sf::Color::Blue, 0 },
@@ -171,10 +208,10 @@ TEST_CASE("[TitleManager] AddTitle") {
         // or a clean state if you move the manager inside the loop.
         SUBCASE(data.name.c_str()) {
             TitleManager manager(mod);
-            
+
             // 1. Initialize the title.
             UniquePtr<Title> title = MakeTitle(data.type, data.name, data.color, false);
-            
+
             // Sets the defined province id for baronies.
             if (data.type == TitleType::BARONY && data.provinceId != -1) {
                 static_cast<BaronyTitle*>(title.get())->SetProvinceId(data.provinceId);
@@ -188,7 +225,7 @@ TEST_CASE("[TitleManager] AddTitle") {
             REQUIRE(manager.HasTitle(data.name));
             CHECK_EQ(manager.CountTitles(), 1);
             CHECK_EQ(manager.GetTitle(data.name)->GetName(), data.name);
-            
+
             // Checks that the title has been added to its type titles list.
             const auto& typeList = manager.GetTitlesByType().at(data.type);
             bool foundInList = std::find(typeList.begin(), typeList.end(), manager.GetTitle(data.name)) != typeList.end();
@@ -211,7 +248,7 @@ TEST_CASE("[TitleManager] AddTitle") {
 
 TEST_CASE("[TitleManager] RemoveTitle") {
     Mod mod("");
-    
+
     std::vector<TitleTestData> testSuite = {
         { TitleType::BARONY,   "b_test",    sf::Color::Yellow, 10 },
         { TitleType::BARONY,   "b_test2",   sf::Color::Blue, 0 },
@@ -227,7 +264,7 @@ TEST_CASE("[TitleManager] RemoveTitle") {
         // or a clean state if you move the manager inside the loop.
         SUBCASE(data.name.c_str()) {
             TitleManager manager(mod);
-            
+
             // 1. Initialize and add the title first.
             {
                 UniquePtr<Title> title = MakeTitle(data.type, data.name, data.color, false);
@@ -240,7 +277,7 @@ TEST_CASE("[TitleManager] RemoveTitle") {
 
             // 2. Remove the title.
             manager.RemoveTitle(data.name);
-            
+
             // 3. Asserts.
             // Check that the title has been correctly deleted from the map.
             CHECK_EQ(manager.CountTitles(), 0);
@@ -281,11 +318,11 @@ TEST_CASE("[TitleManager] RemoveTitle: reset capital title") {
 
     // 2. Remove the county title.
     manager.RemoveTitle("c_test");
-            
+
     // 3. Asserts.
     // Make sure that the county title isn't there anymore.
     REQUIRE_FALSE(manager.HasTitle("c_test"));
-    
+
     // Check that the county title isn't the capital title of d_test and k_test anymore.
     CHECK(manager.GetTitleAs<HighTitle>("d_test")->GetCapitalTitle() == nullptr);
     CHECK(manager.GetTitleAs<HighTitle>("k_test")->GetCapitalTitle() == nullptr);
@@ -309,7 +346,7 @@ TEST_CASE("[TitleManager] RenameTitle") {
 
     // 2. Rename the county title.
     manager.RenameTitle("c_old", "c_new");
-            
+
     // 3. Asserts.
     // Make sure that the keys have been changed for the title.
     CHECK_FALSE(manager.HasTitle("c_old"));
@@ -317,7 +354,7 @@ TEST_CASE("[TitleManager] RenameTitle") {
 
     // Check that the title's name has been changed.
     CHECK_EQ(manager.GetTitle("c_new")->GetName(), "c_new");
-    
+
     //Check that the title name has been changed in the duchy history.
     const auto& history = manager.GetTitle("d_test")->GetHistory();
     REQUIRE(history.contains(Jomini::Date(1, 1, 1)));
@@ -338,7 +375,7 @@ TEST_CASE("[TitleManager] RenameTitle: throws exception when trying to rename to
 
     // 2. Rename the title and asserts that it throws an exception.
     CHECK_THROWS_AS(manager.RenameTitle("c_old", "c_new"), std::invalid_argument);
-            
+
     // Check that both titles still exist.
     CHECK(manager.HasTitle("c_old"));
     CHECK(manager.HasTitle("c_new"));
@@ -380,53 +417,41 @@ TEST_CASE("[TitleManager] LoadTitles") {
         REQUIRE(variables->Contains("@never_primary_score"));
         CHECK(variables->Get("@never_primary_score")->As<std::string>() == "-1000");
     }
-    
+
     // Check that the vanilla override files have been stored.
     SUBCASE("vanilla overrides") {
         REQUIRE(manager.GetVanillaOverrideTitleFiles().size() == 2);
 
         REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("01_japan.txt"));
         CHECK(manager.GetVanillaOverrideTitleFiles().at("01_japan.txt") == "\xEF\xBB\xBF");
-        
+
         REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("02_china.txt"));
         CHECK(manager.GetVanillaOverrideTitleFiles().at("02_china.txt") == "\xEF\xBB\xBF# Vanilla Overrides");
     }
 
     // Check that every title has been successfully parsed and added.
     SUBCASE("titles existence") {
-        CHECK(manager.HasTitle("e_test"));
-        CHECK(manager.HasTitle("k_test"));
-
-        CHECK(manager.HasTitle("d_test1"));
-        CHECK(manager.HasTitle("d_test2"));
-
-        CHECK(manager.HasTitle("c_test1"));
-        CHECK(manager.HasTitle("c_test2"));
-
-        CHECK(manager.HasTitle("b_test1"));
-        CHECK(manager.HasTitle("b_test2"));
-        CHECK(manager.HasTitle("b_test3"));
-        CHECK(manager.HasTitle("b_test4"));
-
-        CHECK(manager.HasTitle("k_papal_state"));
+        CheckTitlesExist(manager, {
+            "e_test", "k_test", "d_test1", "d_test2", "c_test1", "c_test2",
+            "b_test1", "b_test2", "b_test3", "b_test4", "k_papal_state"
+        });
     }
 
     // Check that every title has the correct liege title assigned to it.
     SUBCASE("titles liege") {
-        CHECK(manager.GetTitle("b_test1")->GetLiegeTitle() == manager.GetTitle("c_test1"));
-        CHECK(manager.GetTitle("b_test2")->GetLiegeTitle() == manager.GetTitle("c_test1"));
-        CHECK(manager.GetTitle("c_test1")->GetLiegeTitle() == manager.GetTitle("d_test1"));
-        CHECK(manager.GetTitle("d_test1")->GetLiegeTitle() == manager.GetTitle("k_test"));
-        
-        CHECK(manager.GetTitle("b_test3")->GetLiegeTitle() == manager.GetTitle("c_test2"));
-        CHECK(manager.GetTitle("b_test4")->GetLiegeTitle() == manager.GetTitle("c_test2"));
-        CHECK(manager.GetTitle("c_test2")->GetLiegeTitle() == manager.GetTitle("d_test2"));
-        CHECK(manager.GetTitle("d_test2")->GetLiegeTitle() == manager.GetTitle("k_test"));
-        
-        CHECK(manager.GetTitle("k_test")->GetLiegeTitle() == manager.GetTitle("e_test"));
-        CHECK(manager.GetTitle("e_test")->GetLiegeTitle() == nullptr);
-        
-        CHECK(manager.GetTitle("k_papal_state")->GetLiegeTitle() == nullptr);
+        CheckTitlesLiege(manager, {
+            { "b_test1", "c_test1" },
+            { "b_test2", "c_test1" },
+            { "c_test1", "d_test1" },
+            { "d_test1", "k_test" },
+            { "b_test3", "c_test2" },
+            { "b_test4", "c_test2" },
+            { "c_test2", "d_test2" },
+            { "d_test2", "k_test" },
+            { "k_test", "e_test" },
+            { "e_test", "" },
+            { "k_papal_state", "" },
+        });
     }
 
     // Check that liege titles have the correct title in their dejure list.
@@ -436,7 +461,7 @@ TEST_CASE("[TitleManager] LoadTitles") {
             auto* parent = manager.GetTitleAs<HighTitle>(parentName);
             auto* child = manager.GetTitle(childName);
             const auto& dejureList = parent->GetDejureTitles();
-            
+
             return std::find(dejureList.begin(), dejureList.end(), child) != dejureList.end();
         };
 
@@ -490,13 +515,13 @@ TEST_CASE("[TitleManager] LoadTitles") {
     // Check that the papal state landless title has the correct property values.
     SUBCASE("special title properties") {
         HighTitle* papalState = manager.GetTitleAs<HighTitle>("k_papal_state");
-        
+
         CHECK_EQ(papalState->GetName(), "k_papal_state");
         CHECK_EQ(papalState->GetColor(), sf::Color(255, 249, 198));
         CHECK_NE(papalState->GetCapitalTitle(), nullptr);
         CHECK_EQ(papalState->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_test2"));
         CHECK(papalState->IsLandless());
-        
+
         const SharedPtr<Jomini::Object>& papalStateData = papalState->GetOriginalData();
         REQUIRE(papalStateData->Contains("definite_form"));
         CHECK_EQ(papalStateData->Get("definite_form")->As<std::string>(), "yes");
@@ -515,39 +540,18 @@ TEST_CASE("[TitleManager] LoadTitles") {
 
     // Check that the titles have the correct properties (name, color...).
     SUBCASE("titles properties") {
-        CHECK_EQ(manager.GetTitle("b_test1")->GetName(), "b_test1");
-        CHECK_EQ(manager.GetTitle("b_test1")->GetColor(), sf::Color(20, 20, 20));
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test1")->GetProvinceId(), 1);
-
-        CHECK_EQ(manager.GetTitle("b_test2")->GetName(), "b_test2");
-        CHECK_EQ(manager.GetTitle("b_test2")->GetColor(), sf::Color(20, 20, 20));
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test2")->GetProvinceId(), 2);
-
-        CHECK_EQ(manager.GetTitle("b_test3")->GetName(), "b_test3");
-        CHECK_EQ(manager.GetTitle("b_test3")->GetColor(), sf::Color(50, 50, 50));
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test3")->GetProvinceId(), 3);
-
-        CHECK_EQ(manager.GetTitle("b_test4")->GetName(), "b_test4");
-        CHECK_EQ(manager.GetTitle("b_test4")->GetColor(), sf::Color(50, 50, 50));
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test4")->GetProvinceId(), 4);
-        
-        CHECK_EQ(manager.GetTitle("c_test1")->GetName(), "c_test1");
-        CHECK_EQ(manager.GetTitle("c_test1")->GetColor(), sf::Color(10, 10, 10));
-        
-        CHECK_EQ(manager.GetTitle("c_test2")->GetName(), "c_test2");
-        CHECK_EQ(manager.GetTitle("c_test2")->GetColor(), sf::Color(40, 40, 40));
-        
-        CHECK_EQ(manager.GetTitle("d_test1")->GetName(), "d_test1");
-        CHECK_EQ(manager.GetTitle("d_test1")->GetColor(), sf::Color(170, 255, 170));
-        
-        CHECK_EQ(manager.GetTitle("d_test2")->GetName(), "d_test2");
-        CHECK_EQ(manager.GetTitle("d_test2")->GetColor(), sf::Color(30, 30, 30));
-        
-        CHECK_EQ(manager.GetTitle("k_test")->GetName(), "k_test");
-        CHECK_EQ(manager.GetTitle("k_test")->GetColor(), sf::Color(244, 227, 160));
-        
-        CHECK_EQ(manager.GetTitle("e_test")->GetName(), "e_test");
-        CHECK_EQ(manager.GetTitle("e_test")->GetColor(), sf::Color(234, 217, 110));
+        CheckTitlesProperties(manager, {
+            { "b_test1", sf::Color(20, 20, 20), 1 },
+            { "b_test2", sf::Color(20, 20, 20), 2 },
+            { "b_test3", sf::Color(50, 50, 50), 3 },
+            { "b_test4", sf::Color(50, 50, 50), 4 },
+            { "c_test1", sf::Color(10, 10, 10) },
+            { "c_test2", sf::Color(40, 40, 40) },
+            { "d_test1", sf::Color(170, 255, 170) },
+            { "d_test2", sf::Color(30, 30, 30) },
+            { "k_test", sf::Color(244, 227, 160) },
+            { "e_test", sf::Color(234, 217, 110) },
+        });
     }
 }
 
@@ -571,9 +575,9 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
         auto& history = manager.GetTitle("k_test")->GetHistory();
 
         REQUIRE(history.contains(Jomini::Date(866, 1, 1)));
-        // change_development_level = 1 is kept, change_development_level = 2 is ignored. 
+        // change_development_level = 1 is kept, change_development_level = 2 is ignored.
         // first and second are both kept as they are unique.
-        CHECK(history.at(Jomini::Date(866, 1, 1))->Serialize(0, true, true) == 
+        CHECK(history.at(Jomini::Date(866, 1, 1))->Serialize(0, true, true) ==
             "change_development_level = 1 first = yes second = yes");
     }
 
@@ -583,7 +587,7 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
         auto& history = manager.GetTitle("d_test1")->GetHistory();
 
         REQUIRE(history.contains(Jomini::Date(866, 1, 1)));
-        CHECK(history.at(Jomini::Date(866, 1, 1))->Serialize(0, true, false) == 
+        CHECK(history.at(Jomini::Date(866, 1, 1))->Serialize(0, true, false) ==
             "change_development_level = 1\n"
             "change_development_level = 2\n\n"
             "holder = char1\n"
@@ -608,7 +612,7 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
         // Missing month and day.
         REQUIRE(history.contains(Jomini::Date(1, 1, 1)));
         CHECK(history.at(Jomini::Date(1, 1, 1))->Serialize(0, true, true) == "change_development_level = 1");
-        
+
         // Missing day.
         REQUIRE(history.contains(Jomini::Date(10, 2, 1)));
         CHECK(history.at(Jomini::Date(10, 2, 1))->Serialize(0, true, true) == "change_development_level = 2");
@@ -625,11 +629,11 @@ TEST_CASE("[TitleManager] LoadTitlesHistory") {
         REQUIRE(history.at(Jomini::Date(867, 1, 1))->Is(Jomini::Type::OBJECT));
         CHECK(history.at(Jomini::Date(867, 1, 1))->Serialize(0, true, true) ==
             "change_development_level = 1 first = yes second = yes");
-        
+
         // Check that unique date are not removed.
         REQUIRE(history.contains(Jomini::Date(1066, 1, 1)));
         CHECK(history.at(Jomini::Date(1066, 1, 1))->Serialize(0, true, true) == "change_development_level = 3");
-        
+
         // Check that dates in second entry are not ignored and merged.
         REQUIRE(history.contains(Jomini::Date(10, 1, 1)));
         CHECK(history.at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) == "change_development_level = 4");
@@ -659,10 +663,10 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
 
         CHECK(manager.GetTitle("d_test1")->GetLocNames().contains("english"));
         CHECK(manager.GetTitle("d_test1")->GetLocName("english") == "dTest");
-        
+
         CHECK(manager.GetTitle("k_test")->GetLocNames().contains("english"));
         CHECK(manager.GetTitle("k_test")->GetLocName("english") == "kTest");
-        
+
         CHECK(manager.GetTitle("e_test")->GetLocNames().contains("english"));
         CHECK(manager.GetTitle("e_test")->GetLocName("english") == "Test Empire");
 
@@ -674,7 +678,7 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
 
         CHECK_FALSE(manager.GetTitle("d_test2")->GetLocNames().contains("english"));
     }
-    
+
     SUBCASE("article") {
         CHECK(manager.GetTitle("e_test")->GetLocArticles().contains("english"));
         CHECK(manager.GetTitle("e_test")->GetLocArticle("english") == "the ");
@@ -692,7 +696,7 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
 
         CHECK_FALSE(manager.GetTitle("k_test")->GetLocArticles().contains("english"));
     }
-    
+
     SUBCASE("adjective") {
         CHECK(manager.GetTitle("e_test")->GetLocAdjectives().contains("english"));
         CHECK(manager.GetTitle("e_test")->GetLocAdjective("english") == "Testian");
@@ -710,17 +714,17 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
 
         CHECK_FALSE(manager.GetTitle("k_test")->GetLocAdjectives().contains("english"));
     }
-    
+
     SUBCASE("cultural names") {
         REQUIRE(manager.GetLocCulturalNames().size() == 1);
         REQUIRE(manager.GetLocCulturalNames("english").size() == 4);
 
         REQUIRE(manager.HasLocCulturalName("english", "cn_naoned"));
         CHECK(manager.GetLocCulturalName("english", "cn_naoned") == "Naoned");
-        
+
         REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_article"));
         CHECK(manager.GetLocCulturalName("english", "cn_naoned_article") == "the ");
-        
+
         REQUIRE(manager.HasLocCulturalName("english", "cn_naoned_adj"));
         CHECK(manager.GetLocCulturalName("english", "cn_naoned_adj") == "naonedat");
 
@@ -733,7 +737,7 @@ TEST_CASE("[TitleManager] LoadTitlesLocalization") {
 
 TEST_CASE("[TitleManager] ExportTitles") {
     // Removes the temporary export directory if it already exists from a previous test.
-    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+    TestUtil::ResetDirectory("resources/tests/title_manager/test_mod_modified");
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
@@ -750,7 +754,7 @@ TEST_CASE("[TitleManager] ExportTitles") {
         manager.RenameTitle("d_test1", "d_modified1");
         manager.RenameTitle("k_test", "k_modified");
         manager.RenameTitle("e_test", "e_modified");
-        
+
         // 2. Export the titles definition.
         mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
@@ -763,53 +767,40 @@ TEST_CASE("[TitleManager] ExportTitles") {
     // 3. Asserts
 
     SUBCASE("title keys") {
-        CHECK(manager.HasTitle("b_modified1"));
-        CHECK(manager.HasTitle("b_test2"));
-        CHECK(manager.HasTitle("b_test3"));
-        CHECK(manager.HasTitle("b_test4"));
-        CHECK(manager.HasTitle("c_modified1"));
-        CHECK(manager.HasTitle("c_test2"));
-        CHECK(manager.HasTitle("d_modified1"));
-        CHECK(manager.HasTitle("d_test2"));
-        CHECK(manager.HasTitle("k_modified"));
-        CHECK(manager.HasTitle("e_modified"));
-
-        CHECK_FALSE(manager.HasTitle("b_test1"));
-        CHECK_FALSE(manager.HasTitle("c_test1"));
-        CHECK_FALSE(manager.HasTitle("d_test1"));
+        CheckTitlesExist(manager, {
+            "b_modified1", "b_test2", "b_test3", "b_test4", "c_modified1", "c_test2",
+            "d_modified1", "d_test2", "k_modified", "e_modified"
+        });
+        CheckTitlesExist(manager, { "b_test1", "c_test1", "d_test1" }, false);
     }
 
     SUBCASE("hierarchy") {
-        CHECK(manager.GetTitle("b_test2")->GetLiegeTitle() == manager.GetTitle("c_modified1"));
-        CHECK(manager.GetTitle("b_test3")->GetLiegeTitle() == manager.GetTitle("c_test2"));
-        CHECK(manager.GetTitle("b_test4")->GetLiegeTitle() == manager.GetTitle("c_test2"));
-        CHECK(manager.GetTitle("c_test2")->GetLiegeTitle() == manager.GetTitle("d_test2"));
-        CHECK(manager.GetTitle("d_test2")->GetLiegeTitle() == manager.GetTitle("k_modified"));
-
-        CHECK(manager.GetTitle("b_modified1")->GetLiegeTitle() == manager.GetTitle("c_modified1"));
-        CHECK(manager.GetTitle("c_modified1")->GetLiegeTitle() == manager.GetTitle("d_modified1"));
-        CHECK(manager.GetTitle("d_modified1")->GetLiegeTitle() == manager.GetTitle("k_modified"));
-        CHECK(manager.GetTitle("k_modified")->GetLiegeTitle() == manager.GetTitle("e_modified"));
+        CheckTitlesLiege(manager, {
+            { "b_test2", "c_modified1" },
+            { "b_test3", "c_test2" },
+            { "b_test4", "c_test2" },
+            { "c_test2", "d_test2" },
+            { "d_test2", "k_modified" },
+            { "b_modified1", "c_modified1" },
+            { "c_modified1", "d_modified1" },
+            { "d_modified1", "k_modified" },
+            { "k_modified", "e_modified" },
+        });
     }
 
     SUBCASE("properties") {
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_modified1")->GetProvinceId(), 1);
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test2")->GetProvinceId(), 2);
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test3")->GetProvinceId(), 3);
-        CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test4")->GetProvinceId(), 4);
-        
-        CHECK_EQ(manager.GetTitle("b_test2")->GetColor(), sf::Color(20, 20, 20));
-        CHECK_EQ(manager.GetTitle("b_test3")->GetColor(), sf::Color(50, 50, 50));
-        CHECK_EQ(manager.GetTitle("b_test4")->GetColor(), sf::Color(50, 50, 50));
-
-        CHECK_EQ(manager.GetTitle("c_test2")->GetColor(), sf::Color(40, 40, 40));
-        CHECK_EQ(manager.GetTitle("d_test2")->GetColor(), sf::Color(30, 30, 30));
-        
-        CHECK_EQ(manager.GetTitle("b_modified1")->GetColor(), sf::Color(20, 20, 20));
-        CHECK_EQ(manager.GetTitle("c_modified1")->GetColor(), sf::Color(10, 10, 10));
-        CHECK_EQ(manager.GetTitle("d_modified1")->GetColor(), sf::Color(170, 255, 170));
-        CHECK_EQ(manager.GetTitle("k_modified")->GetColor(), sf::Color(244, 227, 160));
-        CHECK_EQ(manager.GetTitle("e_modified")->GetColor(), sf::Color(234, 217, 110));
+        CheckTitlesProperties(manager, {
+            { "b_modified1", sf::Color(20, 20, 20), 1 },
+            { "b_test2", sf::Color(20, 20, 20), 2 },
+            { "b_test3", sf::Color(50, 50, 50), 3 },
+            { "b_test4", sf::Color(50, 50, 50), 4 },
+            { "c_test2", sf::Color(40, 40, 40) },
+            { "d_test2", sf::Color(30, 30, 30) },
+            { "c_modified1", sf::Color(10, 10, 10) },
+            { "d_modified1", sf::Color(170, 255, 170) },
+            { "k_modified", sf::Color(244, 227, 160) },
+            { "e_modified", sf::Color(234, 217, 110) },
+        });
 
         CHECK_EQ(manager.GetTitle("k_papal_state")->GetColor(), sf::Color(255, 249, 198));
         CHECK(manager.GetTitle("k_papal_state")->IsLandless());
@@ -822,7 +813,7 @@ TEST_CASE("[TitleManager] ExportTitles") {
             "}"
         );
     }
-    
+
     SUBCASE("capitals") {
         CHECK_EQ(manager.GetTitleAs<HighTitle>("d_modified1")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_modified1"));
         CHECK_EQ(manager.GetTitleAs<HighTitle>("d_test2")->GetCapitalTitle(), manager.GetTitleAs<CountyTitle>("c_test2"));
@@ -848,7 +839,7 @@ TEST_CASE("[TitleManager] ExportTitles") {
         REQUIRE(variables->Contains("@never_primary_score"));
         CHECK(variables->Get("@never_primary_score")->As<std::string>() == "-1000");
     }
-    
+
     // Check that the vanilla override files have been stored.
     SUBCASE("vanilla overrides") {
         REQUIRE(manager.GetVanillaOverrideTitleFiles().size() == 2);
@@ -856,7 +847,7 @@ TEST_CASE("[TitleManager] ExportTitles") {
         REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("01_japan.txt"));
         CHECK(manager.GetVanillaOverrideTitleFiles().at("01_japan.txt") == "\xEF\xBB\xBF");
         CHECK(std::filesystem::exists("resources/tests/title_manager/test_mod_modified/common/landed_titles/01_japan.txt"));
-        
+
         REQUIRE(manager.GetVanillaOverrideTitleFiles().contains("02_china.txt"));
         CHECK(manager.GetVanillaOverrideTitleFiles().at("02_china.txt") == "\xEF\xBB\xBF# Vanilla Overrides");
         CHECK(std::filesystem::exists("resources/tests/title_manager/test_mod_modified/common/landed_titles/02_china.txt"));
@@ -866,22 +857,17 @@ TEST_CASE("[TitleManager] ExportTitles") {
         // Check that titles files are encoded as UTF-8 BOM.
         std::set<std::string> filesPath = File::ListFiles( mod.GetDirectory(Paths::COMMON_LANDED_TITLES) );
 
-        for(const auto& filePath : filesPath) {
-            if(!filePath.ends_with(".txt"))
+        for (const auto& filePath : filesPath) {
+            if (!filePath.ends_with(".txt"))
                 continue;
-            std::ifstream file(filePath, std::ios::binary);
-            char bom[3];
-            file.read(bom, 3);
-            CHECK(bom[0] == static_cast<char>(0xEF));
-            CHECK(bom[1] == static_cast<char>(0xBB));
-            CHECK(bom[2] == static_cast<char>(0xBF));
+            CHECK(TestUtil::HasUTF8BOM(filePath));
         }
     }
 }
 
 TEST_CASE("[TitleManager] ExportTitlesHistory") {
     // Removes the temporary export directory if it already exists from a previous test.
-    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+    TestUtil::ResetDirectory("resources/tests/title_manager/test_mod_modified");
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
@@ -901,7 +887,7 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
         // Add a non-empty history entry, that should be exported.
         manager.GetTitle("d_test1")->AddHistory(Jomini::Date(10, 1, 1), MakeShared<Jomini::Object>(Jomini::Type::OBJECT));
         manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(10, 1, 1))->Put("change_development_level", 10);
-        
+
         // 2. Export the titles definition.
         mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
@@ -923,7 +909,7 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
 
         REQUIRE(manager.HasTitle("d_test1"));
         REQUIRE(manager.GetTitle("d_test1")->GetHistory().contains(Jomini::Date(866, 1, 1)));
-        CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, false) == 
+        CHECK(manager.GetTitle("d_test1")->GetHistory().at(Jomini::Date(866, 1, 1))->Serialize(0, true, false) ==
             "change_development_level = 1\n"
             "change_development_level = 2\n\n"
             "holder = char1\n"
@@ -941,16 +927,16 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
         CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(1, 1, 1))->Serialize(0, true, true) == "change_development_level = 1");
         REQUIRE(manager.GetTitle("c_test1")->GetHistory().contains(Jomini::Date(1, 1, 1)));
         CHECK(manager.GetTitle("c_test1")->GetHistory().at(Jomini::Date(10, 2, 1))->Serialize(0, true, true) == "change_development_level = 2");
-            
+
         REQUIRE(manager.HasTitle("c_test2"));
         REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(867, 1, 1)));
         REQUIRE(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Is(Jomini::Type::OBJECT));
         CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(867, 1, 1))->Serialize(0, true, true) ==
             "change_development_level = 1 first = yes second = yes");
-        
+
         REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(1066, 1, 1)));
         CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(1066, 1, 1))->Serialize(0, true, true) == "change_development_level = 3");
-        
+
         REQUIRE(manager.GetTitle("c_test2")->GetHistory().contains(Jomini::Date(10, 1, 1)));
         CHECK(manager.GetTitle("c_test2")->GetHistory().at(Jomini::Date(10, 1, 1))->Serialize(0, true, true) == "change_development_level = 4");
     }
@@ -959,22 +945,17 @@ TEST_CASE("[TitleManager] ExportTitlesHistory") {
         // Check that titles history files are encoded as UTF-8 BOM.
         std::set<std::string> filesPath = File::ListFiles( mod.GetDirectory(Paths::HISTORY_TITLES) );
 
-        for(const auto& filePath : filesPath) {
-            if(!filePath.ends_with(".txt"))
+        for (const auto& filePath : filesPath) {
+            if (!filePath.ends_with(".txt"))
                 continue;
-            std::ifstream file(filePath, std::ios::binary);
-            char bom[3];
-            file.read(bom, 3);
-            CHECK(bom[0] == static_cast<char>(0xEF));
-            CHECK(bom[1] == static_cast<char>(0xBB));
-            CHECK(bom[2] == static_cast<char>(0xBF));
+            CHECK(TestUtil::HasUTF8BOM(filePath));
         }
     }
 }
 
 TEST_CASE("[TitleManager] ExportTitlesLocalization") {
     // Removes the temporary export directory if it already exists from a previous test.
-    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+    TestUtil::ResetDirectory("resources/tests/title_manager/test_mod_modified");
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
@@ -991,7 +972,7 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
         manager.GetTitle("d_test1")->SetLocName("english", "Duchy Test1 Modified");
         manager.GetTitle("d_test1")->SetLocArticle("english", "the ");
         manager.GetTitle("d_test1")->SetLocAdjective("english", "Modified Testian");
-        
+
         // 2. Export the titles definition.
         mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
@@ -1020,7 +1001,7 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
         CHECK(b_test1->GetLocName("english") == "bTest");
         CHECK_FALSE(b_test1->HasLocArticle("english"));
         CHECK_FALSE(b_test1->HasLocAdjective("english"));
-        
+
         REQUIRE(manager.HasTitle("c_test1"));
         const Title* c_test1 = manager.GetTitle("c_test1");
         CHECK(c_test1->GetLocName("english") == "cTest");
@@ -1060,20 +1041,13 @@ TEST_CASE("[TitleManager] ExportTitlesLocalization") {
         // Check that the file exists and is a regular file.
         REQUIRE(std::filesystem::exists(expectedPath));
         CHECK(std::filesystem::is_regular_file(expectedPath));
-        
-        // Check that the file is UTF-8 BOM encoded by checking the first 3 bytes.
-        std::ifstream file(expectedPath, std::ios::binary);
-        char bom[3];
-        file.read(bom, 3);
-        CHECK(bom[0] == static_cast<char>(0xEF));
-        CHECK(bom[1] == static_cast<char>(0xBB));
-        CHECK(bom[2] == static_cast<char>(0xBF));
+        CHECK(TestUtil::HasUTF8BOM(expectedPath));
     }
 }
 
 TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
     // Removes the temporary export directory if it already exists from a previous test.
-    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+    TestUtil::ResetDirectory("resources/tests/title_manager/test_mod_modified");
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
@@ -1092,7 +1066,7 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
         manager.AddLocCulturalName("english", "cn_naoned", "Naoned Modified");
         manager.AddLocCulturalName("english", "cn_naoned_article", "the ");
         manager.AddLocCulturalName("english", "cn_naoned_adj", "Modified naonedat");
-        
+
         // 2. Export the titles definition.
         mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
         REQUIRE_NOTHROW(manager.ExportTitles());
@@ -1131,20 +1105,13 @@ TEST_CASE("[TitleManager] ExportCulturalNamesLocalization") {
         // Check that the file exists and is a regular file.
         REQUIRE(std::filesystem::exists(expectedPath));
         CHECK(std::filesystem::is_regular_file(expectedPath));
-        
-        // Check that the file is UTF-8 BOM encoded by checking the first 3 bytes.
-        std::ifstream file(expectedPath, std::ios::binary);
-        char bom[3];
-        file.read(bom, 3);
-        CHECK(bom[0] == static_cast<char>(0xEF));
-        CHECK(bom[1] == static_cast<char>(0xBB));
-        CHECK(bom[2] == static_cast<char>(0xBF));
+        CHECK(TestUtil::HasUTF8BOM(expectedPath));
     }
 }
 
 TEST_CASE("[TitleManager] DeleteLocalization") {
     // Removes the temporary export directory if it already exists from a previous test.
-    std::filesystem::remove_all("resources/tests/title_manager/test_mod_modified");
+    TestUtil::ResetDirectory("resources/tests/title_manager/test_mod_modified");
 
     // 1. Setup the mod and the titles.
     Mod mod("resources/tests/title_manager/test_mod");
@@ -1155,7 +1122,7 @@ TEST_CASE("[TitleManager] DeleteLocalization") {
         TitleManager manager(mod);
         REQUIRE_NOTHROW(manager.LoadTitles(provinceManager));
         REQUIRE_NOTHROW(manager.LoadLocalization());
-        
+
         // Copy the original mod localization files to the temp export directory.
         std::filesystem::copy(mod.GetRootDirectory(), "resources/tests/title_manager/test_mod_modified", std::filesystem::copy_options::recursive);
         mod.SetRootDirectory("resources/tests/title_manager/test_mod_modified");
@@ -1172,12 +1139,12 @@ TEST_CASE("[TitleManager] DeleteLocalization") {
     REQUIRE_NOTHROW(manager.LoadLocalization());
 
     // 3. Asserts
-        
+
     // Check that the secondary localization file still exists.
     std::string filePath = mod.GetAbsolutePath("", "localization/english/test_titles_l_english.yml");
     REQUIRE(std::filesystem::exists(filePath));
     REQUIRE(std::filesystem::is_regular_file(filePath));
-    
+
     // Check that the titles localization have been removed from that file.
     std::map<std::string, std::string> entries = Yaml::ParseFile(filePath);
     CHECK(entries.size() == 3);

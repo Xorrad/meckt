@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
 int ImportExportMod(const std::string& modPath) {
     if (!std::filesystem::exists(modPath))
         return 1;
-    
+
     // Import and then export the whole mod.
     {
         Mod mod(modPath);

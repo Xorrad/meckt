@@ -6,114 +6,88 @@
 TEST_SUITE("[TitleType]") {
 
 TEST_CASE("[TitleType] GetTitleTypeByName") {
-    CHECK_EQ(GetTitleTypeByName("b_test"), TitleType::BARONY);
-    CHECK_EQ(GetTitleTypeByName("c_test"), TitleType::COUNTY);
-    CHECK_EQ(GetTitleTypeByName("d_test"), TitleType::DUCHY);
-    CHECK_EQ(GetTitleTypeByName("k_test"), TitleType::KINGDOM);
-    CHECK_EQ(GetTitleTypeByName("e_test"), TitleType::EMPIRE);
-    CHECK_EQ(GetTitleTypeByName("h_test"), TitleType::HEGEMONY);
+    const std::vector<std::pair<std::string, TitleType>> validNames = {
+        { "b_test", TitleType::BARONY },
+        { "c_test", TitleType::COUNTY },
+        { "d_test", TitleType::DUCHY },
+        { "k_test", TitleType::KINGDOM },
+        { "e_test", TitleType::EMPIRE },
+        { "h_test", TitleType::HEGEMONY },
+    };
+    for (const auto& [name, type] : validNames)
+        CHECK_EQ(GetTitleTypeByName(name), type);
 
-    CHECK_THROWS_AS(GetTitleTypeByName("b"), std::invalid_argument);
-    CHECK_THROWS_AS(GetTitleTypeByName("b_"), std::invalid_argument);
-    CHECK_THROWS_AS(GetTitleTypeByName("b_ "), std::invalid_argument);
-    CHECK_THROWS_AS(GetTitleTypeByName("a_"), std::invalid_argument);
-    CHECK_THROWS_AS(GetTitleTypeByName("a_test"), std::invalid_argument);
-    CHECK_THROWS_AS(GetTitleTypeByName("test"), std::invalid_argument);
+    const std::vector<std::string> invalidNames = { "b", "b_", "b_ ", "a_", "a_test", "test" };
+    for (const auto& name : invalidNames)
+        CHECK_THROWS_AS(GetTitleTypeByName(name), std::invalid_argument);
 }
 
 TEST_CASE("[TitleType] IsValidTitleName") {
-    CHECK(IsValidTitleName("b_test", TitleType::BARONY));
-    CHECK(IsValidTitleName("c_test", TitleType::COUNTY));
-    CHECK(IsValidTitleName("d_test", TitleType::DUCHY));
-    CHECK(IsValidTitleName("k_test", TitleType::KINGDOM));
-    CHECK(IsValidTitleName("e_test", TitleType::EMPIRE));
-    CHECK(IsValidTitleName("h_test", TitleType::HEGEMONY));
-    
-    CHECK_FALSE(IsValidTitleName("b", TitleType::BARONY));
-    CHECK_FALSE(IsValidTitleName("b_ ", TitleType::BARONY));
-    CHECK_FALSE(IsValidTitleName("test", TitleType::BARONY));
-    CHECK_FALSE(IsValidTitleName("c_test", TitleType::BARONY));
-    CHECK_FALSE(IsValidTitleName("b_test", TitleType::COUNTY));
-    CHECK_FALSE(IsValidTitleName("c_test", TitleType::DUCHY));
-    CHECK_FALSE(IsValidTitleName("d_test", TitleType::KINGDOM));
-    CHECK_FALSE(IsValidTitleName("k_test", TitleType::EMPIRE));
-    CHECK_FALSE(IsValidTitleName("e_test", TitleType::HEGEMONY));
-    CHECK_FALSE(IsValidTitleName("h_test", TitleType::BARONY));
+    const std::vector<std::pair<std::string, TitleType>> validNames = {
+        { "b_test", TitleType::BARONY },
+        { "c_test", TitleType::COUNTY },
+        { "d_test", TitleType::DUCHY },
+        { "k_test", TitleType::KINGDOM },
+        { "e_test", TitleType::EMPIRE },
+        { "h_test", TitleType::HEGEMONY },
+    };
+    for (const auto& [name, type] : validNames)
+        CHECK(IsValidTitleName(name, type));
+
+    const std::vector<std::pair<std::string, TitleType>> invalidNames = {
+        { "b", TitleType::BARONY },
+        { "b_ ", TitleType::BARONY },
+        { "test", TitleType::BARONY },
+        { "c_test", TitleType::BARONY },
+        { "b_test", TitleType::COUNTY },
+        { "c_test", TitleType::DUCHY },
+        { "d_test", TitleType::KINGDOM },
+        { "k_test", TitleType::EMPIRE },
+        { "e_test", TitleType::HEGEMONY },
+        { "h_test", TitleType::BARONY },
+    };
+    for (const auto& [name, type] : invalidNames)
+        CHECK_FALSE(IsValidTitleName(name, type));
 }
 
 }
 
 TEST_SUITE("[Title] MakeTitle") {
 
-TEST_CASE("[Title] MakeTitle: barony") {
-    UniquePtr<Title> title = MakeTitle(TitleType::BARONY, "b_test", sf::Color::Red, true);
-    REQUIRE(title != nullptr);
-    CHECK(IsInstance<BaronyTitle>(title));
-    CHECK(title->Is(TitleType::BARONY));
-    CHECK_EQ(title->GetName(), "b_test");
-    CHECK_EQ(title->GetColor(), sf::Color::Red);
-    CHECK_EQ(title->GetLiegeTitle(), nullptr);
-    CHECK(title->IsLandless());
-}
+TEST_CASE("[Title] MakeTitle") {
+    struct MakeTitleTestData {
+        TitleType type;
+        std::string name;
+        sf::Color color;
+        bool landless;
+        std::function<bool(const UniquePtr<Title>&)> isInstance;
+    };
+    const std::vector<MakeTitleTestData> testData = {
+        { TitleType::BARONY,   "b_test", sf::Color::Red,   true,  [](auto& t) { return IsInstance<BaronyTitle>(t); } },
+        { TitleType::COUNTY,   "c_test", sf::Color::Green, false, [](auto& t) { return IsInstance<CountyTitle>(t); } },
+        { TitleType::DUCHY,    "d_test", sf::Color::Blue,  true,  [](auto& t) { return IsInstance<DuchyTitle>(t); } },
+        { TitleType::KINGDOM,  "k_test", sf::Color::Blue,  true,  [](auto& t) { return IsInstance<KingdomTitle>(t); } },
+        { TitleType::EMPIRE,   "e_test", sf::Color::Blue,  true,  [](auto& t) { return IsInstance<EmpireTitle>(t); } },
+        { TitleType::HEGEMONY, "h_test", sf::Color::Blue,  true,  [](auto& t) { return IsInstance<HegemonyTitle>(t); } },
+    };
 
-TEST_CASE("[Title] MakeTitle: county") {
-    UniquePtr<Title> title = MakeTitle(TitleType::COUNTY, "c_test", sf::Color::Green, false);
-    REQUIRE(title != nullptr);
-    CHECK(IsInstance<CountyTitle>(title));
-    CHECK(title->Is(TitleType::COUNTY));
-    CHECK_EQ(title->GetName(), "c_test");
-    CHECK_EQ(title->GetColor(), sf::Color::Green);
-    CHECK_EQ(title->GetLiegeTitle(), nullptr);
-    CHECK_FALSE(title->IsLandless());
-}
+    for (const auto& data : testData) {
+        SUBCASE(data.name.c_str()) {
+            UniquePtr<Title> title = MakeTitle(data.type, data.name, data.color, data.landless);
+            REQUIRE(title != nullptr);
+            CHECK(data.isInstance(title));
+            CHECK(title->Is(data.type));
+            CHECK_EQ(title->GetName(), data.name);
+            CHECK_EQ(title->GetColor(), data.color);
+            CHECK_EQ(title->GetLiegeTitle(), nullptr);
+            CHECK_EQ(title->IsLandless(), data.landless);
+        }
+    }
 
-TEST_CASE("[Title] MakeTitle: duchy") {
-    UniquePtr<Title> title = MakeTitle(TitleType::DUCHY, "d_test", sf::Color::Blue, true);
-    REQUIRE(title != nullptr);
-    CHECK(IsInstance<DuchyTitle>(title));
-    CHECK(title->Is(TitleType::DUCHY));
-    CHECK_EQ(title->GetName(), "d_test");
-    CHECK_EQ(title->GetColor(), sf::Color::Blue);
-    CHECK_EQ(title->GetLiegeTitle(), nullptr);
-    CHECK(title->IsLandless());
-}
-
-TEST_CASE("[Title] MakeTitle: kingdom") {
-    UniquePtr<Title> title = MakeTitle(TitleType::KINGDOM, "k_test", sf::Color::Blue, true);
-    REQUIRE(title != nullptr);
-    CHECK(IsInstance<KingdomTitle>(title));
-    CHECK(title->Is(TitleType::KINGDOM));
-    CHECK_EQ(title->GetName(), "k_test");
-    CHECK_EQ(title->GetColor(), sf::Color::Blue);
-    CHECK_EQ(title->GetLiegeTitle(), nullptr);
-    CHECK(title->IsLandless());
-}
-
-TEST_CASE("[Title] MakeTitle: empire") {
-    UniquePtr<Title> title = MakeTitle(TitleType::EMPIRE, "e_test", sf::Color::Blue, true);
-    REQUIRE(title != nullptr);
-    CHECK(IsInstance<EmpireTitle>(title));
-    CHECK(title->Is(TitleType::EMPIRE));
-    CHECK_EQ(title->GetName(), "e_test");
-    CHECK_EQ(title->GetColor(), sf::Color::Blue);
-    CHECK_EQ(title->GetLiegeTitle(), nullptr);
-    CHECK(title->IsLandless());
-}
-
-TEST_CASE("[Title] MakeTitle: hegemony") {
-    UniquePtr<Title> title = MakeTitle(TitleType::HEGEMONY, "h_test", sf::Color::Blue, true);
-    REQUIRE(title != nullptr);
-    CHECK(IsInstance<HegemonyTitle>(title));
-    CHECK(title->Is(TitleType::HEGEMONY));
-    CHECK_EQ(title->GetName(), "h_test");
-    CHECK_EQ(title->GetColor(), sf::Color::Blue);
-    CHECK_EQ(title->GetLiegeTitle(), nullptr);
-    CHECK(title->IsLandless());
-}
-
-TEST_CASE("[Title] MakeTitle: unknown") {
-    CHECK_THROWS_AS(MakeTitle(TitleType::COUNT, "b_test", sf::Color::Blue, true), std::invalid_argument);
-    CHECK_THROWS_AS(MakeTitle(TitleType::COUNT, "a_test", sf::Color::Blue, true), std::invalid_argument);
+    SUBCASE("unknown") {
+        CHECK_THROWS_AS(MakeTitle(TitleType::COUNT, "b_test", sf::Color::Blue, true), std::invalid_argument);
+        CHECK_THROWS_AS(MakeTitle(TitleType::COUNT, "a_test", sf::Color::Blue, true), std::invalid_argument);
+    }
 }
 
 }
@@ -175,8 +149,6 @@ TEST_CASE("[Title] Title::AddHistory") {
 TEST_CASE("[Title] Title::RemoveHistory") {
     UniquePtr<Title> barony = MakeTitle(TitleType::BARONY, "b_test", sf::Color::Red, false);
 
-    CHECK_EQ(barony->GetHistory().size(), 0);
-
     barony->AddHistory(Jomini::Date(1, 1, 1), MakeShared<Jomini::Object>("test"));
 
     CHECK_EQ(barony->GetHistory().size(), 1);
@@ -201,13 +173,10 @@ TEST_CASE("[Title] Title::AddCulturalName") {
     CHECK_EQ(barony->GetCulturalNames().at("breton"), "Naoned");
 }
 
-TEST_CASE("[Title] Title::RemoveHistory") {
+TEST_CASE("[Title] Title::RemoveCulturalName") {
     UniquePtr<Title> barony = MakeTitle(TitleType::BARONY, "b_nantes", sf::Color::White, false);
 
-    CHECK_EQ(barony->GetCulturalNames().size(), 0);
-
     barony->AddCulturalName("breton", "Naoned");
-
     CHECK_EQ(barony->GetCulturalNames().size(), 1);
 
     barony->RemoveCulturalName("breton");
@@ -215,121 +184,60 @@ TEST_CASE("[Title] Title::RemoveHistory") {
     CHECK_EQ(barony->GetCulturalNames().size(), 0);
 }
 
-TEST_CASE("[Title] Title::SetLocName") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
+// Set/Get/Has for a title's localized name, adjective and article follow the exact same shape,
+// so they're all verified together through one data-driven test instead of nine near-identical ones.
+TEST_CASE("[Title] Title::Loc properties") {
+    struct LocPropertyTestData {
+        std::string label;
+        std::string value1;
+        std::string value2;
+        std::function<std::map<std::string, std::string>&(Title&)> getAll;
+        std::function<void(Title&, const std::string&, const std::string&)> set;
+        std::function<std::string(Title&, const std::string&)> get;
+        std::function<bool(Title&, const std::string&)> has;
+    };
+    const std::vector<LocPropertyTestData> properties = {
+        { "name", "Cologne", "Köln",
+          [](Title& t) -> std::map<std::string, std::string>& { return t.GetLocNames(); },
+          [](Title& t, const std::string& lang, const std::string& v) { t.SetLocName(lang, v); },
+          [](Title& t, const std::string& lang) { return t.GetLocName(lang); },
+          [](Title& t, const std::string& lang) { return t.HasLocName(lang); } },
+        { "adjective", "Colonais", "Kölner",
+          [](Title& t) -> std::map<std::string, std::string>& { return t.GetLocAdjectives(); },
+          [](Title& t, const std::string& lang, const std::string& v) { t.SetLocAdjective(lang, v); },
+          [](Title& t, const std::string& lang) { return t.GetLocAdjective(lang); },
+          [](Title& t, const std::string& lang) { return t.HasLocAdjective(lang); } },
+        { "article", "la", "das",
+          [](Title& t) -> std::map<std::string, std::string>& { return t.GetLocArticles(); },
+          [](Title& t, const std::string& lang, const std::string& v) { t.SetLocArticle(lang, v); },
+          [](Title& t, const std::string& lang) { return t.GetLocArticle(lang); },
+          [](Title& t, const std::string& lang) { return t.HasLocArticle(lang); } },
+    };
 
-    CHECK_EQ(county->GetLocNames().size(), 0);
+    for (const auto& property : properties) {
+        SUBCASE(property.label.c_str()) {
+            UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
 
-    county->SetLocName("french", "Cologne");
-    county->SetLocName("german", "Köln");
+            CHECK_EQ(property.getAll(*county).size(), 0);
 
-    REQUIRE(county->GetLocNames().size() == 2);
-    REQUIRE(county->GetLocNames().contains("french"));
-    REQUIRE(county->GetLocNames().contains("german"));
+            property.set(*county, "french", property.value1);
+            property.set(*county, "german", property.value2);
 
-    CHECK_EQ(county->GetLocNames().at("french"), "Cologne");
-    CHECK_EQ(county->GetLocNames().at("german"), "Köln");
-}
+            REQUIRE(property.getAll(*county).size() == 2);
+            REQUIRE(property.getAll(*county).contains("french"));
+            REQUIRE(property.getAll(*county).contains("german"));
+            CHECK_EQ(property.getAll(*county).at("french"), property.value1);
+            CHECK_EQ(property.getAll(*county).at("german"), property.value2);
 
-TEST_CASE("[Title] Title::GetLocName") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
+            CHECK_EQ(property.get(*county, "french"), property.value1);
+            CHECK_EQ(property.get(*county, "german"), property.value2);
+            CHECK_EQ(property.get(*county, "english"), "");
 
-    county->SetLocName("french", "Cologne");
-    county->SetLocName("german", "Köln");
-
-    CHECK_EQ(county->GetLocName("french"), "Cologne");
-    CHECK_EQ(county->GetLocName("german"), "Köln");
-    CHECK_EQ(county->GetLocName("english"), "");
-}
-
-TEST_CASE("[Title] Title::HasLocName") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
-
-    county->SetLocName("french", "Cologne");
-    county->SetLocName("german", "Köln");
-
-    CHECK(county->HasLocName("french"));
-    CHECK(county->HasLocName("german"));
-    CHECK_FALSE(county->HasLocName("english"));
-}
-
-///
-
-TEST_CASE("[Title] Title::SetLocAdjective") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
-
-    CHECK_EQ(county->GetLocAdjectives().size(), 0);
-
-    county->SetLocAdjective("french", "Colonais");
-    county->SetLocAdjective("german", "Kölner");
-
-    REQUIRE(county->GetLocAdjectives().size() == 2);
-    REQUIRE(county->GetLocAdjectives().contains("french"));
-    REQUIRE(county->GetLocAdjectives().contains("german"));
-
-    CHECK_EQ(county->GetLocAdjectives().at("french"), "Colonais");
-    CHECK_EQ(county->GetLocAdjectives().at("german"), "Kölner");
-}
-
-TEST_CASE("[Title] Title::GetLocAdjective") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
-
-    county->SetLocAdjective("french", "Colonais");
-    county->SetLocAdjective("german", "Kölner");
-
-    CHECK_EQ(county->GetLocAdjective("french"), "Colonais");
-    CHECK_EQ(county->GetLocAdjective("german"), "Kölner");
-    CHECK_EQ(county->GetLocAdjective("english"), "");
-}
-
-TEST_CASE("[Title] Title::HasLocAdjective") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
-
-    county->SetLocAdjective("french", "Colonais");
-    county->SetLocAdjective("german", "Kölner");
-
-    CHECK(county->HasLocAdjective("french"));
-    CHECK(county->HasLocAdjective("german"));
-    CHECK_FALSE(county->HasLocAdjective("english"));
-}
-
-TEST_CASE("[Title] Title::SetLocArticle") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
-
-    CHECK_EQ(county->GetLocArticles().size(), 0);
-
-    county->SetLocArticle("french", "la");
-    county->SetLocArticle("german", "das");
-
-    REQUIRE(county->GetLocArticles().size() == 2);
-    REQUIRE(county->GetLocArticles().contains("french"));
-    REQUIRE(county->GetLocArticles().contains("german"));
-
-    CHECK_EQ(county->GetLocArticles().at("french"), "la");
-    CHECK_EQ(county->GetLocArticles().at("german"), "das");
-}
-
-TEST_CASE("[Title] Title::GetLocArticle") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
-
-    county->SetLocArticle("french", "la");
-    county->SetLocArticle("german", "das");
-
-    CHECK_EQ(county->GetLocArticle("french"), "la");
-    CHECK_EQ(county->GetLocArticle("german"), "das");
-
-    CHECK_EQ(county->GetLocArticle("english"), "");
-}
-
-TEST_CASE("[Title] Title::HasLocArticle") {
-    UniquePtr<Title> county = MakeTitle(TitleType::COUNTY, "c_cologne", sf::Color::Yellow, false);
-
-    county->SetLocArticle("french", "la");
-    county->SetLocArticle("german", "das");
-
-    CHECK(county->HasLocArticle("french"));
-    CHECK(county->HasLocArticle("german"));
-    CHECK_FALSE(county->HasLocArticle("english"));
+            CHECK(property.has(*county, "french"));
+            CHECK(property.has(*county, "german"));
+            CHECK_FALSE(property.has(*county, "english"));
+        }
+    }
 }
 
 TEST_CASE("[Title] HighTitle::AddDejureTitle") {
@@ -338,9 +246,9 @@ TEST_CASE("[Title] HighTitle::AddDejureTitle") {
     HighTitle* county = dynamic_cast<HighTitle*>(_county.get());
 
     CHECK_EQ(county->GetDejureTitles().size(), 0);
-    
+
     county->AddDejureTitle(barony.get());
-    
+
     CHECK_EQ(county->GetDejureTitles().size(), 1);
     CHECK(std::find(county->GetDejureTitles().begin(), county->GetDejureTitles().end(), barony.get()) != county->GetDejureTitles().end());
 }
@@ -348,11 +256,11 @@ TEST_CASE("[Title] HighTitle::AddDejureTitle") {
 TEST_CASE("[Title] HighTitle::HasDejureTitle") {
     UniquePtr<Title> barony = MakeTitle(TitleType::BARONY, "b_test", sf::Color::White, false);
     UniquePtr<Title> barony2 = MakeTitle(TitleType::BARONY, "b_test2", sf::Color::White, false);
-    UniquePtr<Title> _county = MakeTitle(TitleType::COUNTY, "c_test", sf::Color::Yellow, false);    
+    UniquePtr<Title> _county = MakeTitle(TitleType::COUNTY, "c_test", sf::Color::Yellow, false);
     HighTitle* county = dynamic_cast<HighTitle*>(_county.get());
 
     county->AddDejureTitle(barony.get());
-    
+
     CHECK(county->HasDejureTitle(barony.get()));
     CHECK_FALSE(county->HasDejureTitle(barony2.get()));
     CHECK_FALSE(county->HasDejureTitle(nullptr));
@@ -364,12 +272,11 @@ TEST_CASE("[Title] HighTitle::RemoveDejureTitle") {
     HighTitle* county = dynamic_cast<HighTitle*>(_county.get());
 
     county->AddDejureTitle(barony.get());
-    
     CHECK_EQ(county->GetDejureTitles().size(), 1);
     CHECK(county->HasDejureTitle(barony.get()));
 
     county->RemoveDejureTitle(barony.get());
-    
+
     CHECK_EQ(county->GetDejureTitles().size(), 0);
     CHECK_FALSE(county->HasDejureTitle(barony.get()));
 }

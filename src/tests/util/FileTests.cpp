@@ -92,7 +92,7 @@ TEST_CASE("[File] ReadString: full file content") {
     std::ifstream in1(file1);
     REQUIRE(in1.is_open());
     CHECK_EQ(File::ReadString(in1), content1);
-    
+
     std::ifstream in2(file2);
     REQUIRE(in2.is_open());
     CHECK_EQ(File::ReadString(in2), content2);

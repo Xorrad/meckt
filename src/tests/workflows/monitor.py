@@ -124,7 +124,7 @@ def main():
                     result["reason"] = "Crashed after loading savegame"
                     result["exit_code"] = ret
                     break
-               
+
 
             # Tail the dedicated_server log to determine when the savegame is fully loaded.
             lines, server_offset = tail_new_lines(status_log, server_offset)

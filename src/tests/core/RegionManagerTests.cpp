@@ -5,6 +5,19 @@
 #include "provinces/ProvinceManager.hpp"
 #include "titles/TitleManager.hpp"
 #include "util/Yaml.hpp"
+#include "../TestUtil.hpp"
+
+namespace {
+
+// Asserts that `name` resolves to a region of that same name, and returns it.
+Region* CheckRegionExists(RegionManager& manager, const std::string& name) {
+    Region* region = manager.GetRegion(name);
+    REQUIRE(region != nullptr);
+    CHECK(region->GetName() == name);
+    return region;
+}
+
+}
 
 TEST_SUITE("[RegionManager]") {
 
@@ -63,20 +76,16 @@ TEST_CASE("[RegionManager] GetRegion") {
     CHECK(regionManager.GetRegion("region2") == nullptr);
 
     regionManager.AddRegion(MakeUnique<Region>("region1"));
-    REQUIRE(regionManager.GetRegion("region1") != nullptr);
-    CHECK(regionManager.GetRegion("region1")->GetName() == "region1");
+    CheckRegionExists(regionManager, "region1");
     CHECK(regionManager.GetRegion("region2") == nullptr);
 
     regionManager.AddRegion(MakeUnique<Region>("region2"));
-    REQUIRE(regionManager.GetRegion("region1") != nullptr);
-    CHECK(regionManager.GetRegion("region1")->GetName() == "region1");
-    REQUIRE(regionManager.GetRegion("region2") != nullptr);
-    CHECK(regionManager.GetRegion("region2")->GetName() == "region2");
+    CheckRegionExists(regionManager, "region1");
+    CheckRegionExists(regionManager, "region2");
 
     regionManager.RemoveRegion("region1");
     CHECK(regionManager.GetRegion("region1") == nullptr);
-    REQUIRE(regionManager.GetRegion("region2") != nullptr);
-    CHECK(regionManager.GetRegion("region2")->GetName() == "region2");
+    CheckRegionExists(regionManager, "region2");
 
     regionManager.RemoveRegion("region2");
     CHECK(regionManager.GetRegion("region1") == nullptr);
@@ -93,13 +102,11 @@ TEST_CASE("[RegionManager] AddRegion") {
 
     regionManager.AddRegion(MakeUnique<Region>("region1"));
     CHECK(regionManager.CountRegions() == 1);
-    REQUIRE(regionManager.GetRegion("region1") != nullptr);
-    CHECK(regionManager.GetRegion("region1")->GetName() == "region1");
+    CheckRegionExists(regionManager, "region1");
 
     regionManager.AddRegion(MakeUnique<Region>("region2"));
     CHECK(regionManager.CountRegions() == 2);
-    REQUIRE(regionManager.GetRegion("region2") != nullptr);
-    CHECK(regionManager.GetRegion("region2")->GetName() == "region2");
+    CheckRegionExists(regionManager, "region2");
 }
 
 TEST_CASE("[RegionManager] RemoveRegion") {
@@ -115,8 +122,7 @@ TEST_CASE("[RegionManager] RemoveRegion") {
     regionManager.RemoveRegion("region1");
     CHECK(regionManager.CountRegions() == 1);
     CHECK(regionManager.GetRegion("region1") == nullptr);
-    REQUIRE(regionManager.GetRegion("region2") != nullptr);
-    CHECK(regionManager.GetRegion("region2")->GetName() == "region2");
+    CheckRegionExists(regionManager, "region2");
 
     regionManager.RemoveRegion("region2");
     CHECK(regionManager.CountRegions() == 0);
@@ -150,14 +156,12 @@ TEST_CASE("[RegionManager] RenameRegion") {
 
     regionManager.AddRegion(MakeUnique<Region>("region1"));
     CHECK(regionManager.CountRegions() == 1);
-    REQUIRE(regionManager.GetRegion("region1") != nullptr);
-    CHECK(regionManager.GetRegion("region1")->GetName() == "region1");
+    CheckRegionExists(regionManager, "region1");
 
     regionManager.RenameRegion("region1", "new_region1");
     CHECK(regionManager.CountRegions() == 1);
     CHECK(regionManager.GetRegion("region1") == nullptr);
-    REQUIRE(regionManager.GetRegion("new_region1") != nullptr);
-    CHECK(regionManager.GetRegion("new_region1")->GetName() == "new_region1");
+    CheckRegionExists(regionManager, "new_region1");
 }
 
 //////////////////////////////////////////////////////
@@ -201,22 +205,22 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
             REQUIRE(regionManager.HasRegion(otherRegionName));
             CHECK(region->HasRegion(regionManager.GetRegion(otherRegionName)));
         }
-        
+
         for (const std::string& titleName : data.kingdoms) {
             REQUIRE(titleManager.HasTitle(titleName));
             CHECK(region->HasTitle(titleManager.GetTitle(titleName)));
         }
-        
+
         for (const std::string& titleName : data.duchies) {
             REQUIRE(titleManager.HasTitle(titleName));
             CHECK(region->HasTitle(titleManager.GetTitle(titleName)));
         }
-        
+
         for (const std::string& titleName : data.counties) {
             REQUIRE(titleManager.HasTitle(titleName));
             CHECK(region->HasTitle(titleManager.GetTitle(titleName)));
         }
-        
+
         for (int provinceId : data.provinces) {
             REQUIRE(provinceManager.HasProvinceById(provinceId));
             CHECK(region->HasProvince(provinceManager.GetProvinceById(provinceId)));
@@ -243,15 +247,15 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
             "#}";
 
         REQUIRE(regionManager.GetVanillaOverrideFiles().size() == 1);
-        
+
         REQUIRE(regionManager.GetVanillaOverrideFiles().contains("tgp_chinesenaming_regions.txt"));
         CHECK(regionManager.GetVanillaOverrideFiles().at("tgp_chinesenaming_regions.txt") == expectedExportedData);
     }
 }
- 
+
 TEST_CASE("[RegionManager] ExportGeographicalRegions") {
     // Removes the temporary export directory if it already exists from a previous test.
-    std::filesystem::remove_all("resources/tests/region_manager/test_mod_modified");
+    TestUtil::ResetDirectory("resources/tests/region_manager/test_mod_modified");
 
     Mod mod("resources/tests/region_manager/test_mod");
     RegionManager regionManager(mod);
@@ -333,14 +337,7 @@ region3 = {
         // Check that the file exists and is a regular file.
         REQUIRE(std::filesystem::exists(expectedPath));
         CHECK(std::filesystem::is_regular_file(expectedPath));
-
-        // Check that the file is UTF-8 BOM encoded by checking the first 3 bytes.
-        std::ifstream file(expectedPath, std::ios::binary);
-        char bom[3];
-        file.read(bom, 3);
-        CHECK(bom[0] == static_cast<char>(0xEF));
-        CHECK(bom[1] == static_cast<char>(0xBB));
-        CHECK(bom[2] == static_cast<char>(0xBF));
+        CHECK(TestUtil::HasUTF8BOM(expectedPath));
     }
 }
 
