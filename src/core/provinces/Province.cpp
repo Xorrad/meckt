@@ -236,7 +236,7 @@ float Province::CalculateWinterSeverityBias(ProvinceManager& provinceManager, bo
             return static_cast<float>(std::stod(m_WinterSeverityBias));
         if (m_ClimateType != ClimateType::NONE)
             return (m_ClimateType == ClimateType::MILD_WINTER ? 0.f :
-                (m_ClimateType == ClimateType::MILD_WINTER ? 0.5f : 1.f)
+                (m_ClimateType == ClimateType::NORMAL_WINTER ? 0.5f : 1.f)
             );
         return 0.f;
     }
