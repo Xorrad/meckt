@@ -31,7 +31,7 @@ void PropertiesTab::Update(sf::Time delta) {
         m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
         m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
     }
-    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::POSITION) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
         m_Menu.GetSelectionHandler().m_PositionCallbacks.pop_back();
         m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
     }
