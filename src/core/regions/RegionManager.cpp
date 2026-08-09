@@ -284,35 +284,40 @@ void RegionManager::ExportGeographicalRegion(Region* region, std::ofstream& file
         regionObject->Put("should_remember_counties_order", region->ShouldRememberCountiesOrder());
 
     if (!region->GetKingdoms().empty()) {
-        std::vector<std::string> titles = std::vector<std::string>(region->GetKingdoms().size());
+        std::vector<std::string> titles;
+        titles.reserve(region->GetKingdoms().size());
         for (auto title : region->GetKingdoms())
             titles.push_back(title->GetName());
         regionObject->Put("kingdoms", titles);
     }
 
     if (!region->GetDuchies().empty()) {
-        std::vector<std::string> titles = std::vector<std::string>(region->GetDuchies().size());
+        std::vector<std::string> titles;
+        titles.reserve(region->GetDuchies().size());
         for (auto title : region->GetDuchies())
             titles.push_back(title->GetName());
         regionObject->Put("duchies", titles);
     }
 
     if (!region->GetCounties().empty()) {
-        std::vector<std::string> titles = std::vector<std::string>(region->GetCounties().size());
+        std::vector<std::string> titles;
+        titles.reserve(region->GetCounties().size());
         for (auto title : region->GetCounties())
             titles.push_back(title->GetName());
         regionObject->Put("counties", titles);
     }
 
     if (!region->GetProvinces().empty()) {
-        std::vector<std::string> provinces = std::vector<std::string>(region->GetProvinces().size());
+        std::vector<std::string> provinces;
+        provinces.reserve(region->GetProvinces().size());
         for (auto province : region->GetProvinces())
             provinces.push_back(std::to_string(province->GetId()));
         regionObject->Put("provinces", provinces);
     }
 
     if (!region->GetRegions().empty()) {
-        std::vector<std::string> subRegions = std::vector<std::string>(region->GetRegions().size());
+        std::vector<std::string> subRegions;
+        subRegions.reserve(region->GetRegions().size());
         for (auto subRegion : region->GetRegions())
             subRegions.push_back(subRegion->GetName());
         regionObject->Put("regions", subRegions);
