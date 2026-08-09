@@ -1,7 +1,7 @@
 #include "Math.hpp"
 
 int Math::RandomInt(int min, int max) {
-    return min + (rand() / RAND_MAX) * (max-min);
+    return min + static_cast<int>((static_cast<double>(rand()) / RAND_MAX) * (max-min));
 }
 
 float Math::RandomFloat(float min, float max) {
