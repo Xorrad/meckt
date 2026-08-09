@@ -620,7 +620,7 @@ void ProvinceManager::LoadProvincesImage() {
 
                 if(!alreadySeen && !hasProvince) {
                     sf::Vector2i pos = GetIndexPosition(index-4);
-                    LOG_ERROR("Color found in image but missing province from definition.csv: ({},{},{},{}) at ({},{})", pixels[index-4], pixels[index-3], pixels[index-2], pixels[index-1], pos.x, pos.y);
+                    LOG_ERROR("Color ({},{},{},{}) found in provinces.png image at ({},{}) but not assigned to any province in definition.csv", pixels[index-4], pixels[index-3], pixels[index-2], pixels[index-1], pos.x, pos.y);
                     continue;
                 }
 
@@ -638,6 +638,12 @@ void ProvinceManager::LoadProvincesImage() {
     for (auto& thread : threads) {
 		if (thread->joinable())
             thread->join();
+    }
+
+    for (auto& [provinceColorId, province] : m_ProvincesByColors) {
+        if (colors.contains(provinceColorId))
+            continue;
+        LOG_ERROR("Province '{}' with color ({},{},{}) doesn't have any associated pixel in the provinces.png image", province->GetId(), province->GetColor().r, province->GetColor().g, province->GetColor().b);
     }
 }
 
