@@ -276,19 +276,19 @@ TEST_CASE("[RegionManager] ExportGeographicalRegions") {
         const std::string expectedExportedData = R"(﻿region1 = {
 	generate_modifiers = yes
 	should_remember_counties_order = yes
-	kingdoms = {  k_test }
-	duchies = {   d_test1 d_test2 }
-	counties = {  c_test1 }
-	provinces = {    1 2 3 }
+	kingdoms = { k_test }
+	duchies = { d_test1 d_test2 }
+	counties = { c_test1 }
+	provinces = { 1 2 3 }
 }
 
 region2 = {
-	counties = {  c_test1 }
-	regions = {  region1 }
+	counties = { c_test1 }
+	regions = { region1 }
 }
 
 region3 = {
-	regions = {  region1 }
+	regions = { region1 }
 }
 
 )";
@@ -301,7 +301,7 @@ region3 = {
 
     SUBCASE("Check that the exported content match of the other files") {
         const std::string expectedExportedData = R"(﻿region10 = {
-	counties = {  c_test1 }
+	counties = { c_test1 }
 }
 
 )";
