@@ -764,7 +764,7 @@ void ProvinceManager::LoadProvincesTerrain() {
 
             // Check if that file is a province terrain type file, and not a climate one.
             if (!data->Contains("default_land"))
-                return;
+                continue;
 
             this->LoadProvincesTerrainFile(fileName, data);
         }
@@ -877,11 +877,8 @@ void ProvinceManager::LoadProvincesClimate() {
             SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
             std::string fileName = m_Mod.GetRelativePath(Paths::COMMON_PROVINCE_TERRAIN, filePath);
 
-            if (data->GetMap().empty()) {
-                std::ifstream overrideFile = std::ifstream(filePath, std::ios::binary);
-                m_VanillaOverrideProvinceTerrainFiles[fileName] = File::ReadString(overrideFile);
+            if (data->GetMap().empty())
                 continue;
-            }
 
             // Check if that file is a province terrain type file, and not a climate one.
             if (data->Contains("default_land"))
