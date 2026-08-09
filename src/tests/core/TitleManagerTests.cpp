@@ -1156,4 +1156,83 @@ TEST_CASE("[TitleManager] DeleteLocalization") {
     CHECK(entries.at("example_loc2") == "Example Loc 2");
 }
 
+//////////////////////////////////////////////////////
+
+TEST_CASE("[TitleManager] GenerateMissingBaronies") {
+    Mod mod("");
+    ProvinceManager provinceManager(mod);
+    TitleManager manager(mod);
+
+    // Passable land province without any barony: a new one should be generated for it.
+    provinceManager.AddProvince(MakeUnique<Province>(1, sf::Color::Red, "TestProvince"));
+    provinceManager.GetProvinceById(1)->SetFlags(ProvinceFlags::LAND);
+
+    // Passable land province that already has a barony: should be left untouched.
+    provinceManager.AddProvince(MakeUnique<Province>(2, sf::Color::Green, "AlreadyAssigned"));
+    provinceManager.GetProvinceById(2)->SetFlags(ProvinceFlags::LAND);
+    UniquePtr<Title> existingBarony = MakeTitle(TitleType::BARONY, "b_existing", sf::Color::Green, false);
+    static_cast<BaronyTitle*>(existingBarony.get())->SetProvinceId(2);
+    manager.AddTitle(std::move(existingBarony));
+
+    // Sea province: not land, so it shouldn't get a barony.
+    provinceManager.AddProvince(MakeUnique<Province>(3, sf::Color::Blue, "SeaProvince"));
+    provinceManager.GetProvinceById(3)->SetFlags(ProvinceFlags::SEA);
+
+    // Impassable land province: shouldn't get a barony either.
+    provinceManager.AddProvince(MakeUnique<Province>(4, sf::Color::White, "ImpassableProvince"));
+    provinceManager.GetProvinceById(4)->SetFlags(ProvinceFlags::LAND | ProvinceFlags::IMPASSABLE);
+
+    manager.GenerateMissingBaronies(provinceManager);
+
+    SUBCASE("Generates a barony for a passable land province without one") {
+        REQUIRE(manager.HasTitle("b_testprovince"));
+
+        BaronyTitle* barony = manager.GetTitleAs<BaronyTitle>("b_testprovince");
+        REQUIRE(barony != nullptr);
+        CHECK_EQ(barony->GetProvinceId(), 1);
+        CHECK_EQ(barony->GetColor(), sf::Color::Red);
+        CHECK_EQ(manager.GetBaroniesByProvinceId().at(1), barony);
+    }
+
+    SUBCASE("Does not generate a barony for a province that already has one") {
+        CHECK_FALSE(manager.HasTitle("b_alreadyassigned"));
+    }
+
+    SUBCASE("Does not generate a barony for a sea province") {
+        CHECK_FALSE(manager.HasTitle("b_seaprovince"));
+    }
+
+    SUBCASE("Does not generate a barony for an impassable province") {
+        CHECK_FALSE(manager.HasTitle("b_impassableprovince"));
+    }
+
+    SUBCASE("Only generates the one missing barony") {
+        // The pre-existing "b_existing" barony plus the single newly generated one.
+        CHECK_EQ(manager.CountTitles(TitleType::BARONY), 2);
+    }
+}
+
+TEST_CASE("[TitleManager] GenerateMissingBaronies: avoids name collisions") {
+    Mod mod("");
+    ProvinceManager provinceManager(mod);
+    TitleManager manager(mod);
+
+    // Two provinces resolving to the same base barony name "b_test".
+    provinceManager.AddProvince(MakeUnique<Province>(1, sf::Color::Red, "Test"));
+    provinceManager.GetProvinceById(1)->SetFlags(ProvinceFlags::LAND);
+
+    provinceManager.AddProvince(MakeUnique<Province>(2, sf::Color::Green, "Test"));
+    provinceManager.GetProvinceById(2)->SetFlags(ProvinceFlags::LAND);
+
+    manager.GenerateMissingBaronies(provinceManager);
+
+    CHECK_EQ(manager.CountTitles(TitleType::BARONY), 2);
+
+    REQUIRE(manager.HasTitle("b_test"));
+    CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test")->GetProvinceId(), 1);
+
+    REQUIRE(manager.HasTitle("b_test1"));
+    CHECK_EQ(manager.GetTitleAs<BaronyTitle>("b_test1")->GetProvinceId(), 2);
+}
+
 }

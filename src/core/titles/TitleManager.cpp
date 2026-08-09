@@ -1095,7 +1095,7 @@ void TitleManager::GenerateMissingBaronies(ProvinceManager& provinceManager) {
             continue;
         if(province->HasFlag(ProvinceFlags::IMPASSABLE))
             continue;
-        if (provinceManager.HasProvinceById(id))
+        if (m_BaroniesByProvinceId.contains(id))
             continue;
         
         // Make sure to use a title name that isn't already taken.
