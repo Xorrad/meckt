@@ -1316,8 +1316,8 @@ void ProvinceManager::ExportProvincesClimate() {
         // Export individual provinces climate properties to 'common/province_terrain/01_province_properties.txt'.
         bool hasProperty = !province->GetWinterSeverityBias().empty()
             || !province->GetMildWinterFactorOverride().empty()
-            || province->GetNormalWinterFactorOverride().empty()
-            || province->GetHarshWinterFactorOverride().empty();
+            || !province->GetNormalWinterFactorOverride().empty()
+            || !province->GetHarshWinterFactorOverride().empty();
         
         // Ignore provinces without any specified properties.
         if (hasProperty) {
