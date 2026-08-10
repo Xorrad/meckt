@@ -56,6 +56,15 @@ public:
     sf::Image GetCultureImage(ProvinceManager& provinceManager, TitleManager& titleManager) const;
 
     /**
+     * @brief Builds the culture palette: palette[renderIndex] = that province's culture color.
+     * @note  Requires `provinceManager.BuildProvinceIndex()` to have been called beforehand.
+     * @param provinceManager The province manager.
+     * @param titleManager The title manager.
+     * @return The palette, indexed by the province manager's render index.
+     */
+    std::vector<sf::Color> GetCulturePalette(ProvinceManager& provinceManager, TitleManager& titleManager) const;
+
+    /**
      * @brief Retrieves a map of cultures.
      * @return The map of cultures.
      */

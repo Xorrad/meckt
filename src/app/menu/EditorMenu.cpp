@@ -27,6 +27,9 @@ EditorMenu::EditorMenu(App& app) :
     this->UpdateTextures();
     this->SwitchMapMode(m_MapMode);
 
+    // Build the selection palette so it's correctly sized from the first frame.
+    m_SelectionHandler.Update();
+
     m_Camera = m_App.GetWindow().getDefaultView();
 
     m_Dragging = false;
@@ -57,12 +60,9 @@ sf::Vector2f EditorMenu::GetHoveredPosition() {
 }
 
 Province* EditorMenu::GetHoveredProvince() {
-    if (!m_MapSprite.has_value())
-        return nullptr;
-
     sf::Vector2f mousePosition = GetHoveredPosition();
 
-    if(!m_MapSprite->getGlobalBounds().contains(mousePosition))
+    if(!this->GetMapBounds().contains(mousePosition))
         return nullptr;
 
     return m_Mod.GetProvinceManager().GetProvinceByPixel(mousePosition.x, mousePosition.y);
@@ -84,8 +84,18 @@ ImGuiID EditorMenu::GetDockspaceID() const {
     return m_DockspaceID;
 }
 
-std::optional<sf::Sprite> EditorMenu::GetMapSprite() const {
-    return m_MapSprite;
+sf::FloatRect EditorMenu::GetMapBounds() const {
+    return sf::FloatRect(
+        { 0.f, 0.f },
+        sf::Vector2f(m_Mod.GetProvinceManager().GetProvincesImage().getSize())
+    );
+}
+
+sf::FloatRect EditorMenu::GetVisibleWorldRect() const {
+    return sf::FloatRect(
+        m_Camera.getCenter() - m_Camera.getSize() / 2.f,
+        m_Camera.getSize()
+    );
 }
 
 void EditorMenu::UpdateHoveringText() {
@@ -95,8 +105,8 @@ void EditorMenu::UpdateHoveringText() {
     if(hoveredProvince == nullptr)
         goto Hide;
 
-    // Detailed tooltip always showing the province and liege titles info
-    // regardless of the current map mode.
+    // Detailed tooltip always showing the province and liege
+    // titles info regardless of the current map mode.
     if (!Configuration::compactTooltip) {
 
         std::string text = "";
@@ -125,7 +135,7 @@ void EditorMenu::UpdateHoveringText() {
             hoveredTitleText +=  Configuration::mapTooltips[MapTooltip::TITLES] ? GetMapTooltipString(m_Mod, hoveredProvince, m_MapMode, MapTooltip::TITLES, true) : "";
         }
 
-        // Remove the last newline characters
+        // Remove the last newline characters.
         while (!text.empty() && text.back() == '\n')
             text.pop_back();
 
@@ -145,8 +155,8 @@ void EditorMenu::UpdateHoveringText() {
         return;
     }
 
-    // Legacy compact tooltip displaying the province or title info
-    // depending on the current map mode.
+    // Legacy compact tooltip displaying the province or title
+    // info depending on the current map mode.
     if(MapModeIsProvince(m_MapMode)) {
         m_HoverText.setString(fmt::format("#{} ({})", hoveredProvince->GetId(), hoveredProvince->GetName()));
         m_HoverTitleText.setString("");
@@ -178,40 +188,6 @@ void EditorMenu::UpdateHoveringText() {
     m_HoverShape.setSize({0, 0});
 }
 
-void EditorMenu::UpdateCameraBounds() {
-    if (!m_MapSprite.has_value())
-		return;
-
-    sf::Vector2f viewCenter = m_Camera.getCenter();
-    sf::Vector2f viewSize = m_Camera.getSize();
-
-    // Calculate the top-left corner of the visible area.
-    float left = viewCenter.x - viewSize.x / 2.0f;
-    float top = viewCenter.y - viewSize.y / 2.0f;
-    float width = viewSize.x;
-    float height = viewSize.y;
-
-    // Clamp the rectangle so it doesn't exceed the texture boundaries.
-    const sf::Texture& mapTexture = *m_MapTextures.at(m_MapMode);
-    float texWidth = static_cast<float>(mapTexture.getSize().x);
-    float texHeight = static_cast<float>(mapTexture.getSize().y);
-
-    float clampedLeft = std::max(0.f, std::min(left, texWidth - width));
-    float clampedTop = std::max(0.f, std::min(top, texHeight - height));
-    float clampedWidth = std::min(width, texWidth - clampedLeft);
-    float clampedHeight = std::min(height, texHeight - clampedTop);
-
-    // Apply the visible rectangle to the sprite.
-    m_MapSprite->setTextureRect(sf::IntRect(
-        { static_cast<int>(clampedLeft), static_cast<int>(clampedTop) },
-        { static_cast<int>(clampedWidth), static_cast<int>(clampedHeight) }
-    ));
-
-    // Move the sprite to the world position of the top-left corner
-    // so it matches the camera physical location in the game world
-    m_MapSprite->setPosition({ clampedLeft, clampedTop });
-}
-
 void EditorMenu::ToggleCamera(bool enabled) {
     static sf::View previousView;
     sf::RenderWindow& window = m_App.GetWindow();
@@ -225,19 +201,12 @@ void EditorMenu::ToggleCamera(bool enabled) {
 }
 
 void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
-    // Update the map sprite with the corresponding map mode.
-    //
-    // This function does not update the base image, EditorMenu::UpdateTexture(mode)
-    // needs to be called if any province/title/... has been modified.
+    // Switches which map mode is currently displayed.
+    // This function does not update the underlying index/palettes.
 
     m_MapMode = mode;
     if(clearSelection)
         m_SelectionHandler.ClearSelection();
-
-    if (m_MapSprite.has_value())
-        m_MapSprite->setTexture(*m_MapTextures.at(m_MapMode));
-    else
-		m_MapSprite = sf::Sprite(*m_MapTextures.at(m_MapMode));
 }
 
 void EditorMenu::RefreshMapMode(MapMode mode, bool clearSelection, bool resetFocus) {
@@ -254,39 +223,46 @@ void EditorMenu::RefreshCurrentMapMode(bool clearSelection, bool resetFocus) {
 }
 
 void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
-    // Update the pixels of the specified image (from scratch) and then
-    // update the corresponding texture in the shader.
-    m_MapTextures.emplace(mode, MakeUnique<sf::Texture>());
+    // Rebuild the CPU-side data for the specified mode and upload it to the GPU.
+    // Every mode except HEIGHTMAP/RIVERS is backed by a small per-province
+    // palette (cheap to rebuild) looked up through the shared, static province
+    // index texture, opposed to a full-resolution recolored image.
+    ProvinceManager& provinceManager = m_Mod.GetProvinceManager();
+
     switch(mode) {
-        case MapMode::PROVINCES:
-            // TODO: update pixel colors in mod.
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetProvincesImage());
-            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("provincesTexture", *m_MapTextures[mode]);
-            Configuration::shaders.Get(Shaders::PROVINCES).setUniform("textureSize", sf::Vector2f(m_MapTextures[mode]->getSize()));
+        case MapMode::PROVINCES: {
+            // The province index (geometry) rarely changes in practice, but is
+            // rebuilt here alongside its identity palette like every other mode.
+            provinceManager.BuildProvinceIndex();
+            m_ProvinceIndexGrid.Build(provinceManager.GetProvincesIndexImage());
+            m_ProvinceIdentityPalette = Image::BuildPaletteTexture(provinceManager.GetProvinceIdentityPalette());
+            // The "provinces" content mode simply displays each province's own color.
+            m_ContentPalettes[mode] = m_ProvinceIdentityPalette;
             break;
+        }
         case MapMode::HEIGHTMAP:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetHeightmapImage());
+            m_HeightmapGrid.Build(provinceManager.GetHeightmapImage());
             break;
         case MapMode::RIVERS:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetRiversImage());
+            m_RiversGrid.Build(provinceManager.GetRiversImage());
             break;
         case MapMode::TERRAIN:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetTerrainImage());
+            m_ContentPalettes[mode] = Image::BuildPaletteTexture(provinceManager.GetTerrainPalette());
             break;
         case MapMode::FLAGS:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetFlagsImage());
+            m_ContentPalettes[mode] = Image::BuildPaletteTexture(provinceManager.GetFlagsPalette());
             break;
         case MapMode::CLIMATE:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetClimateImage());
+            m_ContentPalettes[mode] = Image::BuildPaletteTexture(provinceManager.GetClimatePalette());
             break;
         case MapMode::WINTER_SEVERITY:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetProvinceManager().GetWinterSeverityBiasImage());
+            m_ContentPalettes[mode] = Image::BuildPaletteTexture(provinceManager.GetWinterSeverityBiasPalette());
             break;
         case MapMode::CULTURE:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetCultureManager().GetCultureImage(m_Mod.GetProvinceManager(), m_Mod.GetTitleManager()));
+            m_ContentPalettes[mode] = Image::BuildPaletteTexture(m_Mod.GetCultureManager().GetCulturePalette(provinceManager, m_Mod.GetTitleManager()));
             break;
         case MapMode::FAITH:
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetReligionManager().GetFaithImage(m_Mod.GetProvinceManager(), m_Mod.GetTitleManager()));
+            m_ContentPalettes[mode] = Image::BuildPaletteTexture(m_Mod.GetReligionManager().GetFaithPalette(provinceManager, m_Mod.GetTitleManager()));
             break;
         case MapMode::BARONY:
         case MapMode::COUNTY:
@@ -295,11 +271,7 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::EMPIRE:
         case MapMode::HEGEMONY: {
             TitleType type = MapModeToTileType(mode);
-            m_MapTextures[mode]->loadFromImage(m_Mod.GetTitleManager().GetTitleImage(m_Mod.GetProvinceManager(), type));
-            Configuration::shaders.Get(Shaders::PROVINCES).setUniform(
-                String::ToLowercase(TitleTypeLabels[(int) type]) + "Texture",
-                *m_MapTextures[mode]
-            );
+            m_TierPalettes[type] = Image::BuildPaletteTexture(m_Mod.GetTitleManager().GetTierPalette(provinceManager, type));
 
             // Reset the selection focus for every titles of that tier or below.
             if(resetFocus) {
@@ -311,21 +283,110 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         }
         default:
             break;
-    }   
+    }
+
+    m_SelectionHandler.Update();
 }
 
 void EditorMenu::UpdateTextures() {
-    // Update the textures for all map modes. This includes:
-    // - Redraw titles/provinces image pixels (with colors from Province/Title objects).
-    // - Update titles and provinces textures in the shader.
+    // Update the index/palettes for all map modes. This includes:
+    // - Rebuilding the province index (geometry) and every palette (appearance).
 
     for (int mode = 0; mode < static_cast<int>(MapMode::COUNT); mode++) {
         this->UpdateTexture(static_cast<MapMode>(mode));
     }
 }
 
+void EditorMenu::BindPaletteUniforms(sf::Shader& shader) {
+    shader.setUniform("paletteSize", sf::Glsl::Vec2(Image::GetPaletteSize(m_Mod.GetProvinceManager().GetProvinceIndices().size())));
+
+    shader.setUniform("selectionPalette", m_SelectionHandler.GetSelectionPaletteTexture());
+
+    // These are always relevant regardless of the current mode: border/selection
+    // logic checks every tier every frame, and the province identity palette
+    // backs the base PROVINCE-tier border/selection check.
+    shader.setUniform("provinceIdentityPalette", m_ProvinceIdentityPalette);
+    shader.setUniform("baronyPalette", m_TierPalettes[TitleType::BARONY]);
+    shader.setUniform("countyPalette", m_TierPalettes[TitleType::COUNTY]);
+    shader.setUniform("duchyPalette", m_TierPalettes[TitleType::DUCHY]);
+    shader.setUniform("kingdomPalette", m_TierPalettes[TitleType::KINGDOM]);
+    shader.setUniform("empirePalette", m_TierPalettes[TitleType::EMPIRE]);
+    shader.setUniform("hegemonyPalette", m_TierPalettes[TitleType::HEGEMONY]);
+
+    // Only relevant when the current mode is one of the province-content modes.
+    auto it = m_ContentPalettes.find(m_MapMode);
+    if (it != m_ContentPalettes.end())
+        shader.setUniform("contentPalette", it->second);
+}
+
+void EditorMenu::DrawMap(sf::RenderTarget& target) {
+    sf::Shader& provinceShader = Configuration::shaders.Get(Shaders::PROVINCES);
+    sf::FloatRect visibleRect = this->GetVisibleWorldRect();
+
+    if (MapModeIsProvince(m_MapMode) || MapModeIsTitle(m_MapMode)) {
+        this->BindPaletteUniforms(provinceShader);
+
+        for (const sf::Vector2u& coord : m_ProvinceIndexGrid.GetVisibleChunkCoords(visibleRect)) {
+            TextureChunk* chunk = m_ProvinceIndexGrid.GetChunk(static_cast<int>(coord.x), static_cast<int>(coord.y));
+            if (chunk == nullptr || !chunk->sprite.has_value())
+                continue;
+
+            provinceShader.setUniform("provincesIndexTexture", *chunk->texture);
+            provinceShader.setUniform("textureSize", sf::Glsl::Vec2(chunk->texture->getSize()));
+            target.draw(*chunk->sprite, &provinceShader);
+        }
+    }
+    else {
+        TextureChunkGrid& grid = (m_MapMode == MapMode::HEIGHTMAP) ? m_HeightmapGrid : m_RiversGrid;
+
+        for (const sf::Vector2u& coord : grid.GetVisibleChunkCoords(visibleRect)) {
+            TextureChunk* chunk = grid.GetChunk(static_cast<int>(coord.x), static_cast<int>(coord.y));
+            if (chunk == nullptr || !chunk->sprite.has_value())
+                continue;
+            target.draw(*chunk->sprite);
+        }
+    }
+}
+
+void EditorMenu::DrawAdjacencies(sf::RenderTarget& target) {
+    // Draw red lines between province adjacencies.
+    sf::FloatRect cameraRect = this->GetVisibleWorldRect();
+    uint32_t imageHeight = m_Mod.GetProvinceManager().GetProvincesImage().getSize().y;
+    const auto DrawAdjacencyLine = [&](Adjacency* adjacency) {
+        // The y axis needs to be flipped.
+        sf::Vector2f start = sf::Vector2f(adjacency->GetStart());
+        sf::Vector2f stop = sf::Vector2f(adjacency->GetStop());
+        start.y = imageHeight - start.y;
+        stop.y = imageHeight - stop.y;
+
+        if (start.x < 0 || start.y < 0 || stop.x < 0 || stop.y < 0)
+            return;
+
+        if (!cameraRect.contains(sf::Vector2f(start)) && !cameraRect.contains(stop))
+            return;
+
+        sf::Vertex line[] {
+            {start, sf::Color::Red},
+            {stop, sf::Color::Red}
+        };
+        target.draw(line, 2, sf::PrimitiveType::Lines);
+    };
+    if (Configuration::adjacenciesConnections) {
+        for (const auto& [ids, adjacency] : m_Mod.GetProvinceManager().GetAdjacencies()) {
+            DrawAdjacencyLine(adjacency.get());
+        }
+    }
+    else if (m_SelectionHandler.GetAdjacency() != nullptr) {
+        DrawAdjacencyLine(m_SelectionHandler.GetAdjacency());
+    }
+}
+
 void EditorMenu::Update(sf::Time delta) {
     ToggleCamera(true);
+
+    // Per-frame housekeeping (Escape-to-cancel a pick), regardless of which
+    // tabs are currently visible.
+    m_SelectionHandler.Tick();
 
     // Update all currently opened tabs
     for(const auto& [type, tab] : m_Tabs) {
@@ -342,7 +403,6 @@ void EditorMenu::Update(sf::Time delta) {
 
         m_Camera.move(delta);
         m_LastMousePosition = currentMousePosition;
-        UpdateCameraBounds();
     }
 
     ToggleCamera(false);
@@ -375,7 +435,6 @@ void EditorMenu::Event(const sf::Event& event) {
         m_TotalZoom *= factor;
         m_Camera.zoom(factor);
         ToggleCamera(false);
-        UpdateCameraBounds();
     }
     else if(const auto* mouseButton = event.getIf<sf::Event::MouseButtonPressed>()) {
         if(mouseButton->button == sf::Mouse::Button::Left) {
@@ -419,7 +478,6 @@ void EditorMenu::Event(const sf::Event& event) {
             static_cast<float>(resize->size.x),
             static_cast<float>(resize->size.y)
         });
-        UpdateCameraBounds();
     }
 }
 
@@ -434,69 +492,11 @@ void EditorMenu::Render() {
     provinceShader.setUniform("displayBorders", m_DisplayBorders);
 
     ToggleCamera(true);
-
-    if(MapModeIsProvince(m_MapMode) || MapModeIsTitle(m_MapMode))
-        window.draw(*m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
-    else 
-        window.draw(*m_MapSprite);
-
-    // Draw red lines between province adjacencies.
-    sf::FloatRect cameraRect(
-        m_Camera.getCenter() - m_Camera.getSize() / 2.f,
-        m_Camera.getSize()
-    );
-    uint32_t imageHeight = m_Mod.GetProvinceManager().GetProvincesImage().getSize().y;
-    const auto DrawAdjacencyLine = [&](Adjacency* adjacency) {
-        // The y axis needs to be flipped.
-        sf::Vector2f start = sf::Vector2f(adjacency->GetStart());
-        sf::Vector2f stop = sf::Vector2f(adjacency->GetStop());
-        start.y = imageHeight - start.y;
-        stop.y = imageHeight - stop.y;
-
-        if (start.x < 0 || start.y < 0 || stop.x < 0 || stop.y < 0)
-            return;
-
-        if (!cameraRect.contains(sf::Vector2f(start)) && !cameraRect.contains(stop))
-            return;
-
-        sf::Vertex line[] {
-            {start, sf::Color::Red},
-            {stop, sf::Color::Red}
-        };
-        window.draw(line, 2, sf::PrimitiveType::Lines);
-    };
-    if (Configuration::adjacenciesConnections) {
-        for (const auto& [ids, adjacency] : m_Mod.GetProvinceManager().GetAdjacencies()) {
-            DrawAdjacencyLine(adjacency.get());
-        }
-    }
-    else if (m_SelectionHandler.GetAdjacency() != nullptr) {
-        DrawAdjacencyLine(m_SelectionHandler.GetAdjacency());
-    }
-
+    this->DrawMap(window);
+    this->DrawAdjacencies(window);
     ToggleCamera(false);
 
-    if (!m_SelectionHandler.IsSelectionType(SelectionType::NONE)) {
-        // Draw a red outline around the view of the map.
-        ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(m_DockspaceID);
-        if (node != nullptr) {
-            int red = 255 - (abs(sin(2*3.1415*0.05*std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()/100.f)) * 150);
-            ImGui::GetBackgroundDrawList()->AddRect(
-                node->Pos,
-                { node->Pos.x + node->Size.x, node->Pos.y + node->Size.y },
-                IM_COL32(red, 0, 0, 255),
-                0.f,
-                ImDrawFlags_None,
-                3.f
-            );
-            m_SelectionHandler.GetSelectionText().setFillColor(sf::Color(red, 0, 0, 255));
-        }
-
-        m_SelectionHandler.UpdateSelectionText();
-        m_SelectionHandler.GetSelectionText().setCharacterSize(24 * Configuration::uiScale);
-        m_SelectionHandler.GetSelectionText().setPosition({node->Pos.x + 10*Configuration::uiScale, node->Pos.y + 34*Configuration::uiScale});
-        window.draw(m_SelectionHandler.GetSelectionText());
-    }
+    m_SelectionHandler.Render(window);
 
     if (!ImGui::IsAnyItemHovered()) {
         if (!Configuration::compactTooltip) {
@@ -527,7 +527,7 @@ void EditorMenu::Render() {
 
 void EditorMenu::InitSelectionCallbacks() {
     m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, Province* province) {
-        if (!m_SelectionHandler.IsSelectionType(SelectionType::NONE))
+        if (m_SelectionHandler.IsPicking())
             return SelectionCallbackResult::CONTINUE;
         if(button != sf::Mouse::Button::Left)
             return SelectionCallbackResult::CONTINUE;
@@ -554,7 +554,7 @@ void EditorMenu::InitSelectionCallbacks() {
     });
 
     m_SelectionHandler.AddCallback([&](sf::Mouse::Button button, Province* province, Title* title) {
-        if (!m_SelectionHandler.IsSelectionType(SelectionType::NONE))
+        if (m_SelectionHandler.IsPicking())
             return SelectionCallbackResult::CONTINUE;
 
         bool isSelected = m_SelectionHandler.IsSelected(title);
@@ -797,7 +797,7 @@ void EditorMenu::RenderMenuBarTools() {
         
         if(ImGui::MenuItem("Save image to disk")) {
             try {
-                if (m_MapSprite.has_value()) {
+                if (this->GetMapBounds().size.x > 0) {
                     sf::RenderTexture renderTexture(sf::Vector2u(m_Camera.getSize()));
 
                     // Update provinces shader
@@ -810,23 +810,14 @@ void EditorMenu::RenderMenuBarTools() {
                     renderTexture.setView(m_Camera);
 
                     renderTexture.clear(sf::Color::Transparent);
-                    if(MapModeIsProvince(m_MapMode) || MapModeIsTitle(m_MapMode))
-                        renderTexture.draw(*m_MapSprite, &Configuration::shaders.Get(Shaders::PROVINCES));
-                    else 
-                        renderTexture.draw(*m_MapSprite);
+                    this->DrawMap(renderTexture);
                     renderTexture.display();
 
                     // Determine which part of the camera is actually part of the map.
 
-                    sf::FloatRect cameraRect(
-                        m_Camera.getCenter() - m_Camera.getSize() / 2.f,
-                        m_Camera.getSize()
-                    );
+                    sf::FloatRect cameraRect = this->GetVisibleWorldRect();
 
-                    sf::FloatRect mapRect(
-                        {0.f, 0.f},
-                        sf::Vector2f(m_Mod.GetProvinceManager().GetProvincesImage().getSize())
-                    );
+                    sf::FloatRect mapRect = this->GetMapBounds();
 
                     std::optional<sf::FloatRect> visibleRectOpt = cameraRect.findIntersection(mapRect);
                     if (visibleRectOpt.has_value()) {
@@ -1344,7 +1335,13 @@ void EditorMenu::RenderModals() {
         const sf::Image& heightmapImage = m_Mod.GetProvinceManager().GetHeightmapImage();
         const sf::Image& provinceImage = m_Mod.GetProvinceManager().GetProvincesImage();
 
-        static const auto UpdatePreview = [&](){
+        // Not `static`: it captures `provinceImage`/`heightmapImage`/etc. by
+        // reference, which are ordinary (non-static) locals re-created every
+        // call to this function. A `static` lambda would only ever capture
+        // them once, on the first frame the modal opens, and keep calling
+        // through those stale references forever after (dangling once that
+        // first call returns).
+        const auto UpdatePreview = [&](){
             previewImage = Image::MapPixels(provinceImage, [&](auto& mappedColors){
                 for(const auto& [provinceColorId, province] : m_Mod.GetProvinceManager().GetProvincesByColors()) {
                     float winterSeverityBias = province->CalculateWinterSeverityBias(

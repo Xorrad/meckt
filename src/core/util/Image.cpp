@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <lodepng.h>
 #include <nfd.h>
+#include <cmath>
 
 sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(std::unordered_map<uint32_t, uint32_t>&)> mapFunc) {
     // Used for benchmarking.
@@ -94,6 +95,83 @@ sf::Image Image::MapPixels(const sf::Image& originalImage, std::function<void(st
     // fmt::println("initializing image: {}", String::DurationFormat(clock.restart()));
 
     return sf::Image({ static_cast<uint32_t>(width), static_cast<uint32_t>(height) }, newPixels.data());
+}
+
+sf::Vector2u Image::GetPaletteSize(size_t count) {
+    // Lay the palette out as a roughly square texture so it stays well within
+    // GPU texture size limits even for mods with a very large number of provinces.
+    count = std::max<size_t>(1, count);
+    uint32_t width = static_cast<uint32_t>(std::ceil(std::sqrt(static_cast<double>(count))));
+    width = std::max<uint32_t>(1, width);
+    uint32_t height = static_cast<uint32_t>((count + width - 1) / width);
+    return sf::Vector2u(width, height);
+}
+
+sf::Texture Image::BuildPaletteTexture(const std::vector<sf::Color>& palette) {
+    sf::Vector2u size = Image::GetPaletteSize(palette.size());
+
+    std::vector<uint8_t> pixels(static_cast<size_t>(size.x) * size.y * 4, 0);
+    for (size_t i = 0; i < palette.size(); i++) {
+        pixels[i * 4 + 0] = palette[i].r;
+        pixels[i * 4 + 1] = palette[i].g;
+        pixels[i * 4 + 2] = palette[i].b;
+        pixels[i * 4 + 3] = palette[i].a;
+    }
+
+    sf::Image image(size, pixels.data());
+
+    sf::Texture texture;
+    texture.loadFromImage(image);
+    // Palettes are indexed lookups: disable smoothing/repeating so each texel
+    // maps to exactly one palette entry with no bilinear blending at the edges.
+    texture.setSmooth(false);
+    texture.setRepeated(false);
+    return texture;
+}
+
+sf::Image Image::Resize(const sf::Image& image, sf::Vector2u size) {
+    sf::Vector2u sourceSize = image.getSize();
+    if (sourceSize == size || size.x == 0 || size.y == 0 || sourceSize.x == 0 || sourceSize.y == 0)
+        return image;
+
+    std::vector<uint8_t> pixels(static_cast<size_t>(size.x) * size.y * 4);
+    const uint8_t* sourcePixels = image.getPixelsPtr();
+
+    float scaleX = static_cast<float>(sourceSize.x) / static_cast<float>(size.x);
+    float scaleY = static_cast<float>(sourceSize.y) / static_cast<float>(size.y);
+
+    for (uint32_t y = 0; y < size.y; y++) {
+        // Source-space y coordinate this destination row samples from (texel centers).
+        float srcY = std::clamp((y + 0.5f) * scaleY - 0.5f, 0.0f, static_cast<float>(sourceSize.y - 1));
+        uint32_t y0 = static_cast<uint32_t>(srcY);
+        uint32_t y1 = std::min(y0 + 1, sourceSize.y - 1);
+        float ty = srcY - y0;
+
+        for (uint32_t x = 0; x < size.x; x++) {
+            float srcX = std::clamp((x + 0.5f) * scaleX - 0.5f, 0.0f, static_cast<float>(sourceSize.x - 1));
+            uint32_t x0 = static_cast<uint32_t>(srcX);
+            uint32_t x1 = std::min(x0 + 1, sourceSize.x - 1);
+            float tx = srcX - x0;
+
+            size_t destOffset = (static_cast<size_t>(y) * size.x + x) * 4;
+
+            // Bilinear-interpolate each channel from the 4 surrounding source texels.
+            for (size_t channel = 0; channel < 4; channel++) {
+                float p00 = sourcePixels[(static_cast<size_t>(y0) * sourceSize.x + x0) * 4 + channel];
+                float p10 = sourcePixels[(static_cast<size_t>(y0) * sourceSize.x + x1) * 4 + channel];
+                float p01 = sourcePixels[(static_cast<size_t>(y1) * sourceSize.x + x0) * 4 + channel];
+                float p11 = sourcePixels[(static_cast<size_t>(y1) * sourceSize.x + x1) * 4 + channel];
+
+                float top = p00 + (p10 - p00) * tx;
+                float bottom = p01 + (p11 - p01) * tx;
+                float value = top + (bottom - top) * ty;
+
+                pixels[destOffset + channel] = static_cast<uint8_t>(std::clamp(value + 0.5f, 0.0f, 255.0f));
+            }
+        }
+    }
+
+    return sf::Image(size, pixels.data());
 }
 
 void Image::IndexImage(const std::string& filePath, const std::vector<sf::Color>& palette) {

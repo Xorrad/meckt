@@ -130,6 +130,63 @@ public:
     sf::Image GetWinterSeverityBiasImage() const;
 
     /**
+     * @brief Assigns every province a stable, dense render index (0..N-1) and rebuilds
+     *        the province index image (each pixel encodes its province's render index
+     *        instead of a color) used by the GPU index+palette rendering pipeline.
+     * @note  Only needs to be called when the set of provinces or the base provinces
+     *        image changes (province added/removed/recolored) - not on every edit.
+     */
+    void BuildProvinceIndex();
+
+    /**
+     * @brief Retrieves the province index image built by `BuildProvinceIndex()`.
+     *        Each pixel's R+G channels encode the owning province's render index.
+     * @return The reference to the province index image.
+     */
+    const sf::Image& GetProvincesIndexImage() const;
+
+    /**
+     * @brief Retrieves the render index assigned to every province, keyed by color id.
+     * @return A map of province color id to its dense render index.
+     */
+    const std::unordered_map<uint32_t, uint16_t>& GetProvinceIndices() const;
+
+    /**
+     * @brief Builds the identity palette: palette[renderIndex] = that province's own color.
+     * @note  Requires `BuildProvinceIndex()` to have been called beforehand.
+     * @return The palette, indexed by render index.
+     */
+    std::vector<sf::Color> GetProvinceIdentityPalette() const;
+
+    /**
+     * @brief Builds the flags palette: palette[renderIndex] = that province's flags color.
+     * @note  Requires `BuildProvinceIndex()` to have been called beforehand.
+     * @return The palette, indexed by render index.
+     */
+    std::vector<sf::Color> GetFlagsPalette() const;
+
+    /**
+     * @brief Builds the terrain palette: palette[renderIndex] = that province's terrain color.
+     * @note  Requires `BuildProvinceIndex()` to have been called beforehand.
+     * @return The palette, indexed by render index.
+     */
+    std::vector<sf::Color> GetTerrainPalette() const;
+
+    /**
+     * @brief Builds the climate palette: palette[renderIndex] = that province's climate color.
+     * @note  Requires `BuildProvinceIndex()` to have been called beforehand.
+     * @return The palette, indexed by render index.
+     */
+    std::vector<sf::Color> GetClimatePalette() const;
+
+    /**
+     * @brief Builds the winter severity palette: palette[renderIndex] = that province's winter severity shade.
+     * @note  Requires `BuildProvinceIndex()` to have been called beforehand.
+     * @return The palette, indexed by render index.
+     */
+    std::vector<sf::Color> GetWinterSeverityBiasPalette() const;
+
+    /**
      * @brief Retrieves a province by its color.
      * @param color The color of the province to retrieve.
      * @return The pointer to the province if it exists, nullptr otherwise.
@@ -528,6 +585,11 @@ private:
     sf::Image m_ProvincesImage; // map_data/provinces.png
     sf::Image m_HeightmapImage; // map_data/heightmap.png
     sf::Image m_RiversImage; // map_data/rivers.png
+
+    // Built by BuildProvinceIndex(): province render indices (dense, 0..N-1) and the
+    // corresponding index image, used by the GPU index+palette rendering pipeline.
+    sf::Image m_ProvincesIndexImage;
+    std::unordered_map<uint32_t, uint16_t> m_ProvinceIndices;
 
     std::unordered_map<uint32_t, UniquePtr<Province>> m_ProvincesByColors;
     std::map<int, Province*> m_ProvincesByIds;

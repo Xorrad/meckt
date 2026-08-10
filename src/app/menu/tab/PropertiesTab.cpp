@@ -22,19 +22,9 @@ PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
 }
 
 void PropertiesTab::Update(sf::Time delta) {
-    // Cancel selecting a title or province by pressing escape.
-    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-        m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
-        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-    }
-    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-        m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
-        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-    }
-    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::POSITION) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-        m_Menu.GetSelectionHandler().m_PositionCallbacks.pop_back();
-        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-    }
+    // Escape-to-cancel a pick is now handled centrally by SelectionHandler::Tick()
+    // (called every frame from EditorMenu::Update()), regardless of which tabs
+    // are visible.
 }
 
 void PropertiesTab::Render() {
@@ -838,21 +828,15 @@ void PropertiesTab::RenderTitles() {
 
                     // BARONY: province id (field)
                     ImGui::NewLine();
-                    if (ImGui::Button((m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE)) ? "click on a province..." : "change province") && !m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE)) {
-                        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::PROVINCE);
-                        MapMode previousMapMode = m_Menu.GetMapMode();
-                        m_Menu.SwitchMapMode(MapMode::PROVINCES, false);
-                        m_Menu.GetSelectionHandler().AddCallback(
-                            [this, barony, previousMapMode](sf::Mouse::Button button, Province* province) {
-                                if (button != sf::Mouse::Button::Left)
-                                    return SelectionCallbackResult::INTERRUPT;
-
+                    bool isPickingProvince = m_Menu.GetSelectionHandler().IsPicking(SelectionType::PROVINCE);
+                    if (ImGui::Button(isPickingProvince ? "click on a province..." : "change province") && !isPickingProvince) {
+                        m_Menu.GetSelectionHandler().PickProvince(
+                            [this, barony](Province* province) {
                                 m_Mod.GetTitleManager().ChangeBaronyProvinceId(barony, province->GetId());
-
-                                m_Menu.SwitchMapMode(previousMapMode, false);
-                                m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                                return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                            }
+                            },
+                            false,
+                            MapMode::PROVINCES,
+                            m_Menu.GetMapMode()
                         );
                     }
 
@@ -915,13 +899,10 @@ void PropertiesTab::RenderTitles() {
                                 highTitle->RemoveDejureTitle(dejure);
 
                                 // Update the map to remove the dejure title from the title color.
-                                // TODO: it would be better not having to redraw the entire map
-                                // but only the relevant colors.
                                 MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
                                 for (int i = (int)liegeMapMode; i <= (int)MapMode::HEGEMONY; i++) {
                                     m_Menu.UpdateTexture((MapMode)i, false);
                                 }
-                                m_Menu.SwitchMapMode(liegeMapMode, false);
                             }
                             ImGui::PopID();
                             n++;
@@ -930,37 +911,26 @@ void PropertiesTab::RenderTitles() {
                         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "note: drag to change order.");
 
                         // HIGHTITLE: add new dejure title (button)
-                        if (ImGui::SmallButton((m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) ? "click on a title..." : "add") && !m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) {
+                        bool isPickingDejure = m_Menu.GetSelectionHandler().IsPicking(SelectionType::TITLE);
+                        if (ImGui::SmallButton(isPickingDejure ? "click on a title..." : "add") && !isPickingDejure) {
                             TitleType dejureType = static_cast<TitleType>(static_cast<int>(highTitle->GetType()) - 1);
                             MapMode liegeMapMode = TitleTypeToMapMode(highTitle->GetType());
-                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::TITLE);
-                            m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
-                            m_Menu.GetSelectionHandler().AddCallback(
-                                [this, highTitle, dejureType, liegeMapMode](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
-                                    if (button != sf::Mouse::Button::Left)
-                                        goto StopSelecting;
-
+                            m_Menu.GetSelectionHandler().PickTitle(
+                                [this, highTitle, dejureType, liegeMapMode](Title* clickedTitle) {
                                     if (!clickedTitle->Is(dejureType))
-                                        return SelectionCallbackResult::INTERRUPT;
+                                        return false;
 
-                                    // Add the clicked title as a dejure vassals,
-                                    // and then update the textures for all map modes above the clicked title type.
+                                    // Add the clicked title as a dejure vassal, and then
+                                    // update the textures for all map modes above it.
                                     highTitle->AddDejureTitle(clickedTitle);
                                     for (int i = static_cast<int>(liegeMapMode); i <= static_cast<int>(MapMode::HEGEMONY); i++) {
                                         m_Menu.UpdateTexture(static_cast<MapMode>(i), false);
-									}
-
-                                    // Keep selecting if the user is holding the left shift key, otherwise stop selecting.
-                                    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)) {
-                                        m_Menu.SwitchMapMode(TitleTypeToMapMode(dejureType), false);
-                                        return SelectionCallbackResult::INTERRUPT;
                                     }
-
-                                    StopSelecting:
-                                    m_Menu.SwitchMapMode(liegeMapMode, false);
-                                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                                    return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                                }
+                                    return true;
+                                },
+                                true, // hold LSHIFT to keep adding several dejure titles
+                                TitleTypeToMapMode(dejureType),
+                                liegeMapMode
                             );
                         }
                         ImGui::EndChild();
@@ -973,28 +943,21 @@ void PropertiesTab::RenderTitles() {
 
                         // HIGHTITLE: change capital county (button)
                         ImGui::NewLine();
-                        if (ImGui::Button((m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) ? "click on a title..." : "change capital county") && !m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) {
-                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::TITLE);
-                            m_Menu.SwitchMapMode(MapMode::COUNTY, false);
-                            m_Menu.GetSelectionHandler().AddCallback(
-                                [this, highTitle](sf::Mouse::Button button, Province* province, Title* clickedTitle) {
-                                    if (button != sf::Mouse::Button::Right)
-                                        goto DeleteCallback;
-                                    if (button != sf::Mouse::Button::Left)
-                                        return SelectionCallbackResult::INTERRUPT;
+                        bool isPickingCapital = m_Menu.GetSelectionHandler().IsPicking(SelectionType::TITLE);
+                        if (ImGui::Button(isPickingCapital ? "click on a title..." : "change capital county") && !isPickingCapital) {
+                            m_Menu.GetSelectionHandler().PickTitle(
+                                [this, highTitle](Title* clickedTitle) {
                                     if (!clickedTitle->Is(TitleType::COUNTY))
-                                        return SelectionCallbackResult::INTERRUPT;
-
-                                    // Check if clicked title is a direct or undirect vassal of the title.
+                                        return false;
+                                    // Check if the clicked title is a direct or indirect vassal of the title.
                                     if (!clickedTitle->IsVassal(highTitle))
-                                        return SelectionCallbackResult::INTERRUPT;
+                                        return false;
                                     highTitle->SetCapitalTitle(static_cast<CountyTitle*>(clickedTitle));
-
-                                DeleteCallback:
-                                    m_Menu.SwitchMapMode(TitleTypeToMapMode(highTitle->GetType()), false);
-                                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                                    return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                                }
+                                    return true;
+                                },
+                                false,
+                                MapMode::COUNTY,
+                                TitleTypeToMapMode(highTitle->GetType())
                             );
                         }
                     }
@@ -1156,35 +1119,21 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
-                bool wasSelectingTitle = m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE);
+                bool wasSelectingTitle = m_Menu.GetSelectionHandler().IsPicking(SelectionType::TITLE);
                 ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                 if (wasSelectingTitle) ImGui::BeginDisabled();
                 if (ImGui::SmallButton("📌") && !wasSelectingTitle) {
-                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::TITLE);
-
-                    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE)) {
-                        m_Menu.GetSelectionHandler().m_ProvinceCallbacks.pop_back();
-                        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                    }
-
-                    if (!MapModeIsTitle(m_Menu.GetMapMode()))
-                        m_Menu.SwitchMapMode(MapMode::KINGDOM, false);
-
-                    m_Menu.GetSelectionHandler().AddCallback(
-                        [this, region](sf::Mouse::Button button, Province* clickedProvince, Title* clickedTitle) {
-                            // Allow user to wrap a title using RMB.
-                            if (button != sf::Mouse::Button::Left)
-                                return SelectionCallbackResult::CONTINUE;
-                            // Allow user to unwrap a title using LCtrl+LMB.
-                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
-                                return SelectionCallbackResult::CONTINUE;
+                    std::optional<MapMode> mapModeWhilePicking = MapModeIsTitle(m_Menu.GetMapMode()) ? std::nullopt : std::optional<MapMode>(MapMode::KINGDOM);
+                    m_Menu.GetSelectionHandler().PickTitle(
+                        [this, region](Title* clickedTitle) {
                             region->AddTitle(clickedTitle);
                             m_Menu.GetSelectionHandler().Update();
-                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
-                                return SelectionCallbackResult::INTERRUPT;
-                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                        }
+                            return true;
+                        },
+                        true, // hold LSHIFT to keep adding several titles
+                        mapModeWhilePicking,
+                        std::nullopt,
+                        false // let RMB (wrap) / LCtrl+LMB (unwrap) reach the normal title click handlers instead of cancelling the pick
                     );
                 }
                 if (wasSelectingTitle) ImGui::EndDisabled();
@@ -1244,29 +1193,17 @@ void PropertiesTab::RenderRegions() {
                 ImGui::SameLine();
 
                 // REGION: add new title (button with callback)
-                bool wasSelectingProvince = m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE);
+                bool wasSelectingProvince = m_Menu.GetSelectionHandler().IsPicking(SelectionType::PROVINCE);
                 ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
                 if (wasSelectingProvince) ImGui::BeginDisabled();
                 if (ImGui::SmallButton("📌") && !wasSelectingProvince) {
-                    m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::PROVINCE);
-                    m_Menu.SwitchMapMode(MapMode::PROVINCES, false);
-
-                    if (m_Menu.GetSelectionHandler().IsSelectionType(SelectionType::TITLE)) {
-                        m_Menu.GetSelectionHandler().m_TitleCallbacks.pop_back();
-                        m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                    }
-
-                    m_Menu.GetSelectionHandler().AddCallback(
-                        [this, region](sf::Mouse::Button button, Province* clickedProvince) {
-                            if (button != sf::Mouse::Button::Left)
-                                return SelectionCallbackResult::INTERRUPT;
+                    m_Menu.GetSelectionHandler().PickProvince(
+                        [this, region](Province* clickedProvince) {
                             region->AddProvince(clickedProvince);
                             m_Menu.GetSelectionHandler().Update();
-                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
-                                return SelectionCallbackResult::INTERRUPT;
-                            m_Menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                            return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                        }
+                        },
+                        true, // hold LSHIFT to keep adding several provinces
+                        MapMode::PROVINCES
                     );
                 }
                 if (wasSelectingProvince) ImGui::EndDisabled();
@@ -1394,7 +1331,7 @@ void PropertiesTab::RenderAdjacency() {
         };
 
         // ADJACENCY: from id (text input + picker + alerts)
-        Components::ProvinceInput("from id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetFromId(), [&](int newProvinceId) {
+        Components::ProvinceInput("from id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetFromId(), [this, adjacency](int newProvinceId) {
             std::pair<int, int> formerIds = adjacency->GetId();
             adjacency->SetFromId(newProvinceId);
             m_Mod.GetProvinceManager().RenameAdjacencyIds(formerIds, adjacency->GetId());
@@ -1403,13 +1340,17 @@ void PropertiesTab::RenderAdjacency() {
             // Automatically change the start position to the new province position.
             Province* province = m_Mod.GetProvinceManager().GetProvinceById(newProvinceId);
             if (province != nullptr) {
-                adjacency->SetStart(sf::Vector2u(province->GetImagePosition()));
+                sf::Vector2f provincePosition = sf::Vector2f(province->GetImagePosition());
+                provincePosition.x = std::max(0.f, provincePosition.x);
+                provincePosition.y = std::max(0.f, m_Mod.GetProvinceManager().GetProvincesImage().getSize().y - provincePosition.y);
+                sf::Vector2u newPosition = sf::Vector2u(provincePosition);
+                adjacency->SetStart(newPosition);
             }
         });
         DrawMissingBaronyIcon(adjacency->GetFromId());
 
         // ADJACENCY: to id (text input + picker + alerts)
-        Components::ProvinceInput("to id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetToId(), [&](int newProvinceId) {
+        Components::ProvinceInput("to id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetToId(), [this, adjacency](int newProvinceId) {
             std::pair<int, int> formerIds = adjacency->GetId();
             adjacency->SetToId(newProvinceId);
             m_Mod.GetProvinceManager().RenameAdjacencyIds(formerIds, adjacency->GetId());
@@ -1417,7 +1358,11 @@ void PropertiesTab::RenderAdjacency() {
 
             Province* province = m_Mod.GetProvinceManager().GetProvinceById(newProvinceId);
             if (province != nullptr) {
-                adjacency->SetStop(sf::Vector2u(province->GetImagePosition()));
+                sf::Vector2f provincePosition = sf::Vector2f(province->GetImagePosition());
+                provincePosition.x = std::max(0.f, provincePosition.x);
+                provincePosition.y = std::max(0.f, m_Mod.GetProvinceManager().GetProvincesImage().getSize().y - provincePosition.y);
+                sf::Vector2u newPosition = sf::Vector2u(provincePosition);
+                adjacency->SetStop(newPosition);
             }
         });
         DrawMissingBaronyIcon(adjacency->GetToId());
@@ -1431,8 +1376,9 @@ void PropertiesTab::RenderAdjacency() {
         );
         
         // ADJACENCY: through id (text input + picker + alerts)
-        Components::ProvinceInput("through id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetThroughId(), [adjacency](int newProvinceId) {
+        Components::ProvinceInput("through id", m_Menu, m_Mod.GetProvinceManager(), adjacency->GetThroughId(), [this, adjacency](int newProvinceId) {
             adjacency->SetThroughId(newProvinceId);
+            m_Menu.GetSelectionHandler().Update();
         });
 
         // ADJACENCY: start position

@@ -100,6 +100,67 @@ sf::Image CultureManager::GetCultureImage(ProvinceManager& provinceManager, Titl
     return image;
 }
 
+std::vector<sf::Color> CultureManager::GetCulturePalette(ProvinceManager& provinceManager, TitleManager& titleManager) const {
+    sf::Color defaultColor = sf::Color(127, 127, 127);
+
+    const auto& indices = provinceManager.GetProvinceIndices();
+    std::vector<sf::Color> palette(indices.size(), defaultColor);
+
+    for(const auto& [provinceColorId, province] : provinceManager.GetProvincesByColors()) {
+        auto indexIt = indices.find(provinceColorId);
+        if (indexIt == indices.end())
+            continue;
+
+        std::string culture = province->GetCulture();
+        sf::Color color = defaultColor;
+        uint8_t alpha = culture.empty() ? 255 : 0;
+
+        if(culture.empty()) {
+            CountyTitle* liege = static_cast<CountyTitle*>(province->GetProvinceLiegeTitle(titleManager, TitleType::COUNTY));
+
+            if(liege == nullptr) {
+                goto End;
+            }
+
+            for(const auto& dejureTitle : liege->GetDejureTitles()) {
+                BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
+                Province* baronyProvince = provinceManager.GetProvinceById(barony->GetProvinceId());
+
+                if (baronyProvince == nullptr) {
+                    LOG_ERROR("Barony '{}' has unknown province id '{}'", barony->GetName(), barony->GetProvinceId());
+                    continue;
+                }
+
+                if(!baronyProvince->GetCulture().empty()) {
+                    culture = baronyProvince->GetCulture();
+                    break;
+                }
+            }
+        }
+
+        if (culture.empty()) {
+            color = sf::Color::Black;
+            goto End;
+        }
+
+        {
+            auto it = m_Cultures.find(culture);
+            if (it == m_Cultures.end()) {
+                color = sf::Color(culture[0], culture[1], culture[2]);
+            }
+            else {
+                color = it->second->GetColor();
+            }
+        }
+
+        End:
+        color.a = alpha;
+        palette[indexIt->second] = color;
+    }
+
+    return palette;
+}
+
 //////////////////////////////////////////////////////
 
 void CultureManager::AddCulture(UniquePtr<Culture> culture) {

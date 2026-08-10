@@ -23,36 +23,24 @@ bool Components::PositionInput(std::string_view label, EditorMenu& menu, Provinc
         catch (...) {}
     }
 
-    bool wasPickingPosition = menu.GetSelectionHandler().IsSelectionType(SelectionType::POSITION);
+    bool wasPickingPosition = menu.GetSelectionHandler().IsPicking(SelectionType::POSITION);
     ImGui::SameLine();
     ImGui::PushFont(ImGui::notoSansNormalFont, ImGui::GetFontSize());
     if (wasPickingPosition) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     if (ImGui::Button("📌")) {
         if (wasPickingPosition) {
-            menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-            menu.GetSelectionHandler().RemoveLastPositionCallback();
+            menu.GetSelectionHandler().CancelPick();
         }
         else {
-            menu.GetSelectionHandler().SetSelectionType(SelectionType::POSITION);
-
-            menu.GetSelectionHandler().AddCallback(
-                [&, onChange](sf::Mouse::Button button, sf::Vector2f clickedPosition) {
-                    menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                    menu.GetSelectionHandler().Update();
-
-                    if (button != sf::Mouse::Button::Left)
-                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-
+            menu.GetSelectionHandler().PickPosition(
+                [&provinceManager, currentPosition, onChange](sf::Vector2f clickedPosition) {
                     clickedPosition.x = std::max(0.f, clickedPosition.x);
                     clickedPosition.y = std::max(0.f, provinceManager.GetProvincesImage().getSize().y - clickedPosition.y);
                     sf::Vector2u newPosition = sf::Vector2u(clickedPosition);
 
                     if (newPosition != currentPosition) {
                         onChange(newPosition);
-                        valueChanged = true;
                     }
-
-                    return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
                 }
             );
         }

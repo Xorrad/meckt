@@ -56,6 +56,15 @@ public:
     sf::Image GetFaithImage(ProvinceManager& provinceManager, TitleManager& titleManager) const;
 
     /**
+     * @brief Builds the faith palette: palette[renderIndex] = that province's faith color.
+     * @note  Requires `provinceManager.BuildProvinceIndex()` to have been called beforehand.
+     * @param provinceManager The province manager.
+     * @param titleManager The title manager.
+     * @return The palette, indexed by the province manager's render index.
+     */
+    std::vector<sf::Color> GetFaithPalette(ProvinceManager& provinceManager, TitleManager& titleManager) const;
+
+    /**
      * @brief Retrieves a map of faiths.
      * @return The map of faiths.
      */

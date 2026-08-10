@@ -157,6 +157,145 @@ sf::Image ProvinceManager::GetWinterSeverityBiasImage() const {
     return image;
 }
 
+void ProvinceManager::BuildProvinceIndex() {
+    // Assign every province a stable, dense render index (0..N-1) ordered by id.
+    m_ProvinceIndices.clear();
+    uint16_t index = 0;
+    for (const auto& [id, province] : m_ProvincesByIds) {
+        m_ProvinceIndices[province->GetColorId()] = index;
+        index++;
+    }
+
+    // Rebuild the index image: each pixel's R+G channels encode its province's
+    // render index instead of a color, so it never needs regenerating again
+    // unless the set of provinces (or the base image) changes.
+    sf::Vector2u size = m_ProvincesImage.getSize();
+    size_t totalPixels = static_cast<size_t>(size.x) * size.y;
+    const uint8_t* srcPixels = m_ProvincesImage.getPixelsPtr();
+
+    std::vector<uint8_t> pixels(totalPixels * 4, 0);
+
+    // Cache the last resolved color/index to avoid a hash lookup for every
+    // pixel of a run of identical colors (provinces span many contiguous pixels).
+    uint32_t previousColor = 0xFFFFFFFF;
+    uint16_t previousIndex = 0xFFFF;
+
+    for (size_t i = 0; i < totalPixels; i++) {
+        size_t offset = i * 4;
+        uint32_t color = (static_cast<uint32_t>(srcPixels[offset + 0]) << 24)
+                        | (static_cast<uint32_t>(srcPixels[offset + 1]) << 16)
+                        | (static_cast<uint32_t>(srcPixels[offset + 2]) << 8)
+                        | static_cast<uint32_t>(srcPixels[offset + 3]);
+
+        uint16_t provinceIndex;
+        if (color == previousColor) {
+            provinceIndex = previousIndex;
+        }
+        else {
+            auto it = m_ProvinceIndices.find(color);
+            // 0xFFFF is used as a sentinel for pixels that don't match any known
+            // province (e.g. stray colors) - harmlessly clamped to the palette edge.
+            provinceIndex = (it != m_ProvinceIndices.end()) ? it->second : 0xFFFF;
+            previousColor = color;
+            previousIndex = provinceIndex;
+        }
+
+        pixels[offset + 0] = static_cast<uint8_t>(provinceIndex & 0xFF);
+        pixels[offset + 1] = static_cast<uint8_t>((provinceIndex >> 8) & 0xFF);
+        pixels[offset + 2] = 0;
+        pixels[offset + 3] = 255;
+    }
+
+    m_ProvincesIndexImage = sf::Image(size, pixels.data());
+}
+
+const sf::Image& ProvinceManager::GetProvincesIndexImage() const {
+    return m_ProvincesIndexImage;
+}
+
+const std::unordered_map<uint32_t, uint16_t>& ProvinceManager::GetProvinceIndices() const {
+    return m_ProvinceIndices;
+}
+
+std::vector<sf::Color> ProvinceManager::GetProvinceIdentityPalette() const {
+    std::vector<sf::Color> palette(m_ProvinceIndices.size());
+    for (const auto& [colorId, province] : m_ProvincesByColors) {
+        auto it = m_ProvinceIndices.find(colorId);
+        if (it == m_ProvinceIndices.end())
+            continue;
+        palette[it->second] = province->GetColor();
+    }
+    return palette;
+}
+
+std::vector<sf::Color> ProvinceManager::GetFlagsPalette() const {
+    std::vector<sf::Color> palette(m_ProvinceIndices.size());
+    for (const auto& [colorId, province] : m_ProvincesByColors) {
+        auto it = m_ProvinceIndices.find(colorId);
+        if (it == m_ProvinceIndices.end())
+            continue;
+        palette[it->second] = ProvincesFlagsToColor(province->GetFlags());
+    }
+    return palette;
+}
+
+std::vector<sf::Color> ProvinceManager::GetTerrainPalette() const {
+    sf::Color defaultColor = sf::Color(0, 0, 0);
+    std::vector<sf::Color> palette(m_ProvinceIndices.size(), defaultColor);
+    for (const auto& [colorId, province] : m_ProvincesByColors) {
+        auto it = m_ProvinceIndices.find(colorId);
+        if (it == m_ProvinceIndices.end())
+            continue;
+
+        std::string terrain = province->GetTerrain();
+        sf::Color color = defaultColor;
+        if (m_TerrainTypes.contains(terrain)) {
+            const TerrainType& terrainType = m_TerrainTypes.at(terrain);
+            color = terrainType.GetColor();
+        }
+        palette[it->second] = color;
+    }
+    return palette;
+}
+
+std::vector<sf::Color> ProvinceManager::GetClimatePalette() const {
+    std::vector<sf::Color> palette(m_ProvinceIndices.size());
+    for (const auto& [colorId, province] : m_ProvincesByColors) {
+        auto it = m_ProvinceIndices.find(colorId);
+        if (it == m_ProvinceIndices.end())
+            continue;
+        palette[it->second] = ClimateTypeColors.at(province->GetClimateType());
+    }
+    return palette;
+}
+
+std::vector<sf::Color> ProvinceManager::GetWinterSeverityBiasPalette() const {
+    sf::Color defaultColor = sf::Color(255, 0, 0);
+    std::vector<sf::Color> palette(m_ProvinceIndices.size(), defaultColor);
+    for (const auto& [colorId, province] : m_ProvincesByColors) {
+        auto it = m_ProvinceIndices.find(colorId);
+        if (it == m_ProvinceIndices.end())
+            continue;
+
+        sf::Color color = defaultColor;
+        if (!province->GetWinterSeverityBias().empty()) {
+            try {
+                double winterSeverity = std::clamp(
+                    province->GetWinterSeverityBias().starts_with("@")
+                        ? String::ParseDouble(m_ProvinceTerrainPropertiesVariables->Get(province->GetWinterSeverityBias())->As<std::string>("0.0"))
+                        : String::ParseDouble(province->GetWinterSeverityBias()),
+                    0.0,
+                    1.0
+                );
+                color = sf::Color(winterSeverity * 255, winterSeverity * 255, winterSeverity * 255, 255);
+            }
+            catch(std::exception&){}
+        }
+        palette[it->second] = color;
+    }
+    return palette;
+}
+
 Province* ProvinceManager::GetProvinceByColor(uint32_t color) {
     auto it = m_ProvincesByColors.find(color);
     return (it != m_ProvincesByColors.end()) ? it->second.get() : nullptr;
@@ -654,6 +793,13 @@ void ProvinceManager::LoadHeightmapImage() {
         throw std::runtime_error(fmt::format("ProvinceManager::LoadHeightmapImage: Failed to load heightmap image at '{}': file does not exist", filePath));
     if(!m_HeightmapImage.loadFromFile(filePath))
         throw std::runtime_error(fmt::format("ProvinceManager::LoadHeightmapImage: Failed to load heightmap image at '{}': file couldn't be opened", filePath));
+
+    // Scale the heightmap to match the provinces image.
+    sf::Vector2u provincesSize = m_ProvincesImage.getSize();
+    if (provincesSize.x > 0 && provincesSize.y > 0 && m_HeightmapImage.getSize() != provincesSize) {
+        LOG_INFO("Scaling heightmap image from {}x{} to {}x{} to match the provinces image", m_HeightmapImage.getSize().x, m_HeightmapImage.getSize().y, provincesSize.x, provincesSize.y);
+        m_HeightmapImage = Image::Resize(m_HeightmapImage, provincesSize);
+    }
 }
 
 void ProvinceManager::LoadRiversImage() {

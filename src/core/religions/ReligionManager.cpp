@@ -100,6 +100,67 @@ sf::Image ReligionManager::GetFaithImage(ProvinceManager& provinceManager, Title
     return image;
 }
 
+std::vector<sf::Color> ReligionManager::GetFaithPalette(ProvinceManager& provinceManager, TitleManager& titleManager) const {
+    sf::Color defaultColor = sf::Color(127, 127, 127);
+
+    const auto& indices = provinceManager.GetProvinceIndices();
+    std::vector<sf::Color> palette(indices.size(), defaultColor);
+
+    for(const auto& [provinceColorId, province] : provinceManager.GetProvincesByColors()) {
+        auto indexIt = indices.find(provinceColorId);
+        if (indexIt == indices.end())
+            continue;
+
+        std::string faith = province->GetFaith();
+        sf::Color color = defaultColor;
+        uint8_t alpha = faith.empty() ? 255 : 0;
+
+        if(faith.empty()) {
+            CountyTitle* liege = static_cast<CountyTitle*>(province->GetProvinceLiegeTitle(titleManager, TitleType::COUNTY));
+
+            if(liege == nullptr) {
+                goto End;
+            }
+
+            for(const auto& dejureTitle : liege->GetDejureTitles()) {
+                BaronyTitle* barony = static_cast<BaronyTitle*>(dejureTitle);
+                Province* baronyProvince = provinceManager.GetProvinceById(barony->GetProvinceId());
+
+                if (baronyProvince == nullptr) {
+                    LOG_ERROR("Barony '{}' has unknown province id '{}'", barony->GetName(), barony->GetProvinceId());
+                    continue;
+                }
+
+                if(!baronyProvince->GetFaith().empty()) {
+                    faith = baronyProvince->GetFaith();
+                    break;
+                }
+            }
+        }
+
+        if (faith.empty()) {
+            color = sf::Color::Black;
+            goto End;
+        }
+
+        {
+            auto it = m_Faiths.find(faith);
+            if(it == m_Faiths.end()) {
+                color = sf::Color(faith[0], faith[1], faith[2]);
+            }
+            else {
+                color = it->second->GetColor();
+            }
+        }
+
+        End:
+        color.a = alpha;
+        palette[indexIt->second] = color;
+    }
+
+    return palette;
+}
+
 std::unordered_map<std::string, UniquePtr<Faith>>& ReligionManager::GetFaiths() {
     return m_Faiths;
 }

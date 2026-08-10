@@ -4,8 +4,6 @@
 #include "app/menu/EditorMenu.hpp"
 
 bool Components::ProvinceInput(std::string_view label, EditorMenu& menu, ProvinceManager& provinceManager, int currentProvinceId, std::function<void(int)> onChange) {
-    static MapMode lastMapMode = MapMode::PROVINCES;
-
     bool valueChanged = false;
 
     ImGui::PushID(ImHashStr(fmt::format("##province-input-{}", label).c_str()));
@@ -23,34 +21,24 @@ bool Components::ProvinceInput(std::string_view label, EditorMenu& menu, Provinc
     }
 
     // PROVINCE PICKER BUTTON
-    bool wasPickingProvince = menu.GetSelectionHandler().IsSelectionType(SelectionType::PROVINCE);
+    bool wasPickingProvince = menu.GetSelectionHandler().IsPicking(SelectionType::PROVINCE);
     ImGui::SameLine();
     ImGui::PushFont(ImGui::notoSansNormalFont, ImGui::GetFontSize());
     if (wasPickingProvince) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     if (ImGui::Button("📌")) {
         if (wasPickingProvince) {
-            menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-            menu.GetSelectionHandler().RemoveLastProvinceCallback();
-            menu.SwitchMapMode(lastMapMode, false);
+            menu.GetSelectionHandler().CancelPick();
         }
         else {
-            menu.GetSelectionHandler().SetSelectionType(SelectionType::PROVINCE);
-            lastMapMode = menu.GetMapMode();
-            menu.SwitchMapMode(MapMode::PROVINCES, false);
-
-            menu.GetSelectionHandler().AddCallback(
-                [&, onChange](sf::Mouse::Button button, Province* clickedProvince) {
-                    menu.GetSelectionHandler().SetSelectionType(SelectionType::NONE);
-                    menu.SwitchMapMode(lastMapMode, false);
-                    menu.GetSelectionHandler().Update();
-
-                    if (button != sf::Mouse::Button::Left || clickedProvince == nullptr)
-                        return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-
-                    valueChanged = true;
+            // Pick from the PROVINCES map mode, restoring whatever mode we're
+            // currently in once the pick stops (success or cancel).
+            menu.GetSelectionHandler().PickProvince(
+                [onChange](Province* clickedProvince) {
                     onChange(clickedProvince->GetId());
-                    return SelectionCallbackResult::INTERRUPT | SelectionCallbackResult::DELETE_CALLBACK;
-                }
+                },
+                false,
+                MapMode::PROVINCES,
+                menu.GetMapMode()
             );
         }
     }

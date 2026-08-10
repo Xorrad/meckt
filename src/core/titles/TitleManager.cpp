@@ -121,6 +121,24 @@ sf::Image TitleManager::GetTitleImage(ProvinceManager& provinceManager, TitleTyp
     return image;
 }
 
+std::vector<sf::Color> TitleManager::GetTierPalette(ProvinceManager& provinceManager, TitleType type) {
+    const sf::Color noLiegeColor = sf::Color(0x50, 0x50, 0x50, 0xff);
+
+    const auto& indices = provinceManager.GetProvinceIndices();
+    std::vector<sf::Color> palette(indices.size(), noLiegeColor);
+
+    for (const auto& [provinceColorId, province] : provinceManager.GetProvincesByColors()) {
+        auto it = indices.find(provinceColorId);
+        if (it == indices.end())
+            continue;
+
+        Title* liege = province->GetProvinceFocusedTitle(*this, type);
+        palette[it->second] = (liege != nullptr) ? liege->GetColor() : noLiegeColor;
+    }
+
+    return palette;
+}
+
 std::map<std::string, UniquePtr<Title>>& TitleManager::GetTitles() {
     return m_Titles;
 }

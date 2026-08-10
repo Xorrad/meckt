@@ -101,6 +101,16 @@ public:
     sf::Image GetTitleImage(ProvinceManager& provinceManager, TitleType type);
 
     /**
+     * @brief Builds the tier palette: palette[renderIndex] = the color of the province's
+     *        focused title of the specified type (or a neutral gray if it has none).
+     * @note  Requires `provinceManager.BuildProvinceIndex()` to have been called beforehand.
+     * @param provinceManager The province manager.
+     * @param type The highest title type.
+     * @return The palette, indexed by the province manager's render index.
+     */
+    std::vector<sf::Color> GetTierPalette(ProvinceManager& provinceManager, TitleType type);
+
+    /**
      * @brief Retrieves a map of titles.
      * @return The map of titles paired by their name.
      */
