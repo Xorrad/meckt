@@ -43,6 +43,9 @@ TEST_CASE("[TextureChunkGrid] Build: multiple chunks with apron at the shared bo
     TextureChunkGrid grid;
     grid.Build(image);
 
+    const bool canUploadApronedChunk =
+        sf::Texture::getMaximumSize() >= static_cast<unsigned int>(ChunkSize + TextureChunkGrid::Apron);
+
     CHECK(grid.GetSize() == sf::Vector2u{static_cast<unsigned int>(ChunkSize * 2), static_cast<unsigned int>(ChunkSize)});
     CHECK(grid.GetChunkCount() == sf::Vector2u{2, 1});
 
@@ -52,7 +55,8 @@ TEST_CASE("[TextureChunkGrid] Build: multiple chunks with apron at the shared bo
     REQUIRE(left != nullptr);
     CHECK(left->bounds == sf::IntRect({0, 0}, {ChunkSize, ChunkSize}));
     REQUIRE(left->texture != nullptr);
-    CHECK(left->texture->getSize() == sf::Vector2u{static_cast<unsigned int>(ChunkSize + 1), static_cast<unsigned int>(ChunkSize)});
+    if (canUploadApronedChunk)
+        CHECK(left->texture->getSize() == sf::Vector2u{static_cast<unsigned int>(ChunkSize + 1), static_cast<unsigned int>(ChunkSize)});
     REQUIRE(left->sprite.has_value());
     CHECK(left->sprite->getPosition() == sf::Vector2f{0.f, 0.f});
     CHECK(left->sprite->getTextureRect() == sf::IntRect({0, 0}, {ChunkSize, ChunkSize}));
@@ -63,7 +67,8 @@ TEST_CASE("[TextureChunkGrid] Build: multiple chunks with apron at the shared bo
     REQUIRE(right != nullptr);
     CHECK(right->bounds == sf::IntRect({ChunkSize, 0}, {ChunkSize, ChunkSize}));
     REQUIRE(right->texture != nullptr);
-    CHECK(right->texture->getSize() == sf::Vector2u{static_cast<unsigned int>(ChunkSize + 1), static_cast<unsigned int>(ChunkSize)});
+    if (canUploadApronedChunk)
+        CHECK(right->texture->getSize() == sf::Vector2u{static_cast<unsigned int>(ChunkSize + 1), static_cast<unsigned int>(ChunkSize)});
     REQUIRE(right->sprite.has_value());
     CHECK(right->sprite->getPosition() == sf::Vector2f{static_cast<float>(ChunkSize), 0.f});
     // The visible region starts 1px into the apron-inclusive texture.
