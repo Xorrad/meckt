@@ -1,7 +1,5 @@
 #include "doctest/doctest.hpp"
 
-#include "util/TextureChunkGrid.hpp"
-
 TEST_CASE("[TextureChunkGrid] Default Constructor") {
     TextureChunkGrid grid;
 

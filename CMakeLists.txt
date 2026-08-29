@@ -181,6 +181,58 @@ FetchContent_MakeAvailable(nlohmann_json)
 set_target_properties(nlohmann_json PROPERTIES FOLDER "vendor")
 
 ###############################################
+#  Lua                                        #
+###############################################
+# The upstream repository ships no CMakeLists, so the static library is
+# declared here (same approach as lodepng/nfd above).
+FetchContent_Declare(
+    lua
+    GIT_REPOSITORY https://github.com/lua/lua.git
+    GIT_TAG v5.4.8
+    GIT_SHALLOW ON
+)
+FetchContent_MakeAvailable(lua)
+
+file(GLOB LUA_SOURCES "${lua_SOURCE_DIR}/*.c")
+list(FILTER LUA_SOURCES EXCLUDE REGEX "/(lua|onelua|ltests)\\.c$")
+
+add_library(lua STATIC ${LUA_SOURCES})
+target_include_directories(lua SYSTEM PUBLIC ${lua_SOURCE_DIR})
+
+set_source_files_properties(${LUA_SOURCES} PROPERTIES LANGUAGE CXX)
+
+set_target_properties(lua PROPERTIES FOLDER "vendor")
+
+###############################################
+#  sol2                                       #
+###############################################
+FetchContent_Declare(
+    sol2
+    GIT_REPOSITORY https://github.com/ThePhD/sol2.git
+    GIT_TAG v3.3.0
+    GIT_SHALLOW ON
+    SOURCE_SUBDIR do-not-configure
+)
+FetchContent_MakeAvailable(sol2)
+
+add_library(sol2 INTERFACE)
+target_include_directories(sol2 SYSTEM INTERFACE "${sol2_SOURCE_DIR}/include")
+target_link_libraries(sol2 INTERFACE lua)
+
+# SOL_ALL_SAFETIES_ON turns type/bounds mismatches coming from user-written
+# scripts into catchable Lua errors rather than undefined behavior.
+target_compile_definitions(sol2 INTERFACE
+    SOL_ALL_SAFETIES_ON=1
+    SOL_USING_CXX_LUA=1 # Lua is built as C++ above, so no extern "C" wrapping.
+)
+
+target_compile_options(sol2 INTERFACE
+    $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
+)
+
+set_target_properties(sol2 PROPERTIES FOLDER "vendor")
+
+###############################################
 #  doctest                                    #
 ###############################################
 add_library(doctest INTERFACE)
@@ -297,6 +349,7 @@ target_link_libraries(meckt-core PUBLIC
     nlohmann_json::nlohmann_json
     backward
     meckt-resources
+    sol2
 )
 
 if (WIN32)

@@ -14,7 +14,16 @@ Mod::Mod(const std::string& rootDirectory) :
 {}
 
 Mod::Mod(const std::string& rootDirectory, sf::Image heightmapImage, sf::Image provincesImage) :
-    m_RootDirectory(rootDirectory)
+    m_RootDirectory(rootDirectory),
+    // Constructed up-front so the getters are usable on a mod that hasn't been
+    // loaded yet (they used to dereference null until Load() ran). Load()
+    // replaces them, which is what resets the state when a mod is re-loaded.
+    m_TitleManager(MakeUnique<TitleManager>(*this)),
+    m_ProvinceManager(MakeUnique<ProvinceManager>(*this)),
+    m_RegionManager(MakeUnique<RegionManager>(*this)),
+    m_CultureManager(MakeUnique<CultureManager>(*this)),
+    m_ReligionManager(MakeUnique<ReligionManager>(*this)),
+    m_DefineManager(MakeUnique<DefineManager>(*this))
 {
 
 }

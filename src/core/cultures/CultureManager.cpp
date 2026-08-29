@@ -161,6 +161,14 @@ std::vector<sf::Color> CultureManager::GetCulturePalette(ProvinceManager& provin
     return palette;
 }
 
+std::unordered_map<std::string, UniquePtr<Culture>>& CultureManager::GetCultures() {
+    return m_Cultures;
+}
+
+const std::unordered_map<std::string, UniquePtr<Culture>>& CultureManager::GetCultures() const {
+    return m_Cultures;
+}
+
 //////////////////////////////////////////////////////
 
 void CultureManager::AddCulture(UniquePtr<Culture> culture) {

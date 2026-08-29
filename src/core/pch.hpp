@@ -68,6 +68,7 @@ class Faith;
 #include "util/ScopedString.hpp"
 #include "util/Image.hpp"
 #include "util/OrderedMap.hpp"
+#include "util/TextureChunkGrid.hpp"
 
 #include "provinces/ClimateType.hpp"
 #include "provinces/HoldingType.hpp"

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Menu.hpp"
-#include "core/util/TextureChunkGrid.hpp"
 #include "selection/SelectionHandler.hpp"
+#include "ui/components/modals/ScriptModal.hpp"
 
 typedef unsigned int ImGuiID;
 
@@ -91,6 +91,7 @@ private:
 
     MapMode m_MapMode;
     SelectionHandler m_SelectionHandler;
+    ScriptModal m_ScriptModal;
 
     sf::View m_Camera;
     sf::Clock m_Clock;

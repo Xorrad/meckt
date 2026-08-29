@@ -17,6 +17,7 @@ EditorMenu::EditorMenu(App& app) :
     m_Mod(app.GetMod()),
     m_MapMode(MapMode::PROVINCES),
     m_SelectionHandler(SelectionHandler(*this)),
+    m_ScriptModal(*this),
     m_HoverText(Configuration::fonts.Get(Fonts::FIGTREE)),
     m_HoverTitleText(Configuration::fonts.Get(Fonts::FIGTREE)),
     m_DisplayBorders(true),
@@ -794,7 +795,15 @@ void EditorMenu::RenderMenuBarTools() {
         if(ImGui::MenuItem("Generate provinces climate")) {
             m_ModalName = "Generate provinces climate";
         }
-        
+
+        ImGui::Separator();
+
+        if(ImGui::MenuItem("Run a Lua script")) {
+            m_ModalName = ScriptModal::Name;
+        }
+
+        ImGui::Separator();
+
         if(ImGui::MenuItem("Save image to disk")) {
             try {
                 if (this->GetMapBounds().size.x > 0) {
@@ -860,6 +869,9 @@ void EditorMenu::RenderMenuBarTools() {
 }
 
 void EditorMenu::RenderModals() {
+    // LUA SCRIPT EXECUTOR
+    m_ScriptModal.Render();
+
     // CREATE TITLE: modal begin
     ImVec2 size = ImGui::GetMainViewport()->Size;
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
