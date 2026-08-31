@@ -823,7 +823,12 @@ void TitleManager::ExportTitles() {
         if(fileName.empty())
             fileName = "01_landed_titles.txt";
         if(files.count(fileName) == 0) {
-            files[fileName] = std::ofstream(m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName), std::ios::binary);
+            std::string filePath = m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName);
+            files[fileName] = std::ofstream(filePath, std::ios::binary);
+            if (!files[fileName].is_open()) {
+                LOG_ERROR("Failed to open file '{}' for writing: {}", filePath, std::strerror(errno));
+                continue;
+            }
             File::EncodeToUTF8BOM(files[fileName]);
 
             // Export original script variables.
