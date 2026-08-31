@@ -1106,6 +1106,107 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
     }
 }
 
+TEST_CASE("[ProvinceManager] ExportProvincesHistory: title tier comments") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    TestUtil::ResetDirectory("resources/tests/province_manager/test_mod_modified");
+
+    // 1. Setup the mod and the provinces.
+    Mod mod("resources/tests/province_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
+
+    TitleManager titleManager(mod);
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadHoldingTypes());
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadProvincesHistory());
+
+    const auto AddHighTitle = [&](TitleType type, const std::string& name) {
+        titleManager.AddTitle(MakeTitle(type, name, sf::Color::White, false));
+        return titleManager.GetTitleAs<HighTitle>(name);
+    };
+    const auto AddBarony = [&](const std::string& name, int provinceId) {
+        titleManager.AddTitle(MakeUnique<BaronyTitle>(name, sf::Color::White, false, provinceId));
+        return titleManager.GetTitleAs<BaronyTitle>(name);
+    };
+
+    //   k_a  d_a  c_a  provinces 4 and 5
+    //             c_b   province 3
+    //        d_b  c_c  province 2
+    //   k_b  d_c  c_d  province 1
+    HighTitle* kingdomAlpha = AddHighTitle(TitleType::KINGDOM, "k_a");
+    HighTitle* kingdomBeta = AddHighTitle(TitleType::KINGDOM, "k_b");
+    HighTitle* duchyAlpha = AddHighTitle(TitleType::DUCHY, "d_a");
+    HighTitle* duchyBeta = AddHighTitle(TitleType::DUCHY, "d_b");
+    HighTitle* duchyGamma = AddHighTitle(TitleType::DUCHY, "d_c");
+    HighTitle* countyAlpha = AddHighTitle(TitleType::COUNTY, "c_a");
+    HighTitle* countyBeta = AddHighTitle(TitleType::COUNTY, "c_b");
+    HighTitle* countyGamma = AddHighTitle(TitleType::COUNTY, "c_c");
+    HighTitle* countyDelta = AddHighTitle(TitleType::COUNTY, "c_d");
+
+    REQUIRE(kingdomAlpha != nullptr);
+    REQUIRE(countyDelta != nullptr);
+
+    kingdomAlpha->AddDejureTitle(duchyAlpha);
+    kingdomAlpha->AddDejureTitle(duchyBeta);
+    kingdomBeta->AddDejureTitle(duchyGamma);
+
+    duchyAlpha->AddDejureTitle(countyAlpha);
+    duchyAlpha->AddDejureTitle(countyBeta);
+    duchyBeta->AddDejureTitle(countyGamma);
+    duchyGamma->AddDejureTitle(countyDelta);
+
+    // Provinces 4 and 5 share the same county.
+    countyAlpha->AddDejureTitle(AddBarony("b_four", 4));
+    countyAlpha->AddDejureTitle(AddBarony("b_five", 5));
+    countyBeta->AddDejureTitle(AddBarony("b_three", 3));
+    countyGamma->AddDejureTitle(AddBarony("b_two", 2));
+    countyDelta->AddDejureTitle(AddBarony("b_one", 1));
+
+    // 2. Export the provinces history.
+    mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
+    REQUIRE_NOTHROW(manager.ExportProvincesHistory(titleManager));
+
+    // Provinces 1 to 5 were loaded from this file, and keep it on export.
+    const std::string exportedFile =
+        "resources/tests/province_manager/test_mod_modified/history/provinces/00_k_test_prov.txt";
+    REQUIRE(std::filesystem::exists(exportedFile));
+
+    std::vector<std::string> comments = TestUtil::ReadComments(exportedFile);
+
+    // 3. Asserts
+    SUBCASE("Every title tier is commented") {
+        const auto CountAtLevel = [&](const std::string& prefix) {
+            return std::count_if(comments.begin(), comments.end(), [&](const std::string& line) {
+                return line.starts_with(prefix);
+            });
+        };
+
+        CHECK_EQ(CountAtLevel("##### "), 2); // k_a, k_b
+        CHECK_EQ(CountAtLevel("### "), 3);   // d_a, d_b, d_c
+        CHECK_EQ(CountAtLevel("## "), 4);    // c_a, c_b, c_c, c_d
+        CHECK_EQ(CountAtLevel("# "), 5);     // one per province, named after it
+    }
+
+    SUBCASE("Comments are grouped and ordered by kingdom, then duchy, then county, then id") {
+        CHECK_EQ(comments, std::vector<std::string>{
+            "##### k_a ############################",
+            "### d_a",
+            "## c_a",
+            "# TEST4",
+            "# TEST5",
+            "## c_b",
+            "# TEST3",
+            "### d_b",
+            "## c_c",
+            "# TEST2",
+            "##### k_b ############################",
+            "### d_c",
+            "## c_d",
+            "# TEST1"
+        });
+    }
+}
+
 TEST_CASE("[ProvinceManager] ExportAdjacencies") {
     // Removes the temporary export directory if it already exists from a previous test.
     TestUtil::ResetDirectory("resources/tests/province_manager/test_mod_modified");

@@ -29,4 +29,22 @@ inline bool HasUTF8BOM(const std::string& path) {
     return bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF;
 }
 
+inline std::vector<std::string> ReadComments(const std::string& filePath) {
+    std::ifstream file(filePath, std::ios::binary);
+    REQUIRE(file.is_open());
+
+    std::vector<std::string> comments;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (line.starts_with("\xEF\xBB\xBF"))
+            line = line.substr(3);
+        if (line.ends_with("\n"))
+            line.pop_back();
+        if (line.starts_with("#"))
+            comments.push_back(line);
+    }
+    return comments;
+}
+
 }

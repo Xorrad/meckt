@@ -1496,38 +1496,82 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
     };
     std::map<std::string, FileData> files;
 
-    std::vector<Province*> provinces(m_ProvincesByIds.size());
-    std::transform(m_ProvincesByIds.begin(), m_ProvincesByIds.end(), provinces.begin(), [](const auto& pair) { return pair.second; });
+    std::vector<Province*> provinces;
+    provinces.reserve(m_ProvincesByIds.size());
 
-    // In order to be able to add comments for the kingdom, duchy and county tiers, we need to have provinces grouped by their liege titles.
+    for (auto& [_, province] : m_ProvincesByColors) {
+        // Skip non-land provinces that don't have any history data. 
+        if (!province->HasFlag(ProvinceFlags::LAND)
+            && province->GetHistory().empty()
+            && province->GetExtraHistoryData()->Is(Jomini::Type::NONE))
+            continue;
+        provinces.push_back(province.get());
+    }
+
+    // In order to be able to add comments for the kingdom, duchy and county tiers, group provinces by their liege titles.
     std::sort(provinces.begin(), provinces.end(), [&](const Province* a, const Province* b) {
-        BaronyTitle* aBaronyTitle = titleManager.GetBaronyByProvinceId(a->GetId());
-        BaronyTitle* bBaronyTitle = titleManager.GetBaronyByProvinceId(b->GetId());
+        BaronyTitle* aBarony = titleManager.GetBaronyByProvinceId(a->GetId());
+        BaronyTitle* bBarony = titleManager.GetBaronyByProvinceId(b->GetId());
 
-        // Provinces without barony title are sorted at the end.
-        if (!aBaronyTitle || !bBaronyTitle)
-            return aBaronyTitle != nullptr;
+        // Provinces with barony titles come first.
+        if (aBarony != nullptr && bBarony == nullptr)
+            return true;
+        if (aBarony == nullptr && bBarony != nullptr)
+            return false;
 
-        HighTitle* aCountyTitle = aBaronyTitle->GetLiegeTitle(TitleType::COUNTY);
-        HighTitle* bCountyTitle = bBaronyTitle->GetLiegeTitle(TitleType::COUNTY);
+        // If neither province has a barony title, sort by province ID.
+        if (aBarony == nullptr)
+            return a->GetId() < b->GetId();
 
-        // Provinces without county title are sorted at the end.
-        if (!aCountyTitle || !bCountyTitle)
-            return aCountyTitle != nullptr;
+        HighTitle* aCounty = aBarony->GetLiegeTitle(TitleType::COUNTY);
+        HighTitle* bCounty = bBarony->GetLiegeTitle(TitleType::COUNTY);
 
-        HighTitle* aDuchyTitle = aCountyTitle->GetLiegeTitle(TitleType::DUCHY);
-        HighTitle* bDuchyTitle = bCountyTitle->GetLiegeTitle(TitleType::DUCHY);
+        // Provinces with county titles come first.
+        if (aCounty != nullptr && bCounty == nullptr)
+            return true;
+        if (aCounty == nullptr && bCounty != nullptr)
+            return false;
 
-        if (!aDuchyTitle || !bDuchyTitle)
-            return aCountyTitle->GetName() < bCountyTitle->GetName();
+        if (aCounty == nullptr)
+            return a->GetId() < b->GetId();
 
-        HighTitle* aKingdomTitle = aDuchyTitle->GetLiegeTitle(TitleType::KINGDOM);
-        HighTitle* bKingdomTitle = bDuchyTitle->GetLiegeTitle(TitleType::KINGDOM);
+        HighTitle* aDuchy = aCounty->GetLiegeTitle(TitleType::DUCHY);
+        HighTitle* bDuchy = bCounty->GetLiegeTitle(TitleType::DUCHY);
 
-        if (!aKingdomTitle || !bKingdomTitle)
-            return aDuchyTitle->GetName() < bDuchyTitle->GetName();
+        // Provinces with duchy titles come first.
+        if (aDuchy != nullptr && bDuchy == nullptr)
+            return true;
+        if (aDuchy == nullptr && bDuchy != nullptr)
+            return false;
 
-        return aKingdomTitle->GetName() < bKingdomTitle->GetName();
+        HighTitle* aKingdom = aDuchy
+            ? aDuchy->GetLiegeTitle(TitleType::KINGDOM)
+            : nullptr;
+        HighTitle* bKingdom = bDuchy
+            ? bDuchy->GetLiegeTitle(TitleType::KINGDOM)
+            : nullptr;
+
+        // Compare kingdom.
+        if (aKingdom != nullptr && bKingdom != nullptr) {
+            if (aKingdom->GetName() != bKingdom->GetName())
+                return aKingdom->GetName() < bKingdom->GetName();
+        }
+        else if (aKingdom != nullptr || bKingdom != nullptr) {
+            return aKingdom != nullptr;
+        }
+
+        // Compare duchy.
+        if (aDuchy != nullptr && bDuchy != nullptr) {
+            if (aDuchy->GetName() != bDuchy->GetName())
+                return aDuchy->GetName() < bDuchy->GetName();
+        }
+
+        // Compare county.
+        if (aCounty->GetName() != bCounty->GetName())
+            return aCounty->GetName() < bCounty->GetName();
+
+        // Sort by province id if they have the same non-null county.
+        return a->GetId() < b->GetId();
     });
 
     HighTitle* lastKingdomTitle = nullptr;
