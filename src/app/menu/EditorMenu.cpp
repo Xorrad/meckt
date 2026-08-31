@@ -140,18 +140,22 @@ void EditorMenu::UpdateHoveringText() {
             text.pop_back();
 
         m_HoverText.setString(text);
-        m_HoverText.setPosition({(float) mousePosition.x + 12*Configuration::uiScale, (float) mousePosition.y - 8*Configuration::uiScale});
+        m_HoverText.setPosition({static_cast<float>(mousePosition.x) + 12*Configuration::uiScale, static_cast<float>(mousePosition.y) - 8*Configuration::uiScale});
         m_HoverText.setFillColor(sf::Color::Black);
         m_HoverText.setCharacterSize(12 * Configuration::uiScale);
 
         m_HoverTitleText.setString(hoveredTitleText);
         m_HoverTitleText.setStyle(sf::Text::Bold);
-        m_HoverTitleText.setPosition({(float) mousePosition.x + 12*Configuration::uiScale, (float) mousePosition.y - 8*Configuration::uiScale});
+        m_HoverTitleText.setPosition({static_cast<float>(mousePosition.x) + 12*Configuration::uiScale, static_cast<float>(mousePosition.y) - 8*Configuration::uiScale});
         m_HoverTitleText.setFillColor(sf::Color::Black);
         m_HoverTitleText.setCharacterSize(12 * Configuration::uiScale);
 
+        sf::Vector2f hoverShapeSize{
+            static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.x, m_HoverTitleText.getGlobalBounds().size.x)) + 4.f*Configuration::uiScale,
+            static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.y, m_HoverTitleText.getGlobalBounds().size.y)) + 8.f*Configuration::uiScale
+        };
         m_HoverShape.setPosition({(float) mousePosition.x + 10*Configuration::uiScale, (float) mousePosition.y - 10*Configuration::uiScale});
-        m_HoverShape.setSize({(float) m_HoverText.getGlobalBounds().size.x + 4*Configuration::uiScale, (float) m_HoverText.getGlobalBounds().size.y + 8*Configuration::uiScale});
+        m_HoverShape.setSize(hoverShapeSize);
         return;
     }
 
