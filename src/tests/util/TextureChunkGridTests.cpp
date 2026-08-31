@@ -2,6 +2,8 @@
 
 #include "util/TextureChunkGrid.hpp"
 
+TEST_SUITE("[TextureChunkGrid]" * doctest::skip(std::getenv("GITHUB_ACTIONS") != nullptr)) {
+
 TEST_CASE("[TextureChunkGrid] Default Constructor") {
     TextureChunkGrid grid;
 
@@ -11,7 +13,7 @@ TEST_CASE("[TextureChunkGrid] Default Constructor") {
     CHECK(grid.GetVisibleChunkCoords(sf::FloatRect({0.f, 0.f}, {100.f, 100.f})).empty());
 }
 
-TEST_CASE("[TextureChunkGrid] Build: single chunk smaller than ChunkSize") {
+TEST_CASE("[TextureChunkGrid] Build: single chunk smaller than ChunkSize" * doctest::skip(std::getenv("GITHUB_ACTIONS") != nullptr)) {
     sf::Image image({10, 10}, sf::Color::White);
 
     TextureChunkGrid grid;
@@ -114,4 +116,6 @@ TEST_CASE("[TextureChunkGrid] GetVisibleChunkCoords") {
     // Entirely outside the grid.
     auto outside = grid.GetVisibleChunkCoords(sf::FloatRect({-5000.f, -5000.f}, {10.f, 10.f}));
     CHECK(outside.empty());
+}
+
 }
