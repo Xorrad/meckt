@@ -1,8 +1,8 @@
 #include <windows.h>
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     1,8,1,0
-PRODUCTVERSION  1,8,1,0
+FILEVERSION     1,8,2,0
+PRODUCTVERSION  1,8,2,0
 FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
 FILEFLAGS       0
 FILEOS          VOS__WINDOWS32
@@ -16,11 +16,11 @@ BEGIN
         BEGIN
             VALUE "CompanyName",      "Xorrad"
             VALUE "FileDescription",  "meckt - A map editor for Crusader Kings 3."
-            VALUE "FileVersion",      "1.8.1"
+            VALUE "FileVersion",      "1.8.2"
             VALUE "InternalName",     "meckt"
             VALUE "OriginalFilename", "meckt.exe"
             VALUE "ProductName",      "meckt"
-            VALUE "ProductVersion",   "1.8.1"
+            VALUE "ProductVersion",   "1.8.2"
             VALUE "LegalCopyright",   "made by Xorrad"
         END
     END
