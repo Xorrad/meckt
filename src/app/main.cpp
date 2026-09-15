@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
     std::string directory;
     int province;
     std::string title;
+    std::string region;
     std::string mapModeStr;
     std::string script;
 
@@ -48,6 +49,12 @@ int main(int argc, char** argv) {
         "--title,-t",
         title,
         "Title to select."
+    );
+    
+    CLI::Option* regionOption = openCommand->add_option(
+        "--region,-r",
+        region,
+        "Region to select."
     );
 
     CLI::Option* mapModeOption = openCommand->add_option(
@@ -93,6 +100,7 @@ int main(int argc, char** argv) {
         EditorSetup setup;
         setup.selectedProvinceId =(provinceOption->count() > 0) ? Opt<int>(province) : std::nullopt;
         setup.selectedTitleName = (titleOption->count() > 0) ? Opt<std::string>(title) : std::nullopt;
+        setup.selectedRegionName = (regionOption->count() > 0) ? Opt<std::string>(region) : std::nullopt;
         setup.mapMode = (mapModeOption->count() > 0) ? Opt<MapMode>(MapModeFromString(mapModeStr)) : std::nullopt;
         setup.scriptFilePath = (scriptOption->count() > 0) ? Opt<std::string>(script) : std::nullopt;
 

@@ -71,6 +71,14 @@ void EditorMenu::InitEditorSetup(EditorSetup setup) {
             this->SwitchMapMode(TitleTypeToMapMode(selectedTitle->GetType()), false);
         }
     }
+    
+    if (setup.selectedRegionName.has_value()) {
+        Region* selectedRegion = mod.GetRegionManager().GetRegion(setup.selectedRegionName.value());
+        if (selectedRegion != nullptr) {
+            m_SelectionHandler.Select(selectedRegion);
+            this->SwitchMapMode(MapMode::PROVINCES, false);
+        }
+    }
 
     if (setup.mapMode.has_value()) {
         this->SwitchMapMode(setup.mapMode.value(), false);
