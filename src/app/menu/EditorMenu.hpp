@@ -44,6 +44,11 @@ public:
     void UpdateHoveringText();
     void ToggleCamera(bool enabled);
 
+    void CenterCamera(Province* province);
+    void CenterCamera(Title* title);
+    void CenterCamera(Region* region);
+    void CenterCamera(sf::Vector2f position);
+
     //////////////////////////////////////////////////////
 
     void SwitchMapMode(MapMode mode, bool clearSelection = false);

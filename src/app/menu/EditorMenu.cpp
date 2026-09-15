@@ -77,6 +77,7 @@ void EditorMenu::InitEditorSetup(EditorSetup setup) {
         if (selectedRegion != nullptr) {
             m_SelectionHandler.Select(selectedRegion);
             this->SwitchMapMode(MapMode::PROVINCES, false);
+            
         }
     }
 
@@ -243,6 +244,29 @@ void EditorMenu::ToggleCamera(bool enabled) {
     else {
         window.setView(previousView);
     }
+}
+
+void EditorMenu::CenterCamera(Province* province) {
+    if(province == nullptr)
+        return;
+    this->CenterCamera(sf::Vector2f(province->GetImagePosition()));
+}
+
+void EditorMenu::CenterCamera(Title* title) {
+    if(title == nullptr)
+        return;
+    this->CenterCamera(sf::Vector2f(title->GetImagePosition(m_Mod.GetProvinceManager())));
+}
+
+void EditorMenu::CenterCamera(Region* region) {
+    if(region == nullptr)
+        return;
+    // TODO: implement image position for geographical regions.
+    // this->CenterCamera(sf::Vector2f(region->GetImagePosition(m_Mod.GetProvinceManager())));
+}
+
+void EditorMenu::CenterCamera(sf::Vector2f position) {
+    m_Camera.setCenter(position);
 }
 
 void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
