@@ -60,6 +60,7 @@ void EditorMenu::InitEditorSetup(EditorSetup setup) {
         Province* selectedProvince = mod.GetProvinceManager().GetProvinceById(setup.selectedProvinceId.value());
         if (selectedProvince != nullptr) {
             m_SelectionHandler.Select(selectedProvince);
+            this->CenterCamera(selectedProvince);
             this->SwitchMapMode(MapMode::PROVINCES, false);
         }
     }
@@ -68,6 +69,7 @@ void EditorMenu::InitEditorSetup(EditorSetup setup) {
         Title* selectedTitle = mod.GetTitleManager().GetTitle(setup.selectedTitleName.value());
         if (selectedTitle != nullptr) {
             m_SelectionHandler.Select(selectedTitle);
+            this->CenterCamera(selectedTitle);
             this->SwitchMapMode(TitleTypeToMapMode(selectedTitle->GetType()), false);
         }
     }
@@ -76,6 +78,7 @@ void EditorMenu::InitEditorSetup(EditorSetup setup) {
         Region* selectedRegion = mod.GetRegionManager().GetRegion(setup.selectedRegionName.value());
         if (selectedRegion != nullptr) {
             m_SelectionHandler.Select(selectedRegion);
+            // this->CenterCamera(selectedRegion);
             this->SwitchMapMode(MapMode::PROVINCES, false);
             
         }
