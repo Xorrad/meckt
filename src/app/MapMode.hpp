@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/String.hpp"
 enum class MapMode {
     PROVINCES       = 0,
     HEIGHTMAP       = 1,
@@ -25,6 +26,26 @@ const std::vector<const char*> MapModeLabels = {
     "Flags", "Terrain", "Climate", "Winter Severity", "Culture", "Faith",
     "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony"
 };
+
+inline MapMode MapModeFromString(std::string str) {
+    str = String::ToLowercase(str);
+    if (str == "province") return MapMode::PROVINCES;
+    if (str == "heightmap") return MapMode::HEIGHTMAP;
+    if (str == "rivers") return MapMode::RIVERS;
+    if (str == "flags") return MapMode::FLAGS;
+    if (str == "terrain") return MapMode::TERRAIN;
+    if (str == "climate") return MapMode::CLIMATE;
+    if (str == "winter_severity") return MapMode::WINTER_SEVERITY;
+    if (str == "culture") return MapMode::CULTURE;
+    if (str == "faith") return MapMode::FAITH;
+    if (str == "barony") return MapMode::BARONY;
+    if (str == "county") return MapMode::COUNTY;
+    if (str == "duchy") return MapMode::DUCHY;
+    if (str == "kingdom") return MapMode::KINGDOM;
+    if (str == "empire") return MapMode::EMPIRE;
+    if (str == "hegemony") return MapMode::HEGEMONY;
+    return MapMode::PROVINCES;
+}
 
 inline TitleType MapModeToTileType(MapMode mode) {
     return static_cast<TitleType>(static_cast<int>(mode) - MapModeTitleStartIndex);

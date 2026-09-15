@@ -2,6 +2,7 @@
 #include "menu/HomeMenu.hpp"
 #include "menu/LoadingMenu.hpp"
 #include "menu/EditorMenu.hpp"
+#include <optional>
 
 #if _WIN32
 #include <windows.h>
@@ -15,6 +16,10 @@ App::App() :
 
 sf::RenderWindow& App::GetWindow() {
     return m_Window;
+}
+
+Menu& App::GetMenu() {
+    return *m_ActiveMenu.get();
 }
 
 Mod& App::GetMod() {
@@ -34,6 +39,10 @@ void App::OpenMenu(UniquePtr<Menu> menu) {
 }
 
 void App::OpenMod(UniquePtr<Mod> mod) {
+    this->OpenMod(std::move(mod), EditorSetup{std::nullopt, std::nullopt, std::nullopt, std::nullopt});
+}
+
+void App::OpenMod(UniquePtr<Mod> mod, EditorSetup setup) {
     if (mod == nullptr)
         return;
 
@@ -53,7 +62,7 @@ void App::OpenMod(UniquePtr<Mod> mod) {
 
     UniquePtr<LoadingMenu> menu = MakeUnique<LoadingMenu>(
         *this,
-        [&](){ this->OpenMenu(MakeUnique<EditorMenu>(*this)); },
+        [&,setup](){ this->OpenMenu(MakeUnique<EditorMenu>(*this, setup)); },
         [&](const std::string& error){ this->OpenMenu(MakeUnique<HomeMenu>(*this, error)); }
     );
     menu->Start();

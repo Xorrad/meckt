@@ -32,6 +32,7 @@ class LogTab;
 // Internal headers
 #include "app/Configuration.hpp"
 #include "app/MapMode.hpp"
+#include "app/EditorSetup.hpp"
 
 #include "app/menu/Menu.hpp"
 #include "app/menu/selection/SelectionCallbackResult.hpp"

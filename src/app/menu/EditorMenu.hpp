@@ -9,7 +9,15 @@ typedef unsigned int ImGuiID;
 class EditorMenu : public Menu {
 friend SelectionHandler;
 public:
-    EditorMenu(App& app);
+    EditorMenu(App& app, EditorSetup setup = EditorSetup{std::nullopt, std::nullopt, std::nullopt, std::nullopt});
+
+    //////////////////////////////////////////////////////
+
+    /**
+     * @brief Initializes the editor setup parameters.
+     * @param setup The editor setup parameters to initialize with.
+     */
+    void InitEditorSetup(EditorSetup setup);
 
     //////////////////////////////////////////////////////
 

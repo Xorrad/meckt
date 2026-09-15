@@ -12,7 +12,7 @@
 #include "core/titles/TitleManager.hpp"
 #include "core/defines/DefineManager.hpp"
 
-EditorMenu::EditorMenu(App& app) :
+EditorMenu::EditorMenu(App& app, EditorSetup setup) :
     Menu(app, "Editor"),
     m_Mod(app.GetMod()),
     m_MapMode(MapMode::PROVINCES),
@@ -50,7 +50,38 @@ EditorMenu::EditorMenu(App& app) :
 
     this->InitSelectionCallbacks();
     this->InitTabs();
+    this->InitEditorSetup(setup);
 }
+
+void EditorMenu::InitEditorSetup(EditorSetup setup) {
+    Mod& mod = m_App.GetMod();
+
+    if (setup.selectedProvinceId.has_value()) {
+        Province* selectedProvince = mod.GetProvinceManager().GetProvinceById(setup.selectedProvinceId.value());
+        if (selectedProvince != nullptr) {
+            m_SelectionHandler.Select(selectedProvince);
+            this->SwitchMapMode(MapMode::PROVINCES, false);
+        }
+    }
+    
+    if (setup.selectedTitleName.has_value()) {
+        Title* selectedTitle = mod.GetTitleManager().GetTitle(setup.selectedTitleName.value());
+        if (selectedTitle != nullptr) {
+            m_SelectionHandler.Select(selectedTitle);
+            this->SwitchMapMode(TitleTypeToMapMode(selectedTitle->GetType()), false);
+        }
+    }
+
+    if (setup.mapMode.has_value()) {
+        this->SwitchMapMode(setup.mapMode.value(), false);
+    }
+
+    if (setup.scriptFilePath.has_value()) {
+        // TODO: Implement script execution functionality.
+    }
+}
+
+//////////////////////////////////////////////////////
 
 sf::Vector2f EditorMenu::GetHoveredPosition() {
     ToggleCamera(true);
@@ -97,6 +128,8 @@ sf::FloatRect EditorMenu::GetVisibleWorldRect() const {
         m_Camera.getSize()
     );
 }
+
+//////////////////////////////////////////////////////
 
 void EditorMenu::UpdateHoveringText() {
     Province* hoveredProvince = this->GetHoveredProvince();
