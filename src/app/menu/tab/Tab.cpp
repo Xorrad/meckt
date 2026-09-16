@@ -2,11 +2,12 @@
 #include "app/App.hpp"
 #include "app/menu/EditorMenu.hpp"
 
-Tab::Tab(std::string name, Tabs type, EditorMenu& menu, bool visible) :
+Tab::Tab(std::string name, Tabs type, EditorMenu& menu, bool visible, bool focusedAtStartup) :
     m_Name(name),
     m_Type(type),
     m_Menu(menu),
     m_Visible(visible),
+    m_FocusedAtStartup(focusedAtStartup),
     m_Mod(menu.GetApp().GetMod())
 {}
 
@@ -25,10 +26,18 @@ bool Tab::IsVisible() const {
 bool& Tab::IsVisible() {
     return m_Visible;
 }
-    
+
+bool Tab::IsFocusedAtStartup() const {
+    return m_FocusedAtStartup;
+}
+
 void Tab::SetVisible(bool visible) {
     m_Visible = visible;
 }
+
+void Tab::SetFocusedAtStartup(bool focused) {
+    m_FocusedAtStartup = focused;
+} 
 
 void Tab::Update(sf::Time delta) {}
 

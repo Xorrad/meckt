@@ -8,7 +8,9 @@
 
 #include <imgui/imgui.hpp>
 
-ProvincesTab::ProvincesTab(EditorMenu& menu, bool visible) : Tab("Provinces", Tabs::PROVINCES, menu, visible) {}
+ProvincesTab::ProvincesTab(EditorMenu& menu, bool visible, bool focusedAtStartup) :
+    Tab("Provinces", Tabs::PROVINCES, menu, visible, focusedAtStartup)
+{}
 
 void ProvincesTab::Render() {
     if(!m_Visible)

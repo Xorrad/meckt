@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Menu.hpp"
+#include "app/EditorSetup.hpp"
 #include "core/util/TextureChunkGrid.hpp"
 #include "selection/SelectionHandler.hpp"
 
@@ -138,4 +139,6 @@ private:
     bool m_ExitToMainMenu;
 
     ImGuiID m_DockspaceID;
+
+    EditorSetup m_EditorSetup;
 };

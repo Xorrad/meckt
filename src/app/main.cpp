@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 
         app.Run();
     }
-    else if (*analyseCommand) {
+    else if (analyseCommand != nullptr && *analyseCommand) {
         std::cout << "Running analysis...\n";
         // TODO: Implement checks and output results functionality.
     }
