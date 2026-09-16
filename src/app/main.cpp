@@ -90,6 +90,15 @@ int main(int argc, char** argv) {
     // ->required();
 
     //////////////////////////////////////////////////////////////
+    // - version
+    //////////////////////////////////////////////////////////////    
+
+    auto* versionCommand = cli.add_subcommand(
+        "version",
+        "Display the version of meckt."
+    );
+
+    //////////////////////////////////////////////////////////////    
 
     CLI11_PARSE(cli, argc, argv);
 
@@ -125,6 +134,13 @@ int main(int argc, char** argv) {
     else if (analyseCommand != nullptr && *analyseCommand) {
         std::cout << "Running analysis...\n";
         // TODO: Implement checks and output results functionality.
+    }
+    else if (versionCommand != nullptr && *versionCommand) {
+#ifdef DEBUG
+        fmt::println("meckt version {} (debug)", Configuration::buildVersion);
+#else
+        fmt::println("meckt version {}", Configuration::buildVersion);
+#endif
     }
     else {
         // If no commands have been specified, then run the default behavior of the application.
