@@ -2,6 +2,7 @@
 #include "EditorMenu.hpp"
 #include "NewModMenu.hpp"
 #include "app/App.hpp"
+#include "imgui.h"
 
 #include <nfd.h>
 
@@ -72,6 +73,10 @@ void HomeMenu::Render() {
     ImGui::EndDisabled();
 
     ImGui::Dummy(ImVec2(0.0f, spacing));
+    if (static int frames{ 1 }; frames > 0) {
+        ImGui::SetKeyboardFocusHere();
+        --frames;
+    }
     if (ImGui::TextButton("📁  Open Folder...")) {
         nfdchar_t *dirPath = NULL;
         nfdresult_t result = NFD_PickFolder(NULL, &dirPath);
