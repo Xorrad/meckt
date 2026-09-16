@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Menu.hpp"
+#include "app/EditorSetup.hpp"
 #include "core/util/TextureChunkGrid.hpp"
 #include "selection/SelectionHandler.hpp"
 
@@ -9,7 +10,15 @@ typedef unsigned int ImGuiID;
 class EditorMenu : public Menu {
 friend SelectionHandler;
 public:
-    EditorMenu(App& app);
+    EditorMenu(App& app, EditorSetup setup = EditorSetup{std::nullopt, std::nullopt, std::nullopt, std::nullopt});
+
+    //////////////////////////////////////////////////////
+
+    /**
+     * @brief Initializes the editor setup parameters.
+     * @param setup The editor setup parameters to initialize with.
+     */
+    void InitEditorSetup(EditorSetup setup);
 
     //////////////////////////////////////////////////////
 
@@ -35,6 +44,11 @@ public:
 
     void UpdateHoveringText();
     void ToggleCamera(bool enabled);
+
+    void CenterCamera(Province* province);
+    void CenterCamera(Title* title);
+    void CenterCamera(Region* region);
+    void CenterCamera(sf::Vector2f position);
 
     //////////////////////////////////////////////////////
 
@@ -125,4 +139,6 @@ private:
     bool m_ExitToMainMenu;
 
     ImGuiID m_DockspaceID;
+
+    EditorSetup m_EditorSetup;
 };

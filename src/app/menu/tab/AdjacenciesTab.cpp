@@ -124,8 +124,7 @@ void AdjacenciesTab::Render() {
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
                     Province* fromProvince = provinceManager.GetProvinceById(adjacency->GetFromId());
                     if (fromProvince != nullptr) {
-                        sf::Vector2i provincePos = fromProvince->GetImagePosition();
-                        m_Menu.GetCamera().setCenter(sf::Vector2f(provincePos.x, provincePos.y));
+                        m_Menu.CenterCamera(fromProvince);
                     }
                 }
 

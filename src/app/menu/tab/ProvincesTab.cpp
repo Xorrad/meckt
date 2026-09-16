@@ -8,7 +8,9 @@
 
 #include <imgui/imgui.hpp>
 
-ProvincesTab::ProvincesTab(EditorMenu& menu, bool visible) : Tab("Provinces", Tabs::PROVINCES, menu, visible) {}
+ProvincesTab::ProvincesTab(EditorMenu& menu, bool visible, bool focusedAtStartup) :
+    Tab("Provinces", Tabs::PROVINCES, menu, visible, focusedAtStartup)
+{}
 
 void ProvincesTab::Render() {
     if(!m_Visible)
@@ -123,8 +125,7 @@ void ProvincesTab::Render() {
                 }
 
                 if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-                    sf::Vector2i titlePos = province->GetImagePosition();
-                    m_Menu.GetCamera().setCenter(sf::Vector2f(titlePos.x, titlePos.y));
+                    m_Menu.CenterCamera(province);
                 }
 
                 ImGui::Text(province->GetName().c_str());

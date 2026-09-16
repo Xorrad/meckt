@@ -181,6 +181,17 @@ FetchContent_MakeAvailable(nlohmann_json)
 set_target_properties(nlohmann_json PROPERTIES FOLDER "vendor")
 
 ###############################################
+#  CLI11                                      #
+###############################################
+FetchContent_Declare(
+    CLI11
+    URL https://github.com/CLIUtils/CLI11/releases/download/v2.7.2/CLI11-2.7.2-Source.tar.gz
+)
+FetchContent_MakeAvailable(CLI11)
+
+set_target_properties(CLI11 PROPERTIES FOLDER "vendor")
+
+###############################################
 #  doctest                                    #
 ###############################################
 add_library(doctest INTERFACE)
@@ -345,6 +356,10 @@ target_include_directories(meckt-app SYSTEM PUBLIC vendor/jomini-parser/src) # S
 
 target_link_libraries(meckt-app PRIVATE
     meckt-core
+)
+
+target_link_libraries(meckt-app PUBLIC
+    CLI11::CLI11
 )
 
 if(WIN32)

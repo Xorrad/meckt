@@ -11,8 +11,10 @@
 #include "core/regions/RegionManager.hpp"
 #include "core/titles/TitleManager.hpp"
 #include "core/defines/DefineManager.hpp"
+#include "imgui.h"
+#include "imgui_internal.h"
 
-EditorMenu::EditorMenu(App& app) :
+EditorMenu::EditorMenu(App& app, EditorSetup setup) :
     Menu(app, "Editor"),
     m_Mod(app.GetMod()),
     m_MapMode(MapMode::PROVINCES),
@@ -20,7 +22,8 @@ EditorMenu::EditorMenu(App& app) :
     m_HoverText(Configuration::fonts.Get(Fonts::FIGTREE)),
     m_HoverTitleText(Configuration::fonts.Get(Fonts::FIGTREE)),
     m_DisplayBorders(true),
-    m_ExitToMainMenu(false)
+    m_ExitToMainMenu(false),
+    m_EditorSetup(setup)
 {
     // Update all the textures for the shader and then apply
     // the current map mode texture to the map sprite.
@@ -50,7 +53,52 @@ EditorMenu::EditorMenu(App& app) :
 
     this->InitSelectionCallbacks();
     this->InitTabs();
+    this->InitEditorSetup(setup);
 }
+
+void EditorMenu::InitEditorSetup(EditorSetup setup) {
+    Mod& mod = m_App.GetMod();
+
+    if (setup.selectedProvinceId.has_value()) {
+        Province* selectedProvince = mod.GetProvinceManager().GetProvinceById(setup.selectedProvinceId.value());
+        if (selectedProvince != nullptr) {
+            m_SelectionHandler.Select(selectedProvince);
+            this->CenterCamera(selectedProvince);
+            this->SwitchMapMode(MapMode::PROVINCES, false);
+            m_Tabs[Tabs::PROVINCES]->SetFocusedAtStartup(true);
+        }
+    }
+    
+    if (setup.selectedTitleName.has_value()) {
+        Title* selectedTitle = mod.GetTitleManager().GetTitle(setup.selectedTitleName.value());
+        if (selectedTitle != nullptr) {
+            m_SelectionHandler.Select(selectedTitle);
+            this->CenterCamera(selectedTitle);
+            this->SwitchMapMode(TitleTypeToMapMode(selectedTitle->GetType()), false);
+            m_Tabs[Tabs::TITLES]->SetFocusedAtStartup(true);
+        }
+    }
+    
+    if (setup.selectedRegionName.has_value()) {
+        Region* selectedRegion = mod.GetRegionManager().GetRegion(setup.selectedRegionName.value());
+        if (selectedRegion != nullptr) {
+            m_SelectionHandler.Select(selectedRegion);
+            this->CenterCamera(selectedRegion);
+            this->SwitchMapMode(MapMode::PROVINCES, false);
+            m_Tabs[Tabs::REGIONS]->SetFocusedAtStartup(true);
+        }
+    }
+
+    if (setup.mapMode.has_value()) {
+        this->SwitchMapMode(setup.mapMode.value(), false);
+    }
+
+    if (setup.scriptFilePath.has_value()) {
+        // TODO: Implement script execution functionality.
+    }
+}
+
+//////////////////////////////////////////////////////
 
 sf::Vector2f EditorMenu::GetHoveredPosition() {
     ToggleCamera(true);
@@ -97,6 +145,8 @@ sf::FloatRect EditorMenu::GetVisibleWorldRect() const {
         m_Camera.getSize()
     );
 }
+
+//////////////////////////////////////////////////////
 
 void EditorMenu::UpdateHoveringText() {
     Province* hoveredProvince = this->GetHoveredProvince();
@@ -202,6 +252,28 @@ void EditorMenu::ToggleCamera(bool enabled) {
     else {
         window.setView(previousView);
     }
+}
+
+void EditorMenu::CenterCamera(Province* province) {
+    if(province == nullptr)
+        return;
+    this->CenterCamera(sf::Vector2f(province->GetImagePosition()));
+}
+
+void EditorMenu::CenterCamera(Title* title) {
+    if(title == nullptr)
+        return;
+    this->CenterCamera(sf::Vector2f(title->GetImagePosition(m_Mod.GetProvinceManager())));
+}
+
+void EditorMenu::CenterCamera(Region* region) {
+    if(region == nullptr)
+        return;
+    this->CenterCamera(sf::Vector2f(region->GetImagePosition(m_Mod.GetProvinceManager())));
+}
+
+void EditorMenu::CenterCamera(sf::Vector2f position) {
+    m_Camera.setCenter(position);
 }
 
 void EditorMenu::SwitchMapMode(MapMode mode, bool clearSelection) {
@@ -517,10 +589,19 @@ void EditorMenu::Render() {
     for(const auto& [type, tab] : m_Tabs) {
         if(!tab->IsVisible())
             continue;
+        if (static int frames{ 3 }; frames > 0 && tab->IsFocusedAtStartup()) {
+            ImGui::SetKeyboardFocusHere();
+            ImGui::SetNextWindowFocus();
+            --frames;
+        }
+        // if (tab->GetName() == "Titles" && ImGui::IsKeyDown(ImGuiKey_F2)) {
+        //     ImGui::SetNextWindowFocus();
+        //     // ImGui::SetWindowFocus(tab->GetName().c_str());
+        // }
         if(ImGui::Begin(tab->GetName().c_str(), &tab->IsVisible())) {
             tab->Render();
         }
-        ImGui::End();   
+        ImGui::End();
     }
 
     if(m_ExitToMainMenu) {
@@ -606,7 +687,7 @@ void EditorMenu::InitSelectionCallbacks() {
 void EditorMenu::InitTabs() {
     m_Tabs[Tabs::TITLES] = MakeUnique<TitlesTab>(*this, true);
     m_Tabs[Tabs::PROPERTIES] = MakeUnique<PropertiesTab>(*this, true);
-    m_Tabs[Tabs::PROVINCES] = MakeUnique<ProvincesTab>(*this, true);
+    m_Tabs[Tabs::PROVINCES] = MakeUnique<ProvincesTab>(*this, true, true);
     m_Tabs[Tabs::REGIONS] = MakeUnique<RegionsTab>(*this, true);
     m_Tabs[Tabs::LOG] = MakeUnique<LogTab>(*this, true);
     m_Tabs[Tabs::CULTURAL_NAMES] = MakeUnique<CulturalNamesTab>(*this, true);
