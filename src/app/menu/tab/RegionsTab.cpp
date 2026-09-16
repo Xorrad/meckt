@@ -208,6 +208,10 @@ void RegionsTab::Render() {
                 }
             }
 
+            if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                m_Menu.CenterCamera(sf::Vector2f(region->GetImagePosition(m_Mod.GetProvinceManager())));
+            }
+
             ImGui::Text("%ld", region->GetKingdoms().size());
             ImGui::TableNextColumn();
             ImGui::Text("%ld", region->GetDuchies().size());

@@ -78,7 +78,7 @@ void EditorMenu::InitEditorSetup(EditorSetup setup) {
         Region* selectedRegion = mod.GetRegionManager().GetRegion(setup.selectedRegionName.value());
         if (selectedRegion != nullptr) {
             m_SelectionHandler.Select(selectedRegion);
-            // this->CenterCamera(selectedRegion);
+            this->CenterCamera(selectedRegion);
             this->SwitchMapMode(MapMode::PROVINCES, false);
             
         }
@@ -264,8 +264,7 @@ void EditorMenu::CenterCamera(Title* title) {
 void EditorMenu::CenterCamera(Region* region) {
     if(region == nullptr)
         return;
-    // TODO: implement image position for geographical regions.
-    // this->CenterCamera(sf::Vector2f(region->GetImagePosition(m_Mod.GetProvinceManager())));
+    this->CenterCamera(sf::Vector2f(region->GetImagePosition(m_Mod.GetProvinceManager())));
 }
 
 void EditorMenu::CenterCamera(sf::Vector2f position) {

@@ -95,6 +95,13 @@ public:
      */
     bool ShouldRememberCountiesOrder() const;
 
+    /**
+     * @brief Retrieves the image position of the region based on its provinces.
+     * @param provinceManager The province manager.
+     * @return The image position as a vector, (0,0) if no provinces are present.
+     */
+    sf::Vector2i GetImagePosition(const ProvinceManager& provinceManager) const;
+
     //////////////////////////////////////////////////////
 
     /**

@@ -1,5 +1,7 @@
 #include "Region.hpp"
 #include "titles/Title.hpp"
+#include "provinces/Province.hpp"
+#include <SFML/System/Vector2.hpp>
 
 Region::Region(std::string name) :
     Region(name, "")
@@ -84,6 +86,28 @@ bool Region::DoesGenerateModifiers() const {
 
 bool Region::ShouldRememberCountiesOrder() const {
     return m_ShouldRememberCountiesOrder;
+}
+
+sf::Vector2i Region::GetImagePosition(const ProvinceManager& provinceManager) const {
+    sf::Vector2i position(0, 0);
+    int count = 0;
+
+    #define ADD_POSITIONS_FROM(objects, arg) \
+        for (const auto& o : objects) { \
+            sf::Vector2i pos = o->arg; \
+            if (pos != sf::Vector2i{0, 0}) { \
+                position += pos; \
+                count++; \
+            } \
+        }
+
+    ADD_POSITIONS_FROM(m_Regions, GetImagePosition(provinceManager));
+    ADD_POSITIONS_FROM(m_Kingdoms, GetImagePosition(provinceManager));
+    ADD_POSITIONS_FROM(m_Duchies, GetImagePosition(provinceManager));
+    ADD_POSITIONS_FROM(m_Counties, GetImagePosition(provinceManager));
+    ADD_POSITIONS_FROM(m_Provinces, GetImagePosition());
+
+    return position / count;
 }
 
 //////////////////////////////////////////////////////
