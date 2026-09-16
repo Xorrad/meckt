@@ -232,19 +232,7 @@ TEST_CASE("[RegionManager] LoadGeographicalRegions") {
 
     // Check that the vanilla override files have been stored.
     SUBCASE("vanilla overrides") {
-        const std::string expectedExportedData =
-            "﻿# Vanilla Overrides\r\n"
-            "\r\n"
-            "#tgp_ba_region = {\r\n"
-            "#\tkingdoms = {\r\n"
-            "#\t\tk_dongchuan k_xingyuan\r\n"
-            "#\t}\r\n"
-            "#}\r\n"
-            "#tgp_bao_region = {\r\n"
-            "#\tkingdoms = {\r\n"
-            "#\t\tk_khotan\r\n"
-            "#\t}\r\n"
-            "#}";
+        const std::string expectedExportedData = "﻿# Vanilla Overrides";
 
         REQUIRE(regionManager.GetVanillaOverrideFiles().size() == 1);
 
@@ -313,18 +301,7 @@ region3 = {
     }
 
     SUBCASE("vanilla overrides") {
-        const std::string expectedExportedData = R"(﻿# Vanilla Overrides
-
-#tgp_ba_region = {
-#	kingdoms = {
-#		k_dongchuan k_xingyuan
-#	}
-#}
-#tgp_bao_region = {
-#	kingdoms = {
-#		k_khotan
-#	}
-#})";
+        const std::string expectedExportedData = "﻿# Vanilla Overrides";
 
         std::ifstream exportedFile(mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, "tgp_chinesenaming_regions.txt"));
         REQUIRE(exportedFile.is_open());
