@@ -26,7 +26,7 @@ SelectionHandler::SelectionHandler(EditorMenu& menu) :
     m_SelectionText(Configuration::fonts.Get(Fonts::NOTO_SANS)),
     m_SelectionType(SelectionType::NONE)
 {
-    m_SelectionText.setCharacterSize(24 * Configuration::uiScale);
+    m_SelectionText.setCharacterSize(Components::Scaled(24));
     m_SelectionText.setString("");
     m_SelectionText.setFillColor(sf::Color::Red);
     m_SelectionText.setFont(Configuration::fonts.Get(Fonts::NOTO_SANS));
@@ -488,8 +488,8 @@ void SelectionHandler::Render(sf::RenderTarget& target) {
         std::string(std::max(1, step), '.')
     ));
     m_SelectionText.setFillColor(sf::Color(red, 0, 0, 255));
-    m_SelectionText.setCharacterSize(24 * Configuration::uiScale);
-    m_SelectionText.setPosition({node->Pos.x + 10*Configuration::uiScale, node->Pos.y + 34*Configuration::uiScale});
+    m_SelectionText.setCharacterSize(Components::Scaled(24));
+    m_SelectionText.setPosition({node->Pos.x + Components::Scaled(10), node->Pos.y + Components::Scaled(34)});
     target.draw(m_SelectionText);
 }
 

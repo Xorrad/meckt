@@ -40,7 +40,7 @@ EditorMenu::EditorMenu(App& app, EditorSetup setup) :
     m_Zoom = 1.f;
     m_TotalZoom = 1.f;
 
-    m_HoverText.setCharacterSize(12 * Configuration::uiScale);
+    m_HoverText.setCharacterSize(Components::Scaled(12));
     m_HoverText.setString("");
     m_HoverText.setFillColor(sf::Color::Black);
     m_HoverText.setFont(Configuration::fonts.Get(Fonts::FIGTREE));
@@ -190,21 +190,21 @@ void EditorMenu::UpdateHoveringText() {
             text.pop_back();
 
         m_HoverText.setString(text);
-        m_HoverText.setPosition({static_cast<float>(mousePosition.x) + 12*Configuration::uiScale, static_cast<float>(mousePosition.y) - 8*Configuration::uiScale});
+        m_HoverText.setPosition({static_cast<float>(mousePosition.x) + Components::Scaled(12), static_cast<float>(mousePosition.y) - Components::Scaled(8)});
         m_HoverText.setFillColor(sf::Color::Black);
-        m_HoverText.setCharacterSize(12 * Configuration::uiScale);
+        m_HoverText.setCharacterSize(Components::Scaled(12));
 
         m_HoverTitleText.setString(hoveredTitleText);
         m_HoverTitleText.setStyle(sf::Text::Bold);
-        m_HoverTitleText.setPosition({static_cast<float>(mousePosition.x) + 12*Configuration::uiScale, static_cast<float>(mousePosition.y) - 8*Configuration::uiScale});
+        m_HoverTitleText.setPosition({static_cast<float>(mousePosition.x) + Components::Scaled(12), static_cast<float>(mousePosition.y) - Components::Scaled(8)});
         m_HoverTitleText.setFillColor(sf::Color::Black);
-        m_HoverTitleText.setCharacterSize(12 * Configuration::uiScale);
+        m_HoverTitleText.setCharacterSize(Components::Scaled(12));
 
         sf::Vector2f hoverShapeSize{
-            static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.x, m_HoverTitleText.getGlobalBounds().size.x)) + 4.f*Configuration::uiScale,
-            static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.y, m_HoverTitleText.getGlobalBounds().size.y)) + 8.f*Configuration::uiScale
+            static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.x, m_HoverTitleText.getGlobalBounds().size.x)) + Components::Scaled(4.f),
+            static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.y, m_HoverTitleText.getGlobalBounds().size.y)) + Components::Scaled(8.f)
         };
-        m_HoverShape.setPosition({(float) mousePosition.x + 10*Configuration::uiScale, (float) mousePosition.y - 10*Configuration::uiScale});
+        m_HoverShape.setPosition({(float) mousePosition.x + Components::Scaled(10), (float) mousePosition.y - Components::Scaled(10)});
         m_HoverShape.setSize(hoverShapeSize);
         return;
     }
@@ -214,9 +214,9 @@ void EditorMenu::UpdateHoveringText() {
     if(MapModeIsProvince(m_MapMode)) {
         m_HoverText.setString(fmt::format("#{} ({})", hoveredProvince->GetId(), hoveredProvince->GetName()));
         m_HoverTitleText.setString("");
-        m_HoverText.setPosition({(float) mousePosition.x + 5*Configuration::uiScale, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10*Configuration::uiScale});
+        m_HoverText.setPosition({(float) mousePosition.x + Components::Scaled(5), (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - Components::Scaled(10)});
         m_HoverText.setFillColor(brightenColor(hoveredProvince->GetColor()));
-        m_HoverText.setCharacterSize(12 * Configuration::uiScale);
+        m_HoverText.setCharacterSize(Components::Scaled(12));
         return;
     }
     else if(MapModeIsTitle(m_MapMode)) {
@@ -230,9 +230,9 @@ void EditorMenu::UpdateHoveringText() {
 
         m_HoverText.setString(fmt::format("{}", title->GetName()));
         m_HoverTitleText.setString("");
-        m_HoverText.setPosition({(float) mousePosition.x + 5*Configuration::uiScale, (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - 10*Configuration::uiScale});
+        m_HoverText.setPosition({(float) mousePosition.x + Components::Scaled(5), (float) mousePosition.y - m_HoverText.getGlobalBounds().size.y - Components::Scaled(10)});
         m_HoverText.setFillColor(brightenColor(title->GetColor()));
-        m_HoverText.setCharacterSize(12 * Configuration::uiScale);
+        m_HoverText.setCharacterSize(Components::Scaled(12));
         return;
     }
 
