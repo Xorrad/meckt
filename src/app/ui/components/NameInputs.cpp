@@ -14,7 +14,30 @@ bool Components::TitleNameInput(std::string_view label, const std::string& curre
         nullptr,
         [type](const std::string& name) { return IsValidTitleName(name, type); }
     )) {
-        if (IsValidTitleName(newName, type)) {
+        if (!newName.empty() && IsValidTitleName(newName, type)) {
+            onChange(newName);
+            valueChanged = true;
+        }
+    }
+
+    ImGui::PopID();
+
+    return valueChanged;
+}
+
+bool Components::ProvinceNameInput(std::string_view label, const std::string& currentName, std::function<void(std::string)> onChange) {
+    bool valueChanged = false;
+
+    ImGui::PushID(ImHashStr(fmt::format("##province-name-input-{}", label).c_str()));
+
+    std::string newName = currentName;
+    if (ImGui::InputTextCommitOnEnter(
+        "name",
+        &newName,
+        ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter,
+        Components::Filters::TitleName
+    )) {
+        if (!newName.empty()) {
             onChange(newName);
             valueChanged = true;
         }

@@ -290,10 +290,9 @@ void PropertiesTab::RenderProvinces() {
                 ImGui::EndDisabled();
 
                 // PROVINCE: name (field)
-                std::string name = province->GetName();
-                if (ImGui::InputTextCommitOnEnter("name", &name)) {
-                    province->SetName(name);
-                }
+                Components::ProvinceNameInput("name", province->GetName(), [&](const std::string& newName) {
+                    province->SetName(newName);
+                });
 
                 // PROVINCE: color (colorpicker)
                 sf::Color color = province->GetColor();
