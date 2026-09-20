@@ -1011,8 +1011,9 @@ void EditorMenu::RenderModals() {
         if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another title.");
         if(!hasSelectedProvince && type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "No province is currently selected!");
         if(type == TitleType::BARONY) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This operation will change the province name!");
+        if(name.empty()) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Invalid name.");
 
-        if(isNameTaken) ImGui::BeginDisabled();
+        if(isNameTaken || name.empty()) ImGui::BeginDisabled();
         if(ImGui::Button("Create", ImVec2(120, 0)) && !isNameTaken) {
             ImGui::CloseCurrentPopup();
 
@@ -1061,7 +1062,7 @@ void EditorMenu::RenderModals() {
             this->RefreshCurrentMapMode();
             m_SelectionHandler.Select(titlePtr);
         }
-        if(isNameTaken) ImGui::EndDisabled();
+        if(isNameTaken || name.empty()) ImGui::EndDisabled();
 
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine();
@@ -1093,7 +1094,9 @@ void EditorMenu::RenderModals() {
             shouldRememberCountiesOrder = false;
         }
 
-        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, Components::Filters::TitleName);
+        Components::RegionNameInput("name", name, [&](const std::string& newName) {
+            name = newName;
+        });
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::Checkbox("Generate Modifiers", &generateModifiers);
@@ -1104,8 +1107,9 @@ void EditorMenu::RenderModals() {
         ImGui::PopStyleVar();
         
         if(isNameTaken) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "This name is already taken by another region.");
+        if(name.empty()) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Invalid name.");
 
-        if(isNameTaken) ImGui::BeginDisabled();
+        if(isNameTaken || name.empty()) ImGui::BeginDisabled();
         if(ImGui::Button("Create", ImVec2(120, 0)) && !isNameTaken) {
             ImGui::CloseCurrentPopup();
 
@@ -1137,7 +1141,7 @@ void EditorMenu::RenderModals() {
             m_SelectionHandler.Select(region.get());
             m_Mod.GetRegionManager().AddRegion(std::move(region));
         }
-        if(isNameTaken) ImGui::EndDisabled();
+        if(isNameTaken || name.empty()) ImGui::EndDisabled();
 
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine();

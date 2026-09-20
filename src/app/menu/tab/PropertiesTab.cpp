@@ -1031,10 +1031,9 @@ void PropertiesTab::RenderRegions() {
             ImGui::PushID(region->GetName().c_str());
 
             // REGION: name/tag (field)
-            std::string formerName = region->GetName();
-            if (ImGui::InputTextCommitOnEnter("name", &formerName)) {
-                m_Mod.GetRegionManager().RenameRegion(region->GetName(), formerName);
-            }
+            Components::RegionNameInput("name", region->GetName(), [&](const std::string& newName) {
+                m_Mod.GetRegionManager().RenameRegion(region->GetName(), newName);
+            });
             
             // REGION: file name (field)
             std::string formerFileName = region->GetFileName();
