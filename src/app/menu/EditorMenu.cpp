@@ -982,7 +982,9 @@ void EditorMenu::RenderModals() {
             }
         }
 
-        ImGui::InputText("name", &name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter, Components::Filters::TitleName);
+        Components::TitleNameInput("name", name, type, [&](const std::string& newName) {
+            name = newName;
+        });
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "?");
         if (ImGui::IsItemHovered())

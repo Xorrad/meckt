@@ -200,7 +200,7 @@ bool ImGui::InputTextLocked(const char* label, std::string* str) {
     return pressed;
 }
 
-bool ImGui::InputTextCommitOnEnter(const char* label, std::string* value, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data) {
+bool ImGui::InputTextCommitOnEnter(const char* label, std::string* value, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data, std::function<bool(const std::string&)> validator) {
     ImGuiID id = ImGui::GetID(label);
 
     struct State {
@@ -218,8 +218,13 @@ bool ImGui::InputTextCommitOnEnter(const char* label, std::string* value, ImGuiI
         state.buffer = *value;
     
     bool isTextEdited = state.editing && state.buffer != *value;
-    if(isTextEdited)
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.f));
+    if(isTextEdited) {
+        if (validator(state.buffer)) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.f));
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(.75f, 0.2f, 0.15f, 1.f));
+        }
+    }
 
     bool enterPressed = ImGui::InputText(label, &state.buffer, flags, callback, user_data);
 

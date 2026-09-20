@@ -7,3 +7,4 @@
 #include "app/ui/components/ProvinceInput.hpp"
 #include "app/ui/components/PositionInput.hpp"
 #include "app/ui/components/ConfirmationModal.hpp"
+#include "app/ui/components/NameInputs.hpp"

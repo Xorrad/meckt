@@ -609,11 +609,10 @@ void PropertiesTab::RenderTitles() {
                 ImGui::PushID(title->GetName().c_str());
 
                 // TITLE: name/tag (field)
-                std::string titleName = title->GetName();
-                if (ImGui::InputTextCommitOnEnter("name", &titleName)) {
+                Components::TitleNameInput("name", title->GetName(), title->GetType(), [&](const std::string& newName) {
                     // Rename the title globally, including titles history.
-                    m_Mod.GetTitleManager().RenameTitle(title->GetName(), titleName);
-                }
+                    m_Mod.GetTitleManager().RenameTitle(title->GetName(), newName);
+                });
 
                 // TITLE: localization name (field)
                 std::string locName = title->GetLocName("english");
