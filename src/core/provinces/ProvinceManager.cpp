@@ -991,6 +991,8 @@ void ProvinceManager::LoadProvincesClimate() {
                 return;
             
             auto provinces = result->Get(name);
+            if (provinces->Is(Jomini::Type::OBJECT) && provinces->GetMap().empty())
+                return;
             if (!provinces->Is(Jomini::Type::ARRAY)) {
                 LOG_WARNING("Invalid value for '{}' in '{}'", name, climateFile);
                 return;
