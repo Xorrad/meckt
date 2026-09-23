@@ -2,6 +2,7 @@
 
 #include "mod/Mod.hpp"
 #include "provinces/ProvinceManager.hpp"
+#include "util/String.hpp"
 #include "util/Yaml.hpp"
 
 #include <fmt/ostream.h>
@@ -292,7 +293,11 @@ void TitleManager::RenameTitle(const std::string& formerName, const std::string&
 		return;
     if (m_Titles.contains(newName))
         throw std::invalid_argument(std::format("TitleManager::RenameTitle: couldn't rename title '{}' to '{}' because it is already used by another title", formerName, newName));
-    
+    if (String::IsBlank(newName)) {
+        LOG_ERROR("Title '{}' couldn't be renamed to '{}' because it is empty or blank", formerName, newName);
+        return;
+    }
+
     Title* title = it->second.get();
 
     // 1. Rename the title.
@@ -854,6 +859,16 @@ void TitleManager::ExportTitles() {
 }
 
 void TitleManager::ExportTitle(Title* title, std::ofstream& file, int depth) {
+    if (String::IsBlank(title->GetName())) {
+        std::string typePrefix = TitleTypePrefixes[static_cast<int>(title->GetType())];
+        std::string temporyName;
+        do {
+            temporyName = std::format("{}_corrupted_title_{}", typePrefix, std::rand());
+        } while (m_Titles.contains(temporyName));
+        this->RenameTitle(title->GetName(), temporyName);
+        LOG_WARNING("Title '{}' had no name before exporting. It will use this temporary name instead.", temporyName);
+    }
+
     // Define the different indentations levels for the header and the content.
     std::string headerIndent = std::string(depth, '\t');
     std::string indent = headerIndent + '\t';

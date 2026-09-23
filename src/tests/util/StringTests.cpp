@@ -133,6 +133,14 @@ TEST_CASE("[String] IsAlphaNumeric") {
     CHECK(String::IsAlphaNumeric('_'));
 }
 
+TEST_CASE("[String] IsBlank") {
+    CHECK(String::IsBlank(""));
+    CHECK(String::IsBlank("   "));
+    CHECK(String::IsBlank("\t\n\r"));
+    CHECK_FALSE(String::IsBlank("a"));
+    CHECK_FALSE(String::IsBlank("  a  "));
+}
+
 TEST_SUITE("[String] ParseDouble") {
 
 TEST_CASE("[String] ParseDouble: valid decimal numbers") {

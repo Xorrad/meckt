@@ -102,6 +102,17 @@ bool String::IsAlphaNumeric(char ch) {
     return IsDigit(ch) || IsAlpha(ch);
 }
 
+bool String::IsBlank(std::string_view str) {
+    if (str.empty())
+        return true;
+    for (char ch : str) {
+        if (!std::isspace(static_cast<unsigned char>(ch))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 double String::ParseDouble(const std::string& str) {
     std::stringstream ss(str);
     double value;
