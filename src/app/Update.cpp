@@ -27,7 +27,7 @@ Update::Details Update::QueryDetails() {
                 break;
             }
 #elif __linux__
-            if (std::string(asset["name"]).starts_with("deb")) {
+            if (std::string(asset["name"]).starts_with("ubuntu")) {
                 result.lastBuildDownloadURL = asset["browser_download_url"];
                 break;
             }

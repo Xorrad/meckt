@@ -144,7 +144,7 @@ void HomeMenu::Render() {
     ImGui::End();
 
     // Determine which modal should be displayed.
-    if (s_PromptUpdate && m_App.GetUpdateDetails().shouldUpdate) {
+    if (s_PromptUpdate && m_App.GetUpdateDetails().shouldUpdate && m_App.GetUpdateDetails().lastBuildVersion != Configuration::doNotAskAgainLastUpdate) {
         ImGui::OpenPopup("Update");
         this->RenderUpdateModal();
     }
@@ -198,7 +198,6 @@ void HomeMenu::RenderErrorModal() {
 void HomeMenu::RenderUpdateModal() {
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(400.f, 0.f));
     if(ImGui::BeginPopupModal("Update", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("A newer version is available!");
         ImGui::Text("%s", fmt::format("Current: v{} -> Latest: v{}", Configuration::buildVersion, m_App.GetUpdateDetails().lastBuildVersion).c_str());
@@ -211,6 +210,10 @@ void HomeMenu::RenderUpdateModal() {
         }
         ImGui::Separator();
 
+        static bool dontAskAgain = false;;
+        if (ImGui::Checkbox("Don't ask again", &dontAskAgain)) {}
+
+        ImGui::SameLine();
         if(ImGui::Button("Open GitHub")) {
             Http::OpenURL(m_App.GetUpdateDetails().lastBuildURL);
         }
@@ -219,6 +222,8 @@ void HomeMenu::RenderUpdateModal() {
         if(ImGui::Button("Close")) {
             ImGui::CloseCurrentPopup();
             s_PromptUpdate = false;
+            Configuration::doNotAskAgainLastUpdate = (dontAskAgain) ? m_App.GetUpdateDetails().lastBuildVersion : "";
+            Configuration::Save();
         }
         ImGui::EndPopup();
     }
