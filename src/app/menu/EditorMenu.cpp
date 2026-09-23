@@ -11,6 +11,8 @@
 #include "core/regions/RegionManager.hpp"
 #include "core/titles/TitleManager.hpp"
 #include "core/defines/DefineManager.hpp"
+#include "util/Http.hpp"
+
 #include "imgui.h"
 #include "imgui_internal.h"
 
@@ -764,73 +766,78 @@ void EditorMenu::RenderMenuBar() {
             }
             ImGui::EndMenu();
         }
-        if(ImGui::BeginMenu("View")) {
 
-            if (ImGui::BeginMenu("Map")) {
-                for (int i = 0; i < (int)MapMode::COUNT; i++) {
-                    if (ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode)i)) {
-                        this->SwitchMapMode((MapMode)i);
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::Separator();
-            
-            if (ImGui::BeginMenu("Tooltips")) {
-                for (int i = 0; i < static_cast<int>(MapTooltip::COUNT); ++i) {
-                    MapTooltip tooltip = static_cast<MapTooltip>(i);
-                    ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
-                    if (ImGui::MenuItem(MapTooltipToString(tooltip).data(), "", Configuration::mapTooltips[tooltip])) {
-                        Configuration::mapTooltips[tooltip] = !Configuration::mapTooltips[tooltip];
-                    }
-                    ImGui::PopItemFlag();
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::MenuItem("Borders", "", &m_DisplayBorders);
-            if(ImGui::MenuItem("Adjacencies Connections", "", &Configuration::adjacenciesConnections)) {
-                Configuration::Save();
-            }
-            if(ImGui::MenuItem("Compact Tooltip", "", &Configuration::compactTooltip)) {
-                Configuration::Save();
-            }
-
-            ImGui::Separator();
-
-            for(const auto& [type, tab] : m_Tabs) {
-                ImGui::MenuItem(tab->GetName().c_str(), "", &tab->IsVisible());
-            }
-
-            ImGui::Separator();
-
-            if (ImGui::MenuItem("Refresh all textures")) {
-                this->UpdateTextures();
-                this->SwitchMapMode(m_MapMode, false);
-            }
-            
-            ImGui::Separator();
-
-            ImGui::PushItemWidth(ImGui::CalcItemWidth() * 0.5f);
-            if (ImGui::DragFloat("UI Scale", &Configuration::uiScale, 0.02f, 0.1f, 5.0f)) {
-                ImGuiStyle& style = ImGui::GetStyle();
-                style.FontScaleMain = Configuration::uiScale;
-                Configuration::Save();
-            }
-            ImGui::PopItemWidth();
-
-            ImGui::EndMenu();
-        }
-
+        this->RenderMenuBarView();
         this->RenderMenuBarSelection();
         this->RenderMenuBarTools();
+        this->RenderMenuBarAbout();
 
         ImGui::EndMainMenuBar();
     }
 
     if(!m_ModalName.empty()) {
         ImGui::OpenPopup(m_ModalName.c_str());
+    }
+}
+
+void EditorMenu::RenderMenuBarView() {
+    if(ImGui::BeginMenu("View")) {
+
+        if (ImGui::BeginMenu("Map")) {
+            for (int i = 0; i < (int)MapMode::COUNT; i++) {
+                if (ImGui::MenuItem(MapModeLabels[i], "", m_MapMode == (MapMode)i)) {
+                    this->SwitchMapMode((MapMode)i);
+                }
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::Separator();
+        
+        if (ImGui::BeginMenu("Tooltips")) {
+            for (int i = 0; i < static_cast<int>(MapTooltip::COUNT); ++i) {
+                MapTooltip tooltip = static_cast<MapTooltip>(i);
+                ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+                if (ImGui::MenuItem(MapTooltipToString(tooltip).data(), "", Configuration::mapTooltips[tooltip])) {
+                    Configuration::mapTooltips[tooltip] = !Configuration::mapTooltips[tooltip];
+                }
+                ImGui::PopItemFlag();
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::MenuItem("Borders", "", &m_DisplayBorders);
+        if(ImGui::MenuItem("Adjacencies Connections", "", &Configuration::adjacenciesConnections)) {
+            Configuration::Save();
+        }
+        if(ImGui::MenuItem("Compact Tooltip", "", &Configuration::compactTooltip)) {
+            Configuration::Save();
+        }
+
+        ImGui::Separator();
+
+        for(const auto& [type, tab] : m_Tabs) {
+            ImGui::MenuItem(tab->GetName().c_str(), "", &tab->IsVisible());
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::MenuItem("Refresh all textures")) {
+            this->UpdateTextures();
+            this->SwitchMapMode(m_MapMode, false);
+        }
+        
+        ImGui::Separator();
+
+        ImGui::PushItemWidth(ImGui::CalcItemWidth() * 0.5f);
+        if (ImGui::DragFloat("UI Scale", &Configuration::uiScale, 0.02f, 0.1f, 5.0f)) {
+            ImGuiStyle& style = ImGui::GetStyle();
+            style.FontScaleMain = Configuration::uiScale;
+            Configuration::Save();
+        }
+        ImGui::PopItemWidth();
+
+        ImGui::EndMenu();
     }
 }
 
@@ -938,6 +945,35 @@ void EditorMenu::RenderMenuBarTools() {
             catch (const std::exception& e) {
                 LOG_ERROR("Failed to save image to disk: {}", e.what());
             }
+        }
+
+        ImGui::EndMenu();
+    }
+}
+
+void EditorMenu::RenderMenuBarAbout() {
+    if(ImGui::BeginMenu("About")) {
+        ImGui::BeginDisabled();
+        ImGui::Text("v%s", Configuration::buildVersion.c_str());
+        ImGui::Text("%s", Configuration::buildCredits.c_str());
+        ImGui::EndDisabled();
+
+        ImGui::Separator();
+
+        if(ImGui::MenuItem("GitHub")) {
+            Http::OpenURL(Configuration::githubURL);
+        }
+        
+        if(ImGui::MenuItem("Discord")) {
+            Http::OpenURL(Configuration::discordURL);
+        }
+
+        if(ImGui::MenuItem("Report an issue")) {
+            Http::OpenURL(Configuration::githubURL + "/issues");
+        }
+        
+        if(ImGui::MenuItem("Donate")) {
+            Http::OpenURL(Configuration::donateURL);
         }
 
         ImGui::EndMenu();

@@ -30,6 +30,8 @@ public:
     inline static std::string buildVersion = "1.9.0";
     inline static std::string buildCredits = "made by Xorrad";
     inline static std::string githubURL = "https://github.com/Xorrad/meckt";
+    inline static std::string discordURL = "https://discord.com/channels/735413460439007241/1334319695410761832";
+    inline static std::string donateURL = "https://ko-fi.com/xorrad";
     inline static std::string atlantisURL = "https://codeload.github.com/bombusfrigidus/Atlantis/zip/refs/heads/main";
     
     // Saved settings

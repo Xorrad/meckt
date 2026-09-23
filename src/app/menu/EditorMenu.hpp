@@ -73,8 +73,10 @@ public:
 
     void SetupDockspace();
     void RenderMenuBar();
+    void RenderMenuBarView();
     void RenderMenuBarSelection();
     void RenderMenuBarTools();
+    void RenderMenuBarAbout();
     void RenderModals();
 
 private:
