@@ -153,3 +153,14 @@ std::string Http::Get(const std::string& url, const std::string& filePath) {
     return response;
 #endif
 }
+
+void Http::OpenURL(const std::string& url) {
+#ifdef _WIN32
+    ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+#else
+    std::string command = "xdg-open " + url + " &>/dev/null";
+    if (std::system(command.c_str()) != 0) {
+        throw std::runtime_error("Failed to open URL in default browser.");
+    }
+#endif
+}

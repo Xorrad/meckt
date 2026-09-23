@@ -1,8 +1,8 @@
 #include "HomeMenu.hpp"
-#include "EditorMenu.hpp"
 #include "NewModMenu.hpp"
 #include "app/App.hpp"
 #include "imgui.h"
+#include "util/Http.hpp"
 
 #include <nfd.h>
 
@@ -47,7 +47,7 @@ void HomeMenu::Render() {
 
     // Version and credits.
     ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_MEDIUM);
-    ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), fmt::format("v{} - {}", Configuration::buildVersion, Configuration::buildCredits).c_str());
+    ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "%s", fmt::format("v{} - {}", Configuration::buildVersion, Configuration::buildCredits).c_str());
     ImGui::PopFont();
 
     ImGui::NewLine();
@@ -120,7 +120,7 @@ void HomeMenu::Render() {
         ImGui::SameLine();
         ImGui::Dummy(ImVec2(5.0f, 0.0f));
         ImGui::SameLine();
-        ImGui::Text(std::filesystem::absolute(path).string().c_str());
+        ImGui::Text("%s", std::filesystem::absolute(path).string().c_str());
         i++;
     }
     ImGui::PopFont();
@@ -132,13 +132,7 @@ void HomeMenu::Render() {
     // Other section.
     ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
     if (ImGui::TextButton("🐛 Report an issue")) {
-        std::string command;
-#ifdef _WIN32
-        command = "start " + Configuration::githubURL + "/issues";
-#else
-        command = "xdg-open " + Configuration::githubURL + "/issues" + "&>/dev/null";
-#endif
-        if(std::system(command.c_str())) {}
+        Http::OpenURL(Configuration::githubURL + "/issues");
     }
     ImGui::Dummy(ImVec2(0.0f, spacing));
     if (ImGui::TextButton("❌ Exit")) {
@@ -184,7 +178,7 @@ void HomeMenu::RenderErrorModal() {
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if(ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_LoadingError.c_str());
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "%s", m_LoadingError.c_str());
         ImGui::Separator();
 
         if(ImGui::Button("Open logs", ImVec2(120, 0))) {
@@ -207,24 +201,18 @@ void HomeMenu::RenderUpdateModal() {
     ImGui::SetNextWindowSize(ImVec2(400.f, 0.f));
     if(ImGui::BeginPopupModal("Update", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("A newer version is available!");
-        ImGui::Text(fmt::format("Current: v{} -> Latest: v{}", Configuration::buildVersion, m_App.GetUpdateDetails().lastBuildVersion).c_str());
+        ImGui::Text("%s", fmt::format("Current: v{} -> Latest: v{}", Configuration::buildVersion, m_App.GetUpdateDetails().lastBuildVersion).c_str());
 
         bool hasError = !m_App.GetUpdateDetails().error.empty();
         if (hasError) {
             ImGui::PushTextWrapPos();
-            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), m_App.GetUpdateDetails().error.c_str());
+            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "%s", m_App.GetUpdateDetails().error.c_str());
             ImGui::PopTextWrapPos();
         }
         ImGui::Separator();
 
         if(ImGui::Button("Open GitHub")) {
-            std::string command;
-#ifdef _WIN32
-            command = "start " + m_App.GetUpdateDetails().lastBuildURL;
-#else
-            command = "xdg-open " + m_App.GetUpdateDetails().lastBuildURL + "&>/dev/null";
-#endif
-            if(std::system(command.c_str())) {}
+            Http::OpenURL(m_App.GetUpdateDetails().lastBuildURL);
         }
 
         ImGui::SameLine();

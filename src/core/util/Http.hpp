@@ -7,4 +7,5 @@ namespace Http {
     }
 
     std::string Get(const std::string& url, const std::string& filePath = "");
+    void OpenURL(const std::string& url);
 }
