@@ -57,7 +57,7 @@ void App::OpenMod(UniquePtr<Mod> mod, EditorSetup setup) {
     );
     Configuration::recentMods.push_front(mod->GetRootDirectory());
 
-    m_ActiveMod = std::move(mod);
+    // m_ActiveMod = std::move(mod);
     Logger::Get()->Clear();
 
     UniquePtr<LoadingMenu> menu = MakeUnique<LoadingMenu>(
@@ -65,8 +65,12 @@ void App::OpenMod(UniquePtr<Mod> mod, EditorSetup setup) {
         [&,setup](){ this->OpenMenu(MakeUnique<EditorMenu>(*this, setup)); },
         [&](const std::string& error){ this->OpenMenu(MakeUnique<HomeMenu>(*this, error)); }
     );
-    menu->Start();
+    menu->Start(std::move(mod));
     m_ActiveMenu = std::move(menu);
+}
+
+void App::SetMod(UniquePtr<Mod> mod) {
+    m_ActiveMod = std::move(mod);
 }
 
 void App::CloseMod() {
@@ -121,6 +125,7 @@ void App::Run() {
             ImGui::SFML::ProcessEvent(m_Window, *event);
 
             if (event->is<sf::Event::Closed>()) {
+                m_ActiveMenu->Event(*event);
                 m_Window.close();
                 break;
             }

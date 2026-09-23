@@ -13,10 +13,11 @@ public:
     virtual void Render();
 
     void SetState(LoadingState state);
-    void Start();
+    void Start(UniquePtr<Mod> mod);
 
 private:
-    LoadingState m_State;
+    std::atomic<LoadingState> m_State;
+    std::atomic<bool> m_Cancelled;
     std::string m_LoadingError;
     UniquePtr<std::thread> m_Thread;
 

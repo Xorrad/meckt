@@ -91,7 +91,8 @@ void Mod::SetRootDirectory(const std::string& rootDirectory) {
 void Mod::Load(
     std::function<void()> completeCallback,
     std::function<void(LoadingState)> changeCallback,
-    std::function<void(const std::string&)> errorCallback
+    std::function<void(const std::string&)> errorCallback,
+    std::atomic<bool>* cancelled
 ) {
     if(!this->HasMap()) {
         errorCallback(fmt::format("File {} is missing and required to load the mod.", m_RootDirectory + "/map_data/provinces.png"));
@@ -107,6 +108,10 @@ void Mod::Load(
 
     #define LOAD_CATCH(method, state, name, required) \
         try { \
+            if (cancelled != nullptr && cancelled->load()) { \
+                LOG_INFO("Loading cancelled at state: {}", LoadingStateLabels.at(state)); \
+                return; \
+            } \
             changeCallback(state); \
             method; \
         } \

@@ -59,6 +59,13 @@ public:
     void OpenMod(UniquePtr<Mod> mod, EditorSetup setup);
 
     /**
+     * @brief Sets the currently open mod.
+     * @param mod The mod to set as the active mod.
+     * @note This method does not open the mod in the loading menu. Use OpenMod() for that purpose.
+     */
+    void SetMod(UniquePtr<Mod> mod);
+
+    /**
      * @brief Closes the currently open mod.
      */
     void CloseMod();

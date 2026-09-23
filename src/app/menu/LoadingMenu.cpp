@@ -3,7 +3,8 @@
 
 LoadingMenu::LoadingMenu(App& app, std::function<void()> completeCallback, std::function<void(const std::string&)> errorCallback) :
     Menu(app, "Loading"),
-    m_State((LoadingState) 0),
+    m_State(static_cast<LoadingState>(0)),
+    m_Cancelled(false),
     m_LoadingError(""),
     m_Thread(nullptr),
     m_CompleteCallback(completeCallback), m_ErrorCallback(errorCallback)
@@ -12,6 +13,7 @@ LoadingMenu::LoadingMenu(App& app, std::function<void()> completeCallback, std::
 
 LoadingMenu::~LoadingMenu() {
     if (m_Thread && m_Thread->joinable()) {
+        m_Cancelled.store(true);
         m_Thread->join();
 	}
 }
@@ -25,7 +27,8 @@ void LoadingMenu::Event(const sf::Event& event) {
 }
 
 void LoadingMenu::Render() {
-    if (m_State == LoadingState::FINISHED) {
+    LoadingState currentState = m_State.load();
+    if (currentState == LoadingState::FINISHED) {
         if (m_LoadingError.empty()) {
             m_CompleteCallback();
             return;
@@ -47,22 +50,25 @@ void LoadingMenu::Render() {
 
     ImGui::SetCursorPos(ImVec2(centerX - progressbarSize.x*0.5f, startY));
     ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.40f, 0.40f, 0.90f, 0.45f));
-    ImGui::ProgressBar(((float) m_State)/LoadingStateLabels.size(), ImVec2(0.0f, 0.0f), LoadingStateLabels.at(m_State).c_str());
+    ImGui::ProgressBar(((float) (currentState))/LoadingStateLabels.size(), ImVec2(0.0f, 0.0f), LoadingStateLabels.at(currentState).c_str());
     ImGui::PopStyleColor();
     
     ImGui::End();
 }
 
 void LoadingMenu::SetState(LoadingState state) {
-    m_State = state;
+    m_State.store(state);
 }
 
-void LoadingMenu::Start() {
-    m_Thread = MakeUnique<std::thread>([&]() {
-        m_App.GetMod().Load(
-            [&]() { m_State = LoadingState::FINISHED; },
-            [&](LoadingState state) { m_State = state; },
-            [&](const std::string& error) { m_LoadingError = error; m_State = LoadingState::FINISHED; }
+void LoadingMenu::Start(UniquePtr<Mod> mod) {
+    m_Cancelled.store(false);
+    m_Thread = MakeUnique<std::thread>([this, mod = std::move(mod)]() mutable {
+        mod->Load(
+            [this]() { m_State.store(LoadingState::FINISHED); },
+            [this](LoadingState state) { m_State.store(state); },
+            [this](const std::string& error) { m_LoadingError = error; m_State.store(LoadingState::FINISHED); },
+            &m_Cancelled
         );
+        m_App.SetMod(std::move(mod));
     });
 }

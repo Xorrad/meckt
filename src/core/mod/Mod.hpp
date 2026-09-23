@@ -73,11 +73,13 @@ public:
      * @param completeCallback The callback function to call when the loading is complete.
      * @param changeCallback The callback function to call when the loading state changes, with the new loading state as a parameter.
      * @param errorCallback The callback function to call when an error occurs during loading, with the error message as a parameter.
+     * @param state Optional pointer to an atomic variable to store the current loading state.
      */
     void Load(
         std::function<void()> completeCallback,
         std::function<void(LoadingState)> changeCallback,
-        std::function<void(const std::string&)> errorCallback
+        std::function<void(const std::string&)> errorCallback,
+        std::atomic<bool>* cancelled = nullptr
     );
 
     /**
