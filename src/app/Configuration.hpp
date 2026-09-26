@@ -27,7 +27,7 @@ public:
     Configuration& operator=(const Configuration&) = delete;
 
     //Settings
-    inline static std::string buildVersion = "1.7.0";
+    inline static std::string buildVersion = "1.9.0";
     inline static std::string buildCredits = "made by Xorrad";
     inline static std::string githubURL = "https://github.com/Xorrad/meckt";
     inline static std::string discordURL = "https://discord.com/channels/735413460439007241/1334319695410761832";
