@@ -585,6 +585,7 @@ void PropertiesTab::RenderProvinces() {
                         m_Mod.GetTitleManager().AddTitle(std::move(title));
 
                         m_Menu.UpdateTexture(MapMode::BARONY, false);
+                        m_Menu.RefreshCurrentMapMode(false, false);
                     }
                 }
 

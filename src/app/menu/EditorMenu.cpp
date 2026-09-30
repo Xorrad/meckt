@@ -1325,7 +1325,10 @@ void EditorMenu::RenderModals() {
             ImGui::CloseCurrentPopup();
             initialized = false;
             m_Mod.GetTitleManager().HarmonizeTitlesColors(m_SelectionHandler.GetTitles(), color, hue/100.f, saturation/100.f);
-            this->RefreshCurrentMapMode(true, false);
+            
+            for (int i = static_cast<int>(MapMode::COUNTY); i <= static_cast<int>(MapMode::HEGEMONY); i++)
+                this->UpdateTexture(static_cast<MapMode>(i), false);
+            this->RefreshCurrentMapMode(false, false);
         }
         if(!hasTitlesSelected) ImGui::EndDisabled();
 
@@ -1350,6 +1353,9 @@ void EditorMenu::RenderModals() {
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
             m_Mod.GetProvinceManager().GenerateProvincesFlags(m_Mod.GetDefineManager().GetWaterLevel());
+
+            this->UpdateTexture(MapMode::FLAGS, false);
+            this->RefreshCurrentMapMode(false, false);
         }
 
         ImGui::SetItemDefaultFocus();
@@ -1372,6 +1378,9 @@ void EditorMenu::RenderModals() {
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
             m_Mod.GetProvinceManager().GenerateMissingProvinces();
+
+            this->UpdateTexture(MapMode::PROVINCES, false);
+            this->RefreshCurrentMapMode(false, false);
         }
 
         ImGui::SetItemDefaultFocus();
@@ -1395,6 +1404,9 @@ void EditorMenu::RenderModals() {
         if(ImGui::Button("Generate", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
             m_Mod.GetTitleManager().GenerateMissingBaronies(m_Mod.GetProvinceManager());
+            
+            this->UpdateTexture(MapMode::BARONY, false);
+            this->RefreshCurrentMapMode(false, false);
         }
 
         ImGui::SetItemDefaultFocus();
