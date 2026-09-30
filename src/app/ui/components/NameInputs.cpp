@@ -10,10 +10,10 @@ bool Components::TitleNameInput(std::string_view label, const std::string& curre
         "name",
         &newName,
         ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CallbackCharFilter,
-        Components::Filters::TitleName,
-        nullptr,
-        [type](const std::string& name) { return IsValidTitleName(name, type); }
+        Components::Filters::TitleName
     )) {
+        if (!newName.starts_with(TitleTypePrefixes[static_cast<int>(type)]))
+            newName = fmt::format("{}_{}", TitleTypePrefixes[static_cast<int>(type)], newName);
         if (!newName.empty() && IsValidTitleName(newName, type)) {
             onChange(newName);
             valueChanged = true;
