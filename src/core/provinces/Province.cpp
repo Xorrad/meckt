@@ -7,7 +7,7 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_Id(id),
     m_Name(name),
     m_Color(color),
-    m_Flags(ProvinceFlags::NONE),
+    m_Flags(ProvinceFlags::LAND),
     m_Holding("none"),
     m_Terrain(""),
     m_Culture(""),
