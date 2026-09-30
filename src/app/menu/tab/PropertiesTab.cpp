@@ -583,6 +583,8 @@ void PropertiesTab::RenderProvinces() {
                         baronyTitle->SetProvinceId(province->GetId());
 
                         m_Mod.GetTitleManager().AddTitle(std::move(title));
+
+                        m_Menu.UpdateTexture(MapMode::BARONY, false);
                     }
                 }
 

@@ -1094,8 +1094,8 @@ void EditorMenu::RenderModals() {
 			Title* titlePtr = title.get();
             m_Mod.GetTitleManager().AddTitle(std::move(title));
 
+            this->UpdateTextures();
             this->SwitchMapMode(TitleTypeToMapMode(type), true);
-            this->RefreshCurrentMapMode();
             m_SelectionHandler.Select(titlePtr);
         }
         if(isNameTaken || name.empty()) ImGui::EndDisabled();
