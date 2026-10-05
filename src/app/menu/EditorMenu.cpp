@@ -462,23 +462,19 @@ void EditorMenu::DrawAdjacencies(sf::RenderTarget& target) {
 void EditorMenu::Update(sf::Time delta) {
     ToggleCamera(true);
 
-    // Per-frame housekeeping (Escape-to-cancel a pick), regardless of which
-    // tabs are currently visible.
     m_SelectionHandler.Tick();
 
-    // Update all currently opened tabs
+    // Update all currently opened tabs.
     for(const auto& [type, tab] : m_Tabs) {
         if(!tab->IsVisible())
             continue;
         tab->Update(delta);
     }
 
+    sf::RenderWindow& window = m_App.GetWindow();
+    sf::Vector2i currentMousePosition = sf::Mouse::getPosition(window);
     if(m_Dragging) {
-        sf::RenderWindow& window = m_App.GetWindow();
-
-        sf::Vector2i currentMousePosition = sf::Mouse::getPosition(window);
         sf::Vector2f delta = window.mapPixelToCoords(m_LastMousePosition) - window.mapPixelToCoords(currentMousePosition);
-
         m_Camera.move(delta);
         m_LastMousePosition = currentMousePosition;
     }
@@ -491,7 +487,7 @@ void EditorMenu::Event(const sf::Event& event) {
 
     sf::RenderWindow& window = m_App.GetWindow();
 
-    // Report event to all currently opened tabs
+    // Report event to all currently opened tabs.
     for(const auto& [type, tab] : m_Tabs) {
         if(!tab->IsVisible())
             continue;
@@ -576,7 +572,7 @@ void EditorMenu::Render() {
 
     m_SelectionHandler.Render(window);
 
-    if (!ImGui::IsAnyItemHovered()) {
+    if (!ImGui::GetIO().WantCaptureMouse) {
         if (!Configuration::compactTooltip) {
             window.draw(m_HoverShape);
             window.draw(m_HoverTitleText);
