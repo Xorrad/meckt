@@ -15,6 +15,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include <SFML/Window/Mouse.hpp>
 
 EditorMenu::EditorMenu(App& app, EditorSetup setup) :
     Menu(app, "Editor"),
@@ -150,9 +151,9 @@ sf::FloatRect EditorMenu::GetVisibleWorldRect() const {
 
 //////////////////////////////////////////////////////
 
-void EditorMenu::UpdateHoveringText() {
+void EditorMenu::UpdateHoveringText(sf::Vector2i pixelPosition) {
     Province* hoveredProvince = this->GetHoveredProvince();
-    sf::Vector2i mousePosition = sf::Mouse::getPosition(m_App.GetWindow());
+    sf::Vector2f mousePosition = m_App.GetWindow().mapPixelToCoords(pixelPosition);
 
     if(hoveredProvince == nullptr)
         goto Hide;
@@ -192,13 +193,11 @@ void EditorMenu::UpdateHoveringText() {
             text.pop_back();
 
         m_HoverText.setString(text);
-        m_HoverText.setPosition({static_cast<float>(mousePosition.x) + Components::Scaled(12), static_cast<float>(mousePosition.y) - Components::Scaled(8)});
         m_HoverText.setFillColor(sf::Color::Black);
         m_HoverText.setCharacterSize(Components::Scaled(12));
 
         m_HoverTitleText.setString(hoveredTitleText);
         m_HoverTitleText.setStyle(sf::Text::Bold);
-        m_HoverTitleText.setPosition({static_cast<float>(mousePosition.x) + Components::Scaled(12), static_cast<float>(mousePosition.y) - Components::Scaled(8)});
         m_HoverTitleText.setFillColor(sf::Color::Black);
         m_HoverTitleText.setCharacterSize(Components::Scaled(12));
 
@@ -206,8 +205,11 @@ void EditorMenu::UpdateHoveringText() {
             static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.x, m_HoverTitleText.getGlobalBounds().size.x)) + Components::Scaled(4.f),
             static_cast<float>(std::max(m_HoverText.getGlobalBounds().size.y, m_HoverTitleText.getGlobalBounds().size.y)) + Components::Scaled(8.f)
         };
-        m_HoverShape.setPosition({(float) mousePosition.x + Components::Scaled(10), (float) mousePosition.y - Components::Scaled(10)});
         m_HoverShape.setSize(hoverShapeSize);
+
+        m_HoverText.setPosition({static_cast<float>(mousePosition.x) + Components::Scaled(14), static_cast<float>(mousePosition.y) - Components::Scaled(8)});
+        m_HoverTitleText.setPosition({static_cast<float>(mousePosition.x) + Components::Scaled(14), static_cast<float>(mousePosition.y) - Components::Scaled(8)});
+        m_HoverShape.setPosition({(float) mousePosition.x + Components::Scaled(12), (float) mousePosition.y - Components::Scaled(10)});
         return;
     }
 
@@ -459,6 +461,16 @@ void EditorMenu::DrawAdjacencies(sf::RenderTarget& target) {
     }
 }
 
+void EditorMenu::DrawHoverTooltip(sf::RenderTarget& target) {
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        if (!Configuration::compactTooltip) {
+            target.draw(m_HoverShape);
+            target.draw(m_HoverTitleText);
+        }
+        target.draw(m_HoverText);
+    }
+}
+
 void EditorMenu::Update(sf::Time delta) {
     ToggleCamera(true);
 
@@ -494,8 +506,8 @@ void EditorMenu::Event(const sf::Event& event) {
         tab->Event(event);
     }
 
-    if(event.is<sf::Event::MouseMoved>()) {
-        this->UpdateHoveringText();
+    if (const auto* mouseMove = event.getIf<sf::Event::MouseMoved>()) {
+        this->UpdateHoveringText(mouseMove->position);
     }
     else if(const auto* mouseWheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
         ToggleCamera(true);
@@ -571,14 +583,8 @@ void EditorMenu::Render() {
     ToggleCamera(false);
 
     m_SelectionHandler.Render(window);
-
-    if (!ImGui::GetIO().WantCaptureMouse) {
-        if (!Configuration::compactTooltip) {
-            window.draw(m_HoverShape);
-            window.draw(m_HoverTitleText);
-        }
-        window.draw(m_HoverText);
-    }
+    
+    this->DrawHoverTooltip(window);
 
     this->RenderMenuBar();
     this->RenderModals();

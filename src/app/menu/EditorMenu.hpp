@@ -42,7 +42,7 @@ public:
 
     //////////////////////////////////////////////////////
 
-    void UpdateHoveringText();
+    void UpdateHoveringText(sf::Vector2i pixelPosition);
     void ToggleCamera(bool enabled);
 
     void CenterCamera(Province* province);
@@ -101,6 +101,11 @@ private:
      * @note  Assumes the target's view is already set to `m_Camera`.
      */
     void DrawAdjacencies(sf::RenderTarget& target);
+
+    /**
+     * @brief Draws the hover tooltip onto the given target.
+     */
+    void DrawHoverTooltip(sf::RenderTarget& target);
 
 private:
     Mod& m_Mod;
