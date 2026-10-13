@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![GitHub issues](https://img.shields.io/github/issues/xorrad/ck3-meckt)](https://github.com/xorrad/ck3-meckt/issues)
 [![GitHub stars](https://img.shields.io/github/stars/xorrad/ck3-meckt.svg?style=flat&label=stars)](https://github.com/xorrad/ck3-meckt)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Donate-blue?logo=kofi)](https://ko-fi.com/xorrad)
 
 meckt is a tool whose goal is making total conversion mod easier and less cumbersome. It includes tools to generate provinces from the provinces image, to create and edit titles using a user interface and a map, to manage the history of titles.
 
