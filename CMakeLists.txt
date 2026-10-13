@@ -348,6 +348,12 @@ target_compile_definitions(meckt-app PUBLIC
     $<$<CONFIG:Debug>:DEBUG>
 )
 
+target_compile_options(meckt-app PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/Zi>
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-g>
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-fno-omit-frame-pointer>
+)
+
 target_precompile_headers(meckt-app PRIVATE src/app/pch.hpp)
 
 target_include_directories(meckt-app PUBLIC src)
@@ -407,6 +413,12 @@ set_target_properties(meckt-tests PROPERTIES
 
 target_compile_definitions(meckt-tests PUBLIC
     $<$<CONFIG:Debug>:DEBUG>
+)
+
+target_compile_options(meckt-tests PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/Zi>
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-g>
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-fno-omit-frame-pointer>
 )
 
 target_link_libraries(meckt-tests PUBLIC
