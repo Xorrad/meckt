@@ -279,7 +279,13 @@ void PropertiesTab::RenderProvinces() {
         for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
             Province* province = provinces[index];
                 
-            if (ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            const bool expanded = ImGui::CollapsingHeader(fmt::format("#{} ({})", province->GetId(), province->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+
+            if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                m_Menu.CenterCamera(province);
+            }
+
+            if (expanded) {
                 ImGui::BeginChild(fmt::format("##province-{}", province->GetId()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
                 ImGui::PushID(province->GetId());                        
 
@@ -606,7 +612,13 @@ void PropertiesTab::RenderTitles() {
         for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
             Title* title = titles[index];
 
-            if (ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            const bool expanded = ImGui::CollapsingHeader(title->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+            
+            if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                m_Menu.CenterCamera(title);
+            }
+
+            if (expanded) {
                 ImGui::BeginChild(fmt::format("##title-{}", title->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
                 ImGui::PushID(title->GetName().c_str());
 
@@ -1028,8 +1040,14 @@ void PropertiesTab::RenderTitles() {
 void PropertiesTab::RenderRegions() {
     std::vector<Region*> regions = std::vector<Region*>(m_Menu.GetSelectionHandler().GetRegions().begin(), m_Menu.GetSelectionHandler().GetRegions().end());
     for (Region* region : regions) {
+
+        const bool expanded = ImGui::CollapsingHeader(region->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+            
+        if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            m_Menu.CenterCamera(region);
+        }
                 
-        if (ImGui::CollapsingHeader(region->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (expanded) {
             ImGui::BeginChild(fmt::format("##region-{}", region->GetName()).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
             ImGui::PushID(region->GetName().c_str());
 
