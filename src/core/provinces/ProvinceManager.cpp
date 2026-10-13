@@ -800,7 +800,7 @@ void ProvinceManager::LoadHeightmapImage() {
     // Scale the heightmap to match the provinces image.
     sf::Vector2u provincesSize = m_ProvincesImage.getSize();
     if (provincesSize.x > 0 && provincesSize.y > 0 && m_HeightmapImage.getSize() != provincesSize) {
-        LOG_INFO("Scaling heightmap image from {}x{} to {}x{} to match the provinces image", m_HeightmapImage.getSize().x, m_HeightmapImage.getSize().y, provincesSize.x, provincesSize.y);
+        // LOG_INFO("Scaling heightmap image from {}x{} to {}x{} to match the provinces image", m_HeightmapImage.getSize().x, m_HeightmapImage.getSize().y, provincesSize.x, provincesSize.y);
         m_HeightmapImage = Image::Resize(m_HeightmapImage, provincesSize);
     }
 }
