@@ -11,7 +11,7 @@ Province::Province(int id, sf::Color color, std::string name) :
     m_Holding("none"),
     m_Terrain(""),
     m_Culture(""),
-    m_Faith(""),
+    m_Rite(""),
     m_OriginalHistoryFileName(""),
     m_ExtraHistoryData(MakeShared<Jomini::Object>(Jomini::ObjectMap{})),
     m_History({}),
@@ -64,8 +64,8 @@ std::string Province::GetCulture() const {
     return m_Culture;
 }
 
-std::string Province::GetFaith() const {
-    return m_Faith;
+std::string Province::GetRite() const {
+    return m_Rite;
 }
 
 ClimateType Province::GetClimateType() const {
@@ -173,8 +173,8 @@ void Province::SetCulture(std::string culture) {
     m_Culture = culture;
 }
 
-void Province::SetFaith(std::string faith) {
-    m_Faith = faith;
+void Province::SetRite(std::string rite) {
+    m_Rite = rite;
 }
 
 void Province::SetClimateType(ClimateType type) {

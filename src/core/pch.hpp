@@ -27,7 +27,7 @@ class EmpireTitle;
 class HegemonyTitle;
 
 class Culture;
-class Faith;
+class Rite;
 
 // Standard headers
 #include <iostream>

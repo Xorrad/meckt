@@ -9,12 +9,12 @@ ReligionManager::ReligionManager(Mod& mod) :
 {
 }
 
-size_t ReligionManager::CountFaiths() const {
-    return m_Faiths.size();
+size_t ReligionManager::CountRites() const {
+    return m_Rites.size();
 }
 
-bool ReligionManager::HasFaith(const std::string& name) const {
-    return m_Faiths.contains(name);
+bool ReligionManager::HasRite(const std::string& name) const {
+    return m_Rites.contains(name);
 }
 
 //////////////////////////////////////////////////////
@@ -23,25 +23,25 @@ Mod& ReligionManager::GetMod() {
     return m_Mod;
 }
 
-Faith* ReligionManager::GetFaith(const std::string& name) {
-    auto it = m_Faiths.find(name);
-    if (it == m_Faiths.end())
+Rite* ReligionManager::GetRite(const std::string& name) {
+    auto it = m_Rites.find(name);
+    if (it == m_Rites.end())
         return nullptr;
     return it->second.get();
 }
     
-const Faith* ReligionManager::GetFaith(const std::string& name) const {
-    auto it = m_Faiths.find(name);
-    if (it == m_Faiths.end())
+const Rite* ReligionManager::GetRite(const std::string& name) const {
+    auto it = m_Rites.find(name);
+    if (it == m_Rites.end())
         return nullptr;
     return it->second.get();
 }
 
-sf::Image ReligionManager::GetFaithImage(ProvinceManager& provinceManager, TitleManager& titleManager) const {
-    // - Map provinces colors to their faith color (province -> county -> county capital -> province).
+sf::Image ReligionManager::GetRiteImage(ProvinceManager& provinceManager, TitleManager& titleManager) const {
+    // - Map provinces colors to their rite color (province -> county -> county capital -> province).
     // - Copy province image.
     // - Replace province pixels by their mapped color.
-    // - Provinces with an explicit faith assigned will have alpha=0
+    // - Provinces with an explicit rite assigned will have alpha=0
     //   in order to inform the shader.
     sf::Color defaultColor = sf::Color(127, 127, 127);
 
@@ -49,11 +49,11 @@ sf::Image ReligionManager::GetFaithImage(ProvinceManager& provinceManager, Title
         provinceManager.GetProvincesImage(),
         [&](auto& mappedColors){
             for(const auto& [provinceColorId, province] : provinceManager.GetProvincesByColors()) {
-                std::string faith = province->GetFaith();
+                std::string rite = province->GetRite();
                 sf::Color color = defaultColor;
-                uint8_t alpha = faith.empty() ? 255 : 0;
+                uint8_t alpha = rite.empty() ? 255 : 0;
 
-                if(faith.empty()) {
+                if(rite.empty()) {
                     CountyTitle* liege = static_cast<CountyTitle*>(province->GetProvinceLiegeTitle(titleManager, TitleType::COUNTY));
 
                     if(liege == nullptr) {
@@ -69,22 +69,22 @@ sf::Image ReligionManager::GetFaithImage(ProvinceManager& provinceManager, Title
                             continue;
                         }
 
-                        if(!baronyProvince->GetFaith().empty()) {
-                            faith = baronyProvince->GetFaith();
+                        if(!baronyProvince->GetRite().empty()) {
+                            rite = baronyProvince->GetRite();
                             break;
                         }
                     }
                 }
 
-                if (faith.empty()) {
+                if (rite.empty()) {
                     color = sf::Color::Black;
                     goto End;
                 }
                 
                 {
-                    auto it = m_Faiths.find(faith);
-                    if(it == m_Faiths.end()) {
-                        color = sf::Color(faith[0], faith[1], faith[2]);
+                    auto it = m_Rites.find(rite);
+                    if(it == m_Rites.end()) {
+                        color = sf::Color(rite[0], rite[1], rite[2]);
                     } 
                     else {
                         color = it->second->GetColor();
@@ -100,7 +100,7 @@ sf::Image ReligionManager::GetFaithImage(ProvinceManager& provinceManager, Title
     return image;
 }
 
-std::vector<sf::Color> ReligionManager::GetFaithPalette(ProvinceManager& provinceManager, TitleManager& titleManager) const {
+std::vector<sf::Color> ReligionManager::GetRitePalette(ProvinceManager& provinceManager, TitleManager& titleManager) const {
     sf::Color defaultColor = sf::Color(127, 127, 127);
 
     const auto& indices = provinceManager.GetProvinceIndices();
@@ -111,11 +111,11 @@ std::vector<sf::Color> ReligionManager::GetFaithPalette(ProvinceManager& provinc
         if (indexIt == indices.end())
             continue;
 
-        std::string faith = province->GetFaith();
+        std::string rite = province->GetRite();
         sf::Color color = defaultColor;
-        uint8_t alpha = faith.empty() ? 255 : 0;
+        uint8_t alpha = rite.empty() ? 255 : 0;
 
-        if(faith.empty()) {
+        if(rite.empty()) {
             CountyTitle* liege = static_cast<CountyTitle*>(province->GetProvinceLiegeTitle(titleManager, TitleType::COUNTY));
 
             if(liege == nullptr) {
@@ -131,22 +131,22 @@ std::vector<sf::Color> ReligionManager::GetFaithPalette(ProvinceManager& provinc
                     continue;
                 }
 
-                if(!baronyProvince->GetFaith().empty()) {
-                    faith = baronyProvince->GetFaith();
+                if(!baronyProvince->GetRite().empty()) {
+                    rite = baronyProvince->GetRite();
                     break;
                 }
             }
         }
 
-        if (faith.empty()) {
+        if (rite.empty()) {
             color = sf::Color::Black;
             goto End;
         }
 
         {
-            auto it = m_Faiths.find(faith);
-            if(it == m_Faiths.end()) {
-                color = sf::Color(faith[0], faith[1], faith[2]);
+            auto it = m_Rites.find(rite);
+            if(it == m_Rites.end()) {
+                color = sf::Color(rite[0], rite[1], rite[2]);
             }
             else {
                 color = it->second->GetColor();
@@ -161,28 +161,28 @@ std::vector<sf::Color> ReligionManager::GetFaithPalette(ProvinceManager& provinc
     return palette;
 }
 
-std::unordered_map<std::string, UniquePtr<Faith>>& ReligionManager::GetFaiths() {
-    return m_Faiths;
+std::unordered_map<std::string, UniquePtr<Rite>>& ReligionManager::GetRites() {
+    return m_Rites;
 }
 
-const std::unordered_map<std::string, UniquePtr<Faith>>& ReligionManager::GetFaiths() const {
-    return m_Faiths;
-}
-
-//////////////////////////////////////////////////////
-
-void ReligionManager::AddFaith(UniquePtr<Faith> faith) {
-    m_Faiths[faith->GetName()] = std::move(faith);
-}
-
-void ReligionManager::RemoveFaith(const std::string& name) {
-    m_Faiths.erase(name);
+const std::unordered_map<std::string, UniquePtr<Rite>>& ReligionManager::GetRites() const {
+    return m_Rites;
 }
 
 //////////////////////////////////////////////////////
 
-void ReligionManager::LoadFaiths() {
-    std::set<std::string> filesPath = File::ListFiles(m_Mod.GetDirectory(Paths::COMMON_RELIGIONS_TYPES));
+void ReligionManager::AddRite(UniquePtr<Rite> rite) {
+    m_Rites[rite->GetName()] = std::move(rite);
+}
+
+void ReligionManager::RemoveRite(const std::string& name) {
+    m_Rites.erase(name);
+}
+
+//////////////////////////////////////////////////////
+
+void ReligionManager::LoadRites() {
+    std::set<std::string> filesPath = File::ListFiles(m_Mod.GetDirectory(Paths::COMMON_RITE_TYPES));
 
     for(const auto& filePath : filesPath) {
         if(!filePath.ends_with(".txt"))
@@ -193,41 +193,24 @@ void ReligionManager::LoadFaiths() {
             for(auto& [key, pair] : data->GetMap()) {
                 auto& [op, value] = pair;
 
-                // Merge all objects into a single one when there are duplicate definitions for the same faith.
+                // Merge all objects into a single one when there are duplicate definitions for the same rite.
                 if (value->Is(Jomini::Type::ARRAY))
                     value = value->Flatten(false);
 
                 // Assert that the value is a correct object.
                 if (!value->Is(Jomini::Type::OBJECT)) {
-                    LOG_ERROR("Religion '{}' has invalid definition in '{}'", key, filePath);
+                    LOG_ERROR("Rite '{}' has invalid definition in '{}'", key, filePath);
                     continue;
                 }
 
-                if(!value->Contains("faiths"))
-                    continue;
-
-                for(auto& [faithKey, faithPair] : value->Get("faiths")->GetMap()) {
-                    auto& [op2, faithValue] = faithPair;
-
-                    // Merge all objects into a single one when there are duplicate definitions for the same faith.
-                    if (faithValue->Is(Jomini::Type::ARRAY))
-                        faithValue = faithValue->Flatten(false);
-
-                    // Assert that the value is a correct object.
-                    if (!faithValue->Is(Jomini::Type::OBJECT)) {
-                        LOG_ERROR("Faith '{}' has invalid definition in '{}'", faithKey, filePath);
-                        continue;
-                    }
-
-                    sf::Color color = faithValue->Get("color")->As<sf::Color>(sf::Color::White);
-                    this->AddFaith(MakeUnique<Faith>(faithKey, color));
-                }
+                sf::Color color = value->Get("color")->As<sf::Color>(sf::Color::White);
+                this->AddRite(MakeUnique<Rite>(key, color));
             }
         }
         catch(const std::runtime_error& e) {
-            LOG_ERROR("Failed to parse faith definition file '{}': {}", filePath, e.what());
+            LOG_ERROR("Failed to parse rite definition file '{}': {}", filePath, e.what());
         }
     }
 
-    LOG_INFO("Loaded {} faiths from {} files", m_Faiths.size(), filesPath.size());
+    LOG_INFO("Loaded {} rites from {} files", m_Rites.size(), filesPath.size());
 }

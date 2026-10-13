@@ -1,6 +1,6 @@
 #pragma once
 
-#include "religions/Faith.hpp"
+#include "religions/Rite.hpp"
 
 class ReligionManager {
 public:
@@ -11,17 +11,17 @@ public:
     //////////////////////////////////////////////////////
 
     /**
-     * @brief Counts the total number of faiths.
-     * @return The total number of faiths.
+     * @brief Counts the total number of rites.
+     * @return The total number of rites.
      */
-    size_t CountFaiths() const;
+    size_t CountRites() const;
 
     /**
-     * @brief Checks if a faith exists.
-     * @param name The name of the faith to search for.
-     * @return True if the faith exists, false otherwise.
+     * @brief Checks if a rite exists.
+     * @param name The name of the rite to search for.
+     * @return True if the rite exists, false otherwise.
      */
-    bool HasFaith(const std::string& name) const;
+    bool HasRite(const std::string& name) const;
 
     //////////////////////////////////////////////////////
 
@@ -32,75 +32,75 @@ public:
     Mod& GetMod();
 
     /**
-     * @brief Retrieves a faith by its name.
-     * @param name The name of the faith to retrieve.
-     * @return The pointer to the faith if it exists, nullptr otherwise.
+     * @brief Retrieves a rite by its name.
+     * @param name The name of the rite to retrieve.
+     * @return The pointer to the rite if it exists, nullptr otherwise.
      */
-    Faith* GetFaith(const std::string& name);
+    Rite* GetRite(const std::string& name);
     
     /**
-     * @brief Retrieves a faith by its name.
-     * @param name The name of the faith to retrieve.
-     * @return The pointer to the faith if it exists, nullptr otherwise.
+     * @brief Retrieves a rite by its name.
+     * @param name The name of the rite to retrieve.
+     * @return The pointer to the rite if it exists, nullptr otherwise.
      */
-    const Faith* GetFaith(const std::string& name) const;
+    const Rite* GetRite(const std::string& name) const;
 
     /**
-     * @brief Generates the faiths image.
-     *        Each province's color is replaced by its faith color.
+     * @brief Generates the rites image.
+     *        Each province's color is replaced by its rite color.
      * @note  This function can be expensive: to be used with sparingly.
      * @param provinceManager The province manager.
      * @param titleManager The title manager.
-     * @return The generated faiths image.
+     * @return The generated rites image.
      */
-    sf::Image GetFaithImage(ProvinceManager& provinceManager, TitleManager& titleManager) const;
+    sf::Image GetRiteImage(ProvinceManager& provinceManager, TitleManager& titleManager) const;
 
     /**
-     * @brief Builds the faith palette: palette[renderIndex] = that province's faith color.
+     * @brief Builds the rite palette: palette[renderIndex] = that province's rite color.
      * @note  Requires `provinceManager.BuildProvinceIndex()` to have been called beforehand.
      * @param provinceManager The province manager.
      * @param titleManager The title manager.
      * @return The palette, indexed by the province manager's render index.
      */
-    std::vector<sf::Color> GetFaithPalette(ProvinceManager& provinceManager, TitleManager& titleManager) const;
+    std::vector<sf::Color> GetRitePalette(ProvinceManager& provinceManager, TitleManager& titleManager) const;
 
     /**
-     * @brief Retrieves a map of faiths.
-     * @return The map of faiths.
+     * @brief Retrieves a map of rites.
+     * @return The map of rites.
      */
-    std::unordered_map<std::string, UniquePtr<Faith>>& GetFaiths();
+    std::unordered_map<std::string, UniquePtr<Rite>>& GetRites();
     
     /**
-     * @brief Retrieves a map of faiths.
-     * @return The map of faiths.
+     * @brief Retrieves a map of rites.
+     * @return The map of rites.
      */
-    const std::unordered_map<std::string, UniquePtr<Faith>>& GetFaiths() const;
+    const std::unordered_map<std::string, UniquePtr<Rite>>& GetRites() const;
 
     //////////////////////////////////////////////////////
 
     /**
-     * @brief Adds a new faith.
-     * @param faith The unique pointer of the faith.
-     * @note If a faith with the same name already exists, it will be overwritten with the new one.
+     * @brief Adds a new rite.
+     * @param rite The unique pointer of the rite.
+     * @note If a rite with the same name already exists, it will be overwritten with the new one.
      */
-    void AddFaith(UniquePtr<Faith> faith);
+    void AddRite(UniquePtr<Rite> rite);
 
     /**
-     * @brief Removes a faith.
-     * @param name The name of the faith to remove.
+     * @brief Removes a rite.
+     * @param name The name of the rite to remove.
      */
-    void RemoveFaith(const std::string& name);
+    void RemoveRite(const std::string& name);
 
     //////////////////////////////////////////////////////
 
     /**
-     * @brief Loads the faiths (and not religion types).
+     * @brief Loads the rites (and not religion types).
      */
-    void LoadFaiths();
+    void LoadRites();
 
     ////////////////////////////////////////////////////
 
 private:
     Mod& m_Mod;
-    std::unordered_map<std::string, UniquePtr<Faith>> m_Faiths;
+    std::unordered_map<std::string, UniquePtr<Rite>> m_Rites;
 };

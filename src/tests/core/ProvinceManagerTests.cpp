@@ -77,7 +77,7 @@ void CheckProvincesClimate(ProvinceManager& manager, const std::vector<ProvinceC
 struct ProvinceHistoryTestData {
     int id;
     std::string culture;
-    std::string religion;
+    std::string rite;
     std::string holding;
     std::string extra;
     std::map<Jomini::Date, std::string> history;
@@ -88,7 +88,7 @@ void CheckProvincesHistory(ProvinceManager& manager, const std::vector<ProvinceH
         Province* province = manager.GetProvinceById(data.id);
         REQUIRE(province != nullptr);
         CHECK_EQ(province->GetCulture(), data.culture);
-        CHECK_EQ(province->GetFaith(), data.religion);
+        CHECK_EQ(province->GetRite(), data.rite);
         CHECK_EQ(province->GetHolding(), data.holding);
         CHECK_EQ(province->GetExtraHistoryData()->Serialize(0, true, true), data.extra);
 
@@ -796,11 +796,11 @@ TEST_CASE("[ProvinceManager] LoadProvincesHistory") {
 
     SUBCASE("Check that provinces have the correct history data") {
         CheckProvincesHistory(manager, {
-            {1, "breton", "catholic", "castle_holding", "", {}},
-            {2, "french", "insular", "none", "", {{Jomini::Date(1104, 1, 1), "holding = city_holding culture = breton"}}},
-            {3, "czech", "slavic_pagan", "castle_holding", "", {}},
-            {4, "breton", "catholic", "church_holding", "", {}},
-            {5, "breton", "catholic", "castle_holding", "special_building_slot = kutna_hora_mines_01", {}}
+            {1, "breton", "roman_rite", "castle_holding", "", {}},
+            {2, "french", "hanafi", "none", "", {{Jomini::Date(1104, 1, 1), "holding = city_holding culture = breton"}}},
+            {3, "czech", "alawite", "castle_holding", "", {}},
+            {4, "breton", "roman_rite", "church_holding", "", {}},
+            {5, "breton", "roman_rite", "castle_holding", "special_building_slot = kutna_hora_mines_01", {}}
         });
     }
 
@@ -1061,7 +1061,7 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
         REQUIRE_NOTHROW(titleManager.LoadTitles(manager));
 
         manager.GetProvinceById(1)->SetCulture("modified_culture");
-        manager.GetProvinceById(1)->SetFaith("modified_religion");
+        manager.GetProvinceById(1)->SetRite("modified_rite");
         manager.GetProvinceById(1)->SetHolding("modified_holding");
 
         auto extraHistory = MakeShared<Jomini::Object>(Jomini::Type::OBJECT);
@@ -1087,11 +1087,11 @@ TEST_CASE("[ProvinceManager] ExportProvincesHistory") {
     // 3. Asserts
     SUBCASE("Check that provinces have the correct history data") {
         CheckProvincesHistory(manager, {
-            {1, "modified_culture", "modified_religion", "modified_holding", "extra = modified_extra", {{Jomini::Date(1104, 1, 1), "holding = modified_holding"}}},
-            {2, "french", "insular", "none", "", {{Jomini::Date(1104, 1, 1), "holding = city_holding culture = breton"}}},
-            {3, "czech", "slavic_pagan", "castle_holding", "", {}},
-            {4, "breton", "catholic", "church_holding", "", {}},
-            {5, "breton", "catholic", "castle_holding", "special_building_slot = kutna_hora_mines_01", {}}
+            {1, "modified_culture", "modified_rite", "modified_holding", "extra = modified_extra", {{Jomini::Date(1104, 1, 1), "holding = modified_holding"}}},
+            {2, "french", "hanafi", "none", "", {{Jomini::Date(1104, 1, 1), "holding = city_holding culture = breton"}}},
+            {3, "czech", "alawite", "castle_holding", "", {}},
+            {4, "breton", "roman_rite", "church_holding", "", {}},
+            {5, "breton", "roman_rite", "castle_holding", "special_building_slot = kutna_hora_mines_01", {}}
         });
     }
 

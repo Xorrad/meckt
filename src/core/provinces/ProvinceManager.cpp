@@ -1159,11 +1159,11 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
             continue;
         }
 
-        // 1. Extract global values such as culture, religion or holding.
+        // 1. Extract global values such as culture, rite or holding.
         if(provinceValue->Contains("culture"))
             m_ProvincesByIds[provinceId]->SetCulture(provinceValue->GetFirst("culture")->As<std::string>(""));
-        if(provinceValue->Contains("religion"))
-            m_ProvincesByIds[provinceId]->SetFaith(provinceValue->GetFirst("religion")->As<std::string>(""));
+        if(provinceValue->Contains("rite"))
+            m_ProvincesByIds[provinceId]->SetRite(provinceValue->GetFirst("rite")->As<std::string>(""));
         if(provinceValue->Contains("holding")) {
             m_ProvincesByIds[provinceId]->SetHolding(provinceValue->GetFirst("holding")->As<std::string>(""));
         }
@@ -1174,7 +1174,7 @@ void ProvinceManager::LoadProvincesHistoryFile(const std::string& fileName, Shar
 
         // Remove those attributes to avoid duplicates when exporting and to reduce memory usage a bit.
         provinceValue->Remove("culture");
-        provinceValue->Remove("religion");
+        provinceValue->Remove("rite");
         provinceValue->Remove("holding");
 
         // 2. Loop over dates in the province history and process them.
@@ -1661,7 +1661,7 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
                     
         SharedPtr<Jomini::Object> data = province->GetExtraHistoryData()->Copy();
         if(!province->GetCulture().empty()) data->Put("culture", province->GetCulture());
-        if(!province->GetFaith().empty()) data->Put("religion", province->GetFaith());
+        if(!province->GetRite().empty()) data->Put("rite", province->GetRite());
         data->Put("holding", province->GetHolding().empty() ? "none" : province->GetHolding());
         for(const auto& [date, historyData] : province->GetHistory()) data->Put((std::string) date, historyData);
 

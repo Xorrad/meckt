@@ -1,29 +1,29 @@
-#include "Faith.hpp"
+#include "Rite.hpp"
 
-Faith::Faith() {}
+Rite::Rite() {}
 
-Faith::Faith(const std::string& name, const sf::Color& color) :
+Rite::Rite(const std::string& name, const sf::Color& color) :
     m_Name(name),
     m_Color(color)
 {}
 
 //////////////////////////////////////////////////////
 
-std::string Faith::GetName() const {
+std::string Rite::GetName() const {
     return m_Name;
 }
 
-sf::Color Faith::GetColor() const {
+sf::Color Rite::GetColor() const {
     return m_Color;
 }
 
 //////////////////////////////////////////////////////
 
-void Faith::SetName(const std::string& name) {
+void Rite::SetName(const std::string& name) {
     m_Name = name;
 }
 
-void Faith::SetColor(const sf::Color& color) {
+void Rite::SetColor(const sf::Color& color) {
     m_Color = color;
 }
 

@@ -7,88 +7,90 @@ TEST_SUITE("[ReligionManager]") {
 
 //////////////////////////////////////////////////////
 
-TEST_CASE("[ReligionManager] CountFaiths") {
+TEST_CASE("[ReligionManager] CountRites") {
     Mod mod("");
-    ReligionManager faithManager(mod);
+    ReligionManager religionManager(mod);
 
-    REQUIRE(faithManager.CountFaiths() == 0);
+    REQUIRE(religionManager.CountRites() == 0);
 }
 
-TEST_CASE("[ReligionManager] HasFaith") {
+TEST_CASE("[ReligionManager] HasRite") {
     Mod mod("");
-    ReligionManager faithManager(mod);
+    ReligionManager religionManager(mod);
 
-    REQUIRE_FALSE(faithManager.HasFaith("test_faith"));
-}
-
-//////////////////////////////////////////////////////
-
-TEST_CASE("[ReligionManager] GetFaith") {
-    Mod mod("");
-    ReligionManager faithManager(mod);
-
-    REQUIRE(faithManager.GetFaith("test_faith") == nullptr);
-    REQUIRE(std::as_const(faithManager).GetFaith("test_faith") == nullptr);
-
-    faithManager.AddFaith(std::make_unique<Faith>("test_faith", sf::Color::Red));
-
-    REQUIRE(faithManager.GetFaith("test_faith") != nullptr);
-    CHECK(faithManager.GetFaith("test_faith")->GetName() == "test_faith");
-
-    REQUIRE(std::as_const(faithManager).GetFaith("test_faith") != nullptr);
-    CHECK(std::as_const(faithManager).GetFaith("test_faith")->GetName() == "test_faith");
+    REQUIRE_FALSE(religionManager.HasRite("test_rite"));
 }
 
 //////////////////////////////////////////////////////
 
-TEST_CASE("[ReligionManager] AddFaith") {
+TEST_CASE("[ReligionManager] GetRite") {
     Mod mod("");
-    ReligionManager faithManager(mod);
+    ReligionManager religionManager(mod);
 
-    faithManager.AddFaith(std::make_unique<Faith>("test_faith", sf::Color::Red));
-    REQUIRE(faithManager.HasFaith("test_faith"));
-    CHECK(faithManager.GetFaith("test_faith")->GetName() == "test_faith");
-    CHECK(faithManager.GetFaith("test_faith")->GetColor() == sf::Color::Red);
-}
+    REQUIRE(religionManager.GetRite("test_rite") == nullptr);
+    REQUIRE(std::as_const(religionManager).GetRite("test_rite") == nullptr);
 
-TEST_CASE("[ReligionManager] RemoveFaith") {
-    Mod mod("");
-    ReligionManager faithManager(mod);
+    religionManager.AddRite(std::make_unique<Rite>("test_rite", sf::Color::Red));
 
-    faithManager.AddFaith(std::make_unique<Faith>("test_faith", sf::Color::Red));
-    REQUIRE(faithManager.HasFaith("test_faith"));
+    REQUIRE(religionManager.GetRite("test_rite") != nullptr);
+    CHECK(religionManager.GetRite("test_rite")->GetName() == "test_rite");
 
-    faithManager.RemoveFaith("test_faith");
-    REQUIRE_FALSE(faithManager.HasFaith("test_faith"));
+    REQUIRE(std::as_const(religionManager).GetRite("test_rite") != nullptr);
+    CHECK(std::as_const(religionManager).GetRite("test_rite")->GetName() == "test_rite");
 }
 
 //////////////////////////////////////////////////////
 
-TEST_CASE("[ReligionManager] LoadFaiths") {
+TEST_CASE("[ReligionManager] AddRite") {
+    Mod mod("");
+    ReligionManager religionManager(mod);
+
+    religionManager.AddRite(std::make_unique<Rite>("test_rite", sf::Color::Red));
+    REQUIRE(religionManager.HasRite("test_rite"));
+    CHECK(religionManager.GetRite("test_rite")->GetName() == "test_rite");
+    CHECK(religionManager.GetRite("test_rite")->GetColor() == sf::Color::Red);
+}
+
+TEST_CASE("[ReligionManager] RemoveRite") {
+    Mod mod("");
+    ReligionManager religionManager(mod);
+
+    religionManager.AddRite(std::make_unique<Rite>("test_rite", sf::Color::Red));
+    REQUIRE(religionManager.HasRite("test_rite"));
+
+    religionManager.RemoveRite("test_rite");
+    REQUIRE_FALSE(religionManager.HasRite("test_rite"));
+}
+
+//////////////////////////////////////////////////////
+
+TEST_CASE("[ReligionManager] LoadRites") {
     Mod mod("resources/tests/religion_manager/test_mod");
     ReligionManager religionManager(mod);
 
-    REQUIRE_NOTHROW(religionManager.LoadFaiths());
+    REQUIRE_NOTHROW(religionManager.LoadRites());
 
-    struct FaithTestData {
+    struct RiteTestData {
         std::string name;
         sf::Color color;
     };
-    const std::vector<FaithTestData> expectedFaiths {
-        { "catholic", sf::Color(128, 30, 153) },
-        { "orthodox", sf::Color(127, 127, 127) },
-        { "coptic", sf::Color(210, 235, 87) },
-        { "armenian_apostolic", sf::Color(23, 15, 25) },
-        { "conversos", sf::Color(102, 204, 142) },
-        { "cathar", sf::Color(114, 229, 229) }
+    const std::vector<RiteTestData> expectedRites {
+        { "roman_rite", sf::Color(128, 30, 153) },
+        { "insular_celtic", sf::Color(38, 76, 76) },
+        { "mozarabic_church", sf::Color(124, 255, 142) },
+        { "ambrosian_rite", sf::Color(63, 49, 76) },
+        { "beneventan_rite", sf::Color(76, 26, 71) },
+        { "carolingian_christianity", sf::Color(95, 65, 216) }
     };
 
-    CHECK(religionManager.CountFaiths() == expectedFaiths.size());
+    CHECK(religionManager.CountRites() == expectedRites.size());
 
-    for (auto& expectedFaith : expectedFaiths) {
-         REQUIRE(religionManager.HasFaith(expectedFaith.name));
-         CHECK(religionManager.GetFaith(expectedFaith.name)->GetName() == expectedFaith.name);
-         CHECK(religionManager.GetFaith(expectedFaith.name)->GetColor() == expectedFaith.color);
+    for (auto& expectedRite : expectedRites) {
+         REQUIRE(religionManager.HasRite(expectedRite.name));
+         CHECK(religionManager.GetRite(expectedRite.name)->GetName() == expectedRite.name);
+         CHECK(religionManager.GetRite(expectedRite.name)->GetColor().r == expectedRite.color.r);
+         CHECK(religionManager.GetRite(expectedRite.name)->GetColor().g == expectedRite.color.g);
+         CHECK(religionManager.GetRite(expectedRite.name)->GetColor().b == expectedRite.color.b);
     }
 }
 

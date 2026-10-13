@@ -17,7 +17,7 @@ enum class LoadingState {
     ADJACENCIES,
     GEOGRAPHICAL_REGIONS,
     CULTURES,
-    FAITHS,
+    RITES,
     FINISHED,
 };
 
@@ -38,6 +38,6 @@ const std::map<LoadingState, std::string> LoadingStateLabels = {
     { LoadingState::ADJACENCIES, "Adjacencies" },
     { LoadingState::GEOGRAPHICAL_REGIONS, "Geographical Regions" },
     { LoadingState::CULTURES, "Cultures" },
-    { LoadingState::FAITHS, "Faiths" },
+    { LoadingState::RITES, "Rites" },
     { LoadingState::FINISHED, "Finished" }
 };

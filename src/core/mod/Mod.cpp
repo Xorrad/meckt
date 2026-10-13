@@ -139,7 +139,7 @@ void Mod::Load(
     LOAD_CATCH(m_ProvinceManager->LoadAdjacencies(*m_TitleManager), LoadingState::ADJACENCIES, "adjacencies", true);
     LOAD_CATCH(m_RegionManager->LoadGeographicalRegions(*m_ProvinceManager, *m_TitleManager), LoadingState::GEOGRAPHICAL_REGIONS, "geographical regions", true);
     LOAD_CATCH(m_CultureManager->LoadCultures(), LoadingState::CULTURES, "cultures", true);
-    LOAD_CATCH(m_ReligionManager->LoadFaiths(), LoadingState::FAITHS, "religions", true);
+    LOAD_CATCH(m_ReligionManager->LoadRites(), LoadingState::RITES, "rites", true);
 
     completeCallback();
 }

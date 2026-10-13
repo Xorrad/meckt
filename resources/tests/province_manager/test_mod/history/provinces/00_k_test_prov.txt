@@ -5,8 +5,8 @@
 	culture = breton
 	culture = french
 	
-	religion = catholic
-	religion = insular
+	rite = roman_rite
+	rite = hanafi
 
 	holding = castle_holding
 	holding = church_holding
@@ -15,7 +15,7 @@
 # Should discard the second definition of holding, and keep the new culture. 
 2 = {
 	culture = french
-	religion = insular
+	rite = hanafi
 
 	1104.1.1 = {
 		holding = city_holding
@@ -28,14 +28,14 @@
 
 3 = {
 	culture = czech
-	religion = slavic_pagan
+	rite = alawite
 	holding = castle_holding
 }
 
 # Should only keep first holding value.
 4 = {
 	culture = breton
-	religion = catholic
+	rite = roman_rite
 	holding = church_holding
 }
 4 = {
@@ -44,7 +44,7 @@
 
 5 = {
 	culture = breton
-	religion = catholic
+	rite = roman_rite
 	holding = castle_holding
 	special_building_slot = kutna_hora_mines_01
 }

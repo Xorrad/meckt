@@ -10,7 +10,7 @@ enum class MapTooltip {
     HOLDING         = 2,
     TERRAIN         = 3,
     CULTURE         = 4,
-    FAITH           = 5,
+    RITE            = 5,
     CLIMATE         = 6,
     WINTER_SEVERITY = 7,
     IMAGE_POSITION  = 8,
@@ -25,7 +25,7 @@ inline std::string_view MapTooltipToString(MapTooltip tooltip) {
         case MapTooltip::HOLDING: return "Holding";
         case MapTooltip::TERRAIN: return "Terrain";
         case MapTooltip::CULTURE: return "Culture";
-        case MapTooltip::FAITH: return "Faith";
+        case MapTooltip::RITE: return "Rite";
         case MapTooltip::CLIMATE: return "Climate";
         case MapTooltip::WINTER_SEVERITY: return "Winter Severity";
         case MapTooltip::IMAGE_POSITION: return "Image Position";
@@ -40,7 +40,7 @@ inline MapTooltip MapTooltipFromString(std::string_view str) {
     if (str == "Holding") return MapTooltip::HOLDING;
     if (str == "Terrain") return MapTooltip::TERRAIN;
     if (str == "Culture") return MapTooltip::CULTURE;
-    if (str == "Faith") return MapTooltip::FAITH;
+    if (str == "Rite") return MapTooltip::RITE;
     if (str == "Climate") return MapTooltip::CLIMATE;
     if (str == "Winter Severity") return MapTooltip::WINTER_SEVERITY;
     if (str == "Image Position") return MapTooltip::IMAGE_POSITION;
@@ -55,7 +55,7 @@ inline std::string GetMapTooltipString(Mod& mod, Province* province, MapMode map
         case MapTooltip::HOLDING:         return fmt::format("Holding: {}", province->GetHolding());
         case MapTooltip::TERRAIN:         return fmt::format("Terrain: {}", province->GetTerrain());
         case MapTooltip::CULTURE:         return fmt::format("Culture: {}", province->GetCulture());
-        case MapTooltip::FAITH:           return fmt::format("Faith  : {}", province->GetFaith());
+        case MapTooltip::RITE:            return fmt::format("Rite   : {}", province->GetRite());
         case MapTooltip::CLIMATE:         return fmt::format("Climate: {}", ClimateTypeLabels.at(province->GetClimateType()));
         case MapTooltip::WINTER_SEVERITY: return fmt::format("Winter Severity Bias: {}", province->GetWinterSeverityBias());
         case MapTooltip::IMAGE_POSITION:  return fmt::format("Image Position: {}, {}", province->GetImagePosition().x, province->GetImagePosition().y);

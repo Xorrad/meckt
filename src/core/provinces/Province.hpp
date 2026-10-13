@@ -71,10 +71,10 @@ public:
     std::string GetCulture() const;
 
     /**
-     * @brief Retrieves the faith of the province.
-     * @return The faith of the province as a string.
+     * @brief Retrieves the rite of the province.
+     * @return The rite of the province as a string.
      */
-    std::string GetFaith() const;
+    std::string GetRite() const;
 
     /**
      * @brief Retrieves the climate type of the province.
@@ -206,10 +206,10 @@ public:
     void SetCulture(std::string culture);
 
     /**
-     * @brief Sets the faith of the province.
-     * @param faith The faith to set.
+     * @brief Sets the rite of the province.
+     * @param rite The rite to set.
      */
-    void SetFaith(std::string faith);
+    void SetRite(std::string rite);
 
     /**
      * @brief Sets the climate type of the province.
@@ -313,7 +313,7 @@ private:
     std::string m_Holding;
     std::string m_Terrain;
     std::string m_Culture;
-    std::string m_Faith;
+    std::string m_Rite;
 
     ClimateType m_ClimateType;
     std::string m_WinterSeverityBias;

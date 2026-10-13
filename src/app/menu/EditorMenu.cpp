@@ -341,8 +341,8 @@ void EditorMenu::UpdateTexture(MapMode mode, bool resetFocus) {
         case MapMode::CULTURE:
             m_ContentPalettes[mode] = Image::BuildPaletteTexture(m_Mod.GetCultureManager().GetCulturePalette(provinceManager, m_Mod.GetTitleManager()));
             break;
-        case MapMode::FAITH:
-            m_ContentPalettes[mode] = Image::BuildPaletteTexture(m_Mod.GetReligionManager().GetFaithPalette(provinceManager, m_Mod.GetTitleManager()));
+        case MapMode::RITE:
+            m_ContentPalettes[mode] = Image::BuildPaletteTexture(m_Mod.GetReligionManager().GetRitePalette(provinceManager, m_Mod.GetTitleManager()));
             break;
         case MapMode::BARONY:
         case MapMode::COUNTY:

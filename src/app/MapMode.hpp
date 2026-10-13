@@ -10,7 +10,7 @@ enum class MapMode {
     CLIMATE         = 5,
     WINTER_SEVERITY = 6,
     CULTURE         = 7,
-    FAITH           = 8,
+    RITE           = 8,
     BARONY          = 9,
     COUNTY          = 10,
     DUCHY           = 11,
@@ -23,7 +23,7 @@ const int MapModeTitleStartIndex = static_cast<int>(MapMode::BARONY);
 
 const std::vector<const char*> MapModeLabels = {
     "Provinces", "Heightmap", "Rivers",
-    "Flags", "Terrain", "Climate", "Winter Severity", "Culture", "Faith",
+    "Flags", "Terrain", "Climate", "Winter Severity", "Culture", "Rite",
     "Barony", "County", "Duchy", "Kingdom", "Empire", "Hegemony"
 };
 
@@ -37,7 +37,7 @@ inline MapMode MapModeFromString(std::string str) {
     if (str == "climate") return MapMode::CLIMATE;
     if (str == "winter_severity") return MapMode::WINTER_SEVERITY;
     if (str == "culture") return MapMode::CULTURE;
-    if (str == "faith") return MapMode::FAITH;
+    if (str == "rite") return MapMode::RITE;
     if (str == "barony") return MapMode::BARONY;
     if (str == "county") return MapMode::COUNTY;
     if (str == "duchy") return MapMode::DUCHY;
@@ -67,7 +67,7 @@ inline bool MapModeIsProvince(MapMode mode) {
         case MapMode::CLIMATE:
         case MapMode::WINTER_SEVERITY:
         case MapMode::CULTURE:
-        case MapMode::FAITH:
+        case MapMode::RITE:
             return true;
         default:
             return false;

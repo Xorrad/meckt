@@ -55,7 +55,7 @@ void PropertiesTab::RenderJointProvinces() {
     Province* firstProvince = m_Menu.GetSelectionHandler().GetProvinces().front();
 
     std::string culture = firstProvince->GetCulture();
-    std::string religion = firstProvince->GetFaith();
+    std::string rite = firstProvince->GetRite();
     std::string holding = firstProvince->GetHolding();
     std::string terrain = firstProvince->GetTerrain();
 
@@ -75,7 +75,7 @@ void PropertiesTab::RenderJointProvinces() {
 
     for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
         if (province->GetCulture() != culture) culture = "*****";
-        if (province->GetFaith() != religion) religion = "*****";
+        if (province->GetRite() != rite) rite = "*****";
         if (province->GetHolding() != holding) holding = "*****";
         if (province->GetTerrain() != terrain) terrain = "*****";
         if (province->GetClimateType() != climateType) climateType = ClimateType::COUNT;
@@ -83,13 +83,13 @@ void PropertiesTab::RenderJointProvinces() {
         if (province->GetMildWinterFactorOverride() != mildWinterFactorOverride) mildWinterFactorOverride = "*****";
         if (province->GetNormalWinterFactorOverride() != normalWinterFactorOverride) normalWinterFactorOverride = "*****";
         if (province->GetHarshWinterFactorOverride() != harshWinterFactorOverride) harshWinterFactorOverride = "*****";
-        if (province->HasFlag(ProvinceFlags::COASTAL) != isCoastal) isCoastal = -1;
-        if (province->HasFlag(ProvinceFlags::ISLAND) != isIsland) isIsland = -1;
-        if (province->HasFlag(ProvinceFlags::LAND) != isLand) isLand = -1;
-        if (province->HasFlag(ProvinceFlags::SEA) != isSea) isSea = -1;
-        if (province->HasFlag(ProvinceFlags::RIVER) != isRiver) isRiver = -1;
-        if (province->HasFlag(ProvinceFlags::LAKE) != isLake) isLake = -1;
-        if (province->HasFlag(ProvinceFlags::IMPASSABLE) != isImpassable) isImpassable = -1;
+        if (static_cast<int>(province->HasFlag(ProvinceFlags::COASTAL)) != isCoastal) isCoastal = -1;
+        if (static_cast<int>(province->HasFlag(ProvinceFlags::ISLAND)) != isIsland) isIsland = -1;
+        if (static_cast<int>(province->HasFlag(ProvinceFlags::LAND)) != isLand) isLand = -1;
+        if (static_cast<int>(province->HasFlag(ProvinceFlags::SEA)) != isSea) isSea = -1;
+        if (static_cast<int>(province->HasFlag(ProvinceFlags::RIVER)) != isRiver) isRiver = -1;
+        if (static_cast<int>(province->HasFlag(ProvinceFlags::LAKE)) != isLake) isLake = -1;
+        if (static_cast<int>(province->HasFlag(ProvinceFlags::IMPASSABLE)) != isImpassable) isImpassable = -1;
     }
 
     ImGui::PushStyleColor(ImGuiCol_Header, IM_COL32(3, 48, 102, 255));
@@ -175,12 +175,12 @@ void PropertiesTab::RenderJointProvinces() {
             m_Menu.RefreshMapMode(MapMode::CULTURE);
         }
 
-        // PROVINCE: religion (field)
-        if (ImGui::InputTextCommitOnEnter("religion", &religion)) {
+        // PROVINCE: rite (field)
+        if (ImGui::InputTextCommitOnEnter("rite", &rite)) {
             for (auto& province : m_Menu.GetSelectionHandler().GetProvinces()) {
-                province->SetFaith(religion);
+                province->SetRite(rite);
             }
-            m_Menu.RefreshMapMode(MapMode::FAITH);
+            m_Menu.RefreshMapMode(MapMode::RITE);
         }
 
         // PROVINCE: holding type (combobox)
@@ -383,11 +383,11 @@ void PropertiesTab::RenderProvinces() {
                     m_Menu.RefreshMapMode(MapMode::CULTURE);
                 }
 
-                // PROVINCE: faith (field)
-                std::string faith = province->GetFaith();
-                if (ImGui::InputTextCommitOnEnter("faith", &faith)) {
-                    province->SetFaith(faith);
-                    m_Menu.RefreshMapMode(MapMode::FAITH);
+                // PROVINCE: rite (field)
+                std::string rite = province->GetRite();
+                if (ImGui::InputTextCommitOnEnter("rite", &rite)) {
+                    province->SetRite(rite);
+                    m_Menu.RefreshMapMode(MapMode::RITE);
                 }
 
 

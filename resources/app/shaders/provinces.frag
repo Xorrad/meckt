@@ -40,7 +40,7 @@ const int MAPMODE_TERRAIN = 4;
 const int MAPMODE_CLIMATE = 5;
 const int MAPMODE_WINTER_SEVERITY = 6;
 const int MAPMODE_CULTURE = 7;
-const int MAPMODE_RELIGION = 8;
+const int MAPMODE_RITE = 8;
 const int MAPMODE_BARONY = 9;
 const int MAPMODE_COUNTY = 10;
 const int MAPMODE_DUCHY = 11;
@@ -171,7 +171,7 @@ void main() {
         }
     }
 
-    if((mapMode == MAPMODE_CULTURE || mapMode == MAPMODE_RELIGION || mapMode == MAPMODE_FLAGS) && alpha == 0.0) {
+    if((mapMode == MAPMODE_CULTURE || mapMode == MAPMODE_RITE || mapMode == MAPMODE_FLAGS) && alpha == 0.0) {
         color.a = 1.0;
         if(cos(10000.0*(pixelPos.x+pixelPos.y)) >= 0.5) {
             color = mix(color, vec4(0.0, 0.0, 0.0, 1.0), 0.75);

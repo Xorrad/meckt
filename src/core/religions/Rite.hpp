@@ -1,43 +1,43 @@
 #pragma once
 
-class Faith {
+class Rite {
 public:
     /**
-     * @brief Constructs a new faith.
+     * @brief Constructs a new rite.
      */
-    Faith();
+    Rite();
 
     /**
-     * @brief Constructs a new faith with the given name and color.
-     * @param name The name of the faith.
-     * @param color The color of the faith. 
+     * @brief Constructs a new rite with the given name and color.
+     * @param name The name of the rite.
+     * @param color The color of the rite. 
      */
-    Faith(const std::string& name, const sf::Color& color);
+    Rite(const std::string& name, const sf::Color& color);
 
     //////////////////////////////////////////////////////
 
     /**
-     * @brief Gets the name of the faith.
-     * @return The name of the faith.
+     * @brief Gets the name of the rite.
+     * @return The name of the rite.
      */
     std::string GetName() const;
 
     /**
-     * @brief Gets the color of the faith.
-     * @return The color of the faith.
+     * @brief Gets the color of the rite.
+     * @return The color of the rite.
      */
     sf::Color GetColor() const;
 
     //////////////////////////////////////////////////////
 
     /**
-     * @brief Sets the name of the faith.
+     * @brief Sets the name of the rite.
      * @param name The name to set.
      */
     void SetName(const std::string& name);
 
     /**
-     * @brief Sets the color of the faith.
+     * @brief Sets the color of the rite.
      * @param color The color to set.
      */
     void SetColor(const sf::Color& color);
