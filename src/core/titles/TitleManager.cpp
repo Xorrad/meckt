@@ -819,6 +819,13 @@ void TitleManager::ExportTitles() {
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
 
+    std::string filePath = m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES_CONVERSION_LOOKUP, "");
+    std::ofstream conversionLookupFile(filePath, std::ios::binary);
+    if (!conversionLookupFile.is_open()) {
+        LOG_ERROR("TitleManager::ExportTitles: Failed to create conversion lookup file '{}': {}", filePath, std::strerror(errno));
+    }
+    conversionLookupFile.close();
+
     std::map<std::string, std::ofstream> files;
 
     for(const auto& [name, title] : m_Titles) {

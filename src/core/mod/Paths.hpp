@@ -5,6 +5,7 @@ using GamePath = std::string_view;
 namespace Paths {
     // Common directory paths.
     static constexpr GamePath COMMON_LANDED_TITLES = "common/landed_titles/";
+    static constexpr GamePath COMMON_LANDED_TITLES_CONVERSION_LOOKUP = "common/landed_titles/title_conversion.lookup";
     static constexpr GamePath COMMON_HOLDINGS = "common/holdings/";
     static constexpr GamePath COMMON_TERRAIN_TYPES = "common/terrain_types/";
     static constexpr GamePath COMMON_PROVINCE_TERRAIN = "common/province_terrain/";
