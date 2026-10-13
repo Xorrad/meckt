@@ -1366,7 +1366,6 @@ void ProvinceManager::ExportDefaultMapFile() {
     PRINT_DATA("continent", "\"continent.txt\"");
     PRINT_DATA("adjacencies", "\"adjacencies.csv\"");
     PRINT_DATA("island_region", "\"island_region.txt\"");
-    PRINT_DATA("geographical_region", "\"geographical_region.txt\"");
     PRINT_DATA("seasons", "\"seasons.txt\"");
 
     fmt::println(
