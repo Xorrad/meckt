@@ -817,7 +817,6 @@ void ProvinceManager::LoadRiversImage() {
 void ProvinceManager::LoadDefaultMapFile() {
     std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_DEFAULT_MAP);
     
-    // Create an empty definition file if it does not exist.
     if (!std::filesystem::exists(filePath))
         throw std::runtime_error(fmt::format("ProvinceManager::LoadDefaultMapFile: Failed to load provinces image at '{}': file does not exist", filePath));
 
@@ -1604,11 +1603,14 @@ void ProvinceManager::ExportProvincesHistory(TitleManager& titleManager) {
         // Open the file if it is not already open, and write the original script variables if there are any.
         if(!files.contains(fileName)) {
             files[fileName] = FileData{};
+            
+            std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
             files[fileName].file = std::ofstream(filePath, std::ios::binary);
-            if (!files[fileName].file) {
-                LOG_ERROR("Failed to open file for writing '{}' for province '{}'", filePath, provinceId);
+            if (!files[fileName].file.is_open()) {
+                LOG_ERROR("ProvinceManager::ExportProvincesHistory: Failed to open file '{}' for writing for province '{}': {}", filePath, provinceId, std::strerror(errno));
                 continue;
             }
+
             File::EncodeToUTF8BOM(files[fileName].file);
 
             // Export original script variables.

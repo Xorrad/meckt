@@ -829,11 +829,14 @@ void TitleManager::ExportTitles() {
             fileName = "01_landed_titles.txt";
         if(files.count(fileName) == 0) {
             std::string filePath = m_Mod.GetAbsolutePath(Paths::COMMON_LANDED_TITLES, fileName);
+            
+            std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
             files[fileName] = std::ofstream(filePath, std::ios::binary);
             if (!files[fileName].is_open()) {
-                LOG_ERROR("Failed to open file '{}' for writing: {}", filePath, std::strerror(errno));
+                LOG_ERROR("TitleManager::ExportTitles: Failed to open file '{}' for writing for title '{}': {}", filePath, title->GetName(), std::strerror(errno));
                 continue;
             }
+
             File::EncodeToUTF8BOM(files[fileName]);
 
             // Export original script variables.
@@ -972,9 +975,16 @@ void TitleManager::ExportTitlesHistory() {
         std::string fileName = title->GetOriginalHistoryFileName();
         if(fileName.empty())
             fileName = GetTitleFileName(title.get()) + ".txt";
-        if(files.count(fileName) == 0) {
+        if(!files.contains(fileName)) {
             std::string filePath = m_Mod.GetAbsolutePath(Paths::HISTORY_TITLES, fileName);
+            
+            std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
             files[fileName] = std::ofstream(filePath, std::ios::binary);
+            if (!files[fileName].is_open()) {
+                LOG_ERROR("TitleManager::ExportTitlesHistory: Failed to open file '{}' for writing for title '{}': {}", filePath, title->GetName(), std::strerror(errno));
+                continue;
+            }
+
             File::EncodeToUTF8BOM(files[fileName]);
 
             // Export original script variables.

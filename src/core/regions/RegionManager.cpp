@@ -251,11 +251,15 @@ void RegionManager::ExportGeographicalRegions() {
         
         // Initialize the region's file.
         if(files.count(fileName) == 0) {
-            files[fileName] = std::ofstream(m_Mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, fileName), std::ios::binary);
+            std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, fileName);
+
+            std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+            files[fileName] = std::ofstream(filePath, std::ios::binary);
             if (!files[fileName].is_open()) {
-                LOG_ERROR("RegionManager::ExportGeographicalRegions: Failed to open file '{}' for writing", dir + "/geographical_region.txt");
+                LOG_ERROR("RegionManager::ExportGeographicalRegions: Failed to open file '{}' for writing for region '{}': {}", filePath, region->GetName(), std::strerror(errno));
                 continue;
             }
+
             File::EncodeToUTF8BOM(files[fileName]);
         }
 
@@ -268,7 +272,9 @@ void RegionManager::ExportGeographicalRegions() {
 
     // Create empty files for the vanilla overrides.
     for (const auto& [fileName, fileContent] : m_VanillaOverrideFiles) {
-        std::ofstream file = std::ofstream(m_Mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, fileName), std::ios::binary);
+        std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_GEOGRAPHICAL_REGIONS, fileName);
+        std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+        std::ofstream file = std::ofstream(filePath, std::ios::binary);
         // File::EncodeToUTF8BOM(file); // Encoding bytes are present alongside the file content.
         fmt::print(file, "{}", fileContent);
     }
