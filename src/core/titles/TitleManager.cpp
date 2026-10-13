@@ -1030,10 +1030,25 @@ void TitleManager::ExportLocalization(bool exportTitlesLocalization, bool export
 void TitleManager::ExportTitlesLocalization() {
     std::string filePath = m_Mod.GetAbsolutePath("", m_TitlesLocalizationFileName);
     std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
-    std::ofstream file(filePath, std::ios::binary);
-    File::EncodeToUTF8BOM(file);
+    
+    // Create the file if it doesn't exist, and write the header.
+    if (!std::filesystem::exists(filePath)) {
+        std::ofstream file(filePath, std::ios::binary);
+        if (!file.is_open()) {
+            LOG_ERROR("TitleManager::ExportTitlesLocalization: Failed to open file '{}' for writing: {}", filePath, std::strerror(errno));
+            return;
+        }
+        File::EncodeToUTF8BOM(file);
+        fmt::println(file, "l_english:");
+    }
+    
+    // Otherwise, just append to the existing file.
+    std::ofstream file(filePath, std::ios::binary | std::ios::app);
+    if (!file.is_open()) {
+        LOG_ERROR("TitleManager::ExportTitlesLocalization: Failed to open file '{}' for writing: {}", filePath, std::strerror(errno));
+        return;
+    }
 
-    fmt::println(file, "l_english:");
     for(auto [type, titles] : m_TitlesByType) {
         for(auto title : titles) {
             std::string name = title->GetLocName("english");
@@ -1052,10 +1067,25 @@ void TitleManager::ExportTitlesLocalization() {
 void TitleManager::ExportCulturalNamesLocalization() {
     std::string filePath = m_Mod.GetAbsolutePath("", m_CulturalNamesLocalizationFileName);
     std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
-    std::ofstream file(filePath, std::ios::binary);
-    File::EncodeToUTF8BOM(file);
 
-    fmt::println(file, "l_english:");
+    // Create the file if it doesn't exist, and write the header.
+    if (!std::filesystem::exists(filePath)) {
+        std::ofstream file(filePath, std::ios::binary);
+        if (!file.is_open()) {
+            LOG_ERROR("TitleManager::ExportCulturalNamesLocalization: Failed to open file '{}' for writing: {}", filePath, std::strerror(errno));
+            return;
+        }
+        File::EncodeToUTF8BOM(file);
+        fmt::println(file, "l_english:");
+    }
+
+    // Otherwise, just append to the existing file.
+    std::ofstream file(filePath, std::ios::binary | std::ios::app);
+    if (!file.is_open()) {
+        LOG_ERROR("TitleManager::ExportCulturalNamesLocalization: Failed to open file '{}' for writing: {}", filePath, std::strerror(errno));
+        return;
+    }
+
     for(auto [key, name] : m_LocCulturalNames["english"]) {
         if(!name.empty()) fmt::println(file, " {}: \"{}\"", key, name);
     }
@@ -1078,6 +1108,12 @@ void TitleManager::DeleteLocalization(bool exportTitlesLocalization, bool export
 
         std::ifstream file(filePath);
         std::ofstream tmpFile(filePath + ".tmp");
+
+        if (!tmpFile.is_open()) {
+            LOG_ERROR("TitleManager::DeleteLocalization: Failed to open file '{}' for writing: {}", filePath, std::strerror(errno));
+            continue;
+        }
+        
         std::map<std::string, std::string> loc = Yaml::ParseFile(filePath);
 
         // Rewrite the localization line by line while
