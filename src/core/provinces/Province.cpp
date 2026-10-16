@@ -30,6 +30,10 @@ bool Province::HasFlag(ProvinceFlags flag) const {
     return (bool) (m_Flags & flag);
 }
 
+bool Province::HasMapping() const {
+    return m_Mapping.has_value();
+}
+
 //////////////////////////////////////////////////////
 
 int Province::GetId() const {
@@ -106,6 +110,10 @@ sf::Vector2i Province::GetImagePosition() const {
 
 size_t Province::GetImagePixelsCount() const {
     return m_ImagePixelsCount;
+}
+
+Opt<ProvinceMapping> Province::GetMapping() const {
+    return m_Mapping;
 }
 
 Title* Province::GetProvinceLiegeTitle(TitleManager& titleManager, TitleType type) const {
@@ -215,6 +223,14 @@ void Province::SetImagePixelsCount(size_t count) {
 
 void Province::IncrementImagePixelsCount() {
     m_ImagePixelsCount++;
+}
+
+void Province::SetMapping(Opt<ProvinceMapping> mapping) {
+    m_Mapping = mapping;
+}
+
+void Province::SetMapping(ProvinceMapping mapping) {
+    m_Mapping = mapping;
 }
 
 //////////////////////////////////////////////////////

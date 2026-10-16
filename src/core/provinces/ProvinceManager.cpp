@@ -1,6 +1,7 @@
 #include "ProvinceManager.hpp"
 
 #include "mod/Mod.hpp"
+#include "mod/Paths.hpp"
 #include "titles/TitleManager.hpp"
 
 #include <fmt/ostream.h>
@@ -46,6 +47,10 @@ bool ProvinceManager::HasHoldingType(const std::string& name) const {
 
 bool ProvinceManager::HasTerrainType(const std::string& name) const {
     return m_TerrainTypes.contains(name);
+}
+
+bool ProvinceManager::HasProvinceMappingFile(const std::string& fileName) const {
+    return std::find(m_ProvinceMappingFiles.begin(), m_ProvinceMappingFiles.end(), fileName) != m_ProvinceMappingFiles.end();
 }
 
 //////////////////////////////////////////////////////
@@ -439,6 +444,10 @@ const std::map<std::string, std::string>& ProvinceManager::GetVanillaOverridePro
     return m_VanillaOverrideProvinceTerrainFiles;
 }
 
+const std::vector<std::string>& ProvinceManager::GetProvinceMappingFiles() const {
+    return m_ProvinceMappingFiles;
+}
+
 //////////////////////////////////////////////////////
 
 void ProvinceManager::AddProvince(UniquePtr<Province> province) {
@@ -462,6 +471,14 @@ void ProvinceManager::AddAdjacency(UniquePtr<Adjacency> adjacency) {
     if (adjacency == nullptr)
         return;
     m_Adjacencies[adjacency->GetId()] = std::move(adjacency);
+}
+
+std::string_view ProvinceManager::AddMappingFile(const std::string& fileName) {
+    auto it = std::find(m_ProvinceMappingFiles.begin(), m_ProvinceMappingFiles.end(), fileName);
+    if (it != m_ProvinceMappingFiles.end())
+        return *it;
+    m_ProvinceMappingFiles.push_back(std::move(fileName));
+    return m_ProvinceMappingFiles.back();
 }
 
 void ProvinceManager::RemoveProvinceByColor(uint32_t color) {
@@ -1278,6 +1295,60 @@ void ProvinceManager::LoadAdjacencies(TitleManager& titleManager) {
     LOG_INFO("Loaded {} adjacencies", m_Adjacencies.size());
 }
 
+void ProvinceManager::LoadProvinceMappings() {
+    std::set<std::string> filesPath = File::ListFiles( m_Mod.GetDirectory(Paths::HISTORY_PROVINCE_MAPPING) );
+
+    m_ProvinceMappingFiles.clear();
+    m_ProvinceMappingFiles.reserve(filesPath.size());
+
+    for(const auto& filePath : filesPath) {
+        if(!filePath.ends_with(".txt"))
+            continue;
+
+        try {
+            SharedPtr<Jomini::Object> data = Jomini::ParseFile(filePath);
+
+            std::string fileName = m_Mod.GetRelativePath(Paths::HISTORY_PROVINCE_MAPPING, filePath);
+            this->AddMappingFile(fileName);
+            this->LoadProvinceMappingsFile(std::move(fileName), data);
+        }
+        catch (std::exception& e) {
+            LOG_ERROR("ProvinceManager::LoadProvinceMappings: Failed to parse province mapping file '{}': {}", filePath, e.what());
+        }
+    }
+
+    LOG_INFO("Loaded province mappings from {} files", m_ProvinceMappingFiles.size());
+}
+
+void ProvinceManager::LoadProvinceMappingsFile(const std::string& fileName, SharedPtr<Jomini::Object> data) {
+    if (!data->Is(Jomini::Type::OBJECT))
+        return;
+
+    for (const auto& [key, _] : data->GetMap()) {
+        int provinceId = String::ParseInt(key);
+        auto value = data->GetFirst(key);
+
+        if (!value->Is(Jomini::Type::SCALAR)) {
+            LOG_ERROR("Invalid province mapping for province '{}' in '{}'", provinceId, fileName);
+            continue;
+        }
+
+        int targetId = value->As<int>();
+
+        if (!m_ProvincesByIds.contains(provinceId)) {
+            LOG_WARNING("Province mapping defined for unknown province '{}' in '{}'", provinceId, fileName);
+            continue;
+        }
+        
+        if (!m_ProvincesByIds.contains(targetId)) {
+            LOG_WARNING("Province mapping for province '{}' assigned to undefined province '{}' in '{}'", provinceId, targetId, fileName);
+            continue;
+        }
+
+        m_ProvincesByIds[provinceId]->SetMapping(ProvinceMapping{targetId, std::move(fileName)});
+    }
+}
+
 ////////////////////////////////////////////////////
 
 void ProvinceManager::ExportProvincesDefinition() {
@@ -1706,6 +1777,58 @@ void ProvinceManager::ExportAdjacencies() {
     }
 
     fmt::println(file, "-1;-1;;-1;-1;-1;-1;-1;");
+}
+
+void ProvinceManager::ExportProvinceMappings() {
+    std::string dir = m_Mod.GetDirectory(Paths::HISTORY_PROVINCE_MAPPING);
+    
+    // Create the directory if it does not exist.
+    std::filesystem::create_directories(dir);
+
+    std::unordered_map<std::string, std::ofstream> files;
+
+    const auto OpenMappingFile = [&](const std::string& fileName) {
+        if (!files.contains(fileName)) {
+            std::string filePath = m_Mod.GetAbsolutePath(Paths::HISTORY_PROVINCE_MAPPING, fileName);
+            std::ofstream file(filePath, std::ios::binary);
+            if (!file)
+                return;
+            this->AddMappingFile(fileName);
+            files[fileName] = std::move(file);
+        }
+    };
+
+    for (const auto& fileName : m_ProvinceMappingFiles)
+        OpenMappingFile(fileName);
+
+    // Sort the mappings by the target province id.
+    std::map<int, std::vector<std::pair<int, std::string>>> mappingsByTargetId;
+    for (const auto& [_, province] : m_ProvincesByIds) {
+        if (!province->HasMapping())
+            continue;
+        const Opt<ProvinceMapping>& mapping = province->GetMapping();
+
+        OpenMappingFile(mapping->fileName);
+
+        if (mapping->fileName.empty()) {
+            LOG_ERROR("Empty file name for province '{}'", province->GetId());
+            continue;
+        }
+
+        if (!files.contains(mapping->fileName)) {
+            LOG_ERROR("Failed to open file '{}' for writing for province '{}'", mapping->fileName, province->GetId());
+            continue;
+        }
+
+        mappingsByTargetId[province->GetMapping()->targetId].push_back({province->GetId(), province->GetMapping()->fileName});
+    }
+
+    for (auto& [targetId, mappings] : mappingsByTargetId) {
+        for (auto& [provinceId, fileName] : mappings) {
+            std::ofstream& file = files[fileName];
+            fmt::println(file, "{} = {}", provinceId, targetId);
+        }
+    }
 }
 
 ////////////////////////////////////////////////////

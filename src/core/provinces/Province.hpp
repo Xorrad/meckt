@@ -18,6 +18,12 @@ public:
      * @return True if the province has the flag, false otherwise.
      */
     bool HasFlag(ProvinceFlags flag) const;
+
+    /**
+     * @brief Checks if the province has a province mapping.
+     * @return True if the province has a province mapping, false otherwise.
+     */
+    bool HasMapping() const;
     
     //////////////////////////////////////////////////////
 
@@ -136,6 +142,12 @@ public:
      * @return The number of pixels in the province's image.
      */
     size_t GetImagePixelsCount() const;
+
+    /**
+     * @brief Retrieves the province mapping.
+     * @return The province mapping if it exists, std::nullopt otherwise.
+     */
+    Opt<ProvinceMapping> GetMapping() const;
 
     /**
      * @brief Retrieves the liege title of the province for a given title type.
@@ -270,6 +282,18 @@ public:
      */
     void IncrementImagePixelsCount();
 
+    /**
+     * @brief Sets the province mapping.
+     * @param mapping The province mapping to set.
+     */
+    void SetMapping(Opt<ProvinceMapping> mapping);
+
+    /**
+     * @brief Sets the province mapping.
+     * @param mapping The province mapping to set.
+     */
+    void SetMapping(ProvinceMapping mapping);
+
     //////////////////////////////////////////////////////
 
     /**
@@ -327,6 +351,8 @@ private:
 
     sf::Vector2i m_ImagePosition;
     size_t m_ImagePixelsCount;
+
+    Opt<ProvinceMapping> m_Mapping;
 
     // TODO: Sea-zone for port
 };

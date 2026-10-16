@@ -52,6 +52,13 @@ public:
      */
     bool HasTerrainType(const std::string& name) const;
 
+    /**
+     * @brief Checks if a province mapping file is registered.
+     * @param fileName The name of the mapping file.
+     * @return True if the mapping file exists, false otherwise.
+     */
+    bool HasProvinceMappingFile(const std::string& fileName) const;
+
     //////////////////////////////////////////////////////
 
     /**
@@ -366,6 +373,12 @@ public:
      */
     const std::map<std::string, std::string>& GetVanillaOverrideProvinceTerrainFiles() const;
 
+    /**
+     * @brief Retrieves the list of province mapping files.
+     * @return A list of relative file paths.
+     */
+    const std::vector<std::string>& GetProvinceMappingFiles() const;
+
     //////////////////////////////////////////////////////
 
     /**
@@ -380,6 +393,13 @@ public:
      * @param adjacency The adjacency to add.
      */
     void AddAdjacency(UniquePtr<Adjacency> adjacency);
+
+    /**
+     * @brief Adds a new province mapping file.
+     * @param fileName The name of the file to add.
+     * @return A view of the added file name.
+     */
+    std::string_view AddMappingFile(const std::string& fileName);
 
     /**
      * @brief Removes a province.
@@ -516,6 +536,19 @@ public:
      */
     void LoadAdjacencies(TitleManager& titleManager);
 
+    /**
+     * @brief Loads the province mappings from the province mapping files.
+     * @note Requires the provinces to be loaded first.
+     */
+    void LoadProvinceMappings();
+
+    /**
+     * @brief Loads a single province mapping file.
+     * @param fileName The relative path to the province mapping file.
+     * @param data The parsed data of the province mapping file.
+     */
+    void LoadProvinceMappingsFile(const std::string& fileName, SharedPtr<Jomini::Object> data);
+
     ////////////////////////////////////////////////////
     
     /**
@@ -554,6 +587,12 @@ public:
      * @throws std::runtime_error if the file cannot be opened or written to.
      */
     void ExportAdjacencies();
+
+    /**
+     * @brief Exports the province mappings.
+     * @throws std::runtime_error if the file cannot be opened or written to.
+     */
+    void ExportProvinceMappings();
 
     ////////////////////////////////////////////////////
 
@@ -612,4 +651,6 @@ private:
 
     // List of empty files in common/province_terrain that override vanilla files.
     std::map<std::string, std::string> m_VanillaOverrideProvinceTerrainFiles;
+
+    std::vector<std::string> m_ProvinceMappingFiles; // history/province_mapping
 };

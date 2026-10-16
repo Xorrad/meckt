@@ -74,6 +74,7 @@ class Rite;
 #include "provinces/Adjacency.hpp"
 #include "provinces/ProvinceFlags.hpp"
 #include "provinces/TerrainType.hpp"
+#include "provinces/ProvinceMapping.hpp"
 #include "titles/TitleType.hpp"
 #include "titles/Title.hpp"
 
