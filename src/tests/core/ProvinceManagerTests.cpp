@@ -5,6 +5,7 @@
 #include "titles/TitleManager.hpp"
 #include "util/Yaml.hpp"
 #include "../TestUtil.hpp"
+#include <optional>
 
 // Shared test-data shapes and verification helpers, reused by the load/export test pairs below
 // so each pair doesn't redeclare the same struct and re-write the same assertion loop.
@@ -124,6 +125,25 @@ void CheckAdjacencies(ProvinceManager& manager, const std::vector<AdjacencyTestD
         CHECK_EQ(adjacency->GetStart(), data.start);
         CHECK_EQ(adjacency->GetStop(), data.stop);
         CHECK_EQ(adjacency->GetComment(), data.comment);
+    }
+}
+
+struct MappingTestData {
+    int sourceId;
+    int targetId;
+    std::string fileName;
+};
+
+void CheckProvinceMappings(ProvinceManager& manager, const std::vector<MappingTestData>& expected) {
+    for (const auto& data : expected) {
+        SUBCASE(fmt::format("{} - {} - {}", data.sourceId, data.targetId, data.fileName).c_str()) {
+            REQUIRE(manager.HasProvinceMappingFile(data.fileName));
+            REQUIRE(manager.GetProvincesByIds().contains(data.sourceId));
+            REQUIRE(manager.GetProvincesByIds().contains(data.targetId));
+            REQUIRE(manager.GetProvincesByIds().at(data.sourceId)->HasMapping());
+            CHECK_EQ(manager.GetProvincesByIds().at(data.sourceId)->GetMapping().value().targetId, data.targetId);
+            CHECK_EQ(manager.GetProvincesByIds().at(data.sourceId)->GetMapping().value().fileName, data.fileName);
+        }
     }
 }
 
@@ -323,6 +343,35 @@ TEST_CASE("[ProvinceManager] AddAdjacency") {
         CHECK(manager.GetAdjacencies().size() == 1);
         CHECK(manager.HasAdjacency(1, 2));
         CHECK(manager.HasAdjacency(2, 1));
+    }
+}
+
+TEST_CASE("[ProvinceManager] AddMappingFile") {
+    Mod mod("");
+    ProvinceManager manager(mod);
+
+    SUBCASE("Add a new mapping file") {
+        std::string_view fileName = manager.AddMappingFile("mapping_file_1.txt");
+        CHECK_EQ(fileName, "mapping_file_1.txt");
+        CHECK(manager.GetProvinceMappingFiles().size() == 1);
+        CHECK(std::find(manager.GetProvinceMappingFiles().begin(), manager.GetProvinceMappingFiles().end(), "mapping_file_1.txt") != manager.GetProvinceMappingFiles().end());
+    }
+
+    SUBCASE("Add the same mapping file again") {
+        std::string_view fileName1 = manager.AddMappingFile("mapping_file_1.txt");
+        std::string_view fileName2 = manager.AddMappingFile("mapping_file_1.txt");
+        CHECK_EQ(fileName1, "mapping_file_1.txt");
+        CHECK_EQ(fileName2, "mapping_file_1.txt");
+        CHECK(manager.GetProvinceMappingFiles().size() == 1);
+        CHECK(std::find(manager.GetProvinceMappingFiles().begin(), manager.GetProvinceMappingFiles().end(), "mapping_file_1.txt") != manager.GetProvinceMappingFiles().end());
+    }
+
+    SUBCASE("Add multiple different mapping files") {
+        manager.AddMappingFile("mapping_file_1.txt");
+        manager.AddMappingFile("mapping_file_2.txt");
+        CHECK(manager.GetProvinceMappingFiles().size() == 2);
+        CHECK(std::find(manager.GetProvinceMappingFiles().begin(), manager.GetProvinceMappingFiles().end(), "mapping_file_1.txt") != manager.GetProvinceMappingFiles().end());
+        CHECK(std::find(manager.GetProvinceMappingFiles().begin(), manager.GetProvinceMappingFiles().end(), "mapping_file_2.txt") != manager.GetProvinceMappingFiles().end());
     }
 }
 
@@ -840,6 +889,36 @@ TEST_CASE("[ProvinceManager] LoadAdjacencies") {
     }
 }
 
+TEST_CASE("[ProvinceManager] LoadProvinceMappings") {
+    SUBCASE("No exception if there are no province mappings file") {
+        Mod mod("resources/tests/province_manager/test_mod_no_definitions");
+        ProvinceManager manager(mod);
+
+        REQUIRE_NOTHROW(manager.LoadProvinceMappings());
+    }
+
+    Mod mod("resources/tests/province_manager/test_mod");
+    ProvinceManager manager(mod);
+
+    // Load the provinces.
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadProvinceMappings());
+
+    SUBCASE("Check that province mappings have the correct data") {
+        CheckProvinceMappings(manager, {
+            {1, 8, "00_arabia.txt"},
+            {2, 8, "00_arabia.txt"},
+            {7, 7, "00_arabia.txt"},
+            {5, 6, "00_arabia.txt"}
+        });
+    }
+
+    SUBCASE("Check that empty files are kept") {
+        REQUIRE(manager.HasProvinceMappingFile("00_arabia.txt"));
+        REQUIRE(manager.HasProvinceMappingFile("00_sri_lanka.txt"));
+    }
+}
+
 //////////////////////////////////////////////////////
 
 TEST_CASE("[ProvinceManager] ExportProvincesDefinition") {
@@ -1243,6 +1322,60 @@ TEST_CASE("[ProvinceManager] ExportAdjacencies") {
         {{1, 5}, 5, 1, "river_large", 699, sf::Vector2u(669, 3577), sf::Vector2u(698, 3584), "Crossing 2"},
         {{22, 100}, 100, 22, "river_large", 999, sf::Vector2u(11, 67), sf::Vector2u(50, 41), "NEW ADJACENCY !!!!"}
     });
+}
+
+TEST_CASE("[ProvinceManager] ExportProvinceMappings") {
+    // Removes the temporary export directory if it already exists from a previous test.
+    TestUtil::ResetDirectory("resources/tests/province_manager/test_mod_modified");
+
+    // 1. Setup the mod and the titles.
+    Mod mod("resources/tests/province_manager/test_mod");
+    REQUIRE(std::filesystem::exists(mod.GetRootDirectory()));
+
+    {
+        ProvinceManager manager(mod);
+        REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+        REQUIRE_NOTHROW(manager.LoadProvinceMappings());
+
+        // Edit some province mappings.
+        manager.GetProvinceById(1)->SetMapping(std::nullopt);
+        manager.GetProvinceById(7)->SetMapping(std::nullopt);
+        manager.GetProvinceById(3)->SetMapping(ProvinceMapping{7, "00_arabia.txt"});
+        manager.GetProvinceById(4)->SetMapping(ProvinceMapping{7, "00_test.txt"});
+
+        // 2. Export the province mappings.
+        mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
+        REQUIRE_NOTHROW(manager.ExportProvinceMappings());
+    }
+
+    // Reload the province mappings definition.
+    ProvinceManager manager(mod);
+    REQUIRE_NOTHROW(manager.LoadProvincesDefinition());
+    REQUIRE_NOTHROW(manager.LoadProvinceMappings());
+
+    // 3. Asserts
+    SUBCASE("Check that the modified province mappings are preserved") {
+        REQUIRE(manager.HasProvinceById(1));
+        REQUIRE(manager.HasProvinceById(6));
+        REQUIRE(manager.HasProvinceById(7));
+        CHECK_FALSE(manager.GetProvinceById(1)->HasMapping());
+        CHECK_FALSE(manager.GetProvinceById(6)->HasMapping());
+        CHECK_FALSE(manager.GetProvinceById(7)->HasMapping());
+        CheckProvinceMappings(manager, {
+            {2, 8, "00_arabia.txt"},
+            {3, 7, "00_arabia.txt"},
+            {4, 7, "00_test.txt"},
+            {5, 6, "00_arabia.txt"}
+        });
+    }
+
+    SUBCASE("Check that all mapping files are still preserved") {
+        CHECK(manager.HasProvinceMappingFile("00_arabia.txt"));
+        CHECK(manager.HasProvinceMappingFile("00_test.txt"));
+        CHECK(manager.HasProvinceMappingFile("00_sri_lanka.txt"));
+    }
+
 }
 
 }
