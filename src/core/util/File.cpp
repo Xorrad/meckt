@@ -44,6 +44,13 @@ std::vector<std::vector<std::string>> File::ReadCSV(const std::string& filePath,
             continue;
 
         lines.push_back(String::Split(line, delimiter));
+
+        // Strip return carriage characters from the end.
+        if (!lines.back().empty()) {
+            std::string& field = lines.back().back();
+            if (!field.empty() && field.back() == '\r')
+                field.pop_back();
+        }
     }
 
     return lines;
