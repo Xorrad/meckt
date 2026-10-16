@@ -23,7 +23,7 @@ bool Components::ProvinceInput(std::string_view label, EditorMenu& menu, Provinc
     // PROVINCE PICKER BUTTON
     bool wasPickingProvince = menu.GetSelectionHandler().IsPicking(SelectionType::PROVINCE);
     ImGui::SameLine();
-    ImGui::PushFont(ImGui::notoSansNormalFont, ImGui::GetFontSize());
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
     if (wasPickingProvince) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     if (ImGui::Button("📌")) {
         if (wasPickingProvince) {

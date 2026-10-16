@@ -825,33 +825,16 @@ void PropertiesTab::RenderTitles() {
 
                     // BARONY: province id (field)
                     BaronyTitle* barony = static_cast<BaronyTitle*>(title);
-                    int provinceId = barony->GetProvinceId();
-                    if (ImGui::InputInt("province id", &provinceId)) {
-                        if (!m_Mod.GetProvinceManager().HasProvinceById(provinceId)) {
-                            ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
-                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.f, 0.f, 1.f));
-                            ImGui::Text("⚠️");
-                            if (ImGui::IsItemHovered())
-                                ImGui::SetTooltip("No province with this id exists!");
-                            ImGui::PopStyleColor();
-                            ImGui::PopFont();
-                            LOG_ERROR("Barony with undefined province id: {},{}", barony->GetName(), provinceId);
+                    Components::ProvinceInput(
+                        "province id",
+                        m_Menu,
+                        m_Mod.GetProvinceManager(),
+                        barony->GetProvinceId(),
+                        [this, barony](int newProvinceId) {
+                            m_Mod.GetTitleManager().ChangeBaronyProvinceId(barony, newProvinceId);
+                            m_Menu.GetSelectionHandler().Update();
                         }
-                    }
-
-                    // BARONY: province id (field)
-                    ImGui::NewLine();
-                    bool isPickingProvince = m_Menu.GetSelectionHandler().IsPicking(SelectionType::PROVINCE);
-                    if (ImGui::Button(isPickingProvince ? "click on a province..." : "change province") && !isPickingProvince) {
-                        m_Menu.GetSelectionHandler().PickProvince(
-                            [this, barony](Province* province) {
-                                m_Mod.GetTitleManager().ChangeBaronyProvinceId(barony, province->GetId());
-                            },
-                            false,
-                            MapMode::PROVINCES,
-                            m_Menu.GetMapMode()
-                        );
-                    }
+                    );
 
                     // BARONY: Switch to province (button)
                     if (ImGui::Button("switch to province")) {

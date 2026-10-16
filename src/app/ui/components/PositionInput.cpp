@@ -25,7 +25,7 @@ bool Components::PositionInput(std::string_view label, EditorMenu& menu, Provinc
 
     bool wasPickingPosition = menu.GetSelectionHandler().IsPicking(SelectionType::POSITION);
     ImGui::SameLine();
-    ImGui::PushFont(ImGui::notoSansNormalFont, ImGui::GetFontSize());
+    ImGui::PushFont(ImGui::notoSansNormalFont, FONT_SIZE_SMALL);
     if (wasPickingPosition) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     if (ImGui::Button("📌")) {
         if (wasPickingPosition) {
