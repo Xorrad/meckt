@@ -13,7 +13,8 @@ public:
     void RenderRegions();
     void RenderAdjacency();
 
-private:
+    private:
+    bool m_DisplayProvinceMapping;
     bool m_DisplayCulturalNames;
     bool m_DisplayHistory;
     bool m_DisplayDejureTitles;

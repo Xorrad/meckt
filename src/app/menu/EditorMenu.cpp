@@ -1636,6 +1636,7 @@ void EditorMenu::RenderModals() {
         static bool provincesClimate = true;
         static bool provincesHistory = true;
         static bool provinceAdjacencies = true;
+        static bool provinceMapping = true;
         static bool titles = true;
         static bool titlesHistory = true;
         static bool titlesLocalization = true;
@@ -1653,6 +1654,7 @@ void EditorMenu::RenderModals() {
             provincesClimate = true;
             provincesHistory = true;
             provinceAdjacencies = true;
+            provinceMapping = true;
             titles = true;
             titlesHistory = true;
             titlesLocalization = true;
@@ -1667,6 +1669,7 @@ void EditorMenu::RenderModals() {
             provincesClimate = false;
             provincesHistory = false;
             provinceAdjacencies = false;
+            provinceMapping = false;
             titles = false;
             titlesHistory = false;
             titlesLocalization = false;
@@ -1686,13 +1689,13 @@ void EditorMenu::RenderModals() {
         std::string provinceTerrainPath = m_Mod.GetProvinceManager().GetProvinceTerrainFileName();
         ImGui::Checkbox("provinces terrain  ", &provincesTerrain);
         ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), fmt::format("common/province_terrain/{}", provinceTerrainPath).c_str());
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled),  "%s", fmt::format("common/province_terrain/{}", provinceTerrainPath).c_str());
         
         
         std::string provinceTerrainPropertiesPath = m_Mod.GetProvinceManager().GetProvinceTerrainPropertiesFileName();
         ImGui::Checkbox("provinces climate  ", &provincesClimate);
         ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), fmt::format("common/province_terrain/{}  &  map_data/climate.txt", provinceTerrainPropertiesPath).c_str());
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "%s", fmt::format("common/province_terrain/{}  &  map_data/climate.txt", provinceTerrainPropertiesPath).c_str());
         
         ImGui::Checkbox("provinces history  ", &provincesHistory);
         ImGui::SameLine();
@@ -1701,6 +1704,10 @@ void EditorMenu::RenderModals() {
         ImGui::Checkbox("province adjacencies  ", &provinceAdjacencies);
         ImGui::SameLine();
         ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "map_data/adjacencies.csv");
+        
+        ImGui::Checkbox("province mapping  ", &provinceMapping);
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "history/province_mapping/");
         
         ImGui::Checkbox("titles  ", &titles);
         ImGui::SameLine();
@@ -1713,17 +1720,17 @@ void EditorMenu::RenderModals() {
         std::string titlesLocalizationPath = m_Mod.GetTitleManager().GetTitlesLocalizationFileName();
         ImGui::Checkbox("titles localization  ", &titlesLocalization);
         ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), titlesLocalizationPath.c_str());
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "%s", titlesLocalizationPath.c_str());
         
         std::string culturalNamesLocalizationPath = m_Mod.GetTitleManager().GetCulturalNamesLocalizationFileName();
         ImGui::Checkbox("cultural names localization  ", &culturalNamesLocalization);
         ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), culturalNamesLocalizationPath.c_str());
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "%s", culturalNamesLocalizationPath.c_str());
         
         std::string geographicalRegionsLocalizationPath = "map_data/geographical_regions/";
         ImGui::Checkbox("geographical regions  ", &geographicalRegions);
         ImGui::SameLine();
-        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), geographicalRegionsLocalizationPath.c_str());
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "%s", geographicalRegionsLocalizationPath.c_str());
 
         if(ImGui::Button("Export", ImVec2(120, 0))) {
             m_Mod.Export(
@@ -1733,6 +1740,7 @@ void EditorMenu::RenderModals() {
                 provincesClimate,
                 provincesHistory,
                 provinceAdjacencies,
+                provinceMapping,
                 titles,
                 titlesHistory,
                 titlesLocalization,

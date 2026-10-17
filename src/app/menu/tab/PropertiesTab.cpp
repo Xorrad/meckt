@@ -11,6 +11,7 @@
 
 PropertiesTab::PropertiesTab(EditorMenu& menu, bool visible) :
     Tab("Properties", Tabs::PROPERTIES, menu, visible),
+    m_DisplayProvinceMapping(false),
     m_DisplayCulturalNames(false),
     m_DisplayHistory(false),
     m_DisplayDejureTitles(false),
@@ -508,6 +509,50 @@ void PropertiesTab::RenderProvinces() {
                 }
                 else {
                     m_DisplayHistory = false;
+                }
+
+                // PROVINCE: mapping
+                ImGui::SetNextItemOpen(m_DisplayProvinceMapping, ImGuiCond_Appearing);
+                if (ImGui::CollapsingHeader("mapping")) {
+                    m_DisplayProvinceMapping = true;
+
+                    if (ImGui::BeginChild((province->GetName() + "-mapping").c_str(), ImVec2(0, 100), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_None)) {
+
+                        const Opt<ProvinceMapping> mapping = province->GetMapping();
+                        Components::ProvinceInput(
+                            "province id",
+                            m_Menu,
+                            m_Mod.GetProvinceManager(),
+                            (mapping.has_value() ? mapping->targetId : -1),
+                            [this, province, mapping](int newProvinceId) {
+                                std::string fileName = "00_mapping.txt";
+
+                                if (mapping.has_value()) {
+                                    fileName = mapping->fileName;
+                                }
+                                else {
+                                    if (Title* kingdomTitle = province->GetProvinceLiegeTitle(m_Mod.GetTitleManager(), TitleType::KINGDOM)) {
+                                        fileName = fmt::format("00_{}.txt", kingdomTitle->GetName().substr(2));
+                                    }
+                                }
+
+                                province->SetMapping(ProvinceMapping{newProvinceId, fileName});
+                                m_Menu.GetSelectionHandler().Update();
+                            }
+                        );
+                        std::string fileName = (mapping.has_value() ? mapping->fileName : "");
+                        bool hasValue = mapping.has_value();
+                        if (!hasValue) ImGui::BeginDisabled();
+                        if (ImGui::InputTextCommitOnEnter("file", &fileName) && !fileName.empty()) {
+                            province->SetMapping(ProvinceMapping{mapping.value().targetId, fileName});
+                        }
+                        if (!hasValue) ImGui::EndDisabled();
+                        
+                    }
+                    ImGui::EndChild();
+                }
+                else {
+                    m_DisplayProvinceMapping = false;
                 }
 
                 // PROVINCE: climate (collapsing header + child window (for borders) + text inputs)
