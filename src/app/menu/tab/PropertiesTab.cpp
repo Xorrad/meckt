@@ -525,6 +525,12 @@ void PropertiesTab::RenderProvinces() {
                             m_Mod.GetProvinceManager(),
                             (mapping.has_value() ? mapping->targetId : -1),
                             [this, province, mapping](int newProvinceId) {
+                                if (newProvinceId == -1) {
+                                    province->SetMapping(std::nullopt);
+                                    m_Menu.GetSelectionHandler().Update();
+                                    return;
+                                }
+
                                 std::string fileName = "00_mapping.txt";
 
                                 if (mapping.has_value()) {
