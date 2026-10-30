@@ -674,12 +674,13 @@ void ProvinceManager::LoadProvincesDefinition() {
     std::string filePath = m_Mod.GetAbsolutePath(Paths::MAP_DATA_DEFINITIONS);
     
     // Create an empty definition file if it does not exist.
-    // if (!std::filesystem::exists(filePath)) {
+    if (!std::filesystem::exists(filePath)) {
     //     std::ofstream file(filePath);
     //     /*if (!file)
     //         throw std::runtime_error(fmt::format("ProvinceManager::LoadProvincesDefinition: Failed to create an empty definition file at \"{}\"", filePath));*/
-    //     return;
-    // }
+        LOG_INFO("Loaded 0 provinces");
+        return;
+    }
     
     std::vector<std::vector<std::string>> lines = File::ReadCSV(filePath);
 
