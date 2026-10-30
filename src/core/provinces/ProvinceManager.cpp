@@ -684,11 +684,11 @@ void ProvinceManager::LoadProvincesDefinition() {
 
     for(const auto& line : lines) {
         try {
-            int id = std::stoi(line[0]);
-            int r = std::stoi(line[1]);
-            int g = std::stoi(line[2]);
-            int b = std::stoi(line[3]);
-            std::string name = line[4];
+            int id = std::stoi(line.at(0));
+            int r = std::stoi(line.at(1));
+            int g = std::stoi(line.at(2));
+            int b = std::stoi(line.at(3));
+            std::string name = line.at(4);
 
             // TODO: Should the alpha channel be included in the color id?
             uint32_t colorId = static_cast<uint32_t>((r << 24) | (g << 16) | (b << 8) | 255);
