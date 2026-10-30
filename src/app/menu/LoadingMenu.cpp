@@ -64,11 +64,12 @@ void LoadingMenu::Start(UniquePtr<Mod> mod) {
     m_Cancelled.store(false);
     m_Thread = MakeUnique<std::thread>([this, mod = std::move(mod)]() mutable {
         mod->Load(
-            [this]() { m_State.store(LoadingState::FINISHED); },
+            [this]() { },
             [this](LoadingState state) { m_State.store(state); },
             [this](const std::string& error) { m_LoadingError = error; m_State.store(LoadingState::FINISHED); },
             &m_Cancelled
         );
         m_App.SetMod(std::move(mod));
+        m_State.store(LoadingState::FINISHED);
     });
 }

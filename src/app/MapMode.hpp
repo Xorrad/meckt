@@ -10,7 +10,7 @@ enum class MapMode {
     CLIMATE         = 5,
     WINTER_SEVERITY = 6,
     CULTURE         = 7,
-    RITE           = 8,
+    RITE            = 8,
     BARONY          = 9,
     COUNTY          = 10,
     DUCHY           = 11,

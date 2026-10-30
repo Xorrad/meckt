@@ -75,7 +75,9 @@ ImFont* ImGui::AddFont(const std::string& path, float size, const ImFontConfig* 
         std::string_view data(file.begin(), std::distance(file.begin(), file.end()));
         
         ImGuiIO& io = ImGui::GetIO();
-        ImFont* font = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), size, font_cfg, glyph_ranges);
+        ImFontConfig fontCfg = font_cfg ? *font_cfg : ImFontConfig();
+        fontCfg.FontDataOwnedByAtlas = false; // We don't want ImGui to free the memory, since it's managed by CMRC.
+        ImFont* font = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), size, &fontCfg, glyph_ranges);
         return font;
     #endif
 }

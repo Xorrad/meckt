@@ -161,6 +161,7 @@ void App::Run() {
 
         // Drawing.
         m_Window.clear();
+        m_Window.resetGLStates();
         
 #ifdef DEBUG
         ImGui::ShowDemoWindow();
