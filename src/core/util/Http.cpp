@@ -109,6 +109,10 @@ std::string Http::Get(const std::string& url, const std::string& filePath) {
         } while (dwSize > 0);
     }
 
+    WinHttpCloseHandle(hRequest);
+    WinHttpCloseHandle(hConnect);
+    WinHttpCloseHandle(hSession);
+
     return response;
 #else
     CURL* curl = curl_easy_init();
@@ -129,8 +133,10 @@ std::string Http::Get(const std::string& url, const std::string& filePath) {
     }
     else {
         file = fopen(filePath.c_str(), "wb");
-        if (!file)
+        if (!file) {
+            curl_easy_cleanup(curl);
             throw std::runtime_error(fmt::format("Failed to open file for writing: {}; {}", errno, strerror(errno)));   
+        }
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, Http::Impl::WriteFileCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
     }
