@@ -1,5 +1,6 @@
 #include "Update.hpp"
 #include "core/util/Http.hpp"
+#include "util/String.hpp"
 #include <nlohmann/json.hpp>
 
 Update::Details Update::QueryDetails() {
@@ -38,17 +39,7 @@ Update::Details Update::QueryDetails() {
             result.error = fmt::format("Failed to find download URL.");
 
         try {
-            // Compare the current and latest version by stripping
-            // the dots in the version and casting them to integers.
-            std::string tmp = result.lastBuildVersion;
-            tmp.erase(std::remove(tmp.begin(), tmp.end(), '.'), tmp.end());
-            int buildNumber = std::stoi(tmp);
-
-            tmp = Configuration::buildVersion;
-            tmp.erase(std::remove(tmp.begin(), tmp.end(), '.'), tmp.end());
-            int currentBuildNumber = std::stoi(tmp);
-
-            if (!result.lastBuildVersion.empty() && buildNumber > currentBuildNumber) {
+            if (!result.lastBuildVersion.empty() && IsVersionNewer(Configuration::buildVersion, result.lastBuildVersion)) {
                 result.shouldUpdate = true;
             }
         }
@@ -61,4 +52,26 @@ Update::Details Update::QueryDetails() {
     }
 
     return result;
+}
+
+bool Update::IsVersionNewer(const std::string& currentVersion, const std::string& newVersion) {
+    // Compare the current and latest version by comparing the build numbers between each dots.
+
+    std::vector<std::string> currentNumbers = String::Split(currentVersion, ".");
+    std::vector<std::string> newNumbers = String::Split(newVersion, ".");
+
+    for (size_t i = 0; i < std::max(currentNumbers.size(), newNumbers.size()); i++) {
+        // Exceptions will be catched by the caller.
+        int currentNum = (i < currentNumbers.size()) ? std::stoi(currentNumbers[i]) : 0;
+        int newNum = (i < newNumbers.size()) ? std::stoi(newNumbers[i]) : 0;
+
+        if (newNum > currentNum) {
+            return true;
+        }
+        else if (newNum < currentNum) {
+            return false;
+        }
+    }
+
+    return false;
 }

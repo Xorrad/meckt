@@ -10,4 +10,5 @@ namespace Update {
     };
 
     Details QueryDetails();
+    bool IsVersionNewer(const std::string& currentVersion, const std::string& newVersion);
 }
