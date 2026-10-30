@@ -9,8 +9,16 @@ float Math::RandomFloat(float min, float max) {
 }
 
 bool Math::IsInt(const std::string& str) {
-    for (char ch : str) {
-        if (ch < '0' || ch > '9')
+    if (str.empty())
+        return false;
+    size_t i = 0;
+    if (str[0] == '-' || str[0] == '+') {
+        if (str.size() == 1)
+            return false;
+        i = 1;
+    }
+    for (; i < str.size(); i++) {
+        if (str[i] < '0' || str[i] > '9')
             return false;
     }
     return true;
