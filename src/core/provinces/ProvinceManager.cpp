@@ -1255,7 +1255,7 @@ void ProvinceManager::LoadAdjacencies(TitleManager& titleManager) {
         }
 
         // Skip the "-1;-1;;-1;-1;-1;-1;-1;" at the end of the file, which is necessary for the game to load.
-        if (line.at(0) == "-1")
+        if (line.at(0) == "-1" || line.at(1) == "-1" || line.at(3) == "-1" || line.at(4) == "-1" || line.at(5) == "-1" || line.at(6) == "-1" || line.at(7) == "-1")
             continue;
 
         try {
