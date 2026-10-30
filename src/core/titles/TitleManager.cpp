@@ -2,6 +2,7 @@
 
 #include "mod/Mod.hpp"
 #include "provinces/ProvinceManager.hpp"
+#include "util/Ptr.hpp"
 #include "util/String.hpp"
 #include "util/Yaml.hpp"
 
@@ -228,6 +229,23 @@ void TitleManager::AddTitle(UniquePtr<Title> title) {
             }),
             m_TitlesByType[title->GetType()].end()
         );
+
+        // Remove barony from map of baronies.
+        if(title->Is(TitleType::BARONY)) {
+            BaronyTitle* barony = static_cast<BaronyTitle*>(title.get());
+            if (barony->GetProvinceId() != 0 && m_BaroniesByProvinceId[barony->GetProvinceId()] == barony)
+                m_BaroniesByProvinceId.erase(barony->GetProvinceId());
+        }
+
+        if (it->second->GetLiegeTitle() != nullptr) {
+            it->second->GetLiegeTitle()->RemoveDejureTitle(it->second.get());
+        }
+        if (IsInstance<HighTitle>(it->second)) {
+            HighTitle* highTitle = static_cast<HighTitle*>(it->second.get());
+            for (const auto& dejureTitle : highTitle->GetDejureTitles()) {
+                dejureTitle->SetLiegeTitle(nullptr);
+            }
+        }
     }
 
     // Add title to the specific type list.
