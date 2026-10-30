@@ -289,10 +289,23 @@ void TitleManager::RemoveTitle(const std::string& name) {
     // Remove barony from map of baronies.
     if(title->Is(TitleType::BARONY)) {
         const BaronyTitle* barony = static_cast<const BaronyTitle*>(title);
-        if (barony->GetProvinceId() != 0 && m_BaroniesByProvinceId[barony->GetProvinceId()] == barony)
+        if (barony->GetProvinceId() != 0
+        && m_BaroniesByProvinceId.contains(barony->GetProvinceId())
+        && m_BaroniesByProvinceId[barony->GetProvinceId()] == barony)
             m_BaroniesByProvinceId.erase(barony->GetProvinceId());
     }
     
+    // Remove the title from its liege and dejure liege titles if applicable.
+    if (it->second->GetLiegeTitle() != nullptr) {
+        it->second->GetLiegeTitle()->RemoveDejureTitle(it->second.get());
+    }
+    if (IsInstance<HighTitle>(it->second)) {
+        HighTitle* highTitle = static_cast<HighTitle*>(it->second.get());
+        for (const auto& dejureTitle : highTitle->GetDejureTitles()) {
+            dejureTitle->SetLiegeTitle(nullptr);
+        }
+    }
+
     // Remove title from map of titles.
     m_Titles.erase(it);
 
