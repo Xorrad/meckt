@@ -728,7 +728,6 @@ void ProvinceManager::LoadProvincesImage() {
     size_t totalPixels = width * height;
 
     const auto& GetIndexPosition = [&](size_t index) {
-        index = index - 4;
         return sf::Vector2i((index / 4) % width, floor(index / (4*width)));
     };
 
