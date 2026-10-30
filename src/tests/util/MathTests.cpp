@@ -48,8 +48,14 @@ TEST_CASE("[Math] IsInt") {
     CHECK(Math::IsInt("0"));
     CHECK(Math::IsInt("123"));
     CHECK(Math::IsInt("00042"));
+    CHECK(Math::IsInt("-1"));
+    CHECK(Math::IsInt("+1"));
+    CHECK(Math::IsInt("-123"));
+    CHECK(Math::IsInt("+123"));
 
-    CHECK_FALSE(Math::IsInt("-1"));
+    CHECK_FALSE(Math::IsInt("-"));
+    CHECK_FALSE(Math::IsInt("+"));
+    CHECK_FALSE(Math::IsInt("-1-1"));
     CHECK_FALSE(Math::IsInt("1.5"));
     CHECK_FALSE(Math::IsInt("12a"));
     CHECK_FALSE(Math::IsInt("a"));

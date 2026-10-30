@@ -1308,6 +1308,7 @@ TEST_CASE("[ProvinceManager] ExportAdjacencies") {
 
         // 2. Export the adjacencies.
         mod.SetRootDirectory("resources/tests/province_manager/test_mod_modified");
+        REQUIRE_NOTHROW(manager.ExportProvincesDefinition());
         REQUIRE_NOTHROW(manager.ExportAdjacencies());
     }
 

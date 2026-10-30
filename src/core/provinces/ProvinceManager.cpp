@@ -525,17 +525,18 @@ void ProvinceManager::RenameProvinceColor(uint32_t formerColor, uint32_t newColo
     if (formerColor == newColor)
         return;
 
-    // If a province with the new color already exists, remove it first.
-    this->RemoveProvinceByColor(newColor);
-
     auto it = m_ProvincesByColors.find(formerColor);
     if (it == m_ProvincesByColors.end())
         return;
 
     UniquePtr<Province> province = std::move(it->second);
     province->SetColor(sf::Color(newColor));
+
+    // If a province with the new color already exists, remove it first.
+    this->RemoveProvinceByColor(newColor);
+
     m_ProvincesByColors[newColor] = std::move(province);
-    m_ProvincesByColors.erase(it);
+    m_ProvincesByColors.erase(formerColor);
 
     auto it2 = m_ProvinceIndices.extract(formerColor);
     if (!it2.empty()) {
